@@ -59,15 +59,7 @@ func player() templ.Component {
 			var_3 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, err = templBuffer.WriteString("<html>")
-		if err != nil {
-			return err
-		}
-		err = header().Render(ctx, templBuffer)
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString("<body class=\"bg-gray-100\"><div class=\"flex items-center justify-center min-h-screen bg-gray-100\"><div class=\"px-8 py-6 mt-4 text-left bg-white shadow-lg\"><h3 class=\"text-2xl font-bold text-center\">")
+		_, err = templBuffer.WriteString("<div class=\"flex items-center justify-center min-h-screen bg-gray-100\"><div class=\"px-8 py-6 mt-4 text-left bg-white shadow-lg\"><h3 class=\"text-2xl font-bold text-center\">")
 		if err != nil {
 			return err
 		}
@@ -103,7 +95,7 @@ func player() templ.Component {
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("</button></div></form></div></div></body></html>")
+		_, err = templBuffer.WriteString("</button></div></form></div></div>")
 		if err != nil {
 			return err
 		}
@@ -149,7 +141,7 @@ func home(players []PlayerWithFines, isFinemaster bool) templ.Component {
 			return err
 		}
 		if isFinemaster {
-			_, err = templBuffer.WriteString("<a href=\"/fine\">")
+			_, err = templBuffer.WriteString("<a hx-get=\"/fine\">")
 			if err != nil {
 				return err
 			}
@@ -158,7 +150,7 @@ func home(players []PlayerWithFines, isFinemaster bool) templ.Component {
 			if err != nil {
 				return err
 			}
-			_, err = templBuffer.WriteString("</a> <a href=\"/player\">")
+			_, err = templBuffer.WriteString("</a> <a hx-get=\"/player\">")
 			if err != nil {
 				return err
 			}
@@ -242,15 +234,7 @@ func fines() templ.Component {
 			var_16 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, err = templBuffer.WriteString("<html>")
-		if err != nil {
-			return err
-		}
-		err = header().Render(ctx, templBuffer)
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString("<body class=\"bg-gray-100\"><div class=\"flex items-center justify-center min-h-screen bg-gray-100\"><div class=\"px-8 py-6 mt-4 text-left bg-white shadow-lg\"><h3 class=\"text-2xl font-bold text-center\">")
+		_, err = templBuffer.WriteString("<div class=\"flex items-center justify-center min-h-screen bg-gray-100\"><div class=\"px-8 py-6 mt-4 text-left bg-white shadow-lg\"><h3 class=\"text-2xl font-bold text-center\">")
 		if err != nil {
 			return err
 		}
@@ -295,7 +279,7 @@ func fines() templ.Component {
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("</button></div></form></div></div></body></html>")
+		_, err = templBuffer.WriteString("</button></div></form></div></div>")
 		if err != nil {
 			return err
 		}
