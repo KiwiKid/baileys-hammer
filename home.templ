@@ -2,7 +2,28 @@ package main
 
 import (
 	"fmt"
+	"log"
 )
+
+func makeSafeUrl(finesOpen bool, playersOpen bool, presetFinesOpen bool, openPlayers []uint) templ.SafeURL {
+	url := makeUrl(finesOpen,playersOpen, presetFinesOpen, openPlayers)
+	return templ.SafeURL(url)
+}
+func makeUrl(finesOpen bool, playersOpen bool, presetFinesOpen bool, openPlayers []uint) string {
+
+	hp := HomeQueryParams{
+		FinesOpen: finesOpen,
+		PlayerOpen: playersOpen,
+		PresetFinesOpen: presetFinesOpen,
+		OpenPlayers: openPlayers,
+	}
+
+	url, err := GenerateUrl("/", &hp)
+	if(err != nil){
+		log.Fatalf("Generate url error: %+v", err)
+	}
+	return *url;
+}
 
 templ header() {
 	<head>
@@ -11,8 +32,59 @@ templ header() {
 	</head>
 }
 
-templ player() {
-		<div class="flex items-center justify-center min-h-screen bg-gray-100">
+templ home(players []PlayerWithFines, pFines []PresetFine, qp HomeQueryParams) {
+	<html>
+		@header()
+		<body>
+			<div class="p-4">
+				<pre>
+					{ fmt.Sprintf("%+v",     qp) }
+				</pre>
+			</div>
+			<div>
+				<a href={ makeSafeUrl(qp.FinesOpen, qp.PlayerOpen, qp.PresetFinesOpen, qp.OpenPlayers) }>Reload</a>
+				<a href="/">Reset</a>
+			</div>
+			<div class="container mx-auto p-4">
+				<h1 class="text-2xl font-bold mb-4">Player Fines</h1>
+				@fineAdd(qp)
+				@playersAdd(qp)
+				if qp.IsFineMaster {
+					@presetFines(qp, pFines)
+				}
+				<ul>
+					for _, p := range players {
+						<li class="mb-2">
+							<div _="on click toggle .fines-info on closest <li/>" class="cursor-pointer p-2 bg-gray-200 rounded hover:bg-gray-300">
+								{ p.Name } - Click to see fines
+							</div>
+							<div class="fines-info hidden" _="class add 'hidden' unless has closest 'li' class 'fines-info-visible'">
+								<div class="p-2">
+									<p>{ fmt.Sprintf("Number:%d TotalFines: %d", p.Number, p.TotalFines) }</p>
+									<div>
+										<p>Fines:</p>
+										for _, f := range p.Fines {
+											<div class="mt-1">
+												<p>Reason: {f.Reason}</p>
+												<p>Amount: { fmt.Sprintf("%d", f.Amount) }</p>
+											</div>
+										}
+									</div>
+								</div>
+							</div>
+						</li>
+
+					}
+				</ul>
+			</div>
+			<script src="https://unpkg.com/htmx.org"></script>
+		</body>
+	</html>
+}
+
+templ playersAdd(qp HomeQueryParams) {
+	if qp.PlayerOpen {
+		<div class="flex items-center justify-center bg-gray-100">
 			<div class="px-8 py-6 mt-4 text-left bg-white shadow-lg">
 				<h3 class="text-2xl font-bold text-center">Add New Player</h3>
 				<form action="/player" method="POST" class="mt-4">
@@ -27,61 +99,93 @@ templ player() {
 					<div class="flex items-center justify-between mt-4">
 						<button type="submit" class="px-4 py-2 text-white bg-blue-600 rounded-md hover:bg-blue-700">Submit</button>
 					</div>
+					<div>
+						<a href={ makeSafeUrl(qp.FinesOpen, false, qp.PresetFinesOpen, qp.OpenPlayers) }>Close</a>
+					</div>
 				</form>
 			</div>
-			
 		</div>
+	} else {
+		<div>
+			<a href={ makeSafeUrl(qp.FinesOpen, true, qp.PresetFinesOpen, qp.OpenPlayers) }>[[Players]]</a>
+		</div>
+	}
 }
 
-templ home(players []PlayerWithFines, isFinemaster bool) {
-	<html>
-		@header()
-		<body>
-			<div class="container mx-auto p-4">
-				<h1 class="text-2xl font-bold mb-4">Player Fines</h1>
-				if isFinemaster {
-					<a hx-get="/fine">fine</a>
-					<a hx-get="/player">player</a>
-				}
-				<ul>
-					for _, p := range players {
-						<li class="mb-2">
-							<div _="on click toggle .has-visible" class="cursor-pointer p-2 bg-gray-200 rounded hover:bg-gray-300">
-								{ p.Name }
-								- Click to see fines
-							</div>
-							<div class="fine-details" _="class has-visible when my.classList.contains(&#39;has-visible&#39;)" style="display: none;">{ fmt.Sprintf("%+v", p.Fines) }</div>
-						</li>
-					}
-				</ul>
+templ presetFines(qp HomeQueryParams, presetFines []PresetFine) {
+	if qp.PresetFinesOpen {
+		<div id="preset-fines">
+			<div class="flex items-center justify-center bg-gray-100">
+				<div class="px-8 py-6 mt-4 text-left bg-white shadow-lg">
+					<h3 class="text-2xl font-bold text-center">Preset Fines</h3>
+					<form action="/preset-fines" method="POST" class="mt-4">
+						<div>
+							<label for="reason" class="block">Reason</label>
+							<input required type="text" name="reason" id="reason" placeholder="Reason for the fine" class="w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600"/>
+						</div>
+						<div class="mt-4">
+							<label for="amount" class="block">Amount ($)</label>
+							<input required type="number" step="0.01" name="amount" id="amount" placeholder="Amount" class="w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600"/>
+						</div>
+						<div class="flex items-center justify-between mt-4">
+							<button type="submit" class="px-4 py-2 text-white bg-blue-600 rounded-md hover:bg-blue-700">Add Preset Fine</button>
+						</div>
+					</form>
+					<div>
+						<a href={ makeSafeUrl(qp.FinesOpen, qp.PlayerOpen, false, qp.OpenPlayers) } class="underline">Close</a>
+					</div>
+				</div>
 			</div>
-			<script src="https://unpkg.com/htmx.org"></script>
-		</body>
-	</html>
+			<div>
+				<!-- Assuming here you might want to list the preset fines -->
+				for _, fine := range presetFines {
+					<div class="mt-2">
+						<p><strong>Reason:</strong>{ fine.Reason } </p>
+						<p><strong>Amount:</strong>{ fmt.Sprintf("%+v", fine.Amount) }</p>
+					</div>
+				}
+			</div>
+		</div>
+	} else {
+		<div>
+			<a href={ makeSafeUrl(qp.FinesOpen, qp.PlayerOpen, true, qp.OpenPlayers) } class="underline">[View Preset Fines]</a>
+		</div>
+	}
 }
 
-templ fines() {
-	<div class="flex items-center justify-center min-h-screen bg-gray-100">
-		<div class="px-8 py-6 mt-4 text-left bg-white shadow-lg">
-			<h3 class="text-2xl font-bold text-center">Assign Fine to Player</h3>
-			<form action="/fines" method="POST" class="mt-4">
-				<div>
-					<label for="playerID" class="block">Player ID</label>
-					<input type="number" name="playerID" id="playerID" placeholder="Player ID" class="w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600"/>
+templ fineAdd(qp HomeQueryParams) {
+	<div id="fines">
+		if qp.FinesOpen {
+			<div class="flex items-center justify-center bg-gray-100">
+				<div class="px-8 py-6 mt-4 text-left bg-white shadow-lg">
+					<h3 class="text-2xl font-bold text-center">Assign Fine to Player</h3>
+					<form action="/fines" method="POST" class="mt-4">
+						<div>
+							<label for="playerID" class="block">Player ID</label>
+							<input required type="number" name="playerID" id="playerID" placeholder="Player ID" class="w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600"/>
+						</div>
+						<div class="mt-4">
+							<label for="reason" class="block">Reason</label>
+							<input required type="text" name="reason" id="reason" placeholder="Reason for the fine" class="w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600"/>
+						</div>
+						<div class="mt-4">
+							<label for="amount" class="block">Amount ($)</label>
+							<input required type="text" name="amount" id="amount" placeholder="Amount" class="w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600"/>
+						</div>
+						<div class="flex items-center justify-between mt-4">
+							<button type="submit" class="px-4 py-2 text-white bg-blue-600 rounded-md hover:bg-blue-700">Submit</button>
+						</div>
+						<div>
+							<a href={ makeSafeUrl(false, qp.PlayerOpen, qp.PresetFinesOpen, qp.OpenPlayers) }>Close</a>
+						</div>
+					</form>
 				</div>
-				<div class="mt-4">
-					<label for="reason" class="block">Reason</label>
-					<input type="text" name="reason" id="reason" placeholder="Reason for the fine" class="w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600"/>
-				</div>
-				<div class="mt-4">
-					<label for="amount" class="block">Amount ($)</label>
-					<input type="text" name="amount" id="amount" placeholder="Amount" class="w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600"/>
-				</div>
-				<div class="flex items-center justify-between mt-4">
-					<button type="submit" class="px-4 py-2 text-white bg-blue-600 rounded-md hover:bg-blue-700">Submit</button>
-				</div>
-			</form>
-		</div>
+			</div>
+		} else {
+			<div>
+				<a href={ makeSafeUrl(true, qp.PlayerOpen, qp.PresetFinesOpen, qp.OpenPlayers) }>[[Fine]]</a>
+			</div>
+		}
 	</div>
 }
 

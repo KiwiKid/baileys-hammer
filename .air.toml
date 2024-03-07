@@ -3,7 +3,7 @@ root = "."
 tmp_dir = "tmp"
 
 [build]
-  cmd = "templ generate && go build -o ./tmp/main ."
+  cmd = "go build -o ./tmp/main ."
   bin = "./tmp/main"
   exclude_dir = ["assets", "tmp", "vendor"]
   include_ext = ["go", "tmpl", "tpl", "html"]

@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"net/url"
+	"strconv"
 
 	"github.com/gorilla/schema"
 	"gorm.io/gorm"
@@ -38,10 +40,6 @@ func savePlayerHandler(db *gorm.DB) http.HandlerFunc {
 				}
 	
 			}
-			case "GET": {
-				player := player()
-				player.Render(r.Context(), w)
-			}
 		}
 
 	}
@@ -66,19 +64,72 @@ func saveFineHandler(db *gorm.DB) http.HandlerFunc {
 
 			w.WriteHeader(http.StatusCreated)
 		}
-		case "GET": {
-			fines := fines()
-			fines.Render(r.Context(), w)
-		}
-
-			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
-			return
-		
-
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		return
 	}
 	}
 }
 
+func GenerateUrl(baseURL string, queryParams *HomeQueryParams) (*string, error, ) {
+	queryParams.IsFineMaster = true
+	fullURL, err := GenerateURLWithParams(baseURL, queryParams)
+    if err != nil {
+        return nil, err
+    }
+	return &fullURL, nil
+}
+
+type HomeQueryParams struct {
+    FinesOpen bool `schema:"f"` // Assuming `pfid` is the query param name
+	PlayerOpen bool `schema:"p"` // Assuming `pfid` is the query param name
+	PresetFinesOpen bool `schema:"pf"` // Assuming `pfid` is the query param name
+	IsFineMaster bool `schema:"fm"`
+	OpenPlayers []uint `schema:"op"`
+}
+
+func presetFineHandler(db *gorm.DB) http.HandlerFunc {
+    return func(w http.ResponseWriter, r *http.Request) {
+        switch r.Method {
+        case "POST":
+			if err := r.ParseForm(); err != nil {
+				http.Error(w, "Invalid form data", http.StatusBadRequest)
+				return
+			}
+	
+			// Manual assignment of form values to struct
+			presetFine := PresetFine{
+				Reason: r.FormValue("Reason"),
+			}
+	
+			// Parse Amount as float64 from form value
+			if amount, err := strconv.ParseFloat(r.FormValue("Amount"), 64); err == nil {
+				presetFine.Amount = amount
+			} else {
+				log.Printf("Error parsing amount: %v", err)
+				http.Error(w, "Invalid amount value", http.StatusBadRequest)
+				return
+			}
+
+			// Save PresetFine to the database
+			if err := SavePresetFine(db, &presetFine); err != nil {
+				log.Printf("Error saving preset fine: %v", err)
+				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+				return
+			}
+
+            if err := SavePresetFine(db, &presetFine); err != nil {
+                log.Printf("Error saving preset fine: %v", err)
+                http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+                return
+            }
+
+            w.WriteHeader(http.StatusCreated)
+        default:
+            http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+            return
+        }
+    }
+}
 
 func main() {
 	log.Printf("Start")
@@ -87,9 +138,20 @@ func main() {
 		log.Fatalf("failed to connect database: %v", err)
 	}
 
-	http.HandleFunc("/player", savePlayerHandler(db))
-	http.HandleFunc("/fine", saveFineHandler(db))
+	http.HandleFunc("/players", savePlayerHandler(db))
+	http.HandleFunc("/fines", saveFineHandler(db))
+	http.HandleFunc("/preset-fines", presetFineHandler(db))
     http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+
+		decoder := schema.NewDecoder()
+		queryParams := new(HomeQueryParams)
+		if err := decoder.Decode(queryParams, r.URL.Query()); err != nil {
+			log.Printf("Error decoding query params: %v", err)
+			http.Error(w, "Bad Request", http.StatusBadRequest)
+			return
+		}else{
+			log.Printf("GOT QUERY:\n%+v", queryParams)
+		}
 
 		playersWithFines, err := FetchPlayersWithFines(db)
 		if err != nil {
@@ -97,14 +159,49 @@ func main() {
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 			return
 		}
-		log.Printf("response")
 
+		pFines, err := GetPresetFines(db)
+		if err != nil {
+			log.Printf("Error retrieving preset fines: %v", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
 
-		home := home(playersWithFines, true)
+		home := home(playersWithFines, pFines, *queryParams)
 		home.Render(r.Context(), w)
 	})
 
     // Start the HTTP server.
     http.ListenAndServe(":8080", nil)
 	log.Printf("Listening on %d", 8080)
+}
+
+
+
+
+
+
+func GenerateURLWithParams(baseURL string, params *HomeQueryParams) (string, error) {
+    // Parse the base URL
+    u, err := url.Parse(baseURL)
+    if err != nil {
+        return "", err
+    }
+
+    // Initialize the encoder
+    encoder := schema.NewEncoder()
+
+    // Prepare a map to encode the parameters into
+    values := url.Values{}
+
+    // Encode the struct into the map
+    err = encoder.Encode(params, values)
+    if err != nil {
+        return "", err
+    }
+
+    // Append the query parameters to the URL
+    u.RawQuery = values.Encode()
+
+    return u.String(), nil
 }

@@ -30,7 +30,7 @@ func DBInit() (*gorm.DB, error) {
     }
 
     // Migrate the schema
-    err = db.AutoMigrate(&Player{}, &Fine{})
+    err = db.AutoMigrate(&Player{}, &Fine{}, &PresetFine{})
     if err != nil {
         return nil, err
     }
@@ -85,4 +85,27 @@ func SaveFine(db *gorm.DB, fine *Fine) error {
         return err
     }
     return nil
+}
+
+
+type PresetFine struct {
+    gorm.Model
+    Reason string
+    Amount float64
+}
+
+
+func SavePresetFine(db *gorm.DB, presetFine *PresetFine) error {
+    if err := db.Save(presetFine).Error; err != nil {
+        return err
+    }
+    return nil
+}
+
+func GetPresetFines(db *gorm.DB) ([]PresetFine, error) {
+    var presetFines []PresetFine
+    if err := db.Find(&presetFines).Error; err != nil {
+        return nil, err
+    }
+    return presetFines, nil
 }
