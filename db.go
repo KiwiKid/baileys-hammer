@@ -1,6 +1,8 @@
 package main
 
 import (
+	"sort"
+
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -66,6 +68,11 @@ func FetchPlayersWithFines(db *gorm.DB) ([]PlayerWithFines, error) {
         playersWithFines = append(playersWithFines, pwf)
     }
 
+    sort.Slice(playersWithFines, func(i, j int) bool {
+        return playersWithFines[i].TotalFines > playersWithFines[j].TotalFines
+    })
+
+
     return playersWithFines, nil
 }
 
@@ -108,4 +115,13 @@ func GetPresetFines(db *gorm.DB) ([]PresetFine, error) {
         return nil, err
     }
     return presetFines, nil
+}
+
+
+func GetPresetFine(db *gorm.DB, id uint64) (*PresetFine, error) {
+    var presetFines PresetFine
+    if err := db.Where("id = ?", id).First(&presetFines).Error; err != nil {
+        return nil, err
+    }
+    return &presetFines, nil
 }

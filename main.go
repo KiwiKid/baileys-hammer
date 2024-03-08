@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"log"
 	"net/http"
 	"net/url"
@@ -38,6 +37,12 @@ func savePlayerHandler(db *gorm.DB) http.HandlerFunc {
 					http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 					return
 				}
+
+				w.Header().Set("HX-Redirect", "/")
+
+				// Optionally, you can set the status code to 200 OK or any appropriate status
+				w.WriteHeader(http.StatusOK)
+				return
 	
 			}
 		}
@@ -48,24 +53,70 @@ func savePlayerHandler(db *gorm.DB) http.HandlerFunc {
 func saveFineHandler(db *gorm.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		switch(r.Method){
-		case "POST": {
-			var fine Fine
-			if err := json.NewDecoder(r.Body).Decode(&fine); err != nil {
-				log.Printf("Error decoding fine data: %v", err)
-				http.Error(w, "Bad Request", http.StatusBadRequest)
+			case "POST": {
+
+				if err := r.ParseForm(); err != nil {
+					http.Error(w, "Invalid form data", http.StatusBadRequest)
+					return
+				}
+				
+				var presetFine *PresetFine
+				if(len(r.FormValue("presetFineId")) > 0){
+					pfId, err := strconv.ParseUint(r.FormValue("presetFineId"), 10, 64)
+					if err != nil {
+						http.Error(w, "Invalid presetFineId", http.StatusBadRequest)
+						return
+					}
+					presetFine, err = GetPresetFine(db, pfId)
+					if err != nil {
+						http.Error(w, "Could not GetPresetFine", http.StatusBadRequest)
+						return
+					}
+
+
+				} 
+				
+				var fine Fine
+				if presetFine != nil {
+					fine = Fine{
+						Amount: presetFine.Amount,
+						Reason: presetFine.Reason,
+					}
+				}else {
+					amountStr := r.FormValue("amount")
+					amount, err := strconv.ParseFloat(amountStr, 64) // 64 specifies the bit size of the float type
+					if err != nil {
+						// Handle the error if the conversion fails
+						http.Error(w, "Invalid amount", http.StatusBadRequest)
+						return
+					}
+					
+					fine = Fine{
+						Amount: amount,
+						Reason: r.FormValue("reason"),
+					}
+				}
+				
+				// Manual assignment of form values to struct
+
+
+				if err := SaveFine(db, &fine); err != nil {
+					log.Printf("Error saving fine: %v", err)
+					http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+					return
+				}else {
+					log.Printf("Saved Fine!!!")
+				}
+
+				w.Header().Set("HX-Redirect", "/")
+
+				// Optionally, you can set the status code to 200 OK or any appropriate status
+				w.WriteHeader(http.StatusOK)
 				return
 			}
-
-			if err := SaveFine(db, &fine); err != nil {
-				log.Printf("Error saving fine: %v", err)
-				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-				return
-			}
-
-			w.WriteHeader(http.StatusCreated)
-		}
-		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
-		return
+		default: 
+			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+			return
 	}
 	}
 }
@@ -98,11 +149,11 @@ func presetFineHandler(db *gorm.DB) http.HandlerFunc {
 	
 			// Manual assignment of form values to struct
 			presetFine := PresetFine{
-				Reason: r.FormValue("Reason"),
+				Reason: r.FormValue("reason"),
 			}
 	
 			// Parse Amount as float64 from form value
-			if amount, err := strconv.ParseFloat(r.FormValue("Amount"), 64); err == nil {
+			if amount, err := strconv.ParseFloat(r.FormValue("amount"), 64); err == nil {
 				presetFine.Amount = amount
 			} else {
 				log.Printf("Error parsing amount: %v", err)
@@ -123,7 +174,11 @@ func presetFineHandler(db *gorm.DB) http.HandlerFunc {
                 return
             }
 
-            w.WriteHeader(http.StatusCreated)
+			w.Header().Set("HX-Redirect", "/")
+
+			// Optionally, you can set the status code to 200 OK or any appropriate status
+			w.WriteHeader(http.StatusOK)
+			return
         default:
             http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
             return
