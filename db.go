@@ -21,6 +21,7 @@ type Fine struct {
     PlayerID uint
     Reason   string
     Amount   float64
+    Status   string // "proposed", "approved", "paid"
 }
 
 // DBInit initializes the database and creates the tables
@@ -42,11 +43,12 @@ func DBInit() (*gorm.DB, error) {
 
 // PlayerWithFines represents a player along with their fines
 type PlayerWithFines struct {
-    PlayerID    uint   // or use the same type as Player's primary key
+    PlayerID    uint 
     Name        string
     Number      int
-    TotalFines  int       // Optionally, if you want to show the total number of fines
-    Fines []Fine    // Slice to hold the fines details
+    TotalFineCount int
+    TotalFines  int
+    Fines []Fine
 }
 
 func FetchPlayersWithFines(db *gorm.DB) ([]PlayerWithFines, error) {
@@ -56,13 +58,22 @@ func FetchPlayersWithFines(db *gorm.DB) ([]PlayerWithFines, error) {
     var players []Player
     db.Preload("Fines").Find(&players)
 
+
     // Construct the PlayerWithFines slice
     for _, player := range players {
+
+        var fineSum = 0
+        for _, f := range player.Fines {
+            fineSum = fineSum + int(f.Amount)
+        }
+    
+
         pwf := PlayerWithFines{
             PlayerID:    player.ID,
             Name:        player.Name,
             Number:      player.Number,
-            TotalFines:  len(player.Fines),
+            TotalFineCount: len(player.Fines),
+            TotalFines:  fineSum,
             Fines: player.Fines,
         }
         playersWithFines = append(playersWithFines, pwf)

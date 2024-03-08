@@ -1,9 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"strconv"
 
 	"github.com/gorilla/schema"
@@ -59,6 +61,13 @@ func saveFineHandler(db *gorm.DB) http.HandlerFunc {
 					http.Error(w, "Invalid form data", http.StatusBadRequest)
 					return
 				}
+
+				playerIdStr := r.FormValue("playerId")
+				playerId, err := strconv.ParseUint(playerIdStr, 10, 64)
+				if err != nil || playerId == 0 {
+					http.Error(w, fmt.Sprintf("Error parsing playerId %v", err), http.StatusBadRequest)
+					return 
+				}
 				
 				var presetFine *PresetFine
 				if(len(r.FormValue("presetFineId")) > 0){
@@ -74,8 +83,8 @@ func saveFineHandler(db *gorm.DB) http.HandlerFunc {
 					}
 
 
-				} 
-				
+				}
+
 				var fine Fine
 				if presetFine != nil {
 					fine = Fine{
@@ -90,12 +99,16 @@ func saveFineHandler(db *gorm.DB) http.HandlerFunc {
 						http.Error(w, "Invalid amount", http.StatusBadRequest)
 						return
 					}
-					
+
+
 					fine = Fine{
 						Amount: amount,
 						Reason: r.FormValue("reason"),
 					}
 				}
+
+				fine.PlayerID = uint(playerId)
+				fine.Status = "pending"
 				
 				// Manual assignment of form values to struct
 
@@ -105,12 +118,12 @@ func saveFineHandler(db *gorm.DB) http.HandlerFunc {
 					http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 					return
 				}else {
-					log.Printf("Saved Fine!!!")
+					log.Printf("Saved Fine!!! with player id %d", fine.PlayerID)
 				}
 
 				w.Header().Set("HX-Redirect", "/")
 
-				// Optionally, you can set the status code to 200 OK or any appropriate status
+				// Optionally, you can set the status code to 200 OK or any auppropriate status
 				w.WriteHeader(http.StatusOK)
 				return
 			}
@@ -135,7 +148,6 @@ type HomeQueryParams struct {
 	PlayerOpen bool `schema:"p"` // Assuming `pfid` is the query param name
 	PresetFinesOpen bool `schema:"pf"` // Assuming `pfid` is the query param name
 	IsFineMaster bool `schema:"fm"`
-	OpenPlayers []uint `schema:"op"`
 }
 
 func presetFineHandler(db *gorm.DB) http.HandlerFunc {
@@ -186,6 +198,50 @@ func presetFineHandler(db *gorm.DB) http.HandlerFunc {
     }
 }
 
+type FineMasterQueryParams struct {
+	FinesOpen bool `schema:"f"` // Assuming `pfid` is the query param name
+	PlayerOpen bool `schema:"p"` // Assuming `pfid` is the query param name
+	PresetFinesOpen bool `schema:"pf"` // Assuming `pfid` is the query param name
+	Pass string `schema:"pass"`
+}
+
+func presetFineMasterHandler(db *gorm.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if(r.URL.Query().Get("pass") != os.Getenv("PASS")){
+			log.Printf("Error fetching presetFineMasterHandler: %v")
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+
+		decoder := schema.NewDecoder()
+		queryParams := new(FineMasterQueryParams)
+		if err := decoder.Decode(queryParams, r.URL.Query()); err != nil {
+			log.Printf("Error decoding query params: %v", err)
+			http.Error(w, "Bad Request", http.StatusBadRequest)
+			return
+		}else{
+			log.Printf("GOT QUERY:\n%+v", queryParams)
+		}
+
+		playersWithFines, err := FetchPlayersWithFines(db)
+		if err != nil {
+			log.Printf("Error fetching players with fines: %v", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+
+		pFines, err := GetPresetFines(db)
+		if err != nil {
+			log.Printf("Error retrieving preset fines: %v", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+
+		finemaster := finemaster(playersWithFines, pFines, *queryParams)
+		finemaster.Render(r.Context(), w)
+	}
+}
+
 func main() {
 	log.Printf("Start")
 	db, err := DBInit()
@@ -196,6 +252,7 @@ func main() {
 	http.HandleFunc("/players", savePlayerHandler(db))
 	http.HandleFunc("/fines", saveFineHandler(db))
 	http.HandleFunc("/preset-fines", presetFineHandler(db))
+	http.HandleFunc("/finemaster", presetFineMasterHandler(db))
     http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 
 		decoder := schema.NewDecoder()

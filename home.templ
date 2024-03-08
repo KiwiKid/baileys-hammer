@@ -5,17 +5,16 @@ import (
 	"log"
 )
 
-func makeSafeUrl(finesOpen bool, playersOpen bool, presetFinesOpen bool, openPlayers []uint) templ.SafeURL {
-	url := makeUrl(finesOpen,playersOpen, presetFinesOpen, openPlayers)
+func makeSafeUrl(finesOpen bool, playersOpen bool, presetFinesOpen bool) templ.SafeURL {
+	url := makeUrl(finesOpen,playersOpen, presetFinesOpen)
 	return templ.SafeURL(url)
 }
-func makeUrl(finesOpen bool, playersOpen bool, presetFinesOpen bool, openPlayers []uint) string {
+func makeUrl(finesOpen bool, playersOpen bool, presetFinesOpen bool) string {
 
 	hp := HomeQueryParams{
 		FinesOpen: finesOpen,
 		PlayerOpen: playersOpen,
 		PresetFinesOpen: presetFinesOpen,
-		OpenPlayers: openPlayers,
 	}
 
 	url, err := GenerateUrl("/", &hp)
@@ -31,14 +30,16 @@ var sec = "bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-
 
 var add = "bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:scale-105 transition transform ease-out duration-200"
 
+
+var bigPri = fmt.Sprintf("mx-auto items-center justify-center w-4/5 text-center py-2 px-4 text-lg rounded-md border hover:bg-opacity-75 focus:outline-none %s", pri)
+var bigSec = fmt.Sprintf("mx-auto items-center justify-center w-4/5 text-center py-2 px-4 text-lg rounded-md border hover:bg-opacity-75 focus:outline-none %s", sec)
+
 templ header() {
 	<head>
 		<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet"/>
 		<script src="https://unpkg.com/hyperscript.org@0.9.12"></script>
 	</head>
 }
-
-
 
 templ home(players []PlayerWithFines, pFines []PresetFine, qp HomeQueryParams) {
 	<html>
@@ -55,17 +56,16 @@ templ home(players []PlayerWithFines, pFines []PresetFine, qp HomeQueryParams) {
 							<li class="mb-2">
 								<div _="on click toggle .hidden on next &lt;section/&gt;" class="cursor-pointer p-2 bg-gray-200 rounded hover:bg-gray-300">
 									{ p.Name }
-									- { fmt.Sprintf("$%d", p.TotalFines) }
+									- 
+									{ fmt.Sprintf("$%d", p.TotalFines) }
 								</div>
 								<section class="fines-info hidden">
 									<div class="p-2">
-										<p>{ fmt.Sprintf("Number:%v TotalFines: %v", p.Number, p.TotalFines) }</p>
-										<div>
-											<p>Fines:</p>
+										<p class="p-2">{ fmt.Sprintf("Number:%v TotalFines: %v", p.Number, p.TotalFines) }</p>
+										<div class="p-2">
 											for _, f := range p.Fines {
 												<div class="mt-1">
-													<p>Reason: { f.Reason }</p>
-													<p>Amount: { fmt.Sprintf("%d", f.Amount) }</p>
+													<p>Reason: { f.Reason } { fmt.Sprintf("$%.0f", f.Amount) }</p>
 												</div>
 											}
 										</div>
@@ -74,116 +74,109 @@ templ home(players []PlayerWithFines, pFines []PresetFine, qp HomeQueryParams) {
 							</li>
 						}
 					</ul>
-				
 				</div>
 			</div>
 			<div class="grid grid-cols-1 gap-2">
-				@fineAdd(qp, players, pFines)
-				@playersAdd(qp)
-				if qp.IsFineMaster {
-					@presetFines(qp, pFines)
-				}
+				@fineAdd(qp.FinesOpen, players, pFines)
 			</div>
 			<script src="https://unpkg.com/htmx.org"></script>
 		</body>
 	</html>
 }
 
+templ fineAdd(isOpen bool, players []PlayerWithFines, presetFines []PresetFine) {
+	if isOpen {
+		<div class="px-8 py-6 mt-4 text-left bg-white shadow-lg">
+			<h3 class="text-2xl font-bold text-center">Submit Fine</h3>
+			<form hx-post="/fines" class="mt-4">
+				<div class="mt-4">
+					<label class="text-lg font-semibold">Select Player</label>
+					<select name="playerId" class="mt-1 w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+						for _, p := range players {
+							<option value={ fmt.Sprintf("%v", p.PlayerID) }>
+								{ fmt.Sprintf("%s ($%v)", p.Name, p.Number) }
+							</option>
+						}
+					</select>
+				</div>
+				<div class="mt-8">
+					<div class="border-t pt-4">
+						<label class="text-lg font-semibold">Fine Option</label>
+						<div class="mt-2">
+							<select name="presetFineId" class="w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+								<option selected value="">Custom Fine (complete below)</option>
+								for _, fp := range presetFines {
+									<option value={ fmt.Sprintf("%v", fp.ID) }>
+										{ fmt.Sprintf("%s ($%v)", fp.Reason, fp.Amount) }
+									</option>
+								}
+							</select>
+						</div>
+					</div>
+				</div>
+				<div class="mt-4">
+					<label for="reason" class="block">Reason</label>
+					<input type="text" name="reason" id="reason" placeholder="Reason for the fine" class="w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+				</div>
+				<div class="mt-4">
+					<label for="amount" class="block">Amount ($)</label>
+					<input type="text" name="amount" id="amount" placeholder="Amount" class="w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+				</div>
+				<div class="flex items-center justify-between w-full mt-8">
+					<button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Submit Fine</button>
+					<a href={ makeSafeUrl(false, false, false) } class="inline-block align-baseline font-bold text-sm text-blue-500 hover:text-blue-800">Close</a>
+				</div>
+			</form>
+		</div>
+	} else {
+		<div class="flex justify-center w-full">
+			<a class={ bigPri } href={ makeSafeUrl(true, false, false) }>Sudgest Fine</a>
+		</div>
+	}
+}
 
-
-templ presetFines(qp HomeQueryParams, presetFines []PresetFine) {
-	<div id="preset-fines">
-		if qp.PresetFinesOpen {
-			<div class="px-8 py-6 mt-4 text-left bg-white shadow-lg">
-				<h3 class="text-2xl font-bold text-center">Preset Fines</h3>
-				<form action="/preset-fines" method="POST" class="mt-4">
-					<div>
-						<label for="reason" class="block">Reason</label>
-						<input required type="text" name="reason" id="reason" placeholder="Reason for the fine" class="w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600"/>
-					</div>
-					<div class="mt-4">
-						<label for="amount" class="block">Amount ($)</label>
-						<input required type="number" step="0.01" name="amount" id="amount" placeholder="Amount" class="w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600"/>
-					</div>
-					<div class="flex items-center justify-between mt-4">
-						 <button type="submit" class={ add } >Add Preset Fine</button>
-					</div>
-				</form>
+templ presetFines(isOpen bool, presetFines []PresetFine) {
+	if isOpen {
+		<div class="px-8 py-6 mt-4 text-left bg-white shadow-lg">
+			<h3 class="text-2xl font-bold text-center">Preset Fines</h3>
+			<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 				<div>
-					<a href={ makeSafeUrl(false, false, false, []) }  class={ sec }>Close</a>
+					<form action="/preset-fines" method="POST" class="mt-4">
+						<div>
+							<label for="reason" class="block">Reason</label>
+							<input required type="text" name="reason" id="reason" placeholder="Reason for the fine" class="w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600"/>
+						</div>
+						<div class="mt-4">
+							<label for="amount" class="block">Amount ($)</label>
+							<input required type="number" step="0.01" name="amount" id="amount" placeholder="Amount" class="w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600"/>
+						</div>
+						<div class="flex items-center justify-between mt-4">
+							<button type="submit" class={ add }>Add Preset Fine</button>
+						</div>
+					</form>
+					<div>
+						<a href={ makeSafeUrl(false, false, false) } class={ bigSec }>Close</a>
+					</div>
+				</div>
+				<div>
+					<h1>Existing Preset Fines</h1>
+					for _, fine := range presetFines {
+						<div class="mt-2">
+							<p>{ fine.Reason } - { fmt.Sprintf("$%f", fine.Amount) }</p>
+						</div>
+					}
 				</div>
 			</div>
-				
-			<div>
-				<h1>Existing Preset Fines</h1>
-				for _, fine := range presetFines {
-					<div class="mt-2">
-						<p><strong>Reason:</strong>{ fine.Reason }</p>
-						<p><strong>Amount:</strong>{ fmt.Sprintf("%+v", fine.Amount) }</p>
-					</div>
-				}
-			</div>
-		} else {
-			<div>
-				<a href={ makeSafeUrl(false, false, true, []) } class={ pri }>View Preset Fines</a>
-			</div>
-		}
-	</div>
+		</div>
+	} else {
+		<div class="flex justify-center w-full">
+			<a href={ makeSafeUrl(false, false, true) } class={ bigPri }>View Preset Fines</a>
+		</div>
+	}
 }
 
-
-templ fineAdd(qp HomeQueryParams, players []PlayerWithFines, presetFines []PresetFine) {
-	<div id="fines">
-		if qp.FinesOpen {
-			<div class="px-8 py-6 mt-4 text-left bg-white shadow-lg">
-				<h3 class="text-2xl font-bold text-center">Assign Fine to Player</h3>
-				<form hx-post="/fines" class="mt-4">
-					<div class="mt-4">
-						<select name="playerId">
-							for _, p := range players {
-								<option value={ fmt.Sprintf("%v", p.PlayerID) }>
-									{ fmt.Sprintf("%s ($%v)", p.Name, p.Number) }
-								</option>
-							}
-						</select>
-					</div>
-					<div class="mt-4">
-						<select name="presetFineId">
-							<option selected value="">Custom Fine</option>
-							for _, fp := range presetFines {
-								<option value={ fmt.Sprintf("%v", fp.ID) }>
-									{ fmt.Sprintf("%s ($%v)", fp.Reason, fp.Amount) }
-								</option>
-							}
-						</select>
-					</div>
-					<div class="m-10">OR Custom:</div>
-					<div class="mt-4">
-						<label for="reason" class="block">Reason</label>
-						<input type="text" name="reason" id="reason" placeholder="Reason for the fine" class="w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600"/>
-					</div>
-					<div class="mt-4">
-						<label for="amount" class="block">Amount ($)</label>
-						<input type="text" name="amount" id="amount" placeholder="Amount" class="w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600"/>
-					</div>
-					<div class="flex items-center justify-between mt-4">
-						<button type="submit" class="px-4 py-2 text-white bg-blue-600 rounded-md hover:bg-blue-700">Submit</button>
-					</div>
-					<div>
-						<a href={ makeSafeUrl(false, false, false, []) } hx-transition="true" class={ sec }>Close</a>
-					</div>
-				</form>
-			</div>
-		} else {
-			<div>
-				<a href={ makeSafeUrl(true, false, false, []) } hx-transition="true"  class={ pri }>[[Fine]]</a>
-			</div>
-		}
-	</div>
-}
-
-templ playersAdd(qp HomeQueryParams) {
-	if qp.PlayerOpen {
+templ playersAdd(isOpen bool) {
+	if isOpen {
 		<div class="flex items-center justify-center bg-gray-100">
 			<div class="px-8 py-6 mt-4 text-left bg-white shadow-lg">
 				<h3 class="text-2xl font-bold text-center">Add New Player</h3>
@@ -196,18 +189,18 @@ templ playersAdd(qp HomeQueryParams) {
 						<label for="number" class="block">Number</label>
 						<input type="number" name="number" id="number" placeholder="Number" class="w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600"/>
 					</div>
-					<div class="flex items-center justify-between mt-4">
-						<button type="submit" class={ pri }>Add Player</button>
+					<div class="flex items-center w-full">
+						<button type="submit" class={ bigPri }>Add Player</button>
 					</div>
-					<div>
-						<a href={ makeSafeUrl(false, false, false, []) } hx-transition="true" class={ sec }>Close</a>
+					<div class="flex justify-center w-full">
+						<a href={ makeSafeUrl(false, false, false) } hx-transition="true" class={ bigSec }>Close</a>
 					</div>
 				</form>
 			</div>
 		</div>
 	} else {
-		<div>
-			<a href={ makeSafeUrl(false, true, false, []) } hx-transition="true"  class={ pri }>[[Players]]</a>
+		<div class="flex justify-center w-full">
+			<a href={ makeSafeUrl(false, true, false) } hx-transition="true" class={ bigPri }>[[Players]]</a>
 		</div>
 	}
 }
