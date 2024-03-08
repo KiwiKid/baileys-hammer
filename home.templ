@@ -5,11 +5,13 @@ import (
 	"log"
 )
 
-func makeSafeUrl(finesOpen bool, playersOpen bool, presetFinesOpen bool) templ.SafeURL {
-	url := makeUrl(finesOpen,playersOpen, presetFinesOpen)
+var baseUrl = "/"
+
+func makeSafeUrl(baseUrl string, finesOpen bool, playersOpen bool, presetFinesOpen bool) templ.SafeURL {
+	url := makeUrl(baseUrl, finesOpen, playersOpen, presetFinesOpen)
 	return templ.SafeURL(url)
 }
-func makeUrl(finesOpen bool, playersOpen bool, presetFinesOpen bool) string {
+func makeUrl(fbaseUrl string, finesOpen bool, playersOpen bool, presetFinesOpen bool) string {
 
 	hp := HomeQueryParams{
 		FinesOpen: finesOpen,
@@ -17,7 +19,7 @@ func makeUrl(finesOpen bool, playersOpen bool, presetFinesOpen bool) string {
 		PresetFinesOpen: presetFinesOpen,
 	}
 
-	url, err := GenerateUrl("/", &hp)
+	url, err := GenerateUrl(fbaseUrl, &hp)
 	if(err != nil){
 		log.Fatalf("Generate url error: %+v", err)
 	}
@@ -77,14 +79,14 @@ templ home(players []PlayerWithFines, pFines []PresetFine, qp HomeQueryParams) {
 				</div>
 			</div>
 			<div class="grid grid-cols-1 gap-2">
-				@fineAdd(qp.FinesOpen, players, pFines)
+				@fineAdd(baseUrl, qp.FinesOpen, players, pFines)
 			</div>
 			<script src="https://unpkg.com/htmx.org"></script>
 		</body>
 	</html>
 }
 
-templ fineAdd(isOpen bool, players []PlayerWithFines, presetFines []PresetFine) {
+templ fineAdd(baseUrl string, isOpen bool, players []PlayerWithFines, presetFines []PresetFine) {
 	if isOpen {
 		<div class="px-8 py-6 mt-4 text-left bg-white shadow-lg">
 			<h3 class="text-2xl font-bold text-center">Submit Fine</h3>
@@ -124,83 +126,13 @@ templ fineAdd(isOpen bool, players []PlayerWithFines, presetFines []PresetFine) 
 				</div>
 				<div class="flex items-center justify-between w-full mt-8">
 					<button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Submit Fine</button>
-					<a href={ makeSafeUrl(false, false, false) } class="inline-block align-baseline font-bold text-sm text-blue-500 hover:text-blue-800">Close</a>
+					<a href={ makeSafeUrl(baseUrl, false, false, false) } class="inline-block align-baseline font-bold text-sm text-blue-500 hover:text-blue-800">Close</a>
 				</div>
 			</form>
 		</div>
 	} else {
 		<div class="flex justify-center w-full">
-			<a class={ bigPri } href={ makeSafeUrl(true, false, false) }>Sudgest Fine</a>
-		</div>
-	}
-}
-
-templ presetFines(isOpen bool, presetFines []PresetFine) {
-	if isOpen {
-		<div class="px-8 py-6 mt-4 text-left bg-white shadow-lg">
-			<h3 class="text-2xl font-bold text-center">Preset Fines</h3>
-			<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-				<div>
-					<form action="/preset-fines" method="POST" class="mt-4">
-						<div>
-							<label for="reason" class="block">Reason</label>
-							<input required type="text" name="reason" id="reason" placeholder="Reason for the fine" class="w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600"/>
-						</div>
-						<div class="mt-4">
-							<label for="amount" class="block">Amount ($)</label>
-							<input required type="number" step="0.01" name="amount" id="amount" placeholder="Amount" class="w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600"/>
-						</div>
-						<div class="flex items-center justify-between mt-4">
-							<button type="submit" class={ add }>Add Preset Fine</button>
-						</div>
-					</form>
-					<div>
-						<a href={ makeSafeUrl(false, false, false) } class={ bigSec }>Close</a>
-					</div>
-				</div>
-				<div>
-					<h1>Existing Preset Fines</h1>
-					for _, fine := range presetFines {
-						<div class="mt-2">
-							<p>{ fine.Reason } - { fmt.Sprintf("$%f", fine.Amount) }</p>
-						</div>
-					}
-				</div>
-			</div>
-		</div>
-	} else {
-		<div class="flex justify-center w-full">
-			<a href={ makeSafeUrl(false, false, true) } class={ bigPri }>View Preset Fines</a>
-		</div>
-	}
-}
-
-templ playersAdd(isOpen bool) {
-	if isOpen {
-		<div class="flex items-center justify-center bg-gray-100">
-			<div class="px-8 py-6 mt-4 text-left bg-white shadow-lg">
-				<h3 class="text-2xl font-bold text-center">Add New Player</h3>
-				<form hx-post="/players" method="POST" class="mt-4">
-					<div>
-						<label for="name" class="block">Name</label>
-						<input type="text" name="name" id="name" placeholder="Name" class="w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600"/>
-					</div>
-					<div class="mt-4">
-						<label for="number" class="block">Number</label>
-						<input type="number" name="number" id="number" placeholder="Number" class="w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600"/>
-					</div>
-					<div class="flex items-center w-full">
-						<button type="submit" class={ bigPri }>Add Player</button>
-					</div>
-					<div class="flex justify-center w-full">
-						<a href={ makeSafeUrl(false, false, false) } hx-transition="true" class={ bigSec }>Close</a>
-					</div>
-				</form>
-			</div>
-		</div>
-	} else {
-		<div class="flex justify-center w-full">
-			<a href={ makeSafeUrl(false, true, false) } hx-transition="true" class={ bigPri }>[[Players]]</a>
+			<a class={ bigPri } href={ makeSafeUrl(baseUrl, true, false, false) }>Sudgest Fine</a>
 		</div>
 	}
 }

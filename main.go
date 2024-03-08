@@ -8,6 +8,7 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/go-chi/chi"
 	"github.com/gorilla/schema"
 	"gorm.io/gorm"
 )
@@ -20,7 +21,7 @@ func savePlayerHandler(db *gorm.DB) http.HandlerFunc {
 			case "POST": {
 				if err := r.ParseForm(); err != nil {
 					log.Printf("Error parsing form data: %v", err)
-					http.Error(w, "Bad Request", http.StatusBadRequest)
+					http.Error(w, "Bad Request savePlayerHandler ParseForm", http.StatusBadRequest)
 					return
 				}
 	
@@ -28,7 +29,7 @@ func savePlayerHandler(db *gorm.DB) http.HandlerFunc {
 				// Use the decoder to populate the player struct
 				if err := decoder.Decode(&player, r.PostForm); err != nil {
 					log.Printf("Error decoding form into player struct: %v", err)
-					http.Error(w, "Bad Request", http.StatusBadRequest)
+					http.Error(w, "Bad Request savePlayerHandler Decode", http.StatusBadRequest)
 					return
 				}
 	
@@ -135,7 +136,6 @@ func saveFineHandler(db *gorm.DB) http.HandlerFunc {
 }
 
 func GenerateUrl(baseURL string, queryParams *HomeQueryParams) (*string, error, ) {
-	queryParams.IsFineMaster = true
 	fullURL, err := GenerateURLWithParams(baseURL, queryParams)
     if err != nil {
         return nil, err
@@ -147,7 +147,6 @@ type HomeQueryParams struct {
     FinesOpen bool `schema:"f"` // Assuming `pfid` is the query param name
 	PlayerOpen bool `schema:"p"` // Assuming `pfid` is the query param name
 	PresetFinesOpen bool `schema:"pf"` // Assuming `pfid` is the query param name
-	IsFineMaster bool `schema:"fm"`
 }
 
 func presetFineHandler(db *gorm.DB) http.HandlerFunc {
@@ -191,6 +190,23 @@ func presetFineHandler(db *gorm.DB) http.HandlerFunc {
 			// Optionally, you can set the status code to 200 OK or any appropriate status
 			w.WriteHeader(http.StatusOK)
 			return
+		case "DELETE":
+			pfIDStr := r.URL.Query().Get("pfid")
+
+			pfID, err := strconv.ParseUint(pfIDStr, 10, 64)
+			if err != nil || pfID == 0 {
+				http.Error(w, fmt.Sprintf("Error parsing playerId %v", err), http.StatusBadRequest)
+				return 
+			}
+			
+			if err := DeletePresetFineByID(db, uint(pfID)); err != nil {
+				log.Printf("Error deleting preset fine: %v", err)
+				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+				return
+			}
+			w.Header().Set("HX-Redirect", r.URL.Path)
+			w.WriteHeader(http.StatusOK)
+			return
         default:
             http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
             return
@@ -202,14 +218,19 @@ type FineMasterQueryParams struct {
 	FinesOpen bool `schema:"f"` // Assuming `pfid` is the query param name
 	PlayerOpen bool `schema:"p"` // Assuming `pfid` is the query param name
 	PresetFinesOpen bool `schema:"pf"` // Assuming `pfid` is the query param name
-	Pass string `schema:"pass"`
+	// Pass *string `schema:"pass"`
 }
 
 func presetFineMasterHandler(db *gorm.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if(r.URL.Query().Get("pass") != os.Getenv("PASS")){
-			log.Printf("Error fetching presetFineMasterHandler: %v")
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		pass := chi.URLParam(r, "pass")
+
+		realPass := os.Getenv("PASS")
+		log.Printf("presetFineMasterHandler: %s (%s)", pass, realPass)
+
+		if(pass != realPass) {
+			log.Printf("Error fetching presetFineMasterHandler")
+			http.Error(w, "Not this time mate.", http.StatusInternalServerError)
 			return
 		}
 
@@ -217,7 +238,7 @@ func presetFineMasterHandler(db *gorm.DB) http.HandlerFunc {
 		queryParams := new(FineMasterQueryParams)
 		if err := decoder.Decode(queryParams, r.URL.Query()); err != nil {
 			log.Printf("Error decoding query params: %v", err)
-			http.Error(w, "Bad Request", http.StatusBadRequest)
+			http.Error(w, "Bad Request presetFineMasterHandler", http.StatusBadRequest)
 			return
 		}else{
 			log.Printf("GOT QUERY:\n%+v", queryParams)
@@ -237,7 +258,7 @@ func presetFineMasterHandler(db *gorm.DB) http.HandlerFunc {
 			return
 		}
 
-		finemaster := finemaster(playersWithFines, pFines, *queryParams)
+		finemaster := finemaster(pass, playersWithFines, pFines, *queryParams)
 		finemaster.Render(r.Context(), w)
 	}
 }
@@ -249,17 +270,19 @@ func main() {
 		log.Fatalf("failed to connect database: %v", err)
 	}
 
-	http.HandleFunc("/players", savePlayerHandler(db))
-	http.HandleFunc("/fines", saveFineHandler(db))
-	http.HandleFunc("/preset-fines", presetFineHandler(db))
-	http.HandleFunc("/finemaster", presetFineMasterHandler(db))
-    http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	r := chi.NewRouter()
+
+	r.HandleFunc("/players", savePlayerHandler(db))
+	r.HandleFunc("/fines", saveFineHandler(db))
+	r.HandleFunc("/preset-fines", presetFineHandler(db))
+	r.HandleFunc("/finemaster/{pass}", presetFineMasterHandler(db))
+    r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 
 		decoder := schema.NewDecoder()
 		queryParams := new(HomeQueryParams)
 		if err := decoder.Decode(queryParams, r.URL.Query()); err != nil {
 			log.Printf("Error decoding query params: %v", err)
-			http.Error(w, "Bad Request", http.StatusBadRequest)
+			http.Error(w, "Bad Request - home Decode", http.StatusBadRequest)
 			return
 		}else{
 			log.Printf("GOT QUERY:\n%+v", queryParams)
@@ -284,7 +307,7 @@ func main() {
 	})
 
     // Start the HTTP server.
-    http.ListenAndServe(":8080", nil)
+    http.ListenAndServe(":8080", r)
 	log.Printf("Listening on %d", 8080)
 }
 

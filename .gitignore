@@ -1,3 +1,6 @@
-tmp/main
+tmp/*
 production.sqlite3.db
 football.db
+dbdb
+
+.env

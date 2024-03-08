@@ -120,6 +120,17 @@ func SavePresetFine(db *gorm.DB, presetFine *PresetFine) error {
     return nil
 }
 
+func DeletePresetFineByID(db *gorm.DB, id uint) error {
+    result := db.Delete(&PresetFine{}, id)
+    if result.Error != nil {
+        return result.Error
+    }
+    if result.RowsAffected == 0 {
+        return gorm.ErrRecordNotFound
+    }
+    return nil
+}
+
 func GetPresetFines(db *gorm.DB) ([]PresetFine, error) {
     var presetFines []PresetFine
     if err := db.Find(&presetFines).Error; err != nil {
