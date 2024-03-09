@@ -10,6 +10,9 @@ templ finemaster(pass string, players []PlayerWithFines, pFines []PresetFine, qp
 	<html>
 		@header()
 		<body>
+			<div class="bg-yellow-400 border-l-4 border-yellow-800 text-yellow-800 p-2 text-center" role="alert">
+				<p class="font-bold">🚧 Under Construction (Version 1) 🚧</p>
+			</div>
 			<div class="bg-gray-900 text-center p-5">
 				<h1 class="text-xl md:text-3xl lg:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-teal-400">
 					Fine Master Zone
@@ -95,7 +98,6 @@ templ presetFines(baseUrl string, isOpen bool, presetFines []PresetFine) {
 		</div>
 	}
 }
-
 
 templ playersAdd(baseUrl string, isOpen bool) {
 	if isOpen {
