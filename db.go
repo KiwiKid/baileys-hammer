@@ -10,8 +10,7 @@ import (
 // Player represents a player in the social football team
 type Player struct {
     gorm.Model
-    Name   string `form:"name"`
-    Number int	 	`form:"number"`
+    Name   string `gorm:"unique" form:"name"`
     Fines  []Fine
 }
 
@@ -21,7 +20,7 @@ type Fine struct {
     PlayerID uint
     Reason   string
     Amount   float64
-    Status   string // "proposed", "approved", "paid"
+    Approved bool
 }
 
 // DBInit initializes the database and creates the tables
@@ -45,10 +44,12 @@ func DBInit() (*gorm.DB, error) {
 type PlayerWithFines struct {
     PlayerID    uint 
     Name        string
-    Number      int
     TotalFineCount int
     TotalFines  int
     Fines []Fine
+    PendingFines []Fine
+    PendingFineSum int
+    PendingTotalCount int
 }
 
 func FetchPlayersWithFines(db *gorm.DB) ([]PlayerWithFines, error) {
@@ -56,25 +57,37 @@ func FetchPlayersWithFines(db *gorm.DB) ([]PlayerWithFines, error) {
 
     // Query all players
     var players []Player
-    db.Preload("Fines").Find(&players)
-
+    db.Preload("Fines", func(db *gorm.DB) *gorm.DB {
+        return db.Order("fines.created_at DESC")
+    }).Find(&players)
 
     // Construct the PlayerWithFines slice
     for _, player := range players {
 
+        var approvedFines = []Fine{}
+        var pendingFines = []Fine{}
         var fineSum = 0
+        var pendingSum = 0
         for _, f := range player.Fines {
-            fineSum = fineSum + int(f.Amount)
+            if(f.Approved){
+                approvedFines = append(approvedFines, f)
+                fineSum = fineSum + int(f.Amount)
+            } else {
+                pendingFines = append(pendingFines, f)
+                pendingSum = pendingSum + int(f.Amount)
+            }
+            
         }
-    
 
         pwf := PlayerWithFines{
             PlayerID:    player.ID,
             Name:        player.Name,
-            Number:      player.Number,
-            TotalFineCount: len(player.Fines),
+            TotalFineCount: len(approvedFines),
             TotalFines:  fineSum,
-            Fines: player.Fines,
+            Fines: approvedFines,
+            PendingFines: pendingFines,
+            PendingFineSum: pendingSum,
+            PendingTotalCount: len(pendingFines),
         }
         playersWithFines = append(playersWithFines, pwf)
     }
@@ -88,12 +101,38 @@ func FetchPlayersWithFines(db *gorm.DB) ([]PlayerWithFines, error) {
 }
 
 
+
+
+func GetPlayerByID(db *gorm.DB, playerID uint) (*Player, error) {
+    var player Player
+    result := db.First(&player, playerID)
+    if result.Error != nil {
+        return nil, result.Error
+    }
+    return &player, nil
+}
+
+
 func SavePlayer(db *gorm.DB, player *Player) error {
     // Create or update player
     if err := db.Save(player).Error; err != nil {
         return err
     }
     return nil
+}
+
+// FetchLatestFines fetches a paginated list of the latest fines.
+func FetchLatestFines(db *gorm.DB, page int, pageSize int) ([]Fine, error) {
+    var fines []Fine
+    offset := (page - 1) * pageSize
+
+    // Query the latest fines with pagination
+    result := db.Order("created_at DESC").Offset(offset).Limit(pageSize).Find(&fines)
+    if result.Error != nil {
+        return nil, result.Error
+    }
+
+    return fines, nil
 }
 
 // SaveFine adds a new fine or updates an existing fine in the database
@@ -105,11 +144,24 @@ func SaveFine(db *gorm.DB, fine *Fine) error {
     return nil
 }
 
+func DeleteFineByID(db *gorm.DB, id uint) error {
+    result := db.Delete(&Fine{}, id)
+    if result.Error != nil {
+        return result.Error
+    }
+    if result.RowsAffected == 0 {
+        return gorm.ErrRecordNotFound
+    }
+    return nil
+}
+
+
 
 type PresetFine struct {
     gorm.Model
     Reason string
     Amount float64
+    Approved bool
 }
 
 
@@ -131,9 +183,9 @@ func DeletePresetFineByID(db *gorm.DB, id uint) error {
     return nil
 }
 
-func GetPresetFines(db *gorm.DB) ([]PresetFine, error) {
+func GetPresetFines(db *gorm.DB, includeUnapproved bool) ([]PresetFine, error) {
     var presetFines []PresetFine
-    if err := db.Find(&presetFines).Error; err != nil {
+    if err := db.Find(&presetFines).Where("approved = ?", includeUnapproved).Error; err != nil {
         return nil, err
     }
     return presetFines, nil

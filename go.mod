@@ -4,6 +4,7 @@ go 1.21.1
 
 require (
 	github.com/a-h/templ v0.2.598 // indirect
+	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/go-chi/chi v1.5.5 // indirect
 	github.com/go-chi/chi/v5 v5.0.12 // indirect
 	github.com/gorilla/schema v1.2.1 // indirect
