@@ -107,11 +107,11 @@ func home(players []PlayerWithFines, pFines []PresetFine, qp HomeQueryParams) te
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("</a></div><div class=\"container mx-auto p-4\"><h1 class=\"text-2xl font-bold mb-4\">")
+		_, err = templBuffer.WriteString("</a></div><div class=\"container mx-auto p-4 text-center\"><h1 class=\"text-2xl font-bold mb-4\">")
 		if err != nil {
 			return err
 		}
-		var_5 := `Player Fines`
+		var_5 := `🔨 Baileys Hammer 🔨`
 		_, err = templBuffer.WriteString(var_5)
 		if err != nil {
 			return err
