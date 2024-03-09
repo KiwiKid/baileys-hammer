@@ -11,7 +11,7 @@ import "bytes"
 
 import "fmt"
 
-func fineList(fines []Fine, page int) templ.Component {
+func fineList(fines []Fine, page int, isFineMaster bool) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		templBuffer, templIsBuffer := w.(*bytes.Buffer)
 		if !templIsBuffer {
@@ -60,6 +60,15 @@ func fineList(fines []Fine, page int) templ.Component {
 		if err != nil {
 			return err
 		}
+		_, err = templBuffer.WriteString("</th><th scope=\"col\" class=\"px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider\">")
+		if err != nil {
+			return err
+		}
+		var_6 := `Approved`
+		_, err = templBuffer.WriteString(var_6)
+		if err != nil {
+			return err
+		}
 		_, err = templBuffer.WriteString("</th></tr></thead><tbody class=\"bg-white divide-y divide-gray-200\">")
 		if err != nil {
 			return err
@@ -84,8 +93,8 @@ func fineList(fines []Fine, page int) templ.Component {
 			if err != nil {
 				return err
 			}
-			var var_6 string = f.Reason
-			_, err = templBuffer.WriteString(templ.EscapeString(var_6))
+			var var_7 string = f.Reason
+			_, err = templBuffer.WriteString(templ.EscapeString(var_7))
 			if err != nil {
 				return err
 			}
@@ -93,8 +102,8 @@ func fineList(fines []Fine, page int) templ.Component {
 			if err != nil {
 				return err
 			}
-			var var_7 string = fmt.Sprintf("%v", f.Amount)
-			_, err = templBuffer.WriteString(templ.EscapeString(var_7))
+			var var_8 string = fmt.Sprintf("%v", f.Amount)
+			_, err = templBuffer.WriteString(templ.EscapeString(var_8))
 			if err != nil {
 				return err
 			}
@@ -106,7 +115,54 @@ func fineList(fines []Fine, page int) templ.Component {
 			if err != nil {
 				return err
 			}
-			_, err = templBuffer.WriteString("\"></td></tr>")
+			_, err = templBuffer.WriteString("\"></td><td>")
+			if err != nil {
+				return err
+			}
+			if f.Approved {
+				_, err = templBuffer.WriteString("<div>")
+				if err != nil {
+					return err
+				}
+				var_9 := `✅`
+				_, err = templBuffer.WriteString(var_9)
+				if err != nil {
+					return err
+				}
+				_, err = templBuffer.WriteString("</div>")
+				if err != nil {
+					return err
+				}
+			} else if isFineMaster {
+				_, err = templBuffer.WriteString("<button hx-post=\"")
+				if err != nil {
+					return err
+				}
+				_, err = templBuffer.WriteString(templ.EscapeString(fmt.Sprintf("/fines/approve?fid=%d", f.ID)))
+				if err != nil {
+					return err
+				}
+				_, err = templBuffer.WriteString("\">")
+				if err != nil {
+					return err
+				}
+				var_10 := `☐`
+				_, err = templBuffer.WriteString(var_10)
+				if err != nil {
+					return err
+				}
+				_, err = templBuffer.WriteString("</button>")
+				if err != nil {
+					return err
+				}
+			} else {
+				var_11 := `(Pending)`
+				_, err = templBuffer.WriteString(var_11)
+				if err != nil {
+					return err
+				}
+			}
+			_, err = templBuffer.WriteString("</td></tr>")
 			if err != nil {
 				return err
 			}
@@ -115,8 +171,8 @@ func fineList(fines []Fine, page int) templ.Component {
 		if err != nil {
 			return err
 		}
-		var_8 := `Load More`
-		_, err = templBuffer.WriteString(var_8)
+		var_12 := `Load More`
+		_, err = templBuffer.WriteString(var_12)
 		if err != nil {
 			return err
 		}

@@ -2,7 +2,7 @@ package main
 
 import "fmt"
 
-templ fineList(fines []Fine, page int) {
+templ fineList(fines []Fine, page int, isFineMaster bool) {
 	<div class="container mx-auto text-center">
 		<div class="text-3xl p-10">Latest Fines</div>
 		<table class="min-w-full divide-y divide-gray-200">
@@ -17,12 +17,15 @@ templ fineList(fines []Fine, page int) {
 					<th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
 						Player
 					</th>
+					<th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+						Approved
+					</th>
 				</tr>
 			</thead>
 			<tbody class="bg-white divide-y divide-gray-200">
 				for _, f := range fines {
 					<tr
-						if f.Approved {
+ 						if f.Approved {
 							class="bg-white divide-y divide-gray-200"
 						} else {
 							class="bg-yellow-200 divide-y divide-gray-200"
@@ -30,8 +33,16 @@ templ fineList(fines []Fine, page int) {
 					>
 						<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{ f.Reason }</td>
 						<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{ fmt.Sprintf("%v", f.Amount) }</td>
-
 						<td hx-trigger="load once" hx-get={ fmt.Sprintf("/players?playerId=%d",f.PlayerID) }></td>
+						<td>
+						if f.Approved {
+							<div>✅</div>
+						} else if isFineMaster {
+							<button hx-post={ fmt.Sprintf("/fines/approve?fid=%d", f.ID) }>☐</button>
+						} else {
+							(Pending)
+						 }
+						</td>
 					</tr>
 				}
 			</tbody>

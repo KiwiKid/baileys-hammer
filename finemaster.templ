@@ -44,7 +44,7 @@ templ finemaster(pass string, players []PlayerWithFines, pFines []PresetFine, qp
 									</div>
 								</section>
 								for _, pf := range pFines {
-									<form class="space-y-2">
+									<form class=" inline-flex mx-2 space-y-2">
 										<div hidden class={ fmt.Sprintf(".fine-group-%d-%d", pf.ID, p.PlayerID) }>
 											<input type="hidden" name="playerId" value={ fmt.Sprintf("%v", p.PlayerID) }/>
 											<input type="hidden" name="presetFineId" value={ fmt.Sprintf("%v", pf.ID) }/>
@@ -65,6 +65,7 @@ templ finemaster(pass string, players []PlayerWithFines, pFines []PresetFine, qp
 				@playersAdd(fmt.Sprintf("%s/%s", finemasterBaseUrl, pass), qp.PlayerOpen)
 				@presetFines(fmt.Sprintf("%s/%s", finemasterBaseUrl, pass), qp.PresetFinesOpen, pFines)
 			</div>
+			<div hx-get="/fines" hx-trigger="load once" hx-swap="OuterHTML" class="w-full text-center">loading latest..</div>
 			<script src="https://unpkg.com/htmx.org"></script>
 		</body>
 	</html>

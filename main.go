@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/go-chi/chi"
 	"github.com/gorilla/schema"
@@ -87,8 +88,7 @@ func fineHandler(db *gorm.DB) http.HandlerFunc {
 				}
 				pageId = int(pageIdUint)
 			}
-			
-				
+
 			limitStr := r.URL.Query().Get("limit")
 			var limit = 50
 			if len(limitStr) == 0{
@@ -105,7 +105,19 @@ func fineHandler(db *gorm.DB) http.HandlerFunc {
 				http.Error(w, "Invalid form data", http.StatusBadRequest)
 				return
 			}
-			fineList := fineList(fines, pageId)
+			log.Printf("🔨 RAW: [%s]", r.Header.Get("Referer"))
+
+			finemasterPage := false
+			splitUrl := strings.Split(r.Header.Get("Referer"), "/")
+			for _, urlBit := range splitUrl {
+				log.Printf("🔨 🔨 🔨 🔨 🔨 [%s]", urlBit)
+				if(urlBit == "finemaster"){
+					finemasterPage = true
+				}
+			}
+			w.WriteHeader(http.StatusOK)
+
+			fineList := fineList(fines, pageId, finemasterPage)
 			fineList.Render(r.Context(), w)
 		}
 			case "POST": {
@@ -217,6 +229,36 @@ func fineHandler(db *gorm.DB) http.HandlerFunc {
 		default: 
 			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 			return
+	}
+	}
+}
+
+
+func fineApproveHandler(db *gorm.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		switch(r.Method){
+			case "POST": {
+
+			fIDStr := r.URL.Query().Get("fid")
+
+			fID, err := strconv.ParseUint(fIDStr, 10, 64)
+			if err != nil || fID == 0 {
+				http.Error(w, fmt.Sprintf("Error parsing fine id %v", err), http.StatusBadRequest)
+				return 
+			}
+			
+			if err := ApproveFine(db, uint(fID)); err != nil {
+				log.Printf("Error deleting preset fine: %v", err)
+				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+				return
+			}
+			w.Header().Set("HX-Redirect", r.Header.Get("Referrer"))
+			w.WriteHeader(http.StatusOK)
+			return
+			}
+			default: 
+				http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+				return
 	}
 	}
 }
@@ -360,6 +402,7 @@ func main() {
 
 	r.HandleFunc("/players", playerHandler(db))
 	r.HandleFunc("/fines", fineHandler(db))
+	r.HandleFunc("/fines/approve", fineApproveHandler(db))
 	r.HandleFunc("/preset-fines", presetFineHandler(db))
 	r.HandleFunc("/finemaster/{pass}", presetFineMasterHandler(db))
     r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
