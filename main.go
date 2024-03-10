@@ -135,7 +135,8 @@ func fineHandler(db *gorm.DB) http.HandlerFunc {
 				}
 				
 				var presetFine *PresetFine
-				if(len(r.FormValue("presetFineId")) > 0){
+				presetFineStr := r.FormValue("presetFineId")
+				if(len(presetFineStr) > 0 && presetFineStr != "-1"){
 					pfId, err := strconv.ParseUint(r.FormValue("presetFineId"), 10, 64)
 					if err != nil {
 						http.Error(w, "Invalid presetFineId", http.StatusBadRequest)

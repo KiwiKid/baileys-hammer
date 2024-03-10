@@ -188,24 +188,20 @@ func fineList(fines []Fine, page int, isFineMaster bool) templ.Component {
 				return err
 			}
 		}
-		_, err = templBuffer.WriteString("</tbody></table><div class=\"py-3\"><button hx-get=\"")
+		_, err = templBuffer.WriteString("</tbody></table><!--")
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString(templ.EscapeString(fmt.Sprintf("/load-more?page=%d", page+1)))
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString("\" hx-target=\"this\" hx-swap=\"outerHTML\" class=\"px-4 py-2 bg-blue-500 text-white font-semibold rounded hover:bg-blue-700\">")
-		if err != nil {
-			return err
-		}
-		var_14 := `Load More`
+		var_14 := `<div class="py-3">
+			<button hx-get={ fmt.Sprintf("/load-more?page=%d", page +1) } hx-target="this" hx-swap="outerHTML" class="px-4 py-2 bg-blue-500 text-white font-semibold rounded hover:bg-blue-700">
+				Load More
+			</button>
+		</div>`
 		_, err = templBuffer.WriteString(var_14)
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("</button></div></div>")
+		_, err = templBuffer.WriteString("--></div>")
 		if err != nil {
 			return err
 		}

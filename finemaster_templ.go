@@ -28,7 +28,7 @@ func finemaster(pass string, players []PlayerWithFines, pFines []PresetFine, qp 
 			var_1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, err = templBuffer.WriteString("<html>")
+		_, err = templBuffer.WriteString("<html hx-boost=\"true\">")
 		if err != nil {
 			return err
 		}

@@ -7,7 +7,7 @@ import (
 var finemasterBaseUrl = "/finemaster"
 
 templ finemaster(pass string, players []PlayerWithFines, pFines []PresetFine, qp FineMasterQueryParams) {
-	<html>
+	<html hx-boost="true">
 		@header()
 		<body>
 			<div class="bg-yellow-400 border-l-4 border-yellow-800 text-yellow-800 p-2 text-center" role="alert">
@@ -107,7 +107,6 @@ templ presetFines(baseUrl string, isOpen bool, presetFines []PresetFine) {
 								- 
 								{ fmt.Sprintf("$%.0f", fine.Amount) }
 								<button hx-delete={ fmt.Sprintf("/preset-fines?pfid=%d", fine.ID) }>🗑</button>
-								
 							</div>
 						</div>
 					}
