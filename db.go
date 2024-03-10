@@ -1,6 +1,8 @@
 package main
 
 import (
+	"log"
+	"os"
 	"sort"
 
 	"gorm.io/driver/sqlite"
@@ -25,8 +27,12 @@ type Fine struct {
 
 // DBInit initializes the database and creates the tables
 func DBInit() (*gorm.DB, error) {
-	
-    db, err := gorm.Open(sqlite.Open("production.sqlite3.db"), &gorm.Config{})
+
+    dbUrl := os.Getenv("DATABASE_URL")
+    if len(dbUrl) == 0 {
+        log.Panic("No DATABASE_URL set")
+    }
+    db, err := gorm.Open(sqlite.Open(dbUrl), &gorm.Config{})
     if err != nil {
         return nil, err
     }
