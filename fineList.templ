@@ -1,6 +1,10 @@
 package main
 
-import "fmt"
+import (
+
+"fmt"
+"github.com/dustin/go-humanize"
+)
 
 templ fineList(fines []Fine, page int, isFineMaster bool) {
 	<div class="container mx-auto text-center">
@@ -20,6 +24,9 @@ templ fineList(fines []Fine, page int, isFineMaster bool) {
 					<th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
 						Approved
 					</th>
+					<th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+						When
+					</th>
 				</tr>
 			</thead>
 			<tbody class="bg-white divide-y divide-gray-200">
@@ -35,20 +42,23 @@ templ fineList(fines []Fine, page int, isFineMaster bool) {
 						<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{ fmt.Sprintf("%v", f.Amount) }</td>
 						<td hx-trigger="load once" hx-get={ fmt.Sprintf("/players?playerId=%d",f.PlayerID) }></td>
 						<td>
-						if f.Approved {
-							<div>✅</div>
-						} else if isFineMaster {
-							<button hx-post={ fmt.Sprintf("/fines/approve?fid=%d", f.ID) }>☐</button>
-						} else {
-							(Pending)
-						 }
+							if f.Approved {
+								<div>✅</div>
+							} else if isFineMaster {
+								<button hx-post={ fmt.Sprintf("/fines/approve?fid=%d", f.ID) }>☐</button>
+							} else {
+								(Pending approval)
+							}
+						</td>
+						<td>
+							{ humanize.Time(f.CreatedAt) }
 						</td>
 					</tr>
 				}
 			</tbody>
 		</table>
 		<div class="py-3">
-			<button hx-get="/load-more?page={{.Page + 1}}" hx-target="this" hx-swap="outerHTML" class="px-4 py-2 bg-blue-500 text-white font-semibold rounded hover:bg-blue-700">
+			<button hx-get={ fmt.Sprintf("/load-more?page=%d", page +1) } hx-target="this" hx-swap="outerHTML" class="px-4 py-2 bg-blue-500 text-white font-semibold rounded hover:bg-blue-700">
 				Load More
 			</button>
 		</div>

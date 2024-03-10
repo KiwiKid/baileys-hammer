@@ -60,7 +60,9 @@ func playerHandler(db *gorm.DB) http.HandlerFunc {
 					return
 				}
 
-				w.Header().Set("HX-Redirect", "/")
+				log.Printf("Redirect to %s", r.Header.Get("Referrer"))
+
+				w.Header().Set("HX-Redirect", r.Header.Get("Referrer"))
 
 				// Optionally, you can set the status code to 200 OK or any appropriate status
 				w.WriteHeader(http.StatusOK)
@@ -105,12 +107,10 @@ func fineHandler(db *gorm.DB) http.HandlerFunc {
 				http.Error(w, "Invalid form data", http.StatusBadRequest)
 				return
 			}
-			log.Printf("🔨 RAW: [%s]", r.Header.Get("Referer"))
 
 			finemasterPage := false
 			splitUrl := strings.Split(r.Header.Get("Referer"), "/")
 			for _, urlBit := range splitUrl {
-				log.Printf("🔨 🔨 🔨 🔨 🔨 [%s]", urlBit)
 				if(urlBit == "finemaster"){
 					finemasterPage = true
 				}
@@ -186,8 +186,6 @@ func fineHandler(db *gorm.DB) http.HandlerFunc {
 				fine.PlayerID = uint(playerId)
 				fine.Approved = r.FormValue("approved") == "on"
 				
-
-				
 				// Manual assignment of form values to struct
 
 
@@ -233,7 +231,6 @@ func fineHandler(db *gorm.DB) http.HandlerFunc {
 	}
 }
 
-
 func fineApproveHandler(db *gorm.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		switch(r.Method){
@@ -248,6 +245,35 @@ func fineApproveHandler(db *gorm.DB) http.HandlerFunc {
 			}
 			
 			if err := ApproveFine(db, uint(fID)); err != nil {
+				log.Printf("Error deleting preset fine: %v", err)
+				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+				return
+			}
+			w.Header().Set("HX-Redirect", r.Header.Get("Referrer"))
+			w.WriteHeader(http.StatusOK)
+			return
+			}
+			default: 
+				http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+				return
+	}
+	}
+}
+
+func presetFineApproveHandler(db *gorm.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		switch(r.Method){
+			case "POST": {
+
+			pfIDStr := r.URL.Query().Get("pfid")
+
+			pfID, err := strconv.ParseUint(pfIDStr, 10, 64)
+			if err != nil || pfID == 0 {
+				http.Error(w, fmt.Sprintf("Error parsing fine id %v", err), http.StatusBadRequest)
+				return 
+			}
+			
+			if err := ApprovePresetFine(db, uint(pfID)); err != nil {
 				log.Printf("Error deleting preset fine: %v", err)
 				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 				return
@@ -289,6 +315,7 @@ func presetFineHandler(db *gorm.DB) http.HandlerFunc {
 			// Manual assignment of form values to struct
 			presetFine := PresetFine{
 				Reason: r.FormValue("reason"),
+				Approved: true,
 			}
 	
 			// Parse Amount as float64 from form value
@@ -404,6 +431,7 @@ func main() {
 	r.HandleFunc("/fines", fineHandler(db))
 	r.HandleFunc("/fines/approve", fineApproveHandler(db))
 	r.HandleFunc("/preset-fines", presetFineHandler(db))
+	r.HandleFunc("/preset-fines/approve", presetFineApproveHandler(db))
 	r.HandleFunc("/finemaster/{pass}", presetFineMasterHandler(db))
     r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 

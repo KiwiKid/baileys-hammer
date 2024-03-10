@@ -161,6 +161,23 @@ func ApproveFine(db *gorm.DB, id uint) error {
     return nil
 }
 
+func ApprovePresetFine(db *gorm.DB, id uint) error {
+    // Find and update the fine's Approved field to true
+    result := db.Model(&PresetFine{}).Where("id = ?", id).Update("approved", true)
+
+    // Check for errors during the operation
+    if result.Error != nil {
+        return result.Error
+    }
+    
+    // Check if the record was found and updated
+    if result.RowsAffected == 0 {
+        return gorm.ErrRecordNotFound
+    }
+    
+    return nil
+}
+
 func DeleteFineByID(db *gorm.DB, id uint) error {
     result := db.Delete(&Fine{}, id)
     if result.Error != nil {
