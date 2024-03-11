@@ -155,7 +155,15 @@ func fineList(fines []FineWithPlayer, page int, isFineMaster bool) templ.Compone
 					return err
 				}
 			} else if isFineMaster {
-				_, err = templBuffer.WriteString("<form hx-post=\"/fines/approve\" method=\"POST\"><input type=\"hidden\" name=\"fid\" value=\"3\"><input type=\"number\" name=\"amount\" id=\"amount-input-3\" class=\"px-2 py-1 border rounded\" placeholder=\"Set amount\"><button type=\"submit\" class=\"ml-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600\">")
+				_, err = templBuffer.WriteString("<form hx-post=\"/fines/approve\" method=\"POST\"><input type=\"hidden\" name=\"fid\" value=\"")
+				if err != nil {
+					return err
+				}
+				_, err = templBuffer.WriteString(templ.EscapeString(fmt.Sprintf("%d", f.Fine.ID)))
+				if err != nil {
+					return err
+				}
+				_, err = templBuffer.WriteString("\"><input type=\"number\" name=\"amount\" id=\"amount-input-3\" class=\"px-2 py-1 border rounded\" placeholder=\"Set amount\"><button type=\"submit\" class=\"ml-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600\">")
 				if err != nil {
 					return err
 				}

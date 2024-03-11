@@ -185,7 +185,7 @@ func ApproveFine(db *gorm.DB, id uint, amount float64) error {
         return gorm.ErrRecordNotFound
     }
 
-    log.Printf("Fine approved! %f", amount)
+    log.Printf("Fine %d approved! %f", id, amount)
     
     return nil
 }

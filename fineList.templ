@@ -55,7 +55,7 @@ templ fineList(fines []FineWithPlayer, page int, isFineMaster bool) {
 									<input 
 										type="hidden" 
 										name="fid" 
-										value="3"/>
+										value={ fmt.Sprintf("%d", f.Fine.ID) }/>
 									<input 
 										type="number" 
 										name="amount" 
