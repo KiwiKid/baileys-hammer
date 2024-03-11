@@ -264,7 +264,7 @@ func presetFines(baseUrl string, isOpen bool, presetFines []PresetFine) templ.Co
 			if err != nil {
 				return err
 			}
-			var_16 := `Preset Fines`
+			var_16 := `Add/Approve/Remove Preset Fines`
 			_, err = templBuffer.WriteString(var_16)
 			if err != nil {
 				return err

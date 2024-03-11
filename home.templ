@@ -203,19 +203,18 @@ templ fineAdd(baseUrl string, isOpen bool, players []PlayerWithFines, presetFine
 				</div>
 				<div class="grid grid-cols-1 p-4 gap-4 mt-10">
 					<button type="submit" class={ bigPri }>Fine a Player</button>
-					<a href={ makeSafeUrl(baseUrl, false, false, false) } class={ bigSec }>Close</a>
+					<a href={ makeSafeUrlWithAnchor(baseUrl, false, false, false, "fine-add") } class={ bigSec }>Close</a>
 				</div>
 			</form>
 		</div>
 	} else {
-		<div class="flex justify-center w-full">
+		<div class="flex justify-center w-full" id="fine-add">
 			<a class={ bigPri } href={ makeSafeUrlWithAnchor(baseUrl, true, false, false, "fine-add") }>
 				if isFineMaster {
-					Add
+					Fine a Player
 				} else {
-					Suggest
+					Suggest a Fine
 				}
-				Fine
 			</a>
 		</div>
 	}

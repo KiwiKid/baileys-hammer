@@ -575,7 +575,7 @@ func fineAdd(baseUrl string, isOpen bool, players []PlayerWithFines, presetFines
 			if err != nil {
 				return err
 			}
-			var var_40 templ.SafeURL = makeSafeUrl(baseUrl, false, false, false)
+			var var_40 templ.SafeURL = makeSafeUrlWithAnchor(baseUrl, false, false, false, "fine-add")
 			_, err = templBuffer.WriteString(templ.EscapeString(string(var_40)))
 			if err != nil {
 				return err
@@ -602,7 +602,7 @@ func fineAdd(baseUrl string, isOpen bool, players []PlayerWithFines, presetFines
 				return err
 			}
 		} else {
-			_, err = templBuffer.WriteString("<div class=\"flex justify-center w-full\">")
+			_, err = templBuffer.WriteString("<div class=\"flex justify-center w-full\" id=\"fine-add\">")
 			if err != nil {
 				return err
 			}
@@ -633,26 +633,17 @@ func fineAdd(baseUrl string, isOpen bool, players []PlayerWithFines, presetFines
 				return err
 			}
 			if isFineMaster {
-				var_44 := `Add`
+				var_44 := `Fine a Player`
 				_, err = templBuffer.WriteString(var_44)
 				if err != nil {
 					return err
 				}
 			} else {
-				var_45 := `Suggest`
+				var_45 := `Suggest a Fine`
 				_, err = templBuffer.WriteString(var_45)
 				if err != nil {
 					return err
 				}
-			}
-			_, err = templBuffer.WriteString(" ")
-			if err != nil {
-				return err
-			}
-			var_46 := `Fine`
-			_, err = templBuffer.WriteString(var_46)
-			if err != nil {
-				return err
 			}
 			_, err = templBuffer.WriteString("</a></div>")
 			if err != nil {
@@ -663,7 +654,7 @@ func fineAdd(baseUrl string, isOpen bool, players []PlayerWithFines, presetFines
 		if err != nil {
 			return err
 		}
-		var_47 := `
+		var_46 := `
 		window.fpSelect = document.getElementById('presetFineId')
 		if(window.fpSelect != null){
 			fpSelect.addEventListener('change', function() {
@@ -678,7 +669,7 @@ func fineAdd(baseUrl string, isOpen bool, players []PlayerWithFines, presetFines
 			console.warn('no fpSelect')
 		}
 	`
-		_, err = templBuffer.WriteString(var_47)
+		_, err = templBuffer.WriteString(var_46)
 		if err != nil {
 			return err
 		}
