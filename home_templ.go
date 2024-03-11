@@ -118,7 +118,7 @@ func pageHeader() templ.Component {
 		if err != nil {
 			return err
 		}
-		var var_6 string = `1.1`
+		var var_6 string = `0.1`
 		_, err = templBuffer.WriteString(templ.EscapeString(var_6))
 		if err != nil {
 			return err
