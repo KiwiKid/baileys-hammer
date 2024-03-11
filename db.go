@@ -141,6 +141,21 @@ func FetchLatestFines(db *gorm.DB, page int, pageSize int) ([]Fine, error) {
     return fines, nil
 }
 
+// FetchLatestFines fetches a paginated list of the latest fines.
+func FetchPlayers(db *gorm.DB, page int, pageSize int) ([]Player, error) {
+    var players []Player
+    offset := (page - 1) * pageSize
+
+    // Query the latest fines with pagination
+    result := db.Order("created_at DESC").Offset(offset).Limit(pageSize).Find(&players)
+    if result.Error != nil {
+        return nil, result.Error
+    }
+
+    return players, nil
+}
+
+
 // SaveFine adds a new fine or updates an existing fine in the database
 func SaveFine(db *gorm.DB, fine *Fine) error {
     // Create or update fine

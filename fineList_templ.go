@@ -14,7 +14,7 @@ import (
 	"github.com/dustin/go-humanize"
 )
 
-func fineList(fines []Fine, page int, isFineMaster bool) templ.Component {
+func fineList(fines []FineWithPlayer, page int, isFineMaster bool) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		templBuffer, templIsBuffer := w.(*bytes.Buffer)
 		if !templIsBuffer {
@@ -90,7 +90,7 @@ func fineList(fines []Fine, page int, isFineMaster bool) templ.Component {
 			if err != nil {
 				return err
 			}
-			if f.Approved {
+			if f.Fine.Approved {
 				_, err = templBuffer.WriteString(" class=\"bg-white divide-y divide-gray-200\"")
 				if err != nil {
 					return err
@@ -105,7 +105,7 @@ func fineList(fines []Fine, page int, isFineMaster bool) templ.Component {
 			if err != nil {
 				return err
 			}
-			var var_8 string = f.Reason
+			var var_8 string = f.Fine.Reason
 			_, err = templBuffer.WriteString(templ.EscapeString(var_8))
 			if err != nil {
 				return err
@@ -114,30 +114,31 @@ func fineList(fines []Fine, page int, isFineMaster bool) templ.Component {
 			if err != nil {
 				return err
 			}
-			var var_9 string = fmt.Sprintf("%v", f.Amount)
+			var var_9 string = fmt.Sprintf("%v", f.Fine.Amount)
 			_, err = templBuffer.WriteString(templ.EscapeString(var_9))
 			if err != nil {
 				return err
 			}
-			_, err = templBuffer.WriteString("</td><td hx-trigger=\"load once\" hx-get=\"")
+			_, err = templBuffer.WriteString("</td><td>")
 			if err != nil {
 				return err
 			}
-			_, err = templBuffer.WriteString(templ.EscapeString(fmt.Sprintf("/players?playerId=%d", f.PlayerID)))
+			var var_10 string = f.Player.Name
+			_, err = templBuffer.WriteString(templ.EscapeString(var_10))
 			if err != nil {
 				return err
 			}
-			_, err = templBuffer.WriteString("\"></td><td>")
+			_, err = templBuffer.WriteString("</td><td>")
 			if err != nil {
 				return err
 			}
-			if f.Approved {
+			if f.Fine.Approved {
 				_, err = templBuffer.WriteString("<div>")
 				if err != nil {
 					return err
 				}
-				var_10 := `✅`
-				_, err = templBuffer.WriteString(var_10)
+				var_11 := `✅`
+				_, err = templBuffer.WriteString(var_11)
 				if err != nil {
 					return err
 				}
@@ -150,7 +151,7 @@ func fineList(fines []Fine, page int, isFineMaster bool) templ.Component {
 				if err != nil {
 					return err
 				}
-				_, err = templBuffer.WriteString(templ.EscapeString(fmt.Sprintf("/fines/approve?fid=%d", f.ID)))
+				_, err = templBuffer.WriteString(templ.EscapeString(fmt.Sprintf("/fines/approve?fid=%d", f.Fine.ID)))
 				if err != nil {
 					return err
 				}
@@ -158,8 +159,8 @@ func fineList(fines []Fine, page int, isFineMaster bool) templ.Component {
 				if err != nil {
 					return err
 				}
-				var_11 := `☐`
-				_, err = templBuffer.WriteString(var_11)
+				var_12 := `☐`
+				_, err = templBuffer.WriteString(var_12)
 				if err != nil {
 					return err
 				}
@@ -168,8 +169,8 @@ func fineList(fines []Fine, page int, isFineMaster bool) templ.Component {
 					return err
 				}
 			} else {
-				var_12 := `(Pending approval)`
-				_, err = templBuffer.WriteString(var_12)
+				var_13 := `(Pending approval)`
+				_, err = templBuffer.WriteString(var_13)
 				if err != nil {
 					return err
 				}
@@ -178,8 +179,8 @@ func fineList(fines []Fine, page int, isFineMaster bool) templ.Component {
 			if err != nil {
 				return err
 			}
-			var var_13 string = humanize.Time(f.CreatedAt)
-			_, err = templBuffer.WriteString(templ.EscapeString(var_13))
+			var var_14 string = humanize.Time(f.Fine.CreatedAt)
+			_, err = templBuffer.WriteString(templ.EscapeString(var_14))
 			if err != nil {
 				return err
 			}
@@ -192,12 +193,12 @@ func fineList(fines []Fine, page int, isFineMaster bool) templ.Component {
 		if err != nil {
 			return err
 		}
-		var_14 := `<div class="py-3">
+		var_15 := `<div class="py-3">
 			<button hx-get={ fmt.Sprintf("/load-more?page=%d", page +1) } hx-target="this" hx-swap="outerHTML" class="px-4 py-2 bg-blue-500 text-white font-semibold rounded hover:bg-blue-700">
 				Load More
 			</button>
 		</div>`
-		_, err = templBuffer.WriteString(var_14)
+		_, err = templBuffer.WriteString(var_15)
 		if err != nil {
 			return err
 		}

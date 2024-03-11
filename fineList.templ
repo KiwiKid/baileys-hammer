@@ -6,7 +6,7 @@ import (
 "github.com/dustin/go-humanize"
 )
 
-templ fineList(fines []Fine, page int, isFineMaster bool) {
+templ fineList(fines []FineWithPlayer, page int, isFineMaster bool) {
 	<div class="container mx-auto text-center">
 		<div class="text-3xl p-10">Latest Fines</div>
 		<table class="min-w-full divide-y divide-gray-200">
@@ -32,26 +32,26 @@ templ fineList(fines []Fine, page int, isFineMaster bool) {
 			<tbody class="bg-white divide-y divide-gray-200">
 				for _, f := range fines {
 					<tr
- 						if f.Approved {
+ 						if f.Fine.Approved {
 							class="bg-white divide-y divide-gray-200"
 						} else {
 							class="bg-yellow-200 divide-y divide-gray-200"
 						}
 					>
-						<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{ f.Reason }</td>
-						<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{ fmt.Sprintf("%v", f.Amount) }</td>
-						<td hx-trigger="load once" hx-get={ fmt.Sprintf("/players?playerId=%d",f.PlayerID) }></td>
+						<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{ f.Fine.Reason }</td>
+						<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{ fmt.Sprintf("%v", f.Fine.Amount) }</td>
+						<td>{ f.Player.Name }</td>
 						<td>
-							if f.Approved {
+							if f.Fine.Approved {
 								<div>✅</div>
 							} else if isFineMaster {
-								<button hx-post={ fmt.Sprintf("/fines/approve?fid=%d", f.ID) }>☐</button>
+								<button hx-post={ fmt.Sprintf("/fines/approve?fid=%d", f.Fine.ID) }>☐</button>
 							} else {
 								(Pending approval)
 							}
 						</td>
 						<td>
-							{ humanize.Time(f.CreatedAt) }
+							{ humanize.Time(f.Fine.CreatedAt) }
 						</td>
 					</tr>
 				}

@@ -74,6 +74,11 @@ func playerHandler(db *gorm.DB) http.HandlerFunc {
 	}
 }
 
+type FineWithPlayer struct {
+	Fine Fine
+	Player Player
+}
+
 func fineHandler(db *gorm.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		switch(r.Method){
@@ -108,6 +113,12 @@ func fineHandler(db *gorm.DB) http.HandlerFunc {
 				return
 			}
 
+			players, getPlayerErr := FetchPlayers(db, 0, 100)
+			if getPlayerErr != nil {
+				http.Error(w, "Invalid form data", http.StatusBadRequest)
+				return
+			}
+
 			finemasterPage := false
 			splitUrl := strings.Split(r.Header.Get("Referer"), "/")
 			for _, urlBit := range splitUrl {
@@ -117,7 +128,21 @@ func fineHandler(db *gorm.DB) http.HandlerFunc {
 			}
 			w.WriteHeader(http.StatusOK)
 
-			fineList := fineList(fines, pageId, finemasterPage)
+			
+			var fineWithPlayers = []FineWithPlayer{}
+			for _, fine := range fines {
+				for _, player := range players {
+					if(fine.PlayerID == player.ID){
+						fineWithPlayers = append(fineWithPlayers, FineWithPlayer{ 
+							Fine: fine,
+							Player: player,
+						})
+						continue;
+					}
+				}
+			}
+
+			fineList := fineList(fineWithPlayers, pageId, finemasterPage)
 			fineList.Render(r.Context(), w)
 		}
 			case "POST": {
