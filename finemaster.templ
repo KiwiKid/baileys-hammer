@@ -47,7 +47,7 @@ templ finemaster(pass string, players []PlayerWithFines, pFines []PresetFine, qp
 												<input type="hidden" name="presetFineId" value={ fmt.Sprintf("%v", pf.ID) }/>
 												<input type="hidden" name="approved" value="on"/>
 											</div>
-											<button hx-post="/fines" hx-include={ fmt.Sprintf(".fine-group-%d-%d", pf.ID, p.PlayerID) } class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+											<button hx-post="/fines" hx-include={ fmt.Sprintf(".fine-group-%d-%d", pf.ID, p.PlayerID) } class="bg-yellow-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
 												{ fmt.Sprintf("%s ($%v)", pf.Reason, pf.Amount) }
 											</button>
 										</form>
@@ -71,7 +71,7 @@ templ finemaster(pass string, players []PlayerWithFines, pFines []PresetFine, qp
 
 templ presetFines(baseUrl string, isOpen bool, presetFines []PresetFine) {
 	if isOpen {
-		<div class="px-8 py-6 text-left bg-white shadow-xl m-10">
+		<div class="px-8 py-6 text-left bg-white shadow-xl m-10" id="preset-fine">
 			<h3 class="text-2xl font-bold text-center">Preset Fines</h3>
 			<p>Preset Fines will be show at the top of the home page</p>
 			<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -89,10 +89,10 @@ templ presetFines(baseUrl string, isOpen bool, presetFines []PresetFine) {
 							<label class="block"><input type="checkbox" checked="checked" name="approved" class="text-2xl m-2 py-2 mt-2 p-2 "/>Approved</label>
 						</div>
 						<div class="flex items-center justify-between mt-4">
-							<button type="submit" class={ add }>Add Preset Fine</button>
+							<button type="submit" class={ bigAdd }>Add Preset Fine</button>
 						</div>
 					</form>
-					<div>
+					<div class="flex justify-center w-full">
 						<a href={ makeSafeUrl(baseUrl, false, false, false) } class={ bigSec }>Close</a>
 					</div>
 				</div>
@@ -116,14 +116,14 @@ templ presetFines(baseUrl string, isOpen bool, presetFines []PresetFine) {
 		</div>
 	} else {
 		<div class="flex justify-center w-full">
-			<a href={ makeSafeUrl(baseUrl, false, false, true) } class={ bigPri }>View Preset Fines</a>
+			<a href={ makeSafeUrlWithAnchor(baseUrl, false, false, true, "preset-fine") } class={ bigPri }>Add/Approve/Remove Preset Fines</a>
 		</div>
 	}
 }
 
 templ playersAdd(baseUrl string, isOpen bool) {
 	if isOpen {
-		<div class="flex items-center justify-center bg-gray-100">
+		<div class="flex items-center justify-center bg-gray-100" id="players-add">
 			<div class="px-8 py-6 text-left bg-white shadow-xl m-10">
 				<h3 class="text-2xl font-bold text-center">Add New Player</h3>
 				<form hx-post="/players" method="POST" class="mt-4">
@@ -142,7 +142,7 @@ templ playersAdd(baseUrl string, isOpen bool) {
 		</div>
 	} else {
 		<div class="flex justify-center w-full">
-			<a href={ makeSafeUrl(baseUrl, false, true, false) } hx-transition="true" class={ bigPri }>Add/Remove Players</a>
+			<a href={ makeSafeUrlWithAnchor(baseUrl, false, true, false, "players-add") } hx-transition="true" class={ bigPri }>Add/Remove Players</a>
 		</div>
 	}
 }
