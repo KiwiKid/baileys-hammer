@@ -141,59 +141,61 @@ func finemaster(pass string, players []PlayerWithFines, pFines []PresetFine, qp 
 				return err
 			}
 			for _, pf := range pFines {
-				_, err = templBuffer.WriteString("<form class=\" inline-flex mx-2 space-y-2\">")
-				if err != nil {
-					return err
-				}
-				var var_11 = []any{fmt.Sprintf("fine-group-%d-%d", pf.ID, p.PlayerID)}
-				err = templ.RenderCSSItems(ctx, templBuffer, var_11...)
-				if err != nil {
-					return err
-				}
-				_, err = templBuffer.WriteString("<div hidden class=\"")
-				if err != nil {
-					return err
-				}
-				_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_11).String()))
-				if err != nil {
-					return err
-				}
-				_, err = templBuffer.WriteString("\"><input type=\"hidden\" name=\"playerId\" value=\"")
-				if err != nil {
-					return err
-				}
-				_, err = templBuffer.WriteString(templ.EscapeString(fmt.Sprintf("%v", p.PlayerID)))
-				if err != nil {
-					return err
-				}
-				_, err = templBuffer.WriteString("\"><input type=\"hidden\" name=\"presetFineId\" value=\"")
-				if err != nil {
-					return err
-				}
-				_, err = templBuffer.WriteString(templ.EscapeString(fmt.Sprintf("%v", pf.ID)))
-				if err != nil {
-					return err
-				}
-				_, err = templBuffer.WriteString("\"><input type=\"hidden\" name=\"approved\" value=\"on\"></div><button hx-post=\"/fines\" hx-include=\"")
-				if err != nil {
-					return err
-				}
-				_, err = templBuffer.WriteString(templ.EscapeString(fmt.Sprintf(".fine-group-%d-%d", pf.ID, p.PlayerID)))
-				if err != nil {
-					return err
-				}
-				_, err = templBuffer.WriteString("\" class=\"bg-yellow-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline\">")
-				if err != nil {
-					return err
-				}
-				var var_12 string = fmt.Sprintf("%s ($%v)", pf.Reason, pf.Amount)
-				_, err = templBuffer.WriteString(templ.EscapeString(var_12))
-				if err != nil {
-					return err
-				}
-				_, err = templBuffer.WriteString("</button></form>")
-				if err != nil {
-					return err
+				if pf.Approved {
+					_, err = templBuffer.WriteString("<form class=\" inline-flex mx-2 space-y-2\">")
+					if err != nil {
+						return err
+					}
+					var var_11 = []any{fmt.Sprintf("fine-group-%d-%d", pf.ID, p.PlayerID)}
+					err = templ.RenderCSSItems(ctx, templBuffer, var_11...)
+					if err != nil {
+						return err
+					}
+					_, err = templBuffer.WriteString("<div hidden class=\"")
+					if err != nil {
+						return err
+					}
+					_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_11).String()))
+					if err != nil {
+						return err
+					}
+					_, err = templBuffer.WriteString("\"><input type=\"hidden\" name=\"playerId\" value=\"")
+					if err != nil {
+						return err
+					}
+					_, err = templBuffer.WriteString(templ.EscapeString(fmt.Sprintf("%v", p.PlayerID)))
+					if err != nil {
+						return err
+					}
+					_, err = templBuffer.WriteString("\"><input type=\"hidden\" name=\"presetFineId\" value=\"")
+					if err != nil {
+						return err
+					}
+					_, err = templBuffer.WriteString(templ.EscapeString(fmt.Sprintf("%v", pf.ID)))
+					if err != nil {
+						return err
+					}
+					_, err = templBuffer.WriteString("\"><input type=\"hidden\" name=\"approved\" value=\"on\"></div><button hx-post=\"/fines\" hx-include=\"")
+					if err != nil {
+						return err
+					}
+					_, err = templBuffer.WriteString(templ.EscapeString(fmt.Sprintf(".fine-group-%d-%d", pf.ID, p.PlayerID)))
+					if err != nil {
+						return err
+					}
+					_, err = templBuffer.WriteString("\" class=\"bg-yellow-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline\">")
+					if err != nil {
+						return err
+					}
+					var var_12 string = fmt.Sprintf("%s ($%v)", pf.Reason, pf.Amount)
+					_, err = templBuffer.WriteString(templ.EscapeString(var_12))
+					if err != nil {
+						return err
+					}
+					_, err = templBuffer.WriteString("</button></form>")
+					if err != nil {
+						return err
+					}
 				}
 			}
 			_, err = templBuffer.WriteString("</section></li>")

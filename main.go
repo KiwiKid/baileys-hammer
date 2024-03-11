@@ -180,8 +180,11 @@ func fineHandler(db *gorm.DB) http.HandlerFunc {
 						Amount: presetFine.Amount,
 						Reason: presetFine.Reason,
 					}
-				}else {
+				} else {
 					amountStr := r.FormValue("amount")
+					if len(amountStr) == 0 {
+						amountStr = "1"
+					}
 					amount, err := strconv.ParseFloat(amountStr, 64) // 64 specifies the bit size of the float type
 					if err != nil {
 						// Handle the error if the conversion fails
@@ -249,30 +252,47 @@ func fineHandler(db *gorm.DB) http.HandlerFunc {
 
 func fineApproveHandler(db *gorm.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		switch(r.Method){
-			case "POST": {
+		switch r.Method {
+		case "POST":
+			// Parse form data
+			if err := r.ParseForm(); err != nil {
+				http.Error(w, "Error parsing form data", http.StatusBadRequest)
+				return
+			}
 
-			fIDStr := r.URL.Query().Get("fid")
+			// Access form values
+			fIDStr := r.FormValue("fid") // Now getting 'fid' from the form data
+			amountStr := r.FormValue("amount")
 
+			// Convert 'fid' to uint64
 			fID, err := strconv.ParseUint(fIDStr, 10, 64)
 			if err != nil || fID == 0 {
-				http.Error(w, fmt.Sprintf("Error parsing fine id %v", err), http.StatusBadRequest)
-				return 
+				http.Error(w, fmt.Sprintf("Error parsing fine ID: %v", err), http.StatusBadRequest)
+				return
 			}
-			
-			if err := ApproveFine(db, uint(fID)); err != nil {
-				log.Printf("Error deleting preset fine: %v", err)
+
+			// Convert 'amount' to float64
+			amount, err := strconv.ParseFloat(amountStr, 64)
+			if err != nil {
+				http.Error(w, fmt.Sprintf("Error parsing amount: %v", err), http.StatusBadRequest)
+				return
+			}
+			log.Printf("Approve fine %d %f", fID, amount)
+			// Call ApproveFine with parsed 'fid' and 'amount'
+			if err := ApproveFine(db, uint(fID), amount); err != nil {
+				log.Printf("Error approving fine with specified amount: %v", err)
 				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 				return
 			}
+
+			// Redirect or handle response as needed
 			w.Header().Set("HX-Redirect", r.Header.Get("Referrer"))
 			w.WriteHeader(http.StatusOK)
 			return
-			}
-			default: 
-				http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
-				return
-	}
+		default:
+			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+			return
+		}
 	}
 }
 
@@ -333,9 +353,14 @@ func presetFineHandler(db *gorm.DB) http.HandlerFunc {
 				Reason: r.FormValue("reason"),
 				Approved: true,
 			}
-	
+
+			amountStr := r.FormValue("amount")
+			if len(amountStr) == 0 {
+				amountStr = "2"
+			}
+
 			// Parse Amount as float64 from form value
-			if amount, err := strconv.ParseFloat(r.FormValue("amount"), 64); err == nil {
+			if amount, err := strconv.ParseFloat(amountStr, 64); err == nil {
 				presetFine.Amount = amount
 			} else {
 				log.Printf("Error parsing amount: %v", err)
@@ -471,7 +496,18 @@ func main() {
 			return
 		}
 
-		home := home(playersWithFines, pFines, *queryParams)
+		var approvedPFines = []PresetFine{}
+		var pendingPFines = []PresetFine{}
+
+		for _, f := range pFines {
+			if f.Approved {
+				approvedPFines = append(approvedPFines, f)
+			}else{
+				pendingPFines = append(pendingPFines, f)
+			}
+		}
+
+		home := home(playersWithFines, approvedPFines, pendingPFines, *queryParams)
 		home.Render(r.Context(), w)
 	})
 

@@ -41,16 +41,18 @@ templ finemaster(pass string, players []PlayerWithFines, pFines []PresetFine, qp
 								<section>
 									Quick Fine:
 									for _, pf := range pFines {
-										<form class=" inline-flex mx-2 space-y-2">
-											<div hidden class={ fmt.Sprintf("fine-group-%d-%d", pf.ID, p.PlayerID) }>
-												<input type="hidden" name="playerId" value={ fmt.Sprintf("%v", p.PlayerID) }/>
-												<input type="hidden" name="presetFineId" value={ fmt.Sprintf("%v", pf.ID) }/>
-												<input type="hidden" name="approved" value="on"/>
-											</div>
-											<button hx-post="/fines" hx-include={ fmt.Sprintf(".fine-group-%d-%d", pf.ID, p.PlayerID) } class="bg-yellow-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
-												{ fmt.Sprintf("%s ($%v)", pf.Reason, pf.Amount) }
-											</button>
-										</form>
+										if pf.Approved {
+											<form class=" inline-flex mx-2 space-y-2">
+												<div hidden class={ fmt.Sprintf("fine-group-%d-%d", pf.ID, p.PlayerID) }>
+													<input type="hidden" name="playerId" value={ fmt.Sprintf("%v", p.PlayerID) }/>
+													<input type="hidden" name="presetFineId" value={ fmt.Sprintf("%v", pf.ID) }/>
+													<input type="hidden" name="approved" value="on"/>
+												</div>
+												<button hx-post="/fines" hx-include={ fmt.Sprintf(".fine-group-%d-%d", pf.ID, p.PlayerID) } class="bg-yellow-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+													{ fmt.Sprintf("%s ($%v)", pf.Reason, pf.Amount) }
+												</button>
+											</form>
+										}
 									}
 								</section>
 							</li>

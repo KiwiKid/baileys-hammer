@@ -39,13 +39,35 @@ templ fineList(fines []FineWithPlayer, page int, isFineMaster bool) {
 						}
 					>
 						<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{ f.Fine.Reason }</td>
-						<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{ fmt.Sprintf("%v", f.Fine.Amount) }</td>
+						<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+						if f.Fine.Approved {
+						{ fmt.Sprintf("%v", f.Fine.Amount) }
+						} else {
+							----
+						}
+						</td>
 						<td>{ f.Player.Name }</td>
 						<td>
 							if f.Fine.Approved {
 								<div>✅</div>
 							} else if isFineMaster {
-								<button hx-post={ fmt.Sprintf("/fines/approve?fid=%d", f.Fine.ID) }>☐</button>
+								<form hx-post="/fines/approve" method="POST">
+									<input 
+										type="hidden" 
+										name="fid" 
+										value="3"/>
+									<input 
+										type="number" 
+										name="amount" 
+										id="amount-input-3" 
+										class="px-2 py-1 border rounded"
+										placeholder="Set amount"/>
+									<button 
+										type="submit" 
+										class="ml-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+										Approve
+									</button>
+								</form>
 							} else {
 								(Pending approval)
 							}

@@ -114,17 +114,25 @@ func fineList(fines []FineWithPlayer, page int, isFineMaster bool) templ.Compone
 			if err != nil {
 				return err
 			}
-			var var_9 string = fmt.Sprintf("%v", f.Fine.Amount)
-			_, err = templBuffer.WriteString(templ.EscapeString(var_9))
-			if err != nil {
-				return err
+			if f.Fine.Approved {
+				var var_9 string = fmt.Sprintf("%v", f.Fine.Amount)
+				_, err = templBuffer.WriteString(templ.EscapeString(var_9))
+				if err != nil {
+					return err
+				}
+			} else {
+				var_10 := `----`
+				_, err = templBuffer.WriteString(var_10)
+				if err != nil {
+					return err
+				}
 			}
 			_, err = templBuffer.WriteString("</td><td>")
 			if err != nil {
 				return err
 			}
-			var var_10 string = f.Player.Name
-			_, err = templBuffer.WriteString(templ.EscapeString(var_10))
+			var var_11 string = f.Player.Name
+			_, err = templBuffer.WriteString(templ.EscapeString(var_11))
 			if err != nil {
 				return err
 			}
@@ -137,8 +145,8 @@ func fineList(fines []FineWithPlayer, page int, isFineMaster bool) templ.Compone
 				if err != nil {
 					return err
 				}
-				var_11 := `✅`
-				_, err = templBuffer.WriteString(var_11)
+				var_12 := `✅`
+				_, err = templBuffer.WriteString(var_12)
 				if err != nil {
 					return err
 				}
@@ -147,30 +155,22 @@ func fineList(fines []FineWithPlayer, page int, isFineMaster bool) templ.Compone
 					return err
 				}
 			} else if isFineMaster {
-				_, err = templBuffer.WriteString("<button hx-post=\"")
+				_, err = templBuffer.WriteString("<form hx-post=\"/fines/approve\" method=\"POST\"><input type=\"hidden\" name=\"fid\" value=\"3\"><input type=\"number\" name=\"amount\" id=\"amount-input-3\" class=\"px-2 py-1 border rounded\" placeholder=\"Set amount\"><button type=\"submit\" class=\"ml-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600\">")
 				if err != nil {
 					return err
 				}
-				_, err = templBuffer.WriteString(templ.EscapeString(fmt.Sprintf("/fines/approve?fid=%d", f.Fine.ID)))
+				var_13 := `Approve`
+				_, err = templBuffer.WriteString(var_13)
 				if err != nil {
 					return err
 				}
-				_, err = templBuffer.WriteString("\">")
-				if err != nil {
-					return err
-				}
-				var_12 := `☐`
-				_, err = templBuffer.WriteString(var_12)
-				if err != nil {
-					return err
-				}
-				_, err = templBuffer.WriteString("</button>")
+				_, err = templBuffer.WriteString("</button></form>")
 				if err != nil {
 					return err
 				}
 			} else {
-				var_13 := `(Pending approval)`
-				_, err = templBuffer.WriteString(var_13)
+				var_14 := `(Pending approval)`
+				_, err = templBuffer.WriteString(var_14)
 				if err != nil {
 					return err
 				}
@@ -179,8 +179,8 @@ func fineList(fines []FineWithPlayer, page int, isFineMaster bool) templ.Compone
 			if err != nil {
 				return err
 			}
-			var var_14 string = humanize.Time(f.Fine.CreatedAt)
-			_, err = templBuffer.WriteString(templ.EscapeString(var_14))
+			var var_15 string = humanize.Time(f.Fine.CreatedAt)
+			_, err = templBuffer.WriteString(templ.EscapeString(var_15))
 			if err != nil {
 				return err
 			}
@@ -193,12 +193,12 @@ func fineList(fines []FineWithPlayer, page int, isFineMaster bool) templ.Compone
 		if err != nil {
 			return err
 		}
-		var_15 := `<div class="py-3">
+		var_16 := `<div class="py-3">
 			<button hx-get={ fmt.Sprintf("/load-more?page=%d", page +1) } hx-target="this" hx-swap="outerHTML" class="px-4 py-2 bg-blue-500 text-white font-semibold rounded hover:bg-blue-700">
 				Load More
 			</button>
 		</div>`
-		_, err = templBuffer.WriteString(var_15)
+		_, err = templBuffer.WriteString(var_16)
 		if err != nil {
 			return err
 		}

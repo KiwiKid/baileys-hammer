@@ -34,6 +34,12 @@ func makeUrl(fbaseUrl string, finesOpen bool, playersOpen bool, presetFinesOpen 
 	return *url;
 }
 
+templ downArrow(){
+	<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+		<path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+	</svg>
+}
+
 var pri = "bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:scale-105 transition transform ease-out duration-200"
 
 var sec = "bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg hover:scale-105 transition transform ease-out duration-200"
@@ -59,7 +65,7 @@ templ pageHeader() {
 	<div class="bg-yellow-400 border-l-4 border-yellow-800 text-yellow-800 p-2 " role="alert">
 		<p class="font-bold">
 			<details>
-				<summary class="text-center">🚧 Under Construction (Version {`0.1`}) 🚧</summary>
+				<summary class="text-center">🚧 Under Construction (Version { `0.1` }) 🚧</summary>
 				<div>
 					<h1>todo:</h1>
 					<ul>
@@ -74,58 +80,77 @@ templ pageHeader() {
 	</div>
 }
 
-templ home(players []PlayerWithFines, pFines []PresetFine, qp HomeQueryParams) {
+templ home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines []PresetFine, qp HomeQueryParams) {
 	<html hx-boost="true">
 		@header()
 		<body class="text-2xl">
 			@pageHeader()
 			<div class="container mx-auto bg-gray-200 shadow-xl m-10">
 				<h1 class=" font-bold mb-4  text-center">🔨 Baileys Hammer 🔨</h1>
-				<div class="bg-sepia-200 shadow-xl m-10 rounded-lg">
-					<h3 class="text-2xl font-bold text-center">Fines</h3>
-					<ul class="list-inside space-y-3 text-lg font-handwriting text-brown-900">
-						for _, pf := range pFines {
-							<li class="pl-6 border-l-4 border-gold-700 hover:bg-sepia-300 transition duration-300 ease-in-out">
-								{ fmt.Sprintf("$%v - %s", pf.Amount, pf.Reason) }
-								if !pf.Approved {
+				if len(approvedPFines) > 0 {
+					<div class="bg-sepia-200 shadow-xl m-10 rounded-lg">
+						<h3 class="text-2xl font-bold text-center">Fines</h3>
+						<ul class="list-inside space-y-3 text-lg font-handwriting text-brown-900">
+							for _, pf := range approvedPFines {
+								<li class="pl-6 border-l-4 border-gold-700 hover:bg-sepia-300 transition duration-300 ease-in-out">
+									{ fmt.Sprintf("$%v - %s", pf.Amount, pf.Reason) }
+								</li>
+							}
+						</ul>
+					</div>
+				}
+				if len(pendingPFines) > 0 {
+					<div class="w-full flex justify-center items-center">
+						<div _="on click toggle .hidden on next &lt;section/&gt;" class="flex justify-center items-center cursor-pointer">
+							<h3 class="text-lg font-bold text-center">Pending Fines { fmt.Sprintf("(%d)", len(pendingPFines))} </h3>
+							@downArrow()
+						</div>
+					</div>
+					<section class="bg-sepia-200 shadow-xl m-10 rounded-lg hidden">
+						<ul class="list-inside space-y-3 text-lg font-handwriting text-brown-900">
+							for _, pf := range pendingPFines {
+								<li class="pl-6 border-l-4 border-gold-700 hover:bg-sepia-300 transition duration-300 ease-in-out">
+									{ fmt.Sprintf("$%v - %s", pf.Amount, pf.Reason) }
 									<span class="ml-2 inline-block bg-red-100 text-red-800 font-bold px-2 py-1 rounded-full text-sm shadow-sm">(pending approval)</span>
-								}
-							</li>
-						}
-					</ul>
-				</div>
+								</li>
+							}
+						</ul>
+					</section>  
+				}
 				<div class="flex  bg-gray-100 mx-auto shadow-xl m-10">
-					<ul>
-						for _, p := range players {
-							<li class="m-4">
-								<div
- 									_="on click toggle .hidden on next &lt;section/&gt;"
- 									class="cursor-pointer p-2 bg-gray-200 rounded hover:bg-gray-300 transform hover:-translate-y-1 hover:scale-10
-								5"
-								>
-									{ p.Name }
-									- 
-									{ fmt.Sprintf("$%d (%d)", p.TotalFines,  p.TotalFineCount) }
-								</div>
-								<section class="fines-info hidden">
-									<div class="p-2">
-										<div class="p-2">
-											for _, f := range p.Fines {
-												<div class="mt-1">
-													<p>{ f.Reason } { fmt.Sprintf("$%.0f - %s", f.Amount, humanize.Time(f.CreatedAt)) }</p>
-												</div>
-											}
-										</div>
+					<div class="w-full mt-10">
+						<h3 class="text-2xl font-bold text-center">Leaderboard</h3>
+						<ul>
+							for _, p := range players {
+								<li class="m-4">
+									<div
+										_="on click toggle .hidden on next &lt;section/&gt;"
+                						class="cursor-pointer p-2 bg-gray-200 rounded hover:bg-gray-300 flex justify-between items-center transform hover:-translate-y-1 hover:scale-y-120"
+									>
+										{ p.Name }
+										- 
+										{ fmt.Sprintf("$%d (%d)", p.TotalFines,  p.TotalFineCount) }
+										@downArrow()
 									</div>
-								</section>
-							</li>
-						}
-					</ul>
+									<section class="fines-info hidden">
+										<div class="p-2">
+											<div class="p-2">
+												for _, f := range p.Fines {
+													<div class="mt-1">
+														<p>{ f.Reason } { fmt.Sprintf("$%.0f - %s", f.Amount, humanize.Time(f.CreatedAt)) }</p>
+													</div>
+												}
+											</div>
+										</div>
+										
+									</section>
+								</li>
+							}
+						</ul>
+					</div>
 				</div>
 			</div>
-			<div class="grid grid-cols-1 gap-2">
-				@fineAdd(baseUrl, qp.FinesOpen, players, pFines, false)
-			</div>
+			@fineAdd(baseUrl, qp.FinesOpen, players, approvedPFines, false)
 			<div hx-get="/fines" hx-trigger="load once" hx-swap="OuterHTML" class="w-full text-center">loading latest..</div>
 			<script src="https://unpkg.com/htmx.org"></script>
 		</body>
@@ -133,92 +158,95 @@ templ home(players []PlayerWithFines, pFines []PresetFine, qp HomeQueryParams) {
 }
 
 templ fineAdd(baseUrl string, isOpen bool, players []PlayerWithFines, presetFines []PresetFine, isFineMaster bool) {
-	if isOpen {
-		<div class="px-8 py-6 text-left bg-gray-200 shadow-xl m-10" id="fine-add">
-			<h3 class="text-2xl font-bold text-center">
-				if isFineMaster {
-					Fine a Player:
-				} else {
-					Submit a Fine
-				}
-			</h3>
-			<form hx-post="/fines" class="mt-4">
-				<div class="mt-4">
-					<label class="text-lg font-semibold">Select Player:</label>
-					<select name="playerId" class="mt-1 w-full border-gray-300  bg-white rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
-						for _, p := range players {
-							<option value={ fmt.Sprintf("%v", p.PlayerID) }>
-								{ fmt.Sprintf("%s", p.Name) }
-							</option>
-						}
-					</select>
-				</div>
-				<div class="grid grid-cols-1 gap-4">
-					<div class="border-t pt-4">
-						<label class="text-lg font-semibold">Select Fine</label>
-						<div class="mt-2">
-							<select
- 								id="presetFineId"
- 								name="presetFineId"
- 								class=" bg-white  w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-							>
-								<option selected value="">-- Select Fine --</option>
-								for _, fp := range presetFines {
-									<option value={ fmt.Sprintf("%v", fp.ID) }>
-										{ fmt.Sprintf("%s ($%v)", fp.Reason, fp.Amount) }
-									</option>
-								}
-								<option value="-1">-- Create New --</option>
-							</select>
-						</div>
-						<section class="hidden" id="newFine">
-							<div class="border-t pt-4">
-								<label class="text-2xl font-bold text-center">New Fine</label>
-								<div class="mt-4">
-									<label for="reason" class="block">Reason</label>
-									<input type="text" name="reason" id="reason" placeholder="Reason for the fine" class="w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"/>
-								</div>
-								<div class="mt-4">
-									<label for="amount" class="block">Amount ($)</label>
-									<input type="text" name="amount" id="amount" placeholder="Amount" class="w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"/>
-								</div>
-								if isFineMaster {
-									<label>
-										<input type="hidden" name="approved" value="on"/>
-									</label>
-								}
-								<div class="mt-4">
-									<label class="block text-lg">
-										<input type="checkbox" name="should_be_a_rule" class="form-checkbox h-6 w-6 mt-2 text-blue-600 border-gray-300 rounded focus:ring-blue-500"/>
-										if isFineMaster {
-											Make this a preset fine (This fine could apply again )
-										} else {
-											This fine could apply again 
-										}
-									</label>
-								</div>
-							</div>
-						</section>
+	<div class="container mx-auto bg-gray-200 shadow-xl m-10">
+		if isOpen {
+			<div class="px-8 py-6 text-left bg-gray-200 m-10" id="fine-add">
+				<h3 class="text-2xl font-bold text-center">
+					if isFineMaster {
+						Fine a Player:
+					} else {
+						Submit a Fine
+					}
+				</h3>
+				<form hx-post="/fines" class="mt-4">
+					<div class="mt-4">
+						<label class="text-lg font-semibold">Select Player:</label>
+						<select name="playerId" class="mt-1 w-full border-gray-300  bg-white rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+							for _, p := range players {
+								<option value={ fmt.Sprintf("%v", p.PlayerID) }>
+									{ fmt.Sprintf("%s", p.Name) }
+								</option>
+							}
+						</select>
 					</div>
-				</div>
-				<div class="grid grid-cols-1 p-4 gap-4 mt-10">
-					<button type="submit" class={ bigPri }>Fine a Player</button>
-					<a href={ makeSafeUrlWithAnchor(baseUrl, false, false, false, "fine-add") } class={ bigSec }>Close</a>
-				</div>
-			</form>
-		</div>
-	} else {
-		<div class="flex justify-center w-full" id="fine-add">
-			<a class={ bigPri } href={ makeSafeUrlWithAnchor(baseUrl, true, false, false, "fine-add") }>
-				if isFineMaster {
-					Fine a Player
-				} else {
-					Suggest a Fine
-				}
-			</a>
-		</div>
-	}
-	<script>
+					<div class="mt-4">
+						<div class="border-t pt-4">
+							<label class="text-lg font-semibold">Select Fine</label>
+							<div class="mt-2">
+								<select
+ 									id="presetFineId"
+ 									name="presetFineId"
+ 									class=" bg-white  w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+								>
+									<option selected value="">-- Select Fine --</option>
+									for _, fp := range presetFines {
+										if fp.Approved {
+											<option value={ fmt.Sprintf("%v", fp.ID) }>
+												{ fmt.Sprintf("%s ($%v)", fp.Reason, fp.Amount) }
+											</option>
+										}
+									}
+									<option value="-1">-- Create New --</option>
+								</select>
+							</div>
+							<section class="hidden" id="newFine">
+								<div class="border-t pt-4">
+									<label class="text-2xl font-bold text-center">New Fine</label>
+									<div class="mt-4">
+										<label for="reason" class="block">Reason</label>
+										<input type="text" name="reason" id="reason" placeholder="Reason for the fine" class="w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+									</div>
+									if isFineMaster {
+										<div class="mt-4">
+											<label for="amount" class="block">Amount ($)</label>
+											<input type="text" name="amount" id="amount" placeholder="Amount" class="w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+										</div>
+										<label>
+											<input type="hidden" name="approved" value="on"/>
+										</label>
+									}
+									<div class="mt-4">
+										<label class="block text-lg">
+											<input type="checkbox" name="should_be_a_rule" class="form-checkbox h-6 w-6 mt-2 text-blue-600 border-gray-300 rounded focus:ring-blue-500"/>
+											if isFineMaster {
+												Make this a preset fine (This fine could apply again )
+											} else {
+												This fine could apply again 
+											}
+										</label>
+									</div>
+								</div>
+							</section>
+						</div>
+					</div>
+					<div class="grid grid-cols-1 p-4 gap-4 mt-10">
+						<button type="submit" class={ bigPri }>Fine a Player</button>
+						<a href={ makeSafeUrlWithAnchor(baseUrl, false, false, false, "fine-add") } class={ bigSec }>Close</a>
+					</div>
+				</form>
+			</div>
+		} else {
+			<div class="flex justify-center w-full p-4" id="fine-add">
+				<a class={ bigPri } href={ makeSafeUrlWithAnchor(baseUrl, true, false, false, "fine-add") }>
+					if isFineMaster {
+						Fine a Player
+					} else {
+						Suggest a Fine
+					}
+				</a>
+			</div>
+		}
+		<script>
 		window.fpSelect = document.getElementById('presetFineId')
 		if(window.fpSelect != null){
 			fpSelect.addEventListener('change', function() {
@@ -233,5 +261,6 @@ templ fineAdd(baseUrl string, isOpen bool, players []PlayerWithFines, presetFine
 			console.warn('no fpSelect')
 		}
 	</script>
+	</div>
 }
 

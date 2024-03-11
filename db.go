@@ -165,9 +165,15 @@ func SaveFine(db *gorm.DB, fine *Fine) error {
     return nil
 }
 
-func ApproveFine(db *gorm.DB, id uint) error {
+func ApproveFine(db *gorm.DB, id uint, amount float64) error {
     // Find and update the fine's Approved field to true
-    result := db.Model(&Fine{}).Where("id = ?", id).Update("approved", true)
+    updates := map[string]interface{}{
+        "approved": true,
+        "amount":   amount,
+    }
+
+    // Find and update the fine's Approved and Amount fields
+    result := db.Model(&Fine{}).Where("id = ?", id).Updates(updates)
 
     // Check for errors during the operation
     if result.Error != nil {
@@ -178,6 +184,8 @@ func ApproveFine(db *gorm.DB, id uint) error {
     if result.RowsAffected == 0 {
         return gorm.ErrRecordNotFound
     }
+
+    log.Printf("Fine approved! %f", amount)
     
     return nil
 }
