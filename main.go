@@ -60,8 +60,6 @@ func playerHandler(db *gorm.DB) http.HandlerFunc {
 					return
 				}
 
-				log.Printf("Redirect to %s", r.Header.Get("Referrer"))
-
 				w.Header().Set("HX-Redirect", r.Header.Get("Referrer"))
 
 				// Optionally, you can set the status code to 200 OK or any appropriate status
@@ -212,22 +210,14 @@ func fineHandler(db *gorm.DB) http.HandlerFunc {
 				fine.PlayerID = uint(playerId)
 				fine.Approved = r.FormValue("approved") == "on"
 				
-				// Manual assignment of form values to struct
-
-
 				if err := SaveFine(db, &fine); err != nil {
 					log.Printf("Error saving fine: %v", err)
 					http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 					return
-				}else {
-					log.Printf("Saved Fine!!! with player id %d", fine.PlayerID)
 				}
-				log.Printf("Redirect to %s", r.Header.Get("Referrer"))
 
 				w.Header().Set("HX-Redirect", r.Header.Get("Referrer"))
 
-				log.Printf("saveFineHandler Fine saved - %+v", fine)
-				// Optionally, you can set the status code to 200 OK or any auppropriate status
 				w.WriteHeader(http.StatusOK)
 				return
 			}
@@ -421,8 +411,6 @@ func presetFineMasterHandler(db *gorm.DB) http.HandlerFunc {
 			log.Printf("Error decoding query params: %v", err)
 			http.Error(w, "Bad Request presetFineMasterHandler", http.StatusBadRequest)
 			return
-		}else{
-			log.Printf("GOT QUERY:\n%+v", queryParams)
 		}
 
 		playersWithFines, err := FetchPlayersWithFines(db)
@@ -445,7 +433,7 @@ func presetFineMasterHandler(db *gorm.DB) http.HandlerFunc {
 }
 
 func main() {
-	log.Printf("Start")
+	log.Printf("Started")
 	db, err := DBInit()
 	if err != nil {
 		log.Fatalf("failed to connect database: %v", err)
@@ -467,8 +455,6 @@ func main() {
 			log.Printf("Error decoding query params: %v", err)
 			http.Error(w, "Bad Request - home Decode", http.StatusBadRequest)
 			return
-		}else{
-			log.Printf("GOT QUERY:\n%+v", queryParams)
 		}
 
 		playersWithFines, err := FetchPlayersWithFines(db)
