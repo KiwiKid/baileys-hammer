@@ -53,7 +53,19 @@ func finemaster(pass string, players []PlayerWithFines, pFines []PresetFine, qp 
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("</h1></div><div class=\"container mx-auto p-4\"><h1 class=\"text-2xl font-bold mb-4\">")
+		_, err = templBuffer.WriteString("</h1></div><div class=\"grid grid-cols-1 gap-2\">")
+		if err != nil {
+			return err
+		}
+		err = fineAdd(fmt.Sprintf("%s/%s", finemasterBaseUrl, pass), qp.FinesOpen, players, pFines, true).Render(ctx, templBuffer)
+		if err != nil {
+			return err
+		}
+		err = playersAdd(fmt.Sprintf("%s/%s", finemasterBaseUrl, pass), qp.PlayerOpen).Render(ctx, templBuffer)
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("</div><div class=\"container mx-auto p-4\"><h1 class=\"text-2xl font-bold mb-4\">")
 		if err != nil {
 			return err
 		}
@@ -67,12 +79,29 @@ func finemaster(pass string, players []PlayerWithFines, pFines []PresetFine, qp 
 			return err
 		}
 		for _, p := range players {
-			_, err = templBuffer.WriteString("<li class=\"mb-2\"><div _=\"on click toggle .hidden on next &lt;section/&gt;\" class=\"cursor-pointer p-2 bg-gray-200 rounded hover:bg-gray-300\">")
+			_, err = templBuffer.WriteString("<li class=\"mb-2\">")
 			if err != nil {
 				return err
 			}
-			var var_4 string = p.Name
-			_, err = templBuffer.WriteString(templ.EscapeString(var_4))
+			var var_4 = []any{bigPri}
+			err = templ.RenderCSSItems(ctx, templBuffer, var_4...)
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("<div _=\"on click toggle .hidden on next &lt;section/&gt;\" class=\"")
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_4).String()))
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("\">")
+			if err != nil {
+				return err
+			}
+			var var_5 string = p.Name
+			_, err = templBuffer.WriteString(templ.EscapeString(var_5))
 			if err != nil {
 				return err
 			}
@@ -80,8 +109,8 @@ func finemaster(pass string, players []PlayerWithFines, pFines []PresetFine, qp 
 			if err != nil {
 				return err
 			}
-			var_5 := `- `
-			_, err = templBuffer.WriteString(var_5)
+			var_6 := `- `
+			_, err = templBuffer.WriteString(var_6)
 			if err != nil {
 				return err
 			}
@@ -89,8 +118,8 @@ func finemaster(pass string, players []PlayerWithFines, pFines []PresetFine, qp 
 			if err != nil {
 				return err
 			}
-			var var_6 string = fmt.Sprintf("$%d (%d)", p.TotalFines, p.TotalFineCount)
-			_, err = templBuffer.WriteString(templ.EscapeString(var_6))
+			var var_7 string = fmt.Sprintf("$%d (%d)", p.TotalFines, p.TotalFineCount)
+			_, err = templBuffer.WriteString(templ.EscapeString(var_7))
 			if err != nil {
 				return err
 			}
@@ -103,8 +132,8 @@ func finemaster(pass string, players []PlayerWithFines, pFines []PresetFine, qp 
 				if err != nil {
 					return err
 				}
-				var var_7 string = f.Reason
-				_, err = templBuffer.WriteString(templ.EscapeString(var_7))
+				var var_8 string = f.Reason
+				_, err = templBuffer.WriteString(templ.EscapeString(var_8))
 				if err != nil {
 					return err
 				}
@@ -112,13 +141,13 @@ func finemaster(pass string, players []PlayerWithFines, pFines []PresetFine, qp 
 				if err != nil {
 					return err
 				}
-				var_8 := `- `
-				_, err = templBuffer.WriteString(var_8)
+				var_9 := `- `
+				_, err = templBuffer.WriteString(var_9)
 				if err != nil {
 					return err
 				}
-				var var_9 string = fmt.Sprintf("$%.0f", f.Amount)
-				_, err = templBuffer.WriteString(templ.EscapeString(var_9))
+				var var_10 string = fmt.Sprintf("$%.0f", f.Amount)
+				_, err = templBuffer.WriteString(templ.EscapeString(var_10))
 				if err != nil {
 					return err
 				}
@@ -127,16 +156,7 @@ func finemaster(pass string, players []PlayerWithFines, pFines []PresetFine, qp 
 					return err
 				}
 			}
-			_, err = templBuffer.WriteString("</div></div></section><section>")
-			if err != nil {
-				return err
-			}
-			var_10 := `Quick Fine:`
-			_, err = templBuffer.WriteString(var_10)
-			if err != nil {
-				return err
-			}
-			_, err = templBuffer.WriteString(" ")
+			_, err = templBuffer.WriteString("</div></div></section><section class=\"hidden quick-fine\">")
 			if err != nil {
 				return err
 			}
@@ -175,7 +195,16 @@ func finemaster(pass string, players []PlayerWithFines, pFines []PresetFine, qp 
 					if err != nil {
 						return err
 					}
-					_, err = templBuffer.WriteString("\"><input type=\"hidden\" name=\"approved\" value=\"on\"></div><button hx-post=\"/fines\" hx-include=\"")
+					_, err = templBuffer.WriteString("\"><input type=\"hidden\" name=\"approved\" value=\"on\"></div>")
+					if err != nil {
+						return err
+					}
+					var var_12 = []any{bigAdd}
+					err = templ.RenderCSSItems(ctx, templBuffer, var_12...)
+					if err != nil {
+						return err
+					}
+					_, err = templBuffer.WriteString("<button hx-post=\"/fines\" hx-include=\"")
 					if err != nil {
 						return err
 					}
@@ -183,12 +212,20 @@ func finemaster(pass string, players []PlayerWithFines, pFines []PresetFine, qp 
 					if err != nil {
 						return err
 					}
-					_, err = templBuffer.WriteString("\" class=\"bg-yellow-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline\">")
+					_, err = templBuffer.WriteString("\" class=\"")
 					if err != nil {
 						return err
 					}
-					var var_12 string = fmt.Sprintf("%s ($%v)", pf.Reason, pf.Amount)
-					_, err = templBuffer.WriteString(templ.EscapeString(var_12))
+					_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_12).String()))
+					if err != nil {
+						return err
+					}
+					_, err = templBuffer.WriteString("\">")
+					if err != nil {
+						return err
+					}
+					var var_13 string = fmt.Sprintf("%s ($%v)", pf.Reason, pf.Amount)
+					_, err = templBuffer.WriteString(templ.EscapeString(var_13))
 					if err != nil {
 						return err
 					}
@@ -203,15 +240,42 @@ func finemaster(pass string, players []PlayerWithFines, pFines []PresetFine, qp 
 				return err
 			}
 		}
-		_, err = templBuffer.WriteString("</ul></div></div><div class=\"grid grid-cols-1 gap-2\">")
+		_, err = templBuffer.WriteString("</ul></div>")
 		if err != nil {
 			return err
 		}
-		err = fineAdd(fmt.Sprintf("%s/%s", finemasterBaseUrl, pass), qp.FinesOpen, players, pFines, true).Render(ctx, templBuffer)
+		var var_14 = []any{bigPri}
+		err = templ.RenderCSSItems(ctx, templBuffer, var_14...)
 		if err != nil {
 			return err
 		}
-		err = playersAdd(fmt.Sprintf("%s/%s", finemasterBaseUrl, pass), qp.PlayerOpen).Render(ctx, templBuffer)
+		_, err = templBuffer.WriteString("<div _=\"on click toggle .hidden on .quick-fine\" class=\"")
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_14).String()))
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("\">")
+		if err != nil {
+			return err
+		}
+		var_15 := `Toggle Quick Fines`
+		_, err = templBuffer.WriteString(var_15)
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("</div></div><div hx-get=\"/fines\" hx-trigger=\"load once\" hx-swap=\"OuterHTML\" class=\"w-full text-center\">")
+		if err != nil {
+			return err
+		}
+		var_16 := `loading latest..`
+		_, err = templBuffer.WriteString(var_16)
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("</div>")
 		if err != nil {
 			return err
 		}
@@ -219,21 +283,12 @@ func finemaster(pass string, players []PlayerWithFines, pFines []PresetFine, qp 
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("</div><div hx-get=\"/fines\" hx-trigger=\"load once\" hx-swap=\"OuterHTML\" class=\"w-full text-center\">")
+		_, err = templBuffer.WriteString("<script src=\"https://unpkg.com/htmx.org\">")
 		if err != nil {
 			return err
 		}
-		var_13 := `loading latest..`
-		_, err = templBuffer.WriteString(var_13)
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString("</div><script src=\"https://unpkg.com/htmx.org\">")
-		if err != nil {
-			return err
-		}
-		var_14 := ``
-		_, err = templBuffer.WriteString(var_14)
+		var_17 := ``
+		_, err = templBuffer.WriteString(var_17)
 		if err != nil {
 			return err
 		}
@@ -256,9 +311,9 @@ func presetFines(baseUrl string, isOpen bool, presetFines []PresetFine) templ.Co
 			defer templ.ReleaseBuffer(templBuffer)
 		}
 		ctx = templ.InitializeContext(ctx)
-		var_15 := templ.GetChildren(ctx)
-		if var_15 == nil {
-			var_15 = templ.NopComponent
+		var_18 := templ.GetChildren(ctx)
+		if var_18 == nil {
+			var_18 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
 		if isOpen {
@@ -266,114 +321,26 @@ func presetFines(baseUrl string, isOpen bool, presetFines []PresetFine) templ.Co
 			if err != nil {
 				return err
 			}
-			var_16 := `Add/Approve/Remove Preset Fines`
-			_, err = templBuffer.WriteString(var_16)
-			if err != nil {
-				return err
-			}
-			_, err = templBuffer.WriteString("</h3><p>")
-			if err != nil {
-				return err
-			}
-			var_17 := `Preset Fines will be show at the top of the home page`
-			_, err = templBuffer.WriteString(var_17)
-			if err != nil {
-				return err
-			}
-			_, err = templBuffer.WriteString("</p><div class=\"grid grid-cols-1 md:grid-cols-2 gap-4\"><div><form hx-post=\"/preset-fines\" class=\"mt-4\"><div><label for=\"reason\" class=\"block\">")
-			if err != nil {
-				return err
-			}
-			var_18 := `Reason`
-			_, err = templBuffer.WriteString(var_18)
-			if err != nil {
-				return err
-			}
-			_, err = templBuffer.WriteString("</label><input required type=\"text\" name=\"reason\" id=\"reason\" placeholder=\"Reason for the fine\" class=\"w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600\"></div><div class=\"mt-4\"><label for=\"amount\" class=\"block\">")
-			if err != nil {
-				return err
-			}
-			var_19 := `Amount ($)`
+			var_19 := `Add or Approve Fines`
 			_, err = templBuffer.WriteString(var_19)
 			if err != nil {
 				return err
 			}
-			_, err = templBuffer.WriteString("</label><input required type=\"number\" step=\"0.01\" name=\"amount\" id=\"amount\" placeholder=\"Amount\" class=\"p-2 w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600\"></div><div class=\"mt-4\"><label class=\"block\"><input type=\"checkbox\" checked=\"checked\" name=\"approved\" class=\"text-2xl m-2 py-2 mt-2 p-2 \">")
+			_, err = templBuffer.WriteString("</h3><div class=\"w-full flex justify-center items-center py-2\"><p>")
 			if err != nil {
 				return err
 			}
-			var_20 := `Approved`
+			var_20 := `Approve fines submitted, or add new fines`
 			_, err = templBuffer.WriteString(var_20)
 			if err != nil {
 				return err
 			}
-			_, err = templBuffer.WriteString("</label></div><div class=\"flex items-center justify-between mt-4\">")
+			_, err = templBuffer.WriteString("</p></div><div class=\"grid grid-cols-1 md:grid-cols-2 gap-4\"><div class=\"text-2xl\"><h1 class=\"font-bold text-center\">")
 			if err != nil {
 				return err
 			}
-			var var_21 = []any{bigAdd}
-			err = templ.RenderCSSItems(ctx, templBuffer, var_21...)
-			if err != nil {
-				return err
-			}
-			_, err = templBuffer.WriteString("<button type=\"submit\" class=\"")
-			if err != nil {
-				return err
-			}
-			_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_21).String()))
-			if err != nil {
-				return err
-			}
-			_, err = templBuffer.WriteString("\">")
-			if err != nil {
-				return err
-			}
-			var_22 := `Add Preset Fine`
-			_, err = templBuffer.WriteString(var_22)
-			if err != nil {
-				return err
-			}
-			_, err = templBuffer.WriteString("</button></div></form><div class=\"flex justify-center w-full\">")
-			if err != nil {
-				return err
-			}
-			var var_23 = []any{bigSec}
-			err = templ.RenderCSSItems(ctx, templBuffer, var_23...)
-			if err != nil {
-				return err
-			}
-			_, err = templBuffer.WriteString("<a href=\"")
-			if err != nil {
-				return err
-			}
-			var var_24 templ.SafeURL = makeSafeUrl(baseUrl, false, false, false)
-			_, err = templBuffer.WriteString(templ.EscapeString(string(var_24)))
-			if err != nil {
-				return err
-			}
-			_, err = templBuffer.WriteString("\" class=\"")
-			if err != nil {
-				return err
-			}
-			_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_23).String()))
-			if err != nil {
-				return err
-			}
-			_, err = templBuffer.WriteString("\">")
-			if err != nil {
-				return err
-			}
-			var_25 := `Close`
-			_, err = templBuffer.WriteString(var_25)
-			if err != nil {
-				return err
-			}
-			_, err = templBuffer.WriteString("</a></div></div><div class=\"text-2xl\"><h1 class=\"font-bold text-center\">")
-			if err != nil {
-				return err
-			}
-			var_26 := `Approve/Existing Preset Fines`
-			_, err = templBuffer.WriteString(var_26)
+			var_21 := `Approve/Existing Preset Fines`
+			_, err = templBuffer.WriteString(var_21)
 			if err != nil {
 				return err
 			}
@@ -399,8 +366,8 @@ func presetFines(baseUrl string, isOpen bool, presetFines []PresetFine) templ.Co
 					if err != nil {
 						return err
 					}
-					var_27 := `☐ ✨`
-					_, err = templBuffer.WriteString(var_27)
+					var_22 := `☐ ✨`
+					_, err = templBuffer.WriteString(var_22)
 					if err != nil {
 						return err
 					}
@@ -413,8 +380,8 @@ func presetFines(baseUrl string, isOpen bool, presetFines []PresetFine) templ.Co
 				if err != nil {
 					return err
 				}
-				var var_28 string = fine.Reason
-				_, err = templBuffer.WriteString(templ.EscapeString(var_28))
+				var var_23 string = fine.Reason
+				_, err = templBuffer.WriteString(templ.EscapeString(var_23))
 				if err != nil {
 					return err
 				}
@@ -422,8 +389,8 @@ func presetFines(baseUrl string, isOpen bool, presetFines []PresetFine) templ.Co
 				if err != nil {
 					return err
 				}
-				var_29 := `- `
-				_, err = templBuffer.WriteString(var_29)
+				var_24 := `- `
+				_, err = templBuffer.WriteString(var_24)
 				if err != nil {
 					return err
 				}
@@ -431,8 +398,8 @@ func presetFines(baseUrl string, isOpen bool, presetFines []PresetFine) templ.Co
 				if err != nil {
 					return err
 				}
-				var var_30 string = fmt.Sprintf("$%.0f", fine.Amount)
-				_, err = templBuffer.WriteString(templ.EscapeString(var_30))
+				var var_25 string = fmt.Sprintf("$%.0f", fine.Amount)
+				_, err = templBuffer.WriteString(templ.EscapeString(var_25))
 				if err != nil {
 					return err
 				}
@@ -448,8 +415,8 @@ func presetFines(baseUrl string, isOpen bool, presetFines []PresetFine) templ.Co
 				if err != nil {
 					return err
 				}
-				var_31 := `🗑`
-				_, err = templBuffer.WriteString(var_31)
+				var_26 := `🗑`
+				_, err = templBuffer.WriteString(var_26)
 				if err != nil {
 					return err
 				}
@@ -458,7 +425,86 @@ func presetFines(baseUrl string, isOpen bool, presetFines []PresetFine) templ.Co
 					return err
 				}
 			}
-			_, err = templBuffer.WriteString("</div></div></div>")
+			_, err = templBuffer.WriteString("</div><div><form hx-post=\"/preset-fines\" class=\"mt-4\"><div><label for=\"reason\" class=\"block\"><input required type=\"text\" name=\"reason\" id=\"reason\" placeholder=\"Reason for the fine\" class=\"w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600\"></label></div><div class=\"mt-4\"><label for=\"amount\" class=\"block\">")
+			if err != nil {
+				return err
+			}
+			var_27 := `Amount ($)`
+			_, err = templBuffer.WriteString(var_27)
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("</label><input required type=\"number\" step=\"0.01\" name=\"amount\" id=\"amount\" placeholder=\"Amount\" class=\"p-2 w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600\"></div><div class=\"mt-4\"><label class=\"block\"><input type=\"checkbox\" checked=\"checked\" name=\"approved\" class=\"text-2xl m-2 py-2 mt-2 p-2 \">")
+			if err != nil {
+				return err
+			}
+			var_28 := `Approved`
+			_, err = templBuffer.WriteString(var_28)
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("</label></div><div class=\"flex items-center justify-between mt-4\">")
+			if err != nil {
+				return err
+			}
+			var var_29 = []any{bigAdd}
+			err = templ.RenderCSSItems(ctx, templBuffer, var_29...)
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("<button type=\"submit\" class=\"")
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_29).String()))
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("\">")
+			if err != nil {
+				return err
+			}
+			var_30 := `Add Preset Fine`
+			_, err = templBuffer.WriteString(var_30)
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("</button></div></form><div class=\"flex justify-center w-full\">")
+			if err != nil {
+				return err
+			}
+			var var_31 = []any{bigSec}
+			err = templ.RenderCSSItems(ctx, templBuffer, var_31...)
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("<a href=\"")
+			if err != nil {
+				return err
+			}
+			var var_32 templ.SafeURL = makeSafeUrl(baseUrl, false, false, false)
+			_, err = templBuffer.WriteString(templ.EscapeString(string(var_32)))
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("\" class=\"")
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_31).String()))
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("\">")
+			if err != nil {
+				return err
+			}
+			var_33 := `Close`
+			_, err = templBuffer.WriteString(var_33)
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("</a></div></div></div></div>")
 			if err != nil {
 				return err
 			}
@@ -467,8 +513,8 @@ func presetFines(baseUrl string, isOpen bool, presetFines []PresetFine) templ.Co
 			if err != nil {
 				return err
 			}
-			var var_32 = []any{bigPri}
-			err = templ.RenderCSSItems(ctx, templBuffer, var_32...)
+			var var_34 = []any{bigPri}
+			err = templ.RenderCSSItems(ctx, templBuffer, var_34...)
 			if err != nil {
 				return err
 			}
@@ -476,8 +522,8 @@ func presetFines(baseUrl string, isOpen bool, presetFines []PresetFine) templ.Co
 			if err != nil {
 				return err
 			}
-			var var_33 templ.SafeURL = makeSafeUrlWithAnchor(baseUrl, false, false, true, "preset-fine")
-			_, err = templBuffer.WriteString(templ.EscapeString(string(var_33)))
+			var var_35 templ.SafeURL = makeSafeUrlWithAnchor(baseUrl, false, false, true, "preset-fine")
+			_, err = templBuffer.WriteString(templ.EscapeString(string(var_35)))
 			if err != nil {
 				return err
 			}
@@ -485,7 +531,7 @@ func presetFines(baseUrl string, isOpen bool, presetFines []PresetFine) templ.Co
 			if err != nil {
 				return err
 			}
-			_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_32).String()))
+			_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_34).String()))
 			if err != nil {
 				return err
 			}
@@ -493,8 +539,8 @@ func presetFines(baseUrl string, isOpen bool, presetFines []PresetFine) templ.Co
 			if err != nil {
 				return err
 			}
-			var_34 := `Add/Approve/Remove Preset Fines`
-			_, err = templBuffer.WriteString(var_34)
+			var_36 := `Add Fines`
+			_, err = templBuffer.WriteString(var_36)
 			if err != nil {
 				return err
 			}
@@ -518,9 +564,9 @@ func playersAdd(baseUrl string, isOpen bool) templ.Component {
 			defer templ.ReleaseBuffer(templBuffer)
 		}
 		ctx = templ.InitializeContext(ctx)
-		var_35 := templ.GetChildren(ctx)
-		if var_35 == nil {
-			var_35 = templ.NopComponent
+		var_37 := templ.GetChildren(ctx)
+		if var_37 == nil {
+			var_37 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
 		if isOpen {
@@ -528,8 +574,8 @@ func playersAdd(baseUrl string, isOpen bool) templ.Component {
 			if err != nil {
 				return err
 			}
-			var_36 := `Add New Player`
-			_, err = templBuffer.WriteString(var_36)
+			var_38 := `Add New Player`
+			_, err = templBuffer.WriteString(var_38)
 			if err != nil {
 				return err
 			}
@@ -537,8 +583,8 @@ func playersAdd(baseUrl string, isOpen bool) templ.Component {
 			if err != nil {
 				return err
 			}
-			var_37 := `Name`
-			_, err = templBuffer.WriteString(var_37)
+			var_39 := `Name`
+			_, err = templBuffer.WriteString(var_39)
 			if err != nil {
 				return err
 			}
@@ -546,47 +592,12 @@ func playersAdd(baseUrl string, isOpen bool) templ.Component {
 			if err != nil {
 				return err
 			}
-			var var_38 = []any{bigPri}
-			err = templ.RenderCSSItems(ctx, templBuffer, var_38...)
-			if err != nil {
-				return err
-			}
-			_, err = templBuffer.WriteString("<button type=\"submit\" class=\"")
-			if err != nil {
-				return err
-			}
-			_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_38).String()))
-			if err != nil {
-				return err
-			}
-			_, err = templBuffer.WriteString("\">")
-			if err != nil {
-				return err
-			}
-			var_39 := `Add Player`
-			_, err = templBuffer.WriteString(var_39)
-			if err != nil {
-				return err
-			}
-			_, err = templBuffer.WriteString("</button></div><div class=\"flex justify-center w-full\">")
-			if err != nil {
-				return err
-			}
-			var var_40 = []any{bigSec}
+			var var_40 = []any{bigAdd}
 			err = templ.RenderCSSItems(ctx, templBuffer, var_40...)
 			if err != nil {
 				return err
 			}
-			_, err = templBuffer.WriteString("<a href=\"")
-			if err != nil {
-				return err
-			}
-			var var_41 templ.SafeURL = makeSafeUrl(baseUrl, false, false, false)
-			_, err = templBuffer.WriteString(templ.EscapeString(string(var_41)))
-			if err != nil {
-				return err
-			}
-			_, err = templBuffer.WriteString("\" hx-transition=\"true\" class=\"")
+			_, err = templBuffer.WriteString("<button type=\"submit\" class=\"")
 			if err != nil {
 				return err
 			}
@@ -598,8 +609,43 @@ func playersAdd(baseUrl string, isOpen bool) templ.Component {
 			if err != nil {
 				return err
 			}
-			var_42 := `Close`
-			_, err = templBuffer.WriteString(var_42)
+			var_41 := `Add Player`
+			_, err = templBuffer.WriteString(var_41)
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("</button></div><div class=\"flex justify-center w-full\">")
+			if err != nil {
+				return err
+			}
+			var var_42 = []any{bigSec}
+			err = templ.RenderCSSItems(ctx, templBuffer, var_42...)
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("<a href=\"")
+			if err != nil {
+				return err
+			}
+			var var_43 templ.SafeURL = makeSafeUrl(baseUrl, false, false, false)
+			_, err = templBuffer.WriteString(templ.EscapeString(string(var_43)))
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("\" hx-transition=\"true\" class=\"")
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_42).String()))
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("\">")
+			if err != nil {
+				return err
+			}
+			var_44 := `Close`
+			_, err = templBuffer.WriteString(var_44)
 			if err != nil {
 				return err
 			}
@@ -612,8 +658,8 @@ func playersAdd(baseUrl string, isOpen bool) templ.Component {
 			if err != nil {
 				return err
 			}
-			var var_43 = []any{bigPri}
-			err = templ.RenderCSSItems(ctx, templBuffer, var_43...)
+			var var_45 = []any{bigPri}
+			err = templ.RenderCSSItems(ctx, templBuffer, var_45...)
 			if err != nil {
 				return err
 			}
@@ -621,8 +667,8 @@ func playersAdd(baseUrl string, isOpen bool) templ.Component {
 			if err != nil {
 				return err
 			}
-			var var_44 templ.SafeURL = makeSafeUrlWithAnchor(baseUrl, false, true, false, "players-add")
-			_, err = templBuffer.WriteString(templ.EscapeString(string(var_44)))
+			var var_46 templ.SafeURL = makeSafeUrlWithAnchor(baseUrl, false, true, false, "players-add")
+			_, err = templBuffer.WriteString(templ.EscapeString(string(var_46)))
 			if err != nil {
 				return err
 			}
@@ -630,7 +676,7 @@ func playersAdd(baseUrl string, isOpen bool) templ.Component {
 			if err != nil {
 				return err
 			}
-			_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_43).String()))
+			_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_45).String()))
 			if err != nil {
 				return err
 			}
@@ -638,8 +684,8 @@ func playersAdd(baseUrl string, isOpen bool) templ.Component {
 			if err != nil {
 				return err
 			}
-			var_45 := `Add/Remove Players`
-			_, err = templBuffer.WriteString(var_45)
+			var_47 := `Add/Remove Players`
+			_, err = templBuffer.WriteString(var_47)
 			if err != nil {
 				return err
 			}

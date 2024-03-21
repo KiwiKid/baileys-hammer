@@ -4,3 +4,4 @@ football.db
 dbdb
 
 .env
+tmp/build-errors.log

@@ -8,7 +8,7 @@ import (
 
 templ fineList(fines []FineWithPlayer, page int, isFineMaster bool) {
 	<div class="container mx-auto text-center">
-		<div class="text-3xl p-10">Latest Fines</div>
+		<div class="text-3xl p-10">Fines</div>
 		<table class="min-w-full divide-y divide-gray-200">
 			<thead class="bg-gray-50">
 				<tr>
@@ -40,11 +40,11 @@ templ fineList(fines []FineWithPlayer, page int, isFineMaster bool) {
 					>
 						<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{ f.Fine.Reason }</td>
 						<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-						if f.Fine.Approved {
-						{ fmt.Sprintf("%v", f.Fine.Amount) }
-						} else {
-							----
-						}
+							if f.Fine.Approved {
+								{ fmt.Sprintf("%v", f.Fine.Amount) }
+							} else {
+								----
+							}
 						</td>
 						<td>{ f.Player.Name }</td>
 						<td>
@@ -52,19 +52,22 @@ templ fineList(fines []FineWithPlayer, page int, isFineMaster bool) {
 								<div>✅</div>
 							} else if isFineMaster {
 								<form hx-post="/fines/approve" method="POST">
-									<input 
-										type="hidden" 
-										name="fid" 
-										value={ fmt.Sprintf("%d", f.Fine.ID) }/>
-									<input 
-										type="number" 
-										name="amount" 
-										id="amount-input-3" 
-										class="px-2 py-1 border rounded"
-										placeholder="Set amount"/>
-									<button 
-										type="submit" 
-										class="ml-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+									<input
+ 										type="hidden"
+ 										name="fid"
+ 										value={ fmt.Sprintf("%d", f.Fine.ID) }
+									/>
+									<input
+ 										type="number"
+ 										name="amount"
+ 										id="amount-input-3"
+ 										class="px-2 py-1 border rounded"
+ 										placeholder="Set amount"
+									/>
+									<button
+ 										type="submit"
+ 										class="ml-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+									>
 										Approve
 									</button>
 								</form>

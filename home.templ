@@ -34,9 +34,9 @@ func makeUrl(fbaseUrl string, finesOpen bool, playersOpen bool, presetFinesOpen 
 	return *url;
 }
 
-templ downArrow(){
+templ downArrow() {
 	<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-		<path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+		<path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
 	</svg>
 }
 
@@ -102,7 +102,7 @@ templ home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines
 				if len(pendingPFines) > 0 {
 					<div class="w-full flex justify-center items-center">
 						<div _="on click toggle .hidden on next &lt;section/&gt;" class="flex justify-center items-center cursor-pointer">
-							<h3 class="text-lg font-bold text-center">Pending Fines { fmt.Sprintf("(%d)", len(pendingPFines))} </h3>
+							<h3 class="text-lg font-bold text-center">Pending Fines { fmt.Sprintf("(%d)", len(pendingPFines)) }</h3>
 							@downArrow()
 						</div>
 					</div>
@@ -115,7 +115,7 @@ templ home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines
 								</li>
 							}
 						</ul>
-					</section>  
+					</section>
 				}
 				<div class="flex  bg-gray-100 mx-auto shadow-xl m-10">
 					<div class="w-full mt-10">
@@ -124,8 +124,8 @@ templ home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines
 							for _, p := range players {
 								<li class="m-4">
 									<div
-										_="on click toggle .hidden on next &lt;section/&gt;"
-                						class="cursor-pointer p-2 bg-gray-200 rounded hover:bg-gray-300 flex justify-between items-center transform hover:-translate-y-1 hover:scale-y-120"
+ 										_="on click toggle .hidden on next &lt;section/&gt;"
+ 										class="cursor-pointer p-2 bg-gray-200 rounded hover:bg-gray-300 flex justify-between items-center transform hover:-translate-y-1 hover:scale-y-120"
 									>
 										{ p.Name }
 										- 
@@ -142,7 +142,6 @@ templ home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines
 												}
 											</div>
 										</div>
-										
 									</section>
 								</li>
 							}
@@ -170,18 +169,8 @@ templ fineAdd(baseUrl string, isOpen bool, players []PlayerWithFines, presetFine
 				</h3>
 				<form hx-post="/fines" class="mt-4">
 					<div class="mt-4">
-						<label class="text-lg font-semibold">Select Player:</label>
-						<select name="playerId" class="mt-1 w-full border-gray-300  bg-white rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
-							for _, p := range players {
-								<option value={ fmt.Sprintf("%v", p.PlayerID) }>
-									{ fmt.Sprintf("%s", p.Name) }
-								</option>
-							}
-						</select>
-					</div>
-					<div class="mt-4">
 						<div class="border-t pt-4">
-							<label class="text-lg font-semibold">Select Fine</label>
+							<label class="text-lg font-semibold">
 							<div class="mt-2">
 								<select
  									id="presetFineId"
@@ -199,6 +188,7 @@ templ fineAdd(baseUrl string, isOpen bool, players []PlayerWithFines, presetFine
 									<option value="-1">-- Create New --</option>
 								</select>
 							</div>
+							</label>
 							<section class="hidden" id="newFine">
 								<div class="border-t pt-4">
 									<label class="text-2xl font-bold text-center">New Fine</label>
@@ -215,22 +205,34 @@ templ fineAdd(baseUrl string, isOpen bool, players []PlayerWithFines, presetFine
 											<input type="hidden" name="approved" value="on"/>
 										</label>
 									}
-									<div class="mt-4">
-										<label class="block text-lg">
-											<input type="checkbox" name="should_be_a_rule" class="form-checkbox h-6 w-6 mt-2 text-blue-600 border-gray-300 rounded focus:ring-blue-500"/>
-											if isFineMaster {
-												Make this a preset fine (This fine could apply again )
-											} else {
-												This fine could apply again 
-											}
-										</label>
-									</div>
+								<div class="grid grid-cols-2 gap-4">
+								<div class="flex items-center justify-center p-4 border border-gray-200 rounded-lg">
+									<input type="radio" id="oneOffFine" name="fineOption" value="oneOffFine" class="form-radio text-blue-600 transform scale-150" />
+									<label for="oneOffFine" class="ml-2 text-gray-800">One Off Fine</label>
 								</div>
+								<div class="flex items-center justify-center p-4 border border-gray-200 rounded-lg">
+									<input type="radio" id="applyAgain" name="fineOption" value="applyAgain" class="form-radio text-blue-600 transform scale-150" />
+									<label for="applyAgain" class="ml-2 text-gray-800">Could Apply Again</label>
+								</div>
+								</div>
+								</div>
+
 							</section>
+							<div class="mt-4">
+								<label class="text-lg font-semibold">Who does this fine apply to? (optional):</label>
+								<select name="playerId" class="mt-1 w-full border-gray-300  bg-white rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+									<option selected value="">N/A</option>
+									for _, p := range players {
+										<option value={ fmt.Sprintf("%v", p.PlayerID) }>
+											{ fmt.Sprintf("%s", p.Name) }
+										</option>
+									}
+								</select>
+							</div>
 						</div>
 					</div>
 					<div class="grid grid-cols-1 p-4 gap-4 mt-10">
-						<button type="submit" class={ bigPri }>Fine a Player</button>
+						<button type="submit" class={ bigAdd }>Add Fine</button>
 						<a href={ makeSafeUrlWithAnchor(baseUrl, false, false, false, "fine-add") } class={ bigSec }>Close</a>
 					</div>
 				</form>

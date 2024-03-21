@@ -149,14 +149,7 @@ func fineHandler(db *gorm.DB) http.HandlerFunc {
 					http.Error(w, "Invalid form data", http.StatusBadRequest)
 					return
 				}
-
-				playerIdStr := r.FormValue("playerId")
-				playerId, err := strconv.ParseUint(playerIdStr, 10, 64)
-				if err != nil || playerId == 0 {
-					http.Error(w, fmt.Sprintf("Error parsing playerId %v", err), http.StatusBadRequest)
-					return 
-				}
-				
+			
 				var presetFine *PresetFine
 				presetFineStr := r.FormValue("presetFineId")
 				if(len(presetFineStr) > 0 && presetFineStr != "-1"){
@@ -170,8 +163,6 @@ func fineHandler(db *gorm.DB) http.HandlerFunc {
 						http.Error(w, "Could not GetPresetFine", http.StatusBadRequest)
 						return
 					}
-
-
 				}
 
 				var fine Fine
@@ -208,6 +199,15 @@ func fineHandler(db *gorm.DB) http.HandlerFunc {
 						Amount: amount,
 						Reason: reason,
 					}
+				}
+
+				playerIdStr := r.FormValue("playerId")
+				playerId, err := strconv.ParseUint(playerIdStr, 10, 64)
+				if err != nil || playerId == 0 {
+					w.Header().Set("HX-Redirect", r.Header.Get("Referrer"))
+
+					w.WriteHeader(http.StatusOK)
+					return
 				}
 
 				fine.PlayerID = uint(playerId)
@@ -511,8 +511,9 @@ func main() {
 		home.Render(r.Context(), w)
 	})
 
-    // Start the HTTP server.
-    http.ListenAndServe(":8080", r)
+	if err := http.ListenAndServe(":8080", r); err != nil {
+		log.Printf("Server error: %v", err)
+	}
 	log.Printf("Listening on %d", 8080)
 }
 

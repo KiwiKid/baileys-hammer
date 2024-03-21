@@ -16,13 +16,17 @@ templ finemaster(pass string, players []PlayerWithFines, pFines []PresetFine, qp
 					Fine Master Zone
 				</h1>
 			</div>
+			<div class="grid grid-cols-1 gap-2">
+				@fineAdd(fmt.Sprintf("%s/%s", finemasterBaseUrl, pass), qp.FinesOpen, players, pFines, true)
+				@playersAdd(fmt.Sprintf("%s/%s", finemasterBaseUrl, pass), qp.PlayerOpen)
+			</div>
 			<div class="container mx-auto p-4">
 				<h1 class="text-2xl font-bold mb-4">Player Fines</h1>
 				<div class="flex items-center justify-center bg-gray-100 mx-auto">
 					<ul>
 						for _, p := range players {
 							<li class="mb-2">
-								<div _="on click toggle .hidden on next &lt;section/&gt;" class="cursor-pointer p-2 bg-gray-200 rounded hover:bg-gray-300">
+								<div _="on click toggle .hidden on next &lt;section/&gt;" class={ bigPri }>
 									{ p.Name }
 									- 
 									{ fmt.Sprintf("$%d (%d)", p.TotalFines, p.TotalFineCount) }
@@ -38,8 +42,8 @@ templ finemaster(pass string, players []PlayerWithFines, pFines []PresetFine, qp
 										</div>
 									</div>
 								</section>
-								<section>
-									Quick Fine:
+								
+								<section class="hidden quick-fine">
 									for _, pf := range pFines {
 										if pf.Approved {
 											<form class=" inline-flex mx-2 space-y-2">
@@ -48,7 +52,7 @@ templ finemaster(pass string, players []PlayerWithFines, pFines []PresetFine, qp
 													<input type="hidden" name="presetFineId" value={ fmt.Sprintf("%v", pf.ID) }/>
 													<input type="hidden" name="approved" value="on"/>
 												</div>
-												<button hx-post="/fines" hx-include={ fmt.Sprintf(".fine-group-%d-%d", pf.ID, p.PlayerID) } class="bg-yellow-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+												<button hx-post="/fines" hx-include={ fmt.Sprintf(".fine-group-%d-%d", pf.ID, p.PlayerID) } class={ bigAdd }>
 													{ fmt.Sprintf("%s ($%v)", pf.Reason, pf.Amount) }
 												</button>
 											</form>
@@ -58,14 +62,15 @@ templ finemaster(pass string, players []PlayerWithFines, pFines []PresetFine, qp
 							</li>
 						}
 					</ul>
+					
 				</div>
+				<div _="on click toggle .hidden on .quick-fine" class={ bigPri }>
+						Toggle Quick Fines
+					</div>
 			</div>
-			<div class="grid grid-cols-1 gap-2">
-				@fineAdd(fmt.Sprintf("%s/%s", finemasterBaseUrl, pass), qp.FinesOpen, players, pFines, true)
-				@playersAdd(fmt.Sprintf("%s/%s", finemasterBaseUrl, pass), qp.PlayerOpen)
-				@presetFines(fmt.Sprintf("%s/%s", finemasterBaseUrl, pass), qp.PresetFinesOpen, pFines)
-			</div>
+
 			<div hx-get="/fines" hx-trigger="load once" hx-swap="OuterHTML" class="w-full text-center">loading latest..</div>
+			@presetFines(fmt.Sprintf("%s/%s", finemasterBaseUrl, pass), qp.PresetFinesOpen, pFines)
 			<script src="https://unpkg.com/htmx.org"></script>
 		</body>
 	</html>
@@ -74,14 +79,33 @@ templ finemaster(pass string, players []PlayerWithFines, pFines []PresetFine, qp
 templ presetFines(baseUrl string, isOpen bool, presetFines []PresetFine) {
 	if isOpen {
 		<div class="px-8 py-6 text-left bg-white shadow-xl m-10" id="preset-fine">
-			<h3 class="text-2xl font-bold text-center">Add/Approve/Remove Preset Fines</h3>
-			<p>Preset Fines will be show at the top of the home page</p>
+			<h3 class="text-2xl font-bold text-center">Add or Approve Fines</h3>
+			<div class="w-full flex justify-center items-center py-2">
+				<p>Approve fines submitted, or add new fines</p>
+			</div>
 			<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+				<div class="text-2xl">
+						<h1 class="font-bold text-center">Approve/Existing Preset Fines</h1>
+						for _, fine := range presetFines {
+							<div class="mt-2 text-center">
+								<div>
+									if !fine.Approved {
+										<button hx-post={ fmt.Sprintf("/preset-fines/approve?pfid=%d", fine.ID) }>☐ ✨</button>
+									}
+									{ fine.Reason }
+									- 
+									{ fmt.Sprintf("$%.0f", fine.Amount) }
+									<button hx-delete={ fmt.Sprintf("/preset-fines?pfid=%d", fine.ID) }>🗑</button>
+								</div>
+							</div>
+						}
+					</div>
 				<div>
 					<form hx-post="/preset-fines" class="mt-4">
 						<div>
-							<label for="reason" class="block">Reason</label>
+							<label for="reason" class="block">
 							<input required type="text" name="reason" id="reason" placeholder="Reason for the fine" class="w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600"/>
+							</label>
 						</div>
 						<div class="mt-4">
 							<label for="amount" class="block">Amount ($)</label>
@@ -98,27 +122,12 @@ templ presetFines(baseUrl string, isOpen bool, presetFines []PresetFine) {
 						<a href={ makeSafeUrl(baseUrl, false, false, false) } class={ bigSec }>Close</a>
 					</div>
 				</div>
-				<div class="text-2xl">
-					<h1 class="font-bold text-center">Approve/Existing Preset Fines</h1>
-					for _, fine := range presetFines {
-						<div class="mt-2 text-center">
-							<div>
-								if !fine.Approved {
-									<button hx-post={ fmt.Sprintf("/preset-fines/approve?pfid=%d", fine.ID) }>☐ ✨</button>
-								}
-								{ fine.Reason }
-								- 
-								{ fmt.Sprintf("$%.0f", fine.Amount) }
-								<button hx-delete={ fmt.Sprintf("/preset-fines?pfid=%d", fine.ID) }>🗑</button>
-							</div>
-						</div>
-					}
-				</div>
+				
 			</div>
 		</div>
 	} else {
 		<div class="flex justify-center w-full">
-			<a href={ makeSafeUrlWithAnchor(baseUrl, false, false, true, "preset-fine") } class={ bigPri }>Add/Approve/Remove Preset Fines</a>
+			<a href={ makeSafeUrlWithAnchor(baseUrl, false, false, true, "preset-fine") } class={ bigPri }>Add Fines</a>
 		</div>
 	}
 }
@@ -134,7 +143,7 @@ templ playersAdd(baseUrl string, isOpen bool) {
 						<input required type="text" name="name" id="name" placeholder="Name" class="w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600"/>
 					</div>
 					<div class="flex items-center w-full">
-						<button type="submit" class={ bigPri }>Add Player</button>
+						<button type="submit" class={ bigAdd }>Add Player</button>
 					</div>
 					<div class="flex justify-center w-full">
 						<a href={ makeSafeUrl(baseUrl, false, false, false) } hx-transition="true" class={ bigSec }>Close</a>
