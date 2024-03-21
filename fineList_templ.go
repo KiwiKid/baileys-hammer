@@ -31,7 +31,7 @@ func fineList(fines []FineWithPlayer, page int, isFineMaster bool) templ.Compone
 		if err != nil {
 			return err
 		}
-		var_2 := `Fines`
+		var_2 := `Fine List`
 		_, err = templBuffer.WriteString(var_2)
 		if err != nil {
 			return err

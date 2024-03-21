@@ -127,18 +127,22 @@ func fineHandler(db *gorm.DB) http.HandlerFunc {
 			w.WriteHeader(http.StatusOK)
 
 			
-			var fineWithPlayers = []FineWithPlayer{}
+			var fineWithPlayers []FineWithPlayer
+
 			for _, fine := range fines {
+				var matchedPlayer Player
 				for _, player := range players {
-					if(fine.PlayerID == player.ID){
-						fineWithPlayers = append(fineWithPlayers, FineWithPlayer{ 
-							Fine: fine,
-							Player: player,
-						})
-						continue;
+					if fine.PlayerID == player.ID {
+						matchedPlayer = player 
+						break
 					}
 				}
+				fineWithPlayers = append(fineWithPlayers, FineWithPlayer{
+					Fine:   fine,
+					Player: matchedPlayer,
+				})
 			}
+			
 
 			fineList := fineList(fineWithPlayers, pageId, finemasterPage)
 			fineList.Render(r.Context(), w)
@@ -186,13 +190,23 @@ func fineHandler(db *gorm.DB) http.HandlerFunc {
 
 					reason := r.FormValue("reason")
 
-					if r.FormValue("should_be_a_rule") == "on" {
+
+					log.Printf("%+v %+v", r.FormValue("fineOption"), r.FormValue("fineOption") == "applyAgain")
+
+					if r.FormValue("fineOption") == "applyAgain" {
 						var suggestedPFine = &PresetFine{
 							Reason: reason,
 							Approved: false,
 							Amount: amount,
 						}
-						SavePresetFine(db, suggestedPFine)
+						err := SavePresetFine(db, suggestedPFine)
+						if err != nil {
+							// Handle the error if the conversion fails
+							http.Error(w, "SavePresetFine failed", http.StatusBadRequest)
+							return
+						}else{
+							log.Println("Saved preset fine")
+						}
 					}
 
 					fine = Fine{

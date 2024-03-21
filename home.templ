@@ -102,8 +102,7 @@ templ home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines
 				if len(pendingPFines) > 0 {
 					<div class="w-full flex justify-center items-center">
 						<div _="on click toggle .hidden on next &lt;section/&gt;" class="flex justify-center items-center cursor-pointer">
-							<h3 class="text-lg font-bold text-center">Pending Fines { fmt.Sprintf("(%d)", len(pendingPFines)) }</h3>
-							@downArrow()
+							<h3 class={ bigPri }>Pending Fines { fmt.Sprintf("(%d)", len(pendingPFines)) }</h3>
 						</div>
 					</div>
 					<section class="bg-sepia-200 shadow-xl m-10 rounded-lg hidden">
@@ -117,6 +116,7 @@ templ home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines
 						</ul>
 					</section>
 				}
+				@fineAdd(baseUrl, qp.FinesOpen, players, approvedPFines, false)
 				<div class="flex  bg-gray-100 mx-auto shadow-xl m-10">
 					<div class="w-full mt-10">
 						<h3 class="text-2xl font-bold text-center">Leaderboard</h3>
@@ -125,12 +125,11 @@ templ home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines
 								<li class="m-4">
 									<div
  										_="on click toggle .hidden on next &lt;section/&gt;"
- 										class="cursor-pointer p-2 bg-gray-200 rounded hover:bg-gray-300 flex justify-between items-center transform hover:-translate-y-1 hover:scale-y-120"
+ 										class={ bigPri }
 									>
 										{ p.Name }
 										- 
 										{ fmt.Sprintf("$%d (%d)", p.TotalFines,  p.TotalFineCount) }
-										@downArrow()
 									</div>
 									<section class="fines-info hidden">
 										<div class="p-2">
@@ -149,7 +148,6 @@ templ home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines
 					</div>
 				</div>
 			</div>
-			@fineAdd(baseUrl, qp.FinesOpen, players, approvedPFines, false)
 			<div hx-get="/fines" hx-trigger="load once" hx-swap="OuterHTML" class="w-full text-center">loading latest..</div>
 			<script src="https://unpkg.com/htmx.org"></script>
 		</body>
@@ -171,23 +169,23 @@ templ fineAdd(baseUrl string, isOpen bool, players []PlayerWithFines, presetFine
 					<div class="mt-4">
 						<div class="border-t pt-4">
 							<label class="text-lg font-semibold">
-							<div class="mt-2">
-								<select
- 									id="presetFineId"
- 									name="presetFineId"
- 									class=" bg-white  w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-								>
-									<option selected value="">-- Select Fine --</option>
-									for _, fp := range presetFines {
-										if fp.Approved {
-											<option value={ fmt.Sprintf("%v", fp.ID) }>
-												{ fmt.Sprintf("%s ($%v)", fp.Reason, fp.Amount) }
-											</option>
+								<div class="mt-2">
+									<select
+ 										id="presetFineId"
+ 										name="presetFineId"
+ 										class=" bg-white  w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+									>
+										<option selected value="">-- Select Fine --</option>
+										for _, fp := range presetFines {
+											if fp.Approved {
+												<option value={ fmt.Sprintf("%v", fp.ID) }>
+													{ fmt.Sprintf("%s ($%v)", fp.Reason, fp.Amount) }
+												</option>
+											}
 										}
-									}
-									<option value="-1">-- Create New --</option>
-								</select>
-							</div>
+										<option value="-1">-- Create New --</option>
+									</select>
+								</div>
 							</label>
 							<section class="hidden" id="newFine">
 								<div class="border-t pt-4">
@@ -205,18 +203,17 @@ templ fineAdd(baseUrl string, isOpen bool, players []PlayerWithFines, presetFine
 											<input type="hidden" name="approved" value="on"/>
 										</label>
 									}
-								<div class="grid grid-cols-2 gap-4">
-								<div class="flex items-center justify-center p-4 border border-gray-200 rounded-lg">
-									<input type="radio" id="oneOffFine" name="fineOption" value="oneOffFine" class="form-radio text-blue-600 transform scale-150" />
-									<label for="oneOffFine" class="ml-2 text-gray-800">One Off Fine</label>
+									<div class="grid grid-cols-2 gap-4">
+										<div class="flex items-center justify-center p-4 border border-gray-200 rounded-lg">
+											<input type="radio" id="oneOffFine" name="fineOption" value="oneOffFine" class="form-radio text-blue-600 transform scale-15"/>
+											<label for="oneOffFine" class="ml-2 text-gray-800">One Off Fine</label>
+										</div>
+										<div class="flex items-center justify-center p-4 border border-gray-200 rounded-lg">
+											<input type="radio" id="applyAgain" name="fineOption" value="applyAgain" class="form-radio text-blue-600 transform scale-15"/>
+											<label for="applyAgain" class="ml-2 text-gray-800">Could Apply Again</label>
+										</div>
+									</div>
 								</div>
-								<div class="flex items-center justify-center p-4 border border-gray-200 rounded-lg">
-									<input type="radio" id="applyAgain" name="fineOption" value="applyAgain" class="form-radio text-blue-600 transform scale-150" />
-									<label for="applyAgain" class="ml-2 text-gray-800">Could Apply Again</label>
-								</div>
-								</div>
-								</div>
-
 							</section>
 							<div class="mt-4">
 								<label class="text-lg font-semibold">Who does this fine apply to? (optional):</label>
