@@ -38,6 +38,8 @@ func DBInit() (*gorm.DB, error) {
     db, err := gorm.Open(sqlite.Open(dbUrl), &gorm.Config{})
     if err != nil {
         return nil, err
+    }else{
+        log.Printf("Connected to db at \"%s\"", dbUrl)
     }
 
     // Migrate the schema
@@ -46,8 +48,9 @@ func DBInit() (*gorm.DB, error) {
         return nil, err
     }
 
-    if(!db.Migrator().HasColumn(&Player{}, "active")){
-        db.Migrator().AddColumn(&Player{}, "active")
+    //db.Migrator().DropTable(&Match{})
+    if(!db.Migrator().HasColumn(&Match{}, "seasonId")){
+        db.Migrator().AddColumn(&Match{}, "seasonId")
     }
 
     return db, nil
@@ -72,7 +75,7 @@ func FetchPlayersWithFines(db *gorm.DB) ([]PlayerWithFines, error) {
     var players []Player
     db.Preload("Fines", func(db *gorm.DB) *gorm.DB {
         return db.Order("fines.created_at DESC")
-    }).Find(&players)
+    }).Find(&players).Where("active = true")
 
     // Construct the PlayerWithFines slice
     for _, player := range players {
@@ -278,7 +281,8 @@ type Match struct {
     StartTime  *time.Time `json:"timestamp" gorm:"type:datetime"`
     Opponent   string
     Subtitle   string
-    Events     []MatchEvent `gorm:"foreignKey:MatchId"` // This line establishes the relationship
+    Events     []MatchEvent `gorm:"foreignKey:MatchId"`
+    SeasonId    uint64
 }
 
 type MatchEvent struct {
@@ -289,6 +293,21 @@ type MatchEvent struct {
     EventTime *time.Time `json:"timestamp" gorm:"type:datetime"`
 }
 
+
+// FetchLatestFines fetches a paginated list of the latest fines.
+func GetMatches(db *gorm.DB, season uint64, page int, pageSize int) ([]Match, error) {
+    var matches []Match
+    offset := (page - 1) * pageSize
+
+    result := db.Order("created_at DESC").Where("season_id = ?", season).Offset(offset).Limit(pageSize).Find(&matches)
+    if result.Error != nil {
+        return nil, result.Error
+    }
+
+    return matches, nil
+}
+
+
 func GetMatch(db *gorm.DB, id uint64) (*Match, error){ 
     var match Match
     if err := db.Where("id = ?", id).First(&match).Error; err != nil {
@@ -298,7 +317,7 @@ func GetMatch(db *gorm.DB, id uint64) (*Match, error){
 }
 
 
-func GetMatchWithEvents(db *gorm.DB, id uint64) (*Match, error) {
+func GetMatchWithEvents(db *gorm.DB, id uint) (*Match, error) {
     var match Match
     if err := db.Preload("Events").Where("id = ?", id).First(&match).Error; err != nil {
         return nil, err

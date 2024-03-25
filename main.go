@@ -34,8 +34,8 @@ func playerHandler(db *gorm.DB) http.HandlerFunc {
 				}
 
 				
-				fineList := playerName(*player)
-				fineList.Render(r.Context(), w)
+				playerList := playerName(*player)
+				playerList.Render(r.Context(), w)
 
 			case "POST": {
 				if err := r.ParseForm(); err != nil {
@@ -67,6 +67,34 @@ func playerHandler(db *gorm.DB) http.HandlerFunc {
 				return
 	
 			}
+		case "DELETE": {
+			if err := r.ParseForm(); err != nil {
+				log.Printf("Error parsing form data: %v", err)
+				http.Error(w, "Bad Request savePlayerHandler ParseForm", http.StatusBadRequest)
+				return
+			}
+
+			var player Player
+			if err := decoder.Decode(&player, r.PostForm); err != nil {
+				log.Printf("Error decoding form into player struct: %v", err)
+				http.Error(w, "Bad Request savePlayerHandler Decode", http.StatusBadRequest)
+				return
+			}
+
+			// Now, `player` is populated with values from the form
+			// Save the player using your existing logic
+			if err := SavePlayer(db, &player); err != nil {
+				log.Printf("Error saving player: %v", err)
+				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+				return
+			}
+
+			w.Header().Set("HX-Redirect", r.Header.Get("Referrer"))
+
+			// Optionally, you can set the status code to 200 OK or any appropriate status
+			w.WriteHeader(http.StatusOK)
+			return
+		}
 		}
 
 	}
@@ -524,9 +552,9 @@ func main() {
 		home.Render(r.Context(), w)
 	})
 
+	r.HandleFunc("/match-list", matchListHandler(db))
 	r.HandleFunc("/match", matchHandler(db))
 	r.HandleFunc("/match/{id}", matchHandler(db))
-	// r.HandleFunc("/match/{id}", (db))
 
 	if err := http.ListenAndServe(":8080", r); err != nil {
 		log.Printf("Server error: %v", err)

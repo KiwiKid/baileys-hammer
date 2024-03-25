@@ -10,7 +10,8 @@ import (
 )
 
 type MatchPageData struct {
-	Match Match 
+	Match Match
+	isOpen bool
 }
 
 type NewMatchForm struct {
@@ -20,37 +21,91 @@ type NewMatchForm struct {
     Subtitle  string
 }
 
-func matchHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
+const seasonId = 2024
+
+func matchListHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
+
 		switch r.Method {
-		case "GET":
-			matchIdStr := r.URL.Query().Get("match_id")
-			if matchIdStr == "" {
-				matchComp := createMatch()
-				matchComp.Render(r.Context(), w)
-				return
-			}
+			case "GET":
+				var season uint64
+				seasonStr := r.URL.Query().Get("season")
+				if len(seasonStr) == 0 {
+					season = 0
+				}else {
+					seasonUint, err := strconv.ParseInt(seasonStr, 10, 64)
+					if err != nil {
+						http.Error(w, fmt.Sprintf("Error parsing page %v", err), http.StatusBadRequest)
+						return 
+					}
+					season = uint64(seasonUint)
+				}
 
-			matchId, err := strconv.ParseUint(matchIdStr, 10, 64)
-			if err != nil {
-				http.Error(w, fmt.Sprintf("Error parsing match ID: %v", err), http.StatusBadRequest)
-				return
-			}
+				var page = 0
+				pageStr := r.URL.Query().Get("page")
+				if len(pageStr) == 0 {
+					page = 0
+				}else {
+					pageIdUint, err := strconv.ParseInt(pageStr, 10, 64)
+					if err != nil {
+						http.Error(w, fmt.Sprintf("Error parsing page %v", err), http.StatusBadRequest)
+						return 
+					}
+					page = int(pageIdUint)
+				}
+	
+				limitStr := r.URL.Query().Get("limit")
+				var limit = 50
+				if len(limitStr) == 0{
+					limit = 50
+				}else {
+					limit, err := strconv.ParseInt(limitStr, 10, 64)
+					if err != nil || limit == 0 {
+						http.Error(w, fmt.Sprintf("Error parsing limitStr %v", err), http.StatusBadRequest)
+						return 
+					}
+				}
 
-			match, err := GetMatchWithEvents(db, matchId)
+
+			match, err := GetMatches(db, season, page, limit)
 			if err != nil {
 				http.Error(w, fmt.Sprintf("Error retrieving match: %v", err), http.StatusInternalServerError)
 				return
 			}
 
-			// Prepare the data for the template
-			matchData := MatchPageData{
-				Match:  *match,
+			matchComp := matchListPage(match)
+			matchComp.Render(r.Context(), w)
+		
+			default:
+				http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		}
+	}
+}
+
+func matchHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
+	var matchId uint
+	var isOpen bool = false
+	var err error
+	return func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case "GET":
+			isOpen = r.URL.Query().Get("isOpen") == "true"
+
+			matchIdStr := r.URL.Query().Get("match_id")
+			if matchIdStr == "" {
+				matchComp := createMatch(isOpen)
+				matchComp.Render(r.Context(), w)
+				return
+			}
+			fmt.Printf("matchHandler %s", matchIdStr)
+			var matchId64 uint64
+			matchId64, err = strconv.ParseUint(matchIdStr, 10, 64)
+			if err != nil {
+				http.Error(w, fmt.Sprintf("Error parsing match ID: %v", err), http.StatusBadRequest)
+				return
 			}
 
-			matchComp := matchPage(matchData)
-			matchComp.Render(r.Context(), w)
-
+			matchId = uint(matchId64)
 		case "POST":
 			// Simplified example: Assume the response after a POST is a success message or error
 			if err := r.ParseForm(); err != nil {
@@ -78,19 +133,34 @@ func matchHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 				StartTime: &startTime,
 				Opponent:  form.Opponent,
 				Subtitle:  form.Subtitle,
+				SeasonId:  seasonId,
 			}
 
-			id, err := SaveMatch(db, &match)
+			matchId, err = SaveMatch(db, &match)
 			if err != nil {
 				http.Error(w, "Invalid start time format", http.StatusBadRequest)
 				return
 			}
 
-			w.Header().Set("HX-Redirect", fmt.Sprintf("/match/%d", id))
 
 		default:
 			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 		}
+
+		match, err := GetMatchWithEvents(db, matchId)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Error retrieving match: %v", err), http.StatusInternalServerError)
+			return
+		}
+
+		// Prepare the data for the template
+		matchData := MatchPageData{
+			Match:  *match,
+			isOpen: isOpen,
+		}
+
+		matchComp := matchPage(matchData)
+		matchComp.Render(r.Context(), w)
 	}
 }
 
