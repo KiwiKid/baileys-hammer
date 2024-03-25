@@ -48,7 +48,7 @@ func finemaster(pass string, players []PlayerWithFines, pFines []PresetFine, qp 
 		if err != nil {
 			return err
 		}
-		var_2 := `Fine Master Zone`
+		var_2 := `Fine Master Zone (todo: used deleted flag on player)`
 		_, err = templBuffer.WriteString(var_2)
 		if err != nil {
 			return err
@@ -257,7 +257,7 @@ func finemaster(pass string, players []PlayerWithFines, pFines []PresetFine, qp 
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("</div></div><div hx-get=\"/fines\" hx-trigger=\"load once\" hx-swap=\"OuterHTML\" class=\"w-full text-center\">")
+		_, err = templBuffer.WriteString("</div></div><div id=\"fine-list-container\" hx-get=\"/fines\" hx-trigger=\"load once\" hx-swap=\"OuterHTML\" class=\"w-full text-center\">")
 		if err != nil {
 			return err
 		}

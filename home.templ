@@ -148,7 +148,7 @@ templ home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines
 					</div>
 				</div>
 			</div>
-			<div hx-get="/fines" hx-trigger="load once" hx-swap="OuterHTML" class="w-full text-center">loading latest..</div>
+			<div id="fine-list-container" x-get="/fines" hx-trigger="load once" hx-swap="OuterHTML" class="w-full text-center">loading latest..</div>
 			<script src="https://unpkg.com/htmx.org"></script>
 		</body>
 	</html>

@@ -1,0 +1,88 @@
+package main
+
+import "fmt"
+
+templ matchPage(data MatchPageData) {
+	<html hx-boost="true">
+		@header()
+		<body class="text-2xl">
+			@pageHeader()
+			<div class="container mx-auto bg-gray-200 shadow-xl m-10">
+				<h1 class=" font-bold mb-4  text-center">🔨 Baileys Hammer 🔨</h1>
+				<div id="live-match" class="max-w-4xl mx-auto my-8 p-4 border border-gray-200 rounded-lg shadow">
+					<h2 class="text-lg font-semibold mb-4">Live Match</h2>
+					<div class="mb-4">
+						<div id="match-details" class="mb-4"></div>
+						<h3 class="text-md font-semibold mb-2">Events</h3>
+						if data.Match.ID > 0 {
+							<ul id="events-list" class="list-disc list-inside" hx-get={ fmt.Sprintf("/match/%d/events", data.Match.ID) } hx-trigger="load once"></ul>
+						}
+					</div>
+				</div>
+				<script src="https://unpkg.com/htmx.org"></script>
+			</div>
+		</body>
+	</html>
+}
+
+templ createMatch() {
+	<html hx-boost="true">
+		@header()
+		<body class="text-2xl">
+			@pageHeader()
+			<div class="container mx-auto bg-gray-200 shadow-xl m-10">
+				<form action="/match" method="POST" class="max-w-xl mx-auto my-8 p-4 border border-gray-200 rounded-lg shadow">
+					<h2 class="text-lg font-semibold mb-4">Create New Match</h2>
+					<div class="mb-4">
+						<label for="location" class="block text-sm font-medium text-gray-700">Location</label>
+						<input type="text" name="location" id="location" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"/>
+					</div>
+					<div class="mb-4">
+						<label for="start-time" class="block text-sm font-medium text-gray-700">Start Time</label>
+						<input type="datetime-local" name="startTime" id="start-time" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"/>
+					</div>
+					<div class="mb-4">
+						<label for="opponent" class="block text-sm font-medium text-gray-700">Opponent</label>
+						<input type="text" name="opponent" id="opponent" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"/>
+					</div>
+					<div class="mb-4">
+						<label for="subtitle" class="block text-sm font-medium text-gray-700">Subtitle (optional)</label>
+						<input type="text" name="subtitle" id="subtitle" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"/>
+					</div>
+					<button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+						Create Match
+					</button>
+				</form>
+				<script src="https://unpkg.com/htmx.org"></script>
+			</div>
+		</body>
+	</html>
+}
+
+templ createNewEvent(matchId uint64) {
+	<form action={ fmt.Sprintf("/match/%d/event", matchId) } method="POST" class="max-w-xl mx-auto my-8 p-4 border border-gray-200 rounded-lg shadow">
+		<h2 class="text-lg font-semibold mb-4">Create New Event</h2>
+		<div class="mb-4">
+			<label for="event-name" class="block text-sm font-medium text-gray-700">Event Name</label>
+			<input type="text" name="eventName" id="event-name" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"/>
+		</div>
+		<div class="mb-4">
+			<label for="event-type" class="block text-sm font-medium text-gray-700">Event Type</label>
+			<select name="eventType" id="event-type" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+				<option value="subbed-off">Subbed Off</option>
+				<option value="subbed-on">Subbed On</option>
+				<option value="goal">Goal</option>
+				<option value="assist">Assist</option>
+				<option value="own-goal">Own Goal</option>
+			</select>
+		</div>
+		<div class="mb-4">
+			<label for="event-time-offset" class="block text-sm font-medium text-gray-700">Event Time Offset</label>
+			<select name="eventTimeOffset" id="event-time-offset" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"></select>
+		</div>
+		<button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+			Create Event
+		</button>
+	</form>
+}
+

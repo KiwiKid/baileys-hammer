@@ -13,7 +13,7 @@ templ finemaster(pass string, players []PlayerWithFines, pFines []PresetFine, qp
 			@pageHeader()
 			<div class="bg-gray-900 text-center p-5">
 				<h1 class="text-xl md:text-3xl lg:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-teal-400">
-					Fine Master Zone
+					Fine Master Zone (todo: used deleted flag on player)
 				</h1>
 			</div>
 			<div class="grid grid-cols-1 gap-2">
@@ -68,7 +68,7 @@ templ finemaster(pass string, players []PlayerWithFines, pFines []PresetFine, qp
 					</div>
 			</div>
 
-			<div hx-get="/fines" hx-trigger="load once" hx-swap="OuterHTML" class="w-full text-center">loading latest..</div>
+			<div id="fine-list-container" hx-get="/fines" hx-trigger="load once" hx-swap="OuterHTML" class="w-full text-center">loading latest..</div>
 			@presetFines(fmt.Sprintf("%s/%s", finemasterBaseUrl, pass), qp.PresetFinesOpen, pFines)
 			<script src="https://unpkg.com/htmx.org"></script>
 		</body>

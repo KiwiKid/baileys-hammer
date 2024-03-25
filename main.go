@@ -126,7 +126,6 @@ func fineHandler(db *gorm.DB) http.HandlerFunc {
 			}
 			w.WriteHeader(http.StatusOK)
 
-			
 			var fineWithPlayers []FineWithPlayer
 
 			for _, fine := range fines {
@@ -524,6 +523,10 @@ func main() {
 		home := home(playersWithFines, approvedPFines, pendingPFines, *queryParams)
 		home.Render(r.Context(), w)
 	})
+
+	r.HandleFunc("/match", matchHandler(db))
+	r.HandleFunc("/match/{id}", matchHandler(db))
+	// r.HandleFunc("/match/{id}", (db))
 
 	if err := http.ListenAndServe(":8080", r); err != nil {
 		log.Printf("Server error: %v", err)

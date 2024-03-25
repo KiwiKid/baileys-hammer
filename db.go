@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 	"sort"
+	"time"
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -14,6 +15,7 @@ type Player struct {
     gorm.Model
     Name   string `gorm:"unique" form:"name"`
     Fines  []Fine
+    Active bool
 }
 
 // Fine represents a fine assigned to a player
@@ -24,6 +26,7 @@ type Fine struct {
     Amount   float64
     Approved bool
 }
+
 
 // DBInit initializes the database and creates the tables
 func DBInit() (*gorm.DB, error) {
@@ -38,9 +41,13 @@ func DBInit() (*gorm.DB, error) {
     }
 
     // Migrate the schema
-    err = db.AutoMigrate(&Player{}, &Fine{}, &PresetFine{})
+    err = db.AutoMigrate(&Player{}, &Fine{}, &PresetFine{}, &Match{}, &MatchEvent{})
     if err != nil {
         return nil, err
+    }
+
+    if(!db.Migrator().HasColumn(&Player{}, "active")){
+        db.Migrator().AddColumn(&Player{}, "active")
     }
 
     return db, nil
@@ -156,9 +163,7 @@ func FetchPlayers(db *gorm.DB, page int, pageSize int) ([]Player, error) {
 }
 
 
-// SaveFine adds a new fine or updates an existing fine in the database
 func SaveFine(db *gorm.DB, fine *Fine) error {
-    // Create or update fine
     if err := db.Save(fine).Error; err != nil {
         return err
     }
@@ -262,3 +267,71 @@ func GetPresetFine(db *gorm.DB, id uint64) (*PresetFine, error) {
     }
     return &presetFines, nil
 }
+
+
+
+
+
+type Match struct {
+    gorm.Model
+    Location   string
+    StartTime  *time.Time `json:"timestamp" gorm:"type:datetime"`
+    Opponent   string
+    Subtitle   string
+    Events     []MatchEvent `gorm:"foreignKey:MatchId"` // This line establishes the relationship
+}
+
+type MatchEvent struct {
+    gorm.Model
+    MatchId  uint64
+    EventName string
+    EventType string // 'subbed-off' / 'subbed-on' / 'goal' / 'assist' / 'own-goal'
+    EventTime *time.Time `json:"timestamp" gorm:"type:datetime"`
+}
+
+func GetMatch(db *gorm.DB, id uint64) (*Match, error){ 
+    var match Match
+    if err := db.Where("id = ?", id).First(&match).Error; err != nil {
+        return nil, err
+    }
+    return &match, nil
+}
+
+
+func GetMatchWithEvents(db *gorm.DB, id uint64) (*Match, error) {
+    var match Match
+    if err := db.Preload("Events").Where("id = ?", id).First(&match).Error; err != nil {
+        return nil, err
+    }
+    return &match, nil 
+}
+
+func SaveMatch(db *gorm.DB, match *Match) (uint, error) {
+    if err := db.Save(match).Error; err != nil {
+        return 0, err // Return 0 as the ID in case of error
+    }
+    return match.ID, nil // Return the new ID which should now be populated
+}
+
+func GetMatchEvents(db *gorm.DB, id uint64) ([]MatchEvent, error) {
+    var events []MatchEvent
+    if err := db.Where("match_id = ?", id).Find(&events).Error; err != nil {
+        return nil, err
+    }
+    return events, nil
+}
+
+func SaveMatchEvent(db *gorm.DB, fine *MatchEvent) error {
+    if err := db.Save(fine).Error; err != nil {
+        return err
+    }
+    return nil
+}
+
+func DeleteMatchEvent(db *gorm.DB, fine *Match) error {
+    if err := db.Delete(fine).Error; err != nil {
+        return err
+    }
+    return nil
+}
+
