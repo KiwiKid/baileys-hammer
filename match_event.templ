@@ -1,0 +1,117 @@
+package main
+
+import "fmt"
+
+templ addMatchEvent(meta MatchMeta, matchId uint64, isOpen bool) {
+	<!-- Add Match Event Form -->
+	<form method="POST" hx-post={ fmt.Sprintf("/match/%d/event", matchId) } class="space-y-4">
+		<div class="text-lg font-semibold">Add Match Event</div>
+		<div>
+			<label for="eventName" class="block text-sm font-medium text-gray-700">Event Name</label>
+			<input
+ 				type="text"
+ 				name="eventName"
+ 				id="eventName"
+ 				required
+ 				class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+			/>
+		</div>
+		<div>
+			<label for="eventType" class="block text-sm font-medium text-gray-700">Event Type</label>
+			<select
+ 				id="eventType"
+ 				name="eventType"
+ 				required
+ 				class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+			>
+				for _, eventType := range meta.EventTypes {
+					<option value={ eventType }>{ eventType }</option>
+				}
+			</select>
+		</div>
+		<div>
+			<label for="eventTime" class="block text-sm font-medium text-gray-700">Event Time</label>
+			<select
+ 				id="eventTime"
+ 				name="eventTime"
+ 				required
+ 				class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+			>
+				<option value="NOW">Now</option>
+				for _, v := range meta.TimeOpts {
+					<option value={ v.Value }>{ v.Name }</option>
+				}
+			</select>
+		</div>
+		<div>
+			<button type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+				Add Event
+			</button>
+		</div>
+	</form>
+}
+
+templ editMatchEvent(meta MatchMeta, event MatchEvent, isOpen bool, matchId uint64) {
+	<!-- Edit Match Event Form -->
+	<form method="POST" hx-post={ fmt.Sprintf("/match/%d/event/%d", matchId, event.ID) } class="space-y-4">
+		<div class="text-lg font-semibold">Edit Match Event</div>
+		<input type="hidden" name="matchId" value={ S(matchId) }/>
+		<div>
+			<label for="eventName" class="block text-sm font-medium text-gray-700">Event Name</label>
+			<input
+ 				type="text"
+ 				name="eventName"
+ 				id="eventName"
+ 				value="{.eventName}"
+ 				required
+ 				class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+			/>
+		</div>
+		<!--<div>
+			<label for="eventType" class="block text-sm font-medium text-gray-700">Event Type</label>
+			<select
+ 				id="eventType"
+ 				name="eventType"
+ 				required
+ 				class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+			>
+				for _, eventType := range eventTypes {
+					<option
+ 						value={eventType}
+ 						if eventType == event. {
+							selected
+						}
+					>
+						{ eventType }
+					</option>
+				}
+			</select>
+		</div>-->
+		<!--<div>
+			<label for="eventTime" class="block text-sm font-medium text-gray-700">Event Time</label>
+			<select
+ 				id="eventTime"
+ 				name="eventTime"
+ 				required
+ 				class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+			>
+				 Option for keeping the current time or changing it
+				<option value={eventTime}>Current Time</option>
+				for _, v := range timeOptions {
+					<option
+ 						value={v.Value}
+ 						if v.Value == event.EventTimeOffset {
+							selected
+						}
+					>{ v.Name }</option>
+				}
+			</select> 
+		</div>-->
+		<div>
+			<button type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+				Save Changes
+			</button>
+		</div>
+	</form>
+}
+

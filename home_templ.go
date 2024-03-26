@@ -79,6 +79,9 @@ var bigSec = fmt.Sprintf("%s %s", bigBtnTxt, sec)
 var bigAdd = fmt.Sprintf("%s %s", bigBtnTxt, add)
 var bigDel = fmt.Sprintf("%s %s", bigBtnTxt, del)
 
+var S = fmt.Sprint
+var F = fmt.Sprintf
+
 func header() templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		templBuffer, templIsBuffer := w.(*bytes.Buffer)
@@ -134,7 +137,7 @@ func pageFooter() templ.Component {
 			var_5 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, err = templBuffer.WriteString("<div class=\"bg-yellow-400 border-l-4 border-yellow-800 text-yellow-800 p-2 mt-10\" role=\"alert\"><p class=\"font-bold\"><details><summary class=\"text-center\">")
+		_, err = templBuffer.WriteString("<div class=\"bg-yellow-400 border-l-4 border-yellow-800 text-yellow-800 p-2 mt-10 hidden\" role=\"alert\"><p class=\"font-bold\"><details><summary class=\"text-center\">")
 		if err != nil {
 			return err
 		}

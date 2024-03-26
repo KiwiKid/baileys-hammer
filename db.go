@@ -340,6 +340,15 @@ func GetMatchEvents(db *gorm.DB, id uint64) ([]MatchEvent, error) {
     return events, nil
 }
 
+
+func GetMatchEvent(db *gorm.DB, id uint64) (*MatchEvent, error) {
+    var event MatchEvent
+    if err := db.Where("id = ?", id).First(&event).Error; err != nil {
+        return nil, err
+    }
+    return &event, nil
+}
+
 func SaveMatchEvent(db *gorm.DB, fine *MatchEvent) error {
     if err := db.Save(fine).Error; err != nil {
         return err

@@ -553,8 +553,10 @@ func main() {
 	})
 
 	r.HandleFunc("/match-list", matchListHandler(db))
+	r.HandleFunc("/match/{matchId}", matchHandler(db))
 	r.HandleFunc("/match", matchHandler(db))
-	r.HandleFunc("/match/{id}", matchHandler(db))
+
+	r.HandleFunc("/match/{matchId}/event", matchEventHandler(db))
 
 	if err := http.ListenAndServe(":8080", r); err != nil {
 		log.Printf("Server error: %v", err)

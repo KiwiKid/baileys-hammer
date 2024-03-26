@@ -2,10 +2,12 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
 
+	"github.com/go-chi/chi"
 	"gorm.io/gorm"
 )
 
@@ -21,13 +23,19 @@ type NewMatchForm struct {
     Subtitle  string
 }
 
+
 const seasonId = 2024
 
 func matchListHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
+	fmt.Printf("matchListHandler")
+
 	return func(w http.ResponseWriter, r *http.Request) {
+		var isOpen bool = false
 
 		switch r.Method {
 			case "GET":
+				isOpen = r.URL.Query().Get("isOpen") == "true"
+
 				var season uint64
 				seasonStr := r.URL.Query().Get("season")
 				if len(seasonStr) == 0 {
@@ -66,14 +74,14 @@ func matchListHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) 
 					}
 				}
 
-
+				log.Printf("GetMatches(season%+v, page%+v, limit: %+v)", season, page, limit)
 			match, err := GetMatches(db, season, page, limit)
 			if err != nil {
 				http.Error(w, fmt.Sprintf("Error retrieving match: %v", err), http.StatusInternalServerError)
 				return
 			}
 
-			matchComp := matchListPage(match)
+			matchComp := matchListPage(match, isOpen)
 			matchComp.Render(r.Context(), w)
 		
 			default:
@@ -83,6 +91,7 @@ func matchListHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) 
 }
 
 func matchHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
+	fmt.Printf("matchHandler")
 	var matchId uint
 	var isOpen bool = false
 	var err error
@@ -91,13 +100,14 @@ func matchHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 		case "GET":
 			isOpen = r.URL.Query().Get("isOpen") == "true"
 
-			matchIdStr := r.URL.Query().Get("match_id")
+			matchIdStr := chi.URLParam(r, "matchId")
+			fmt.Printf("matchHandler %s", matchIdStr)
+
 			if matchIdStr == "" {
 				matchComp := createMatch(isOpen)
 				matchComp.Render(r.Context(), w)
 				return
 			}
-			fmt.Printf("matchHandler %s", matchIdStr)
 			var matchId64 uint64
 			matchId64, err = strconv.ParseUint(matchIdStr, 10, 64)
 			if err != nil {
@@ -106,6 +116,21 @@ func matchHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 			}
 
 			matchId = uint(matchId64)
+
+			match, err := GetMatchWithEvents(db, matchId)
+			if err != nil {
+				http.Error(w, fmt.Sprintf("Error retrieving match: %v", err), http.StatusInternalServerError)
+				return
+			}
+	
+			// Prepare the data for the template
+			matchData := MatchPageData{
+				Match:  *match,
+				isOpen: isOpen,
+			}
+	
+			matchComp := matchPage(matchData)
+			matchComp.Render(r.Context(), w)
 		case "POST":
 			// Simplified example: Assume the response after a POST is a success message or error
 			if err := r.ParseForm(); err != nil {
@@ -142,27 +167,16 @@ func matchHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-
+			w.Header().Set("HX-Redirect", fmt.Sprintf("/match/%d", matchId))
+			return
 		default:
 			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 		}
 
-		match, err := GetMatchWithEvents(db, matchId)
-		if err != nil {
-			http.Error(w, fmt.Sprintf("Error retrieving match: %v", err), http.StatusInternalServerError)
-			return
-		}
-
-		// Prepare the data for the template
-		matchData := MatchPageData{
-			Match:  *match,
-			isOpen: isOpen,
-		}
-
-		matchComp := matchPage(matchData)
-		matchComp.Render(r.Context(), w)
 	}
 }
+
+
 
 // Mock function for rendering templates. Replace with your actual implementation.
 func RenderTemplate(w http.ResponseWriter, r *http.Request, data interface{}) {
