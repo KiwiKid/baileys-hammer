@@ -39,12 +39,10 @@ var TIME_OPTS = []TimeOpt{
 type MatchMeta struct {
     TimeOpts []TimeOpt
     EventTypes []string
+    Players []Player
 }
 
-var meta = &MatchMeta{
-    TimeOpts: TIME_OPTS,
-    EventTypes: EVENT_TYPES,
-}
+
 
 func matchEventHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request){
 
@@ -60,6 +58,19 @@ func matchEventHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request)
 			http.Error(w, fmt.Sprintf("Error parsing match ID: %v", err), http.StatusBadRequest)
 			return
 		}
+
+
+        players, err := FetchActivePlayers(db)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Error FetchActivePlayers: %v", err), http.StatusBadRequest)
+			return
+		}
+
+        var meta = &MatchMeta{
+            TimeOpts: TIME_OPTS,
+            EventTypes: EVENT_TYPES,
+            Players: players,
+        }
 
 		switch r.Method {
 		case "GET":

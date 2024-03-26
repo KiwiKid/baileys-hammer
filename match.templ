@@ -55,7 +55,7 @@ templ matchPage(data MatchPageData) {
 							<ul id="events-list" class="list-disc list-inside" hx-get={ fmt.Sprintf("/match/%d/event", data.Match.ID) } hx-trigger="load once"></ul>
 						}
 						<div class="flex items-center justify-between mt-4">
-							<button hx-get={ fmt.Sprintf("/match/%d/event?isAddEventOpen=true", data.Match.ID) } class={ bigSec }>Add Event</button>
+							<button hx-get={ fmt.Sprintf("/match/%d/event?isAddEventOpen=false", data.Match.ID) } class={ bigSec }>Close</button>
 						</div>
 					</div>
 				</div>

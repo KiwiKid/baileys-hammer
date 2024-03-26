@@ -281,7 +281,7 @@ func matchPage(data MatchPageData) templ.Component {
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString(templ.EscapeString(fmt.Sprintf("/match/%d/event?isAddEventOpen=true", data.Match.ID)))
+		_, err = templBuffer.WriteString(templ.EscapeString(fmt.Sprintf("/match/%d/event?isAddEventOpen=false", data.Match.ID)))
 		if err != nil {
 			return err
 		}
@@ -297,7 +297,7 @@ func matchPage(data MatchPageData) templ.Component {
 		if err != nil {
 			return err
 		}
-		var_22 := `Add Event`
+		var_22 := `Close`
 		_, err = templBuffer.WriteString(var_22)
 		if err != nil {
 			return err

@@ -116,6 +116,19 @@ func FetchPlayersWithFines(db *gorm.DB) ([]PlayerWithFines, error) {
     return playersWithFines, nil
 }
 
+func FetchActivePlayers(db *gorm.DB) ([]Player, error) {
+    var players []Player
+
+    // Query all active players
+    result := db.Where("active = ?", true).Find(&players)
+    if result.Error != nil {
+        // Return an empty slice and the error
+        return []Player{}, result.Error
+    }
+
+    // Return the slice of active players and nil error
+    return players, nil
+}
 
 
 
