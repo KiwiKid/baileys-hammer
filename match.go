@@ -27,7 +27,6 @@ type NewMatchForm struct {
 const seasonId = 2024
 
 func matchListHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
-	fmt.Printf("matchListHandler")
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		var isOpen bool = false
@@ -131,6 +130,7 @@ func matchHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 	
 			matchComp := matchPage(matchData)
 			matchComp.Render(r.Context(), w)
+			return
 		case "POST":
 			// Simplified example: Assume the response after a POST is a success message or error
 			if err := r.ParseForm(); err != nil {
@@ -171,8 +171,8 @@ func matchHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 			return
 		default:
 			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+			return
 		}
-
 	}
 }
 

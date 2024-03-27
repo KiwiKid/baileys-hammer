@@ -1,61 +1,117 @@
 package main
 
 import "fmt"
+import "github.com/dustin/go-humanize"
+
+templ listMatchEvents(matchEvents []MatchEvent) {
+	<div class="container mx-auto text-center">
+		<div class="text-3xl p-10">Match Events ({ S(len(matchEvents)) })</div>
+		<table class="min-w-full divide-y divide-gray-200">
+			<thead class="bg-gray-50">
+				<tr>
+					<th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+						EventName
+					</th>
+					<th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+						EventType
+					</th>
+					<th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+						EventTime
+					</th>
+				</tr>
+			</thead>
+			<tbody class="bg-white divide-y divide-gray-200">
+				for _, e := range matchEvents {
+					<tr
+ 						class="bg-yellow-200 divide-y divide-gray-200"
+					>
+						<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{ e.EventName }</td>
+						<td>{ e.EventType }</td>
+						<td>
+							{ humanize.Time(*e.EventTime) }
+						</td>
+					</tr>
+				}
+			</tbody>
+		</table>
+		<!--<div class="py-3">
+			<button hx-get={ fmt.Sprintf("/load-more?page=%d", page +1) } hx-target="this" hx-swap="outerHTML" class="px-4 py-2 bg-blue-500 text-white font-semibold rounded hover:bg-blue-700">
+				Load More
+			</button>
+		</div>-->
+	</div>
+}
 
 templ addMatchEvent(meta MatchMeta, matchId uint64, isOpen bool) {
-	<!-- Add Match Event Form -->
-	<form method="POST" hx-post={ fmt.Sprintf("/match/%d/event", matchId) } class="space-y-4">
-		<div class="text-lg font-semibold">Add Match Event</div>
-		<div>
-			<label for="eventName" class="block text-sm font-medium text-gray-700">Event Name</label>
-			<input
- 				type="text"
- 				name="eventName"
- 				id="eventName"
- 				required
- 				class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-			/>
-		</div>
-		<div>
-			<label for="eventType" class="block text-sm font-medium text-gray-700">Event Type</label>
-			<select
- 				id="eventType"
- 				name="eventType"
- 				required
- 				class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-			>
-				for _, eventType := range meta.EventTypes {
-					<option value={ eventType }>{ eventType }</option>
+	[addMatchEvent: 
+	{ fmt.Sprintf("meta: %+v", meta, isOpen) }
+	]
+	if isOpen {
+		<form method="POST" hx-post={ fmt.Sprintf("/match/%d/event", matchId) } class="space-y-4">
+			<div class="text-lg font-semibold">
+				Add Match Event 
+				if (isOpen) {
+					"open" 
+				} else {
+					"close"
 				}
-			</select>
+			</div>
+			<input type="hidden" name="matchId" value={ S(matchId) }/>
+			<div>
+				<label for="eventName" class="block text-sm font-medium text-gray-700">Event Name</label>
+				<input
+ 					type="text"
+ 					name="eventName"
+ 					id="eventName"
+ 					required
+ 					class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+				/>
+			</div>
+			<div>
+				<label for="eventType" class="block text-sm font-medium text-gray-700">Event Type</label>
+				<select
+ 					id="eventType"
+ 					name="eventType"
+ 					required
+ 					class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+				>
+					for _, eventType := range meta.EventTypes {
+						<option value={ eventType }>{ eventType }</option>
+					}
+				</select>
+			</div>
+			<div>
+				<label for="eventTimeOffset" class="block text-sm font-medium text-gray-700">Event Time</label>
+				<select
+ 					id="eventTimeOffset"
+ 					name="eventTimeOffset"
+ 					required
+ 					class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+				>
+					for _, v := range meta.TimeOpts {
+						<option value={ v.Value }>{ v.Name }</option>
+					}
+				</select>
+			</div>
+			<div>
+				<button type="submit" class={ bigAdd }>
+					Add Event
+				</button>
+				<a href={ templ.SafeURL(fmt.Sprintf("/match/%d?isOpen=false", matchId)) } class={ bigSec }>Close</a>
+			</div>
+		</form>
+	} else {
+		<div class="flex justify-center w-full">
+			<a href={ templ.SafeURL(fmt.Sprintf("/match/%d?isOpen=true", matchId)) } hx-transition="true" class={ bigPri }>Add Event</a>
 		</div>
-		<div>
-			<label for="eventTime" class="block text-sm font-medium text-gray-700">Event Time</label>
-			<select
- 				id="eventTime"
- 				name="eventTime"
- 				required
- 				class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-			>
-				<option value="NOW">Now</option>
-				for _, v := range meta.TimeOpts {
-					<option value={ v.Value }>{ v.Name }</option>
-				}
-			</select>
-		</div>
-		<div>
-			<button type="submit" class={ bigAdd }>
-				Add Event
-			</button>
-		</div>
-	</form>
+	}
 }
 
 templ editMatchEvent(meta MatchMeta, event MatchEvent, isOpen bool, matchId uint64) {
-	<!-- Edit Match Event Form -->
 	<form method="POST" hx-post={ fmt.Sprintf("/match/%d/event/%d", matchId, event.ID) } class="space-y-4">
 		<div class="text-lg font-semibold">Edit Match Event</div>
 		<input type="hidden" name="matchId" value={ S(matchId) }/>
+		<input type="hidden" name="eventId" value={ S(event.ID) }/>
 		<div>
 			<label for="eventName" class="block text-sm font-medium text-gray-700">Event Name</label>
 			<input

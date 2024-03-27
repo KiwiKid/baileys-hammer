@@ -24,7 +24,7 @@ templ matchListPage(matches []Match, isOpen bool) {
  					if isOpen {
 						hx-get="/match?isOpen=true"
 					} else {
-						hx-get="/match?isOpen=true"
+						hx-get="/match?isOpen=false"
 					}
  					hx-trigger="load once"
  					hx-swap="OuterHTML"
@@ -52,17 +52,30 @@ templ matchPage(data MatchPageData) {
 						<div id="match-details" class="mb-4"></div>
 						<h3 class="text-md font-semibold mb-2">Events</h3>
 						if data.Match.ID > 0 {
-							<ul id="events-list" class="list-disc list-inside" hx-get={ fmt.Sprintf("/match/%d/event", data.Match.ID) } hx-trigger="load once"></ul>
+							<div  
+								class="list-disc list-inside" 
+								if data.isOpen {
+									hx-get={ fmt.Sprintf("/match/%d/event?isOpen=true", data.Match.ID) }
+								} else {
+									hx-get={ fmt.Sprintf("/match/%d/event?isOpen=false", data.Match.ID) }
+								}
+								hx-trigger="load once"></div>
+							<div hx-get={ fmt.Sprintf("/match/%d/events", data.Match.ID) } hx-trigger="load once">loading events...</div>
 						}
-						<div class="flex items-center justify-between mt-4">
-							<button hx-get={ fmt.Sprintf("/match/%d/event?isAddEventOpen=false", data.Match.ID) } class={ bigSec }>Close</button>
-						</div>
 					</div>
 				</div>
 			</div>
 			@pageFooter()
 		</body>
 	</html>
+}
+
+templ listEvents(events []MatchEvent) {
+	<div>
+		[List event: 
+		{ fmt.Sprintf("%v", len(events)) }
+		]
+	</div>
 }
 
 templ createMatch(isOpen bool) {
@@ -107,6 +120,7 @@ templ createMatch(isOpen bool) {
 	</div>
 }
 
+/*
 templ createNewEvent(matchId uint64) {
 	<form action={ fmt.Sprintf("/match/%d/event", matchId) } method="POST" class="max-w-xl mx-auto my-8 p-4 border border-gray-200 rounded-lg shadow">
 		[createNewEvent
@@ -136,5 +150,5 @@ templ createNewEvent(matchId uint64) {
 			Create Event
 		</button>
 	</form>
-}
+}*/
 

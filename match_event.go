@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -18,21 +19,21 @@ type TimeOpt struct {
 }
 
 var TIME_OPTS = []TimeOpt{
-    TimeOpt{
+    {
         Name: "Now",
         Value: "now",
     },
-    TimeOpt{
+    {
         Name: "+1 min",
-        Value: "+1",
+        Value: "1",
     },
-    TimeOpt{
+    {
         Name: "+1 min",
-        Value: "+2",
+        Value: "2",
     },
-    TimeOpt{
+    {
         Name: "+1 min",
-        Value: "+3",
+        Value: "3",
     },
 }
 
@@ -45,7 +46,6 @@ type MatchMeta struct {
 
 
 func matchEventHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request){
-
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		matchIdStr := chi.URLParam(r, "matchId")
@@ -92,31 +92,43 @@ func matchEventHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request)
 				return
 			}
 		case "POST":
+            log.Println("matchEventHandler")
 			form, err := parseForm(r)
             if err != nil {
                 http.Error(w, err.Error(), http.StatusBadRequest)
                 return
             }
 
-            if matchIdStr == "" {
+            log.Printf("%+v", form)
+
+            if form.ID == 0 {
                 // Create new match
                 handleCreateMatchEvent(db, form, w)
             } else {
                 // Edit existing match
                 handleEditMatchEvent(db, form, matchIdStr, w)
             }
+
+            log.Println("matchEventHandlerend")
+
 		default:
 			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 		}
+
+        http.Error(w, "(fell out)", http.StatusMethodNotAllowed)
+
 	}
 }
 
 type NewMatchEventForm struct {
-    Location  string
-    StartTime string // Using string here for simplicity; parsing is needed
-    Opponent  string
-    Subtitle  string
+    gorm.Model
+    MatchId  uint64
+    EventName string
+    EventType string // 'subbed-off' / 'subbed-on' / 'goal' / 'assist' / 'own-goal'
+    EventTime *time.Time `json:"timestamp" gorm:"type:datetime"`
+    EventTimeOffset  int
 }
+
 
 
 func parseForm(r *http.Request) (NewMatchEventForm, error) {
@@ -124,43 +136,75 @@ func parseForm(r *http.Request) (NewMatchEventForm, error) {
         return NewMatchEventForm{}, fmt.Errorf("invalid form data")
     }
 
-    startTime, err := time.Parse("2006-01-02T15:04", r.FormValue("startTime"))
+   /* startTime, err := time.Parse("2006-01-02T15:04", r.FormValue("eventTime"))
     if err != nil {
-        return NewMatchEventForm{}, fmt.Errorf("invalid start time format: %s", r.FormValue("startTime"))
+        return NewMatchEventForm{}, fmt.Errorf("invalid start time format: %s", r.FormValue("eventTime"))
+    }*/
+
+    var eventTimeOffsetStr = r.FormValue("eventTimeOffset")
+    var eventTime = r.FormValue("eventTime")
+
+    var startTime time.Time
+    if(eventTimeOffsetStr == "now"){
+        if eventTime != "" {
+            newStartTime, startErr := time.Parse("2006-01-02T15:04", eventTime)
+            if startErr != nil {
+                return NewMatchEventForm{}, startErr
+            }
+            startTime = newStartTime
+        } else {
+            startTime = time.Now()
+        }
+    } else {
+        eventTimeOffset, err := strconv.ParseUint(eventTimeOffsetStr, 10, 64)
+        if err != nil {
+            return NewMatchEventForm{}, err
+        }
+        startTime = startTime.Add(-time.Minute * time.Duration(eventTimeOffset))
+    }
+
+    matchIdStr := r.FormValue("matchId")
+    matchId, err := strconv.ParseUint(matchIdStr, 10, 64) // Convert string to int
+    if err != nil {
+        // Handle the error if the conversion fails
+        return NewMatchEventForm{}, fmt.Errorf("invalid MatchId: %s %+v",matchIdStr,  err)
     }
 
     return NewMatchEventForm{
-        Location:  r.FormValue("location"),
-        StartTime: startTime.Format("2006-01-02T15:04"),
-        Opponent:  r.FormValue("opponent"),
-        Subtitle:  r.FormValue("subtitle"),
+        EventName:  r.FormValue("location"),
+        EventType: r.FormValue("eventType"),
+        MatchId: matchId,
+        EventTime: &startTime,
     }, nil
 }
 
 func handleCreateMatchEvent(db *gorm.DB, form NewMatchEventForm, w http.ResponseWriter) {
+    log.Println("handleCreateMatchEvent")
     // Convert startTime back to time.Time for saving
-    startTime, _ := time.Parse("2006-01-02T15:04", form.StartTime)
-    match := Match{
-        Location:  form.Location,
-        StartTime: &startTime,
-        Opponent:  form.Opponent,
-        Subtitle:  form.Subtitle,
-        // Assume seasonId is defined elsewhere
-        SeasonId: seasonId,
+    matchEvt := MatchEvent{
+        EventName: form.EventName,
+        EventType: form.EventType,
+        MatchId: form.MatchId,
+        EventTime: form.EventTime,
+
     }
 
     // Save the match
-    if err := db.Create(&match).Error; err != nil {
+    if err := db.Create(&matchEvt).Error; err != nil {
         http.Error(w, fmt.Sprintf("Error saving match: %v", err), http.StatusInternalServerError)
         return
+    }else{
+        log.Printf("Created Match event ✨ \n%+v", matchEvt)
     }
 
     // Redirect to the new match
-    w.Header().Set("HX-Redirect", fmt.Sprintf("/match/%d", match.ID))
+    w.Header().Set("HX-Redirect", fmt.Sprintf("/match/%d", matchEvt.MatchId))
+    w.WriteHeader(http.StatusOK)
 }
 
 
 func handleEditMatchEvent(db *gorm.DB, form NewMatchEventForm, matchIdStr string, w http.ResponseWriter) {
+    log.Println("handleEditMatchEvent")
     matchId, err := strconv.ParseUint(matchIdStr, 10, 64)
     if err != nil {
         http.Error(w, fmt.Sprintf("Error parsing match ID: %v", err), http.StatusBadRequest)
@@ -183,5 +227,48 @@ func handleEditMatchEvent(db *gorm.DB, form NewMatchEventForm, matchIdStr string
 	}
 	*/
 	// Redirect to the updated match
-	w.Header().Set("HX-Redirect", fmt.Sprintf("/match/%d/not/done-yet", matchId))
+	w.Header().Set("HX-Redirect", fmt.Sprintf("/match/%d", matchId))
+    w.WriteHeader(http.StatusOK)
+}
+
+func matchEventListHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
+
+	return func(w http.ResponseWriter, r *http.Request) {
+        switch(r.Method){
+        case "GET": {
+            matchIdStr := chi.URLParam(r, "matchId")
+
+            log.Printf("matchEventListHandler - %s", matchIdStr)
+
+			var matchId uint64
+            var err error
+			if len(matchIdStr) == 0{
+				http.Error(w, "Error parsing matchId", http.StatusBadRequest)
+					return 
+			} else {
+				matchId, err = strconv.ParseUint(matchIdStr, 10, 64)
+				if err != nil || matchId == 0 {
+					http.Error(w, fmt.Sprintf("Error parsing limitStr %v", err), http.StatusBadRequest)
+					return 
+				}
+			}
+
+
+            log.Printf("matchEventListHandler - GetMatchEvents(%d)", matchId)
+
+
+			matchEvents, getFErr := GetMatchEvents(db, matchId)
+			if getFErr != nil {
+				http.Error(w, "Invalid form data", http.StatusBadRequest)
+				return
+			}
+
+			fineList := listMatchEvents(matchEvents)
+			fineList.Render(r.Context(), w)
+		}
+        default: 
+            http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+            return
+        }
+    }
 }
