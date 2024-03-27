@@ -38,7 +38,7 @@ var TIME_OPTS = []TimeOpt{
 }
 
 type MatchMeta struct {
-    TimeOpts []TimeOpt
+    CurrentMatchMinute int
     EventTypes []string
     Players []Player
 }
@@ -59,15 +59,26 @@ func matchEventHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request)
 			return
 		}
 
-
         players, err := FetchActivePlayers(db)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Error FetchActivePlayers: %v", err), http.StatusBadRequest)
 			return
-		}
+		}else{
+            log.Printf("GOT %d active players", len(players))
+        }
+
+        match, err := GetMatch(db, matchId)
+        if err != nil {
+            http.Error(w, err.Error(), http.StatusBadRequest)
+            return
+        }
+
+        startTime := time.Date(2024, 3, 28, 9, 0, 0, 0, time.UTC)
+        now := time.Now()
+        duration := now.Sub(startTime)
 
         var meta = &MatchMeta{
-            TimeOpts: TIME_OPTS,
+            CurrentMatchMinute: int(duration.Minutes()),
             EventTypes: EVENT_TYPES,
             Players: players,
         }
@@ -92,21 +103,22 @@ func matchEventHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request)
 				return
 			}
 		case "POST":
+
+
+
             log.Println("matchEventHandler")
-			form, err := parseForm(r)
+			form, err := parseForm(r, *match)
             if err != nil {
                 http.Error(w, err.Error(), http.StatusBadRequest)
                 return
             }
 
-            log.Printf("%+v", form)
-
             if form.ID == 0 {
-                // Create new match
+                // Create new event
                 handleCreateMatchEvent(db, form, w)
             } else {
-                // Edit existing match
-                handleEditMatchEvent(db, form, matchIdStr, w)
+                // Edit existing event
+                handleEditMatchEvent(db, form, *match, w)
             }
 
             log.Println("matchEventHandlerend")
@@ -125,13 +137,14 @@ type NewMatchEventForm struct {
     MatchId  uint64
     EventName string
     EventType string // 'subbed-off' / 'subbed-on' / 'goal' / 'assist' / 'own-goal'
+    EventMinute int
     EventTime *time.Time `json:"timestamp" gorm:"type:datetime"`
     EventTimeOffset  int
 }
 
 
 
-func parseForm(r *http.Request) (NewMatchEventForm, error) {
+func parseForm(r *http.Request, match Match) (NewMatchEventForm, error) {
     if err := r.ParseForm(); err != nil {
         return NewMatchEventForm{}, fmt.Errorf("invalid form data")
     }
@@ -142,25 +155,25 @@ func parseForm(r *http.Request) (NewMatchEventForm, error) {
     }*/
 
     var eventTimeOffsetStr = r.FormValue("eventTimeOffset")
-    var eventTime = r.FormValue("eventTime")
+    var eventTimeStr = r.FormValue("eventTime")
 
-    var startTime time.Time
+    var eventTime time.Time
     if(eventTimeOffsetStr == "now"){
-        if eventTime != "" {
-            newStartTime, startErr := time.Parse("2006-01-02T15:04", eventTime)
+        if eventTimeStr != "" {
+            newStartTime, startErr := time.Parse("2006-01-02T15:04", eventTimeStr)
             if startErr != nil {
                 return NewMatchEventForm{}, startErr
             }
-            startTime = newStartTime
+            eventTime = newStartTime
         } else {
-            startTime = time.Now()
+            eventTime = time.Now()
         }
     } else {
         eventTimeOffset, err := strconv.ParseUint(eventTimeOffsetStr, 10, 64)
         if err != nil {
             return NewMatchEventForm{}, err
         }
-        startTime = startTime.Add(-time.Minute * time.Duration(eventTimeOffset))
+        eventTime = eventTime.Add(-time.Minute * time.Duration(eventTimeOffset))
     }
 
     matchIdStr := r.FormValue("matchId")
@@ -170,11 +183,19 @@ func parseForm(r *http.Request) (NewMatchEventForm, error) {
         return NewMatchEventForm{}, fmt.Errorf("invalid MatchId: %s %+v",matchIdStr,  err)
     }
 
+    eventMinStr := r.FormValue("eventMinute")
+    eventMin, err := strconv.Atoi(eventMinStr) // Convert string to int
+    if err != nil {
+        // Handle the error if the conversion fails
+        return NewMatchEventForm{}, fmt.Errorf("invalid eventMinute: %s %+v", eventMinStr,  err)
+    }
+
     return NewMatchEventForm{
         EventName:  r.FormValue("location"),
         EventType: r.FormValue("eventType"),
         MatchId: matchId,
-        EventTime: &startTime,
+        EventTime: &eventTime,
+        EventMinute: eventMin,
     }, nil
 }
 
@@ -203,13 +224,8 @@ func handleCreateMatchEvent(db *gorm.DB, form NewMatchEventForm, w http.Response
 }
 
 
-func handleEditMatchEvent(db *gorm.DB, form NewMatchEventForm, matchIdStr string, w http.ResponseWriter) {
+func handleEditMatchEvent(db *gorm.DB, form NewMatchEventForm, match Match, w http.ResponseWriter) {
     log.Println("handleEditMatchEvent")
-    matchId, err := strconv.ParseUint(matchIdStr, 10, 64)
-    if err != nil {
-        http.Error(w, fmt.Sprintf("Error parsing match ID: %v", err), http.StatusBadRequest)
-        return
-    }
 /*
     // Convert startTime back to time.Time for saving
     startTime, _ := time.Parse("2006-01-02T15:04", form.StartTime)
@@ -227,7 +243,7 @@ func handleEditMatchEvent(db *gorm.DB, form NewMatchEventForm, matchIdStr string
 	}
 	*/
 	// Redirect to the updated match
-	w.Header().Set("HX-Redirect", fmt.Sprintf("/match/%d", matchId))
+	w.Header().Set("HX-Redirect", fmt.Sprintf("/match/%d", match.ID))
     w.WriteHeader(http.StatusOK)
 }
 
@@ -253,7 +269,6 @@ func matchEventListHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Requ
 				}
 			}
 
-
             log.Printf("matchEventListHandler - GetMatchEvents(%d)", matchId)
 
 
@@ -263,7 +278,16 @@ func matchEventListHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Requ
 				return
 			}
 
-			fineList := listMatchEvents(matchEvents)
+            players, err := GetPlayers(db, 1, 9999)
+			if err != nil {
+				http.Error(w, "Invalid GetPlayers", http.StatusBadRequest)
+				return
+			}
+
+            initialState := MatchState{PlayersOn: []PlayerState{}, ScoreFor: 0, ScoreAgainst: 0}
+            matchState := ConstructMatchState(matchEvents, initialState, 90, players)
+
+			fineList := listMatchEvents(matchState, matchEvents)
 			fineList.Render(r.Context(), w)
 		}
         default: 

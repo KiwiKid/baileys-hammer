@@ -78,6 +78,11 @@ templ fineList(fines []FineWithPlayer, page int, isFineMaster bool) {
 						<td>
 							{ humanize.Time(f.Fine.CreatedAt) }
 						</td>
+						if isFineMaster {
+							<td>
+								<button hx-delete={ fmt.Sprintf("/fines?fid=%d", f.Fine.ID) }>🗑</button>
+							</td>
+						}
 					</tr>
 				}
 			</tbody>

@@ -183,3 +183,59 @@ func RenderTemplate(w http.ResponseWriter, r *http.Request, data interface{}) {
 	// Your template rendering logic here
 	fmt.Fprintf(w, "Template rendering with data: %+v\n", data) // Placeholder implementation
 }
+
+
+func ConstructMatchState(events []MatchEvent, currentState MatchState, currentTime int, allPlayers []Player) MatchState {
+    if len(events) == 0 {
+        return currentState
+    }
+
+    event := events[0]
+	var player Player 
+	if event.PlayerId > 0 { 
+
+	
+		for _, p := range allPlayers {
+			if(p.ID == uint(event.PlayerId)){
+				player = p
+			}
+		}
+	}
+	
+    updatedState := UpdateStateBasedOnEvent(currentState, event, currentTime, &player)
+
+    return ConstructMatchState(events[1:], updatedState, currentTime, allPlayers)
+}
+
+func UpdateStateBasedOnEvent(currentState MatchState, event MatchEvent, currentTime int, player *Player) MatchState {
+    switch event.EventType {
+    case "subbed-on":
+        currentState.PlayersOn = append(currentState.PlayersOn, PlayerState{PlayerName: player.Name, PlayerId: player.ID, TimePlayed: currentTime - event.EventMinute})
+    case "subbed-off":
+        // Logic to remove player and update time played
+    case "goal":
+        // Increment player's goal count and the total score
+        currentState.ScoreFor += 1
+    case "assist":
+        // Increment player's assist count
+    case "own-goal":
+        currentState.ScoreAgainst += 1
+    case "conceded-goal":
+        currentState.ScoreAgainst += 1
+    }
+
+    // Update players' time played if they are on the field
+    for i, player := range currentState.PlayersOn {
+        if uint64(player.PlayerId) == event.PlayerId {
+            if event.EventType == "subbed-off" {
+                // Remove player or update time
+            } else if event.EventType == "goal" {
+                currentState.PlayersOn[i].Goals += 1
+            } else if event.EventType == "assist" {
+                currentState.PlayersOn[i].Assists += 1
+            }
+        }
+    }
+
+    return currentState
+}

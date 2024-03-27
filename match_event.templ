@@ -3,20 +3,24 @@ package main
 import "fmt"
 import "github.com/dustin/go-humanize"
 
-templ listMatchEvents(matchEvents []MatchEvent) {
+templ listMatchEvents(matchState MatchState, matchEvents []MatchEvent) {
 	<div class="container mx-auto text-center">
+	<div>
+	<h1>matchState</h1>
+		{ fmt.Sprintf("%+v", matchState)}
+	</div>
 		<div class="text-3xl p-10">Match Events ({ S(len(matchEvents)) })</div>
 		<table class="min-w-full divide-y divide-gray-200">
 			<thead class="bg-gray-50">
 				<tr>
 					<th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-						EventName
+						Name
 					</th>
 					<th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-						EventType
+						Type
 					</th>
 					<th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-						EventTime
+						Time 
 					</th>
 				</tr>
 			</thead>
@@ -28,7 +32,7 @@ templ listMatchEvents(matchEvents []MatchEvent) {
 						<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{ e.EventName }</td>
 						<td>{ e.EventType }</td>
 						<td>
-							{ humanize.Time(*e.EventTime) }
+							 { fmt.Sprintf("%d", e.EventMinute) } - { humanize.Time(*e.EventTime) }
 						</td>
 					</tr>
 				}
@@ -57,7 +61,7 @@ templ addMatchEvent(meta MatchMeta, matchId uint64, isOpen bool) {
 				}
 			</div>
 			<input type="hidden" name="matchId" value={ S(matchId) }/>
-			<div>
+			<!--<div>
 				<label for="eventName" class="block text-sm font-medium text-gray-700">Event Name</label>
 				<input
  					type="text"
@@ -66,13 +70,14 @@ templ addMatchEvent(meta MatchMeta, matchId uint64, isOpen bool) {
  					required
  					class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
 				/>
-			</div>
+			</div>-->
 			<div>
 				<label for="eventType" class="block text-sm font-medium text-gray-700">Event Type</label>
 				<select
  					id="eventType"
  					name="eventType"
  					required
+					_={"on change from #eventType toggle .hidden on #player-select if #eventType.value equals 'player-select'"}
  					class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
 				>
 					for _, eventType := range meta.EventTypes {
@@ -80,18 +85,26 @@ templ addMatchEvent(meta MatchMeta, matchId uint64, isOpen bool) {
 					}
 				</select>
 			</div>
-			<div>
-				<label for="eventTimeOffset" class="block text-sm font-medium text-gray-700">Event Time</label>
-				<select
- 					id="eventTimeOffset"
- 					name="eventTimeOffset"
- 					required
- 					class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-				>
-					for _, v := range meta.TimeOpts {
-						<option value={ v.Value }>{ v.Name }</option>
+			<div id="player-select" class="hidden mt-4" > 
+				<label class="text-lg font-semibold">Player:</label>
+				<select name="playerId" class="mt-1 w-full border-gray-300  bg-white rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+					<option selected value="">N/A</option>
+					for _, p := range meta.Players {
+						<option value={ S("%v", p.ID) }>
+							{ S("%s", p.Name) }
+						</option>
 					}
 				</select>
+			</div>
+			<div>
+				<label for="eventMinute" class="block text-sm font-medium text-gray-700">Event Time</label>
+				<input
+ 					id="eventMinute"
+ 					name="eventMinute"
+					value={ S(meta.CurrentMatchMinute) }
+ 					required
+ 					class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+				/>
 			</div>
 			<div>
 				<button type="submit" class={ bigAdd }>
@@ -109,10 +122,11 @@ templ addMatchEvent(meta MatchMeta, matchId uint64, isOpen bool) {
 
 templ editMatchEvent(meta MatchMeta, event MatchEvent, isOpen bool, matchId uint64) {
 	<form method="POST" hx-post={ fmt.Sprintf("/match/%d/event/%d", matchId, event.ID) } class="space-y-4">
+		editMatchEventeditMatchEventeditMatchEvent
 		<div class="text-lg font-semibold">Edit Match Event</div>
 		<input type="hidden" name="matchId" value={ S(matchId) }/>
 		<input type="hidden" name="eventId" value={ S(event.ID) }/>
-		<div>
+		<!--<div>
 			<label for="eventName" class="block text-sm font-medium text-gray-700">Event Name</label>
 			<input
  				type="text"
@@ -123,7 +137,7 @@ templ editMatchEvent(meta MatchMeta, event MatchEvent, isOpen bool, matchId uint
  				class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
 			/>
 		</div>
-		<!--<div>
+		<div>
 			<label for="eventType" class="block text-sm font-medium text-gray-700">Event Type</label>
 			<select
  				id="eventType"

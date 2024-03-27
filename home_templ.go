@@ -650,7 +650,7 @@ func fineAdd(baseUrl string, isOpen bool, players []PlayerWithFines, presetFines
 				if err != nil {
 					return err
 				}
-				_, err = templBuffer.WriteString(templ.EscapeString(fmt.Sprintf("%v", p.PlayerID)))
+				_, err = templBuffer.WriteString(templ.EscapeString(fmt.Sprintf("%v", p.ID)))
 				if err != nil {
 					return err
 				}

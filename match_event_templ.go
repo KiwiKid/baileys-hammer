@@ -12,7 +12,7 @@ import "bytes"
 import "fmt"
 import "github.com/dustin/go-humanize"
 
-func listMatchEvents(matchEvents []MatchEvent) templ.Component {
+func listMatchEvents(matchState MatchState, matchEvents []MatchEvent) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		templBuffer, templIsBuffer := w.(*bytes.Buffer)
 		if !templIsBuffer {
@@ -25,22 +25,40 @@ func listMatchEvents(matchEvents []MatchEvent) templ.Component {
 			var_1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, err = templBuffer.WriteString("<div class=\"container mx-auto text-center\"><div class=\"text-3xl p-10\">")
+		_, err = templBuffer.WriteString("<div class=\"container mx-auto text-center\"><div><h1>")
 		if err != nil {
 			return err
 		}
-		var_2 := `Match Events (`
+		var_2 := `matchState`
 		_, err = templBuffer.WriteString(var_2)
 		if err != nil {
 			return err
 		}
-		var var_3 string = S(len(matchEvents))
+		_, err = templBuffer.WriteString("</h1> ")
+		if err != nil {
+			return err
+		}
+		var var_3 string = fmt.Sprintf("%+v", matchState)
 		_, err = templBuffer.WriteString(templ.EscapeString(var_3))
 		if err != nil {
 			return err
 		}
-		var_4 := `)`
+		_, err = templBuffer.WriteString("</div><div class=\"text-3xl p-10\">")
+		if err != nil {
+			return err
+		}
+		var_4 := `Match Events (`
 		_, err = templBuffer.WriteString(var_4)
+		if err != nil {
+			return err
+		}
+		var var_5 string = S(len(matchEvents))
+		_, err = templBuffer.WriteString(templ.EscapeString(var_5))
+		if err != nil {
+			return err
+		}
+		var_6 := `)`
+		_, err = templBuffer.WriteString(var_6)
 		if err != nil {
 			return err
 		}
@@ -48,26 +66,26 @@ func listMatchEvents(matchEvents []MatchEvent) templ.Component {
 		if err != nil {
 			return err
 		}
-		var_5 := `EventName`
-		_, err = templBuffer.WriteString(var_5)
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString("</th><th scope=\"col\" class=\"px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider\">")
-		if err != nil {
-			return err
-		}
-		var_6 := `EventType`
-		_, err = templBuffer.WriteString(var_6)
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString("</th><th scope=\"col\" class=\"px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider\">")
-		if err != nil {
-			return err
-		}
-		var_7 := `EventTime`
+		var_7 := `Name`
 		_, err = templBuffer.WriteString(var_7)
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("</th><th scope=\"col\" class=\"px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider\">")
+		if err != nil {
+			return err
+		}
+		var_8 := `Type`
+		_, err = templBuffer.WriteString(var_8)
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("</th><th scope=\"col\" class=\"px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider\">")
+		if err != nil {
+			return err
+		}
+		var_9 := `Time `
+		_, err = templBuffer.WriteString(var_9)
 		if err != nil {
 			return err
 		}
@@ -80,26 +98,40 @@ func listMatchEvents(matchEvents []MatchEvent) templ.Component {
 			if err != nil {
 				return err
 			}
-			var var_8 string = e.EventName
-			_, err = templBuffer.WriteString(templ.EscapeString(var_8))
-			if err != nil {
-				return err
-			}
-			_, err = templBuffer.WriteString("</td><td>")
-			if err != nil {
-				return err
-			}
-			var var_9 string = e.EventType
-			_, err = templBuffer.WriteString(templ.EscapeString(var_9))
-			if err != nil {
-				return err
-			}
-			_, err = templBuffer.WriteString("</td><td>")
-			if err != nil {
-				return err
-			}
-			var var_10 string = humanize.Time(*e.EventTime)
+			var var_10 string = e.EventName
 			_, err = templBuffer.WriteString(templ.EscapeString(var_10))
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("</td><td>")
+			if err != nil {
+				return err
+			}
+			var var_11 string = e.EventType
+			_, err = templBuffer.WriteString(templ.EscapeString(var_11))
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("</td><td>")
+			if err != nil {
+				return err
+			}
+			var var_12 string = fmt.Sprintf("%d", e.EventMinute)
+			_, err = templBuffer.WriteString(templ.EscapeString(var_12))
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString(" ")
+			if err != nil {
+				return err
+			}
+			var_13 := `- `
+			_, err = templBuffer.WriteString(var_13)
+			if err != nil {
+				return err
+			}
+			var var_14 string = humanize.Time(*e.EventTime)
+			_, err = templBuffer.WriteString(templ.EscapeString(var_14))
 			if err != nil {
 				return err
 			}
@@ -112,12 +144,12 @@ func listMatchEvents(matchEvents []MatchEvent) templ.Component {
 		if err != nil {
 			return err
 		}
-		var_11 := `<div class="py-3">
+		var_15 := `<div class="py-3">
 			<button hx-get={ fmt.Sprintf("/load-more?page=%d", page +1) } hx-target="this" hx-swap="outerHTML" class="px-4 py-2 bg-blue-500 text-white font-semibold rounded hover:bg-blue-700">
 				Load More
 			</button>
 		</div>`
-		_, err = templBuffer.WriteString(var_11)
+		_, err = templBuffer.WriteString(var_15)
 		if err != nil {
 			return err
 		}
@@ -140,23 +172,23 @@ func addMatchEvent(meta MatchMeta, matchId uint64, isOpen bool) templ.Component 
 			defer templ.ReleaseBuffer(templBuffer)
 		}
 		ctx = templ.InitializeContext(ctx)
-		var_12 := templ.GetChildren(ctx)
-		if var_12 == nil {
-			var_12 = templ.NopComponent
+		var_16 := templ.GetChildren(ctx)
+		if var_16 == nil {
+			var_16 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		var_13 := `[addMatchEvent: `
-		_, err = templBuffer.WriteString(var_13)
+		var_17 := `[addMatchEvent: `
+		_, err = templBuffer.WriteString(var_17)
 		if err != nil {
 			return err
 		}
-		var var_14 string = fmt.Sprintf("meta: %+v", meta, isOpen)
-		_, err = templBuffer.WriteString(templ.EscapeString(var_14))
+		var var_18 string = fmt.Sprintf("meta: %+v", meta, isOpen)
+		_, err = templBuffer.WriteString(templ.EscapeString(var_18))
 		if err != nil {
 			return err
 		}
-		var_15 := `]`
-		_, err = templBuffer.WriteString(var_15)
+		var_19 := `]`
+		_, err = templBuffer.WriteString(var_19)
 		if err != nil {
 			return err
 		}
@@ -173,8 +205,8 @@ func addMatchEvent(meta MatchMeta, matchId uint64, isOpen bool) templ.Component 
 			if err != nil {
 				return err
 			}
-			var_16 := `Add Match Event `
-			_, err = templBuffer.WriteString(var_16)
+			var_20 := `Add Match Event `
+			_, err = templBuffer.WriteString(var_20)
 			if err != nil {
 				return err
 			}
@@ -183,14 +215,14 @@ func addMatchEvent(meta MatchMeta, matchId uint64, isOpen bool) templ.Component 
 				return err
 			}
 			if isOpen {
-				var_17 := `"open" `
-				_, err = templBuffer.WriteString(var_17)
+				var_21 := `"open" `
+				_, err = templBuffer.WriteString(var_21)
 				if err != nil {
 					return err
 				}
 			} else {
-				var_18 := `"close"`
-				_, err = templBuffer.WriteString(var_18)
+				var_22 := `"close"`
+				_, err = templBuffer.WriteString(var_22)
 				if err != nil {
 					return err
 				}
@@ -203,25 +235,42 @@ func addMatchEvent(meta MatchMeta, matchId uint64, isOpen bool) templ.Component 
 			if err != nil {
 				return err
 			}
-			_, err = templBuffer.WriteString("\"><div><label for=\"eventName\" class=\"block text-sm font-medium text-gray-700\">")
+			_, err = templBuffer.WriteString("\"><!--")
 			if err != nil {
 				return err
 			}
-			var_19 := `Event Name`
-			_, err = templBuffer.WriteString(var_19)
+			var_23 := `<div>
+				<label for="eventName" class="block text-sm font-medium text-gray-700">Event Name</label>
+				<input
+ 					type="text"
+ 					name="eventName"
+ 					id="eventName"
+ 					required
+ 					class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+				/>
+			</div>`
+			_, err = templBuffer.WriteString(var_23)
 			if err != nil {
 				return err
 			}
-			_, err = templBuffer.WriteString("</label><input type=\"text\" name=\"eventName\" id=\"eventName\" required class=\"mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm\"></div><div><label for=\"eventType\" class=\"block text-sm font-medium text-gray-700\">")
+			_, err = templBuffer.WriteString("--><div><label for=\"eventType\" class=\"block text-sm font-medium text-gray-700\">")
 			if err != nil {
 				return err
 			}
-			var_20 := `Event Type`
-			_, err = templBuffer.WriteString(var_20)
+			var_24 := `Event Type`
+			_, err = templBuffer.WriteString(var_24)
 			if err != nil {
 				return err
 			}
-			_, err = templBuffer.WriteString("</label><select id=\"eventType\" name=\"eventType\" required class=\"mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm\">")
+			_, err = templBuffer.WriteString("</label><select id=\"eventType\" name=\"eventType\" required _=\"")
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString(templ.EscapeString("on change from #eventType toggle .hidden on #player-select if #eventType.value equals 'player-select'"))
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("\" class=\"mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm\">")
 			if err != nil {
 				return err
 			}
@@ -238,8 +287,8 @@ func addMatchEvent(meta MatchMeta, matchId uint64, isOpen bool) templ.Component 
 				if err != nil {
 					return err
 				}
-				var var_21 string = eventType
-				_, err = templBuffer.WriteString(templ.EscapeString(var_21))
+				var var_25 string = eventType
+				_, err = templBuffer.WriteString(templ.EscapeString(var_25))
 				if err != nil {
 					return err
 				}
@@ -248,25 +297,34 @@ func addMatchEvent(meta MatchMeta, matchId uint64, isOpen bool) templ.Component 
 					return err
 				}
 			}
-			_, err = templBuffer.WriteString("</select></div><div><label for=\"eventTimeOffset\" class=\"block text-sm font-medium text-gray-700\">")
+			_, err = templBuffer.WriteString("</select></div><div id=\"player-select\" class=\"hidden mt-4\"><label class=\"text-lg font-semibold\">")
 			if err != nil {
 				return err
 			}
-			var_22 := `Event Time`
-			_, err = templBuffer.WriteString(var_22)
+			var_26 := `Player:`
+			_, err = templBuffer.WriteString(var_26)
 			if err != nil {
 				return err
 			}
-			_, err = templBuffer.WriteString("</label><select id=\"eventTimeOffset\" name=\"eventTimeOffset\" required class=\"mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm\">")
+			_, err = templBuffer.WriteString("</label><select name=\"playerId\" class=\"mt-1 w-full border-gray-300  bg-white rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50\"><option selected value=\"\">")
 			if err != nil {
 				return err
 			}
-			for _, v := range meta.TimeOpts {
+			var_27 := `N/A`
+			_, err = templBuffer.WriteString(var_27)
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("</option>")
+			if err != nil {
+				return err
+			}
+			for _, p := range meta.Players {
 				_, err = templBuffer.WriteString("<option value=\"")
 				if err != nil {
 					return err
 				}
-				_, err = templBuffer.WriteString(templ.EscapeString(v.Value))
+				_, err = templBuffer.WriteString(templ.EscapeString(S("%v", p.ID)))
 				if err != nil {
 					return err
 				}
@@ -274,8 +332,8 @@ func addMatchEvent(meta MatchMeta, matchId uint64, isOpen bool) templ.Component 
 				if err != nil {
 					return err
 				}
-				var var_23 string = v.Name
-				_, err = templBuffer.WriteString(templ.EscapeString(var_23))
+				var var_28 string = S("%s", p.Name)
+				_, err = templBuffer.WriteString(templ.EscapeString(var_28))
 				if err != nil {
 					return err
 				}
@@ -284,12 +342,29 @@ func addMatchEvent(meta MatchMeta, matchId uint64, isOpen bool) templ.Component 
 					return err
 				}
 			}
-			_, err = templBuffer.WriteString("</select></div><div>")
+			_, err = templBuffer.WriteString("</select></div><div><label for=\"eventMinute\" class=\"block text-sm font-medium text-gray-700\">")
 			if err != nil {
 				return err
 			}
-			var var_24 = []any{bigAdd}
-			err = templ.RenderCSSItems(ctx, templBuffer, var_24...)
+			var_29 := `Event Time`
+			_, err = templBuffer.WriteString(var_29)
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("</label><input id=\"eventMinute\" name=\"eventMinute\" value=\"")
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString(templ.EscapeString(S(meta.CurrentMatchMinute)))
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("\" required class=\"mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm\"></div><div>")
+			if err != nil {
+				return err
+			}
+			var var_30 = []any{bigAdd}
+			err = templ.RenderCSSItems(ctx, templBuffer, var_30...)
 			if err != nil {
 				return err
 			}
@@ -297,7 +372,7 @@ func addMatchEvent(meta MatchMeta, matchId uint64, isOpen bool) templ.Component 
 			if err != nil {
 				return err
 			}
-			_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_24).String()))
+			_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_30).String()))
 			if err != nil {
 				return err
 			}
@@ -305,8 +380,8 @@ func addMatchEvent(meta MatchMeta, matchId uint64, isOpen bool) templ.Component 
 			if err != nil {
 				return err
 			}
-			var_25 := `Add Event`
-			_, err = templBuffer.WriteString(var_25)
+			var_31 := `Add Event`
+			_, err = templBuffer.WriteString(var_31)
 			if err != nil {
 				return err
 			}
@@ -314,8 +389,8 @@ func addMatchEvent(meta MatchMeta, matchId uint64, isOpen bool) templ.Component 
 			if err != nil {
 				return err
 			}
-			var var_26 = []any{bigSec}
-			err = templ.RenderCSSItems(ctx, templBuffer, var_26...)
+			var var_32 = []any{bigSec}
+			err = templ.RenderCSSItems(ctx, templBuffer, var_32...)
 			if err != nil {
 				return err
 			}
@@ -323,8 +398,8 @@ func addMatchEvent(meta MatchMeta, matchId uint64, isOpen bool) templ.Component 
 			if err != nil {
 				return err
 			}
-			var var_27 templ.SafeURL = templ.SafeURL(fmt.Sprintf("/match/%d?isOpen=false", matchId))
-			_, err = templBuffer.WriteString(templ.EscapeString(string(var_27)))
+			var var_33 templ.SafeURL = templ.SafeURL(fmt.Sprintf("/match/%d?isOpen=false", matchId))
+			_, err = templBuffer.WriteString(templ.EscapeString(string(var_33)))
 			if err != nil {
 				return err
 			}
@@ -332,7 +407,7 @@ func addMatchEvent(meta MatchMeta, matchId uint64, isOpen bool) templ.Component 
 			if err != nil {
 				return err
 			}
-			_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_26).String()))
+			_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_32).String()))
 			if err != nil {
 				return err
 			}
@@ -340,8 +415,8 @@ func addMatchEvent(meta MatchMeta, matchId uint64, isOpen bool) templ.Component 
 			if err != nil {
 				return err
 			}
-			var_28 := `Close`
-			_, err = templBuffer.WriteString(var_28)
+			var_34 := `Close`
+			_, err = templBuffer.WriteString(var_34)
 			if err != nil {
 				return err
 			}
@@ -354,8 +429,8 @@ func addMatchEvent(meta MatchMeta, matchId uint64, isOpen bool) templ.Component 
 			if err != nil {
 				return err
 			}
-			var var_29 = []any{bigPri}
-			err = templ.RenderCSSItems(ctx, templBuffer, var_29...)
+			var var_35 = []any{bigPri}
+			err = templ.RenderCSSItems(ctx, templBuffer, var_35...)
 			if err != nil {
 				return err
 			}
@@ -363,8 +438,8 @@ func addMatchEvent(meta MatchMeta, matchId uint64, isOpen bool) templ.Component 
 			if err != nil {
 				return err
 			}
-			var var_30 templ.SafeURL = templ.SafeURL(fmt.Sprintf("/match/%d?isOpen=true", matchId))
-			_, err = templBuffer.WriteString(templ.EscapeString(string(var_30)))
+			var var_36 templ.SafeURL = templ.SafeURL(fmt.Sprintf("/match/%d?isOpen=true", matchId))
+			_, err = templBuffer.WriteString(templ.EscapeString(string(var_36)))
 			if err != nil {
 				return err
 			}
@@ -372,7 +447,7 @@ func addMatchEvent(meta MatchMeta, matchId uint64, isOpen bool) templ.Component 
 			if err != nil {
 				return err
 			}
-			_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_29).String()))
+			_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_35).String()))
 			if err != nil {
 				return err
 			}
@@ -380,8 +455,8 @@ func addMatchEvent(meta MatchMeta, matchId uint64, isOpen bool) templ.Component 
 			if err != nil {
 				return err
 			}
-			var_31 := `Add Event`
-			_, err = templBuffer.WriteString(var_31)
+			var_37 := `Add Event`
+			_, err = templBuffer.WriteString(var_37)
 			if err != nil {
 				return err
 			}
@@ -405,9 +480,9 @@ func editMatchEvent(meta MatchMeta, event MatchEvent, isOpen bool, matchId uint6
 			defer templ.ReleaseBuffer(templBuffer)
 		}
 		ctx = templ.InitializeContext(ctx)
-		var_32 := templ.GetChildren(ctx)
-		if var_32 == nil {
-			var_32 = templ.NopComponent
+		var_38 := templ.GetChildren(ctx)
+		if var_38 == nil {
+			var_38 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
 		_, err = templBuffer.WriteString("<form method=\"POST\" hx-post=\"")
@@ -418,12 +493,21 @@ func editMatchEvent(meta MatchMeta, event MatchEvent, isOpen bool, matchId uint6
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("\" class=\"space-y-4\"><div class=\"text-lg font-semibold\">")
+		_, err = templBuffer.WriteString("\" class=\"space-y-4\">")
 		if err != nil {
 			return err
 		}
-		var_33 := `Edit Match Event`
-		_, err = templBuffer.WriteString(var_33)
+		var_39 := `editMatchEventeditMatchEventeditMatchEvent`
+		_, err = templBuffer.WriteString(var_39)
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString(" <div class=\"text-lg font-semibold\">")
+		if err != nil {
+			return err
+		}
+		var_40 := `Edit Match Event`
+		_, err = templBuffer.WriteString(var_40)
 		if err != nil {
 			return err
 		}
@@ -443,20 +527,22 @@ func editMatchEvent(meta MatchMeta, event MatchEvent, isOpen bool, matchId uint6
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("\"><div><label for=\"eventName\" class=\"block text-sm font-medium text-gray-700\">")
+		_, err = templBuffer.WriteString("\"><!--")
 		if err != nil {
 			return err
 		}
-		var_34 := `Event Name`
-		_, err = templBuffer.WriteString(var_34)
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString("</label><input type=\"text\" name=\"eventName\" id=\"eventName\" value=\"{.eventName}\" required class=\"mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm\"></div><!--")
-		if err != nil {
-			return err
-		}
-		var_35 := `<div>
+		var_41 := `<div>
+			<label for="eventName" class="block text-sm font-medium text-gray-700">Event Name</label>
+			<input
+ 				type="text"
+ 				name="eventName"
+ 				id="eventName"
+ 				value="{.eventName}"
+ 				required
+ 				class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+			/>
+		</div>
+		<div>
 			<label for="eventType" class="block text-sm font-medium text-gray-700">Event Type</label>
 			<select
  				id="eventType"
@@ -476,7 +562,7 @@ func editMatchEvent(meta MatchMeta, event MatchEvent, isOpen bool, matchId uint6
 				}
 			</select>
 		</div>`
-		_, err = templBuffer.WriteString(var_35)
+		_, err = templBuffer.WriteString(var_41)
 		if err != nil {
 			return err
 		}
@@ -484,7 +570,7 @@ func editMatchEvent(meta MatchMeta, event MatchEvent, isOpen bool, matchId uint6
 		if err != nil {
 			return err
 		}
-		var_36 := `<div>
+		var_42 := `<div>
 			<label for="eventTime" class="block text-sm font-medium text-gray-700">Event Time</label>
 			<select
  				id="eventTime"
@@ -504,7 +590,7 @@ func editMatchEvent(meta MatchMeta, event MatchEvent, isOpen bool, matchId uint6
 				}
 			</select> 
 		</div>`
-		_, err = templBuffer.WriteString(var_36)
+		_, err = templBuffer.WriteString(var_42)
 		if err != nil {
 			return err
 		}
@@ -512,8 +598,8 @@ func editMatchEvent(meta MatchMeta, event MatchEvent, isOpen bool, matchId uint6
 		if err != nil {
 			return err
 		}
-		var_37 := `Save Changes`
-		_, err = templBuffer.WriteString(var_37)
+		var_43 := `Save Changes`
+		_, err = templBuffer.WriteString(var_43)
 		if err != nil {
 			return err
 		}

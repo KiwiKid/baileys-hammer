@@ -224,7 +224,7 @@ templ fineAdd(baseUrl string, isOpen bool, players []PlayerWithFines, presetFine
 								<select name="playerId" class="mt-1 w-full border-gray-300  bg-white rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
 									<option selected value="">N/A</option>
 									for _, p := range players {
-										<option value={ fmt.Sprintf("%v", p.PlayerID) }>
+										<option value={ fmt.Sprintf("%v", p.ID) }>
 											{ fmt.Sprintf("%s", p.Name) }
 										</option>
 									}

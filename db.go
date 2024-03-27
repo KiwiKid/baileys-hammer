@@ -58,7 +58,7 @@ func DBInit() (*gorm.DB, error) {
 
 // PlayerWithFines represents a player along with their fines
 type PlayerWithFines struct {
-    PlayerID    uint 
+    ID    uint 
     Name        string
     TotalFineCount int
     TotalFines  int
@@ -68,7 +68,7 @@ type PlayerWithFines struct {
     PendingTotalCount int
 }
 
-func FetchPlayersWithFines(db *gorm.DB) ([]PlayerWithFines, error) {
+func GetPlayersWithFines(db *gorm.DB) ([]PlayerWithFines, error) {
     var playersWithFines []PlayerWithFines
 
     // Query all players
@@ -92,11 +92,9 @@ func FetchPlayersWithFines(db *gorm.DB) ([]PlayerWithFines, error) {
                 pendingFines = append(pendingFines, f)
                 pendingSum = pendingSum + int(f.Amount)
             }
-            
-        }
-
+        } 
         pwf := PlayerWithFines{
-            PlayerID:    player.ID,
+            ID:    player.ID,
             Name:        player.Name,
             TotalFineCount: len(approvedFines),
             TotalFines:  fineSum,
@@ -150,6 +148,18 @@ func SavePlayer(db *gorm.DB, player *Player) error {
     return nil
 }
 
+func DeletePlayer(db *gorm.DB, playerId uint) error {
+
+    if err := db.Model(&Fine{}).Delete("playerId = ?", playerId).Error; err != nil {
+        return err
+    }
+
+    if err := db.Model(&Player{}).Delete("id = ?", playerId).Error; err != nil {
+        return err
+    }
+    return nil
+}
+
 // FetchLatestFines fetches a paginated list of the latest fines.
 func FetchLatestFines(db *gorm.DB, page int, pageSize int) ([]Fine, error) {
     var fines []Fine
@@ -165,7 +175,7 @@ func FetchLatestFines(db *gorm.DB, page int, pageSize int) ([]Fine, error) {
 }
 
 // FetchLatestFines fetches a paginated list of the latest fines.
-func FetchPlayers(db *gorm.DB, page int, pageSize int) ([]Player, error) {
+func GetPlayers(db *gorm.DB, page int, pageSize int) ([]Player, error) {
     var players []Player
     offset := (page - 1) * pageSize
 
@@ -302,8 +312,25 @@ type MatchEvent struct {
     gorm.Model
     MatchId  uint64
     EventName string
-    EventType string // 'subbed-off' / 'subbed-on' / 'goal' / 'assist' / 'own-goal'
+    EventType string // 'subbed-off' / 'subbed-on' / 'goal' / 'assist' / 'own-goal' / 'concded-goal'
     EventTime *time.Time `json:"timestamp" gorm:"type:datetime"`
+    EventMinute int
+    PlayerId uint64
+}
+
+type PlayerState struct {
+    PlayerId  uint
+    PlayerName string
+    TimePlayed  int // in minutes
+    Goals       int
+    Assists     int
+}
+
+type MatchState struct {
+    PlayersOn     []PlayerState
+    ScoreAgainst int
+    ScoreFor int
+    MatchDuration int            // Duration of the match in minutes so far
 }
 
 

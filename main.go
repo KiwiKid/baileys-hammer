@@ -56,7 +56,7 @@ func playerHandler(db *gorm.DB) http.HandlerFunc {
 				// Save the player using your existing logic
 				if err := SavePlayer(db, &player); err != nil {
 					log.Printf("Error saving player: %v", err)
-					http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+					http.Error(w, "Internal Server Error 1", http.StatusInternalServerError)
 					return
 				}
 
@@ -68,22 +68,27 @@ func playerHandler(db *gorm.DB) http.HandlerFunc {
 	
 			}
 		case "DELETE": {
+			log.Println("PlayerHanlder")
 			if err := r.ParseForm(); err != nil {
 				log.Printf("Error parsing form data: %v", err)
 				http.Error(w, "Bad Request savePlayerHandler ParseForm", http.StatusBadRequest)
 				return
 			}
 
-			var player Player
-			if err := decoder.Decode(&player, r.PostForm); err != nil {
-				log.Printf("Error decoding form into player struct: %v", err)
-				http.Error(w, "Bad Request savePlayerHandler Decode", http.StatusBadRequest)
+			playerIdStr := r.URL.Query().Get("playerId")
+			playerId, err := strconv.ParseUint(playerIdStr, 10, 64)
+			if err != nil {
+				log.Printf("Error get playerIdStr fine: %v", err)
+				http.Error(w, "Internal playerIdStr Error", http.StatusInternalServerError)
 				return
 			}
 
+
+			log.Printf("PlayerHanlder %d", playerId)
+
 			// Now, `player` is populated with values from the form
 			// Save the player using your existing logic
-			if err := SavePlayer(db, &player); err != nil {
+			if err := DeletePlayer(db, uint(playerId)); err != nil {
 				log.Printf("Error saving player: %v", err)
 				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 				return
@@ -139,7 +144,7 @@ func fineHandler(db *gorm.DB) http.HandlerFunc {
 				return
 			}
 
-			players, getPlayerErr := FetchPlayers(db, 0, 100)
+			players, getPlayerErr := GetPlayers(db, 0, 100)
 			if getPlayerErr != nil {
 				http.Error(w, "Invalid form data", http.StatusBadRequest)
 				return
@@ -243,22 +248,25 @@ func fineHandler(db *gorm.DB) http.HandlerFunc {
 				}
 
 				playerIdStr := r.FormValue("playerId")
-				playerId, err := strconv.ParseUint(playerIdStr, 10, 64)
-				if err != nil || playerId == 0 {
-					w.Header().Set("HX-Redirect", r.Header.Get("Referrer"))
-
-					w.WriteHeader(http.StatusOK)
-					return
-				}
-
-				fine.PlayerID = uint(playerId)
-				fine.Approved = r.FormValue("approved") == "on"
+				if(len(playerIdStr) > 0){
+					playerId, err := strconv.ParseUint(playerIdStr, 10, 64)
+					if err != nil {
+						log.Printf("Error get playerIdStr fine: %v", err)
+						http.Error(w, "Internal playerIdStr Error", http.StatusInternalServerError)
+						return
+					}
+					fine.PlayerID = uint(playerId)
+					
+					fine.Approved = r.FormValue("approved") == "on"
 				
-				if err := SaveFine(db, &fine); err != nil {
-					log.Printf("Error saving fine: %v", err)
-					http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-					return
+					if err := SaveFine(db, &fine); err != nil {
+						log.Printf("Error saving fine: %v", err)
+						http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+						return
+					}
 				}
+
+
 
 				w.Header().Set("HX-Redirect", r.Header.Get("Referrer"))
 
@@ -479,7 +487,7 @@ func presetFineMasterHandler(db *gorm.DB) http.HandlerFunc {
 			return
 		}
 
-		playersWithFines, err := FetchPlayersWithFines(db)
+		playersWithFines, err := GetPlayersWithFines(db)
 		if err != nil {
 			log.Printf("Error fetching players with fines: %v", err)
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
@@ -508,6 +516,7 @@ func main() {
 	r := chi.NewRouter()
 
 	r.HandleFunc("/players", playerHandler(db))
+	//r.HandleFunc("/players/{playerId}", playerHandler(db))
 	r.HandleFunc("/fines", fineHandler(db))
 	r.HandleFunc("/fines/approve", fineApproveHandler(db))
 	r.HandleFunc("/preset-fines", presetFineHandler(db))
@@ -523,7 +532,7 @@ func main() {
 			return
 		}
 
-		playersWithFines, err := FetchPlayersWithFines(db)
+		playersWithFines, err := GetPlayersWithFines(db)
 		if err != nil {
 			log.Printf("Error fetching players with fines: %v", err)
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)

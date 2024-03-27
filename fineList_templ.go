@@ -192,7 +192,34 @@ func fineList(fines []FineWithPlayer, page int, isFineMaster bool) templ.Compone
 			if err != nil {
 				return err
 			}
-			_, err = templBuffer.WriteString("</td></tr>")
+			_, err = templBuffer.WriteString("</td>")
+			if err != nil {
+				return err
+			}
+			if isFineMaster {
+				_, err = templBuffer.WriteString("<td><button hx-delete=\"")
+				if err != nil {
+					return err
+				}
+				_, err = templBuffer.WriteString(templ.EscapeString(fmt.Sprintf("/fines?fid=%d", f.Fine.ID)))
+				if err != nil {
+					return err
+				}
+				_, err = templBuffer.WriteString("\">")
+				if err != nil {
+					return err
+				}
+				var_16 := `🗑`
+				_, err = templBuffer.WriteString(var_16)
+				if err != nil {
+					return err
+				}
+				_, err = templBuffer.WriteString("</button></td>")
+				if err != nil {
+					return err
+				}
+			}
+			_, err = templBuffer.WriteString("</tr>")
 			if err != nil {
 				return err
 			}
@@ -201,12 +228,12 @@ func fineList(fines []FineWithPlayer, page int, isFineMaster bool) templ.Compone
 		if err != nil {
 			return err
 		}
-		var_16 := `<div class="py-3">
+		var_17 := `<div class="py-3">
 			<button hx-get={ fmt.Sprintf("/load-more?page=%d", page +1) } hx-target="this" hx-swap="outerHTML" class="px-4 py-2 bg-blue-500 text-white font-semibold rounded hover:bg-blue-700">
 				Load More
 			</button>
 		</div>`
-		_, err = templBuffer.WriteString(var_16)
+		_, err = templBuffer.WriteString(var_17)
 		if err != nil {
 			return err
 		}

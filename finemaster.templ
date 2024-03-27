@@ -17,7 +17,7 @@ templ finemaster(pass string, players []PlayerWithFines, pFines []PresetFine, qp
 			</div>
 			<div class="grid grid-cols-1 gap-2">
 				@fineAdd(fmt.Sprintf("%s/%s", finemasterBaseUrl, pass), qp.FinesOpen, players, pFines, true)
-				@playersManage(fmt.Sprintf("%s/%s", finemasterBaseUrl, pass), qp.PlayerOpen)
+				@playersManage(fmt.Sprintf("%s/%s", finemasterBaseUrl, pass), players, qp.PlayerOpen)
 			</div>
 			<div class="container mx-auto p-4">
 				<div class="flex items-center justify-center bg-gray-100 mx-auto">
@@ -44,12 +44,12 @@ templ finemaster(pass string, players []PlayerWithFines, pFines []PresetFine, qp
 									for _, pf := range pFines {
 										if pf.Approved {
 											<form class=" inline-flex mx-2 space-y-2">
-												<div hidden class={ fmt.Sprintf("fine-group-%d-%d", pf.ID, p.PlayerID) }>
-													<input type="hidden" name="playerId" value={ fmt.Sprintf("%v", p.PlayerID) }/>
+												<div hidden class={ fmt.Sprintf("fine-group-%d-%d", pf.ID, p.ID) }>
+													<input type="hidden" name="playerId" value={ fmt.Sprintf("%v", p.ID) }/>
 													<input type="hidden" name="presetFineId" value={ fmt.Sprintf("%v", pf.ID) }/>
 													<input type="hidden" name="approved" value="on"/>
 												</div>
-												<button hx-post="/fines" hx-include={ fmt.Sprintf(".fine-group-%d-%d", pf.ID, p.PlayerID) } class={ bigAdd }>
+												<button hx-post="/fines" hx-include={ fmt.Sprintf(".fine-group-%d-%d", pf.ID, p.ID) } class={ bigAdd }>
 													{ fmt.Sprintf("%s ($%v)", pf.Reason, pf.Amount) }
 												</button>
 											</form>
@@ -126,7 +126,7 @@ templ presetFines(baseUrl string, isOpen bool, presetFines []PresetFine) {
 	}
 }
 
-templ playersManage(baseUrl string, isOpen bool) {
+templ playersManage(baseUrl string, players []PlayerWithFines, isOpen bool) {
 	if isOpen {
 		<div class="flex items-center justify-center bg-gray-100" id="players-manage">
 			<div class="px-8 py-6 text-left bg-white shadow-xl m-10">
@@ -141,20 +141,13 @@ templ playersManage(baseUrl string, isOpen bool) {
 						<button type="submit" class={ bigAdd }>Add Player</button>
 					</div>
 				</form>
-				<!-- Section for Deleting Existing Player -->
-				<h3 class="text-2xl font-bold text-center mt-8">Delete Player</h3>
-				<form hx-delete="/players" method="POST" class="mt-4">
-					<div>
-						<label for="playerSelect" class="block">Select Player</label>
-						<select name="playerId" id="playerSelect" class="w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600">
-							<option value="1">Player 1</option>
-							<option value="2">Player 2</option>
-						</select>
-					</div>
-					<div class="flex items-center w-full">
-						<button type="submit" hx-confirm="Are you sure you want to delete this player?" class={ bigDel }>Delete Player</button>
-					</div>
-				</form>
+				<div>
+					<!-- Section for Deleting Existing Player -->
+					<h3 class="text-2xl font-bold text-center mt-8">Delete Player</h3>
+					for _, p := range players {
+						<button type="submit" hx-delete={ fmt.Sprintf("/players?playerId=%d", p.ID) } hx-confirm={ fmt.Sprintf("Are you sure you want to delete %s?", p.Name) } class={ bigDel }>Delete { p.Name }</button>
+					}
+				</div>
 				<div class="flex justify-center w-full mt-4">
 					<a href={ makeSafeUrl(baseUrl, false, false, false) } hx-transition="true" class={ bigSec }>Close</a>
 				</div>
