@@ -127,6 +127,11 @@ func fineContestHandler(db *gorm.DB) http.HandlerFunc {
 			return
 		}
 
+		w.Header().Set("HX-Redirect", "/fine-list")
+		w.Header().Set("HX-Refresh", "true")
+
+		// Optionally, you can set the status code to 200 OK or any appropriate status
+		w.WriteHeader(http.StatusOK)
 	}
 }
 
@@ -214,12 +219,13 @@ func fineEditHandler(db *gorm.DB) http.HandlerFunc {
 
 			fineAtStr := r.FormValue("fineAt")
 			fineAt, err := time.Parse("2006-01-02", fineAtStr)
-
 			if err != nil {
 				// Handle parsing error, perhaps set a default value or return an error response
 				http.Error(w, "Failed to parse fineAt time", http.StatusBadRequest)
 				return
 			}
+			context := r.FormValue("context")
+
 
             // Update the fine in the database
             fine := Fine{
@@ -227,6 +233,7 @@ func fineEditHandler(db *gorm.DB) http.HandlerFunc {
 				PlayerID: uint(playerId),
                 Amount:   amount,
                 Reason:   reason,
+				Context: context,
                 Approved: approved,
 				FineAt: fineAt,
             }
@@ -339,6 +346,8 @@ func fineHandler(db *gorm.DB) http.HandlerFunc {
 					return
 				}
 			
+				context := r.FormValue("context")
+
 				var presetFine *PresetFine
 				presetFineStr := r.FormValue("presetFineId")
 				if(len(presetFineStr) > 0 && presetFineStr != "-1"){
@@ -359,6 +368,8 @@ func fineHandler(db *gorm.DB) http.HandlerFunc {
 					fine = Fine{
 						Amount: presetFine.Amount,
 						Reason: presetFine.Reason,
+						Context: context,
+						FineAt: time.Now(),
 					}
 				} else {
 					amountStr := r.FormValue("amount")
@@ -374,7 +385,6 @@ func fineHandler(db *gorm.DB) http.HandlerFunc {
 
 
 					reason := r.FormValue("reason")
-					context := r.FormValue("context")
 
 					log.Printf("%+v %+v", r.FormValue("fineOption"), r.FormValue("fineOption") == "applyAgain")
 
@@ -415,6 +425,8 @@ func fineHandler(db *gorm.DB) http.HandlerFunc {
 					
 					fine.Approved = r.FormValue("approved") == "on"
 				
+					log.Printf("SAVE FINE WITH %s", fine.Context)
+					log.Printf("SAVE FINE WITH RASON %s", fine.Reason)
 					if err := SaveFine(db, &fine); err != nil {
 						log.Printf("Error saving fine: %v", err)
 						http.Error(w, "Internal Server Error", http.StatusInternalServerError)
