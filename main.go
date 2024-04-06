@@ -8,6 +8,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/go-chi/chi"
 	"github.com/gorilla/schema"
@@ -181,6 +182,14 @@ func fineEditHandler(db *gorm.DB) http.HandlerFunc {
                 return
             }
 
+			fineAtStr := r.FormValue("fineAt")
+			fineAt, err := time.Parse("2006-01-02", fineAtStr)
+
+			if err != nil {
+				// Handle parsing error, perhaps set a default value or return an error response
+				http.Error(w, "Failed to parse fineAt time", http.StatusBadRequest)
+				return
+			}
 
             // Update the fine in the database
             fine := Fine{
@@ -189,6 +198,7 @@ func fineEditHandler(db *gorm.DB) http.HandlerFunc {
                 Amount:   amount,
                 Reason:   reason,
                 Approved: approved,
+				FineAt: fineAt,
             }
 
             if err := SaveFine(db, &fine); err != nil {
@@ -357,6 +367,7 @@ func fineHandler(db *gorm.DB) http.HandlerFunc {
 					fine = Fine{
 						Amount: amount,
 						Reason: reason,
+						FineAt: time.Now(),
 					}
 				}
 
@@ -537,11 +548,6 @@ func presetFineHandler(db *gorm.DB) http.HandlerFunc {
 				return
 			}
 
-            if err := SavePresetFine(db, &presetFine); err != nil {
-                log.Printf("Error saving preset fine: %v", err)
-                http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-                return
-            }
 
 			w.Header().Set("HX-Redirect", r.Header.Get("Referrer"))
 

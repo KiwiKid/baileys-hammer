@@ -141,7 +141,7 @@ templ home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines
 											<div class="p-2">
 												for _, f := range p.Fines {
 													<div class="mt-1">
-														<p>{ f.Reason } { fmt.Sprintf("$%.0f - %s", f.Amount, humanize.Time(f.CreatedAt)) }</p>
+														<p>{ f.Reason } { fmt.Sprintf("$%.0f - %s", f.Amount, humanize.Time(f.FineAt)) }</p>
 													</div>
 												}
 											</div>

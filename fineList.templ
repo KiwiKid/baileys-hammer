@@ -27,7 +27,7 @@ templ fineList(fines []FineWithPlayer, page int, isFineMaster bool) {
 						Approved
 					</th>
 					<th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-						When
+						Occured
 					</th>
 				</tr>
 			</thead>
@@ -92,7 +92,7 @@ templ fineRow(isFineMaster bool, f FineWithPlayer) {
 			}
 		</td>
 		<td>
-			{ humanize.Time(f.Fine.CreatedAt) }
+			{ humanize.Time(f.Fine.FineAt) }
 		</td>
 		if isFineMaster {
 			<td>
@@ -161,12 +161,15 @@ templ fineEditRow(f FineWithPlayer) {
 			</select>
 		</td>
 		<td>
+			[
+			{  f.Fine.FineAt.Format("2006-01-02") }
+			]
 			<input
- 				type="text"
- 				name="when"
- 				value={ humanize.Time(f.Fine.CreatedAt) }
+ 				type="date"
+ 				id="fineAt"
+ 				name="fineAt"
+ 				value={ f.Fine.FineAt.Format("2006-01-02") }
  				class="px-2 py-1 border rounded w-full"
- 				disabled
 			/>
 		</td>
 		<td>

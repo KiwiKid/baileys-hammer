@@ -443,7 +443,7 @@ func home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines 
 				if err != nil {
 					return err
 				}
-				var var_31 string = fmt.Sprintf("$%.0f - %s", f.Amount, humanize.Time(f.CreatedAt))
+				var var_31 string = fmt.Sprintf("$%.0f - %s", f.Amount, humanize.Time(f.FineAt))
 				_, err = templBuffer.WriteString(templ.EscapeString(var_31))
 				if err != nil {
 					return err

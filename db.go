@@ -22,6 +22,7 @@ type Player struct {
 type Fine struct {
     gorm.Model
     PlayerID uint
+    FineAt time.Time
     Reason   string
     Amount   float64
     Approved bool
@@ -49,8 +50,20 @@ func DBInit() (*gorm.DB, error) {
     }
 
     //db.Migrator().DropTable(&Match{})
-    if(!db.Migrator().HasColumn(&Match{}, "seasonId")){
-        db.Migrator().AddColumn(&Match{}, "seasonId")
+    if(!db.Migrator().HasColumn(&Match{}, "SeasonId")){
+        db.Migrator().AddColumn(&Match{}, "SeasonId")
+    }
+
+    if(!db.Migrator().HasColumn(&Fine{}, "FineAt")){
+        db.Migrator().AddColumn(&Fine{}, "FineAt")
+
+        result := db.Model(&Fine{}).Where("fine_at IS NULL").Updates(map[string]interface{}{
+            "fine_at": gorm.Expr("created_at"),
+        })
+        
+        if result.Error != nil {
+            panic(result.Error)
+        }
     }
 
     return db, nil
