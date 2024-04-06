@@ -72,14 +72,14 @@ func DBInit() (*gorm.DB, error) {
 
     if(!db.Migrator().HasColumn(&Fine{}, "FineAt")){
         db.Migrator().AddColumn(&Fine{}, "FineAt")
+    }
 
-        result := db.Model(&Fine{}).Where("fine_at IS NULL").Updates(map[string]interface{}{
-            "fine_at": gorm.Expr("created_at"),
-        })
-        
-        if result.Error != nil {
-            panic(result.Error)
-        }
+    result := db.Model(&Fine{}).Where("fine_at IS NULL").Updates(map[string]interface{}{
+        "fine_at": gorm.Expr("created_at"),
+    })
+    
+    if result.Error != nil {
+        panic(result.Error)
     }
 
     return db, nil
