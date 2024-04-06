@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"sort"
@@ -26,6 +27,8 @@ type Fine struct {
     Reason   string
     Amount   float64
     Approved bool
+    Context string
+    Contest string
 }
 
 
@@ -53,6 +56,19 @@ func DBInit() (*gorm.DB, error) {
     if(!db.Migrator().HasColumn(&Match{}, "SeasonId")){
         db.Migrator().AddColumn(&Match{}, "SeasonId")
     }
+
+    if(!db.Migrator().HasColumn(&Fine{}, "Context")){
+        db.Migrator().AddColumn(&Fine{}, "Context")
+    }
+
+    if(!db.Migrator().HasColumn(&Fine{}, "Contest")){
+        db.Migrator().AddColumn(&Fine{}, "Contest")
+    }
+
+    if(!db.Migrator().HasColumn(&PresetFine{}, "Context")){
+        db.Migrator().AddColumn(&PresetFine{}, "Context")
+    }
+
 
     if(!db.Migrator().HasColumn(&Fine{}, "FineAt")){
         db.Migrator().AddColumn(&Fine{}, "FineAt")
@@ -219,6 +235,28 @@ func SaveFine(db *gorm.DB, fine *Fine) error {
     return nil
 }
 
+func UpdateFineContestByID(db *gorm.DB, fineID uint, contest string) error {
+    // Create a map with the fields you want to update
+    updates := map[string]interface{}{
+        "Contest": contest,
+    }
+
+    // Find the Fine by ID and update the Contest field
+    result := db.Model(&Fine{}).Where("id = ?", fineID).Updates(updates)
+
+    // Check if the update operation resulted in an error
+    if result.Error != nil {
+        return result.Error
+    }
+
+    // Optionally, check if the record was found and updated
+    if result.RowsAffected == 0 {
+        return fmt.Errorf("no fine found with ID %d", fineID)
+    }
+
+    return nil
+}
+
 func ApproveFine(db *gorm.DB, id uint, amount float64) error {
     // Find and update the fine's Approved field to true
     updates := map[string]interface{}{
@@ -279,6 +317,7 @@ type PresetFine struct {
     Reason string
     Amount float64
     Approved bool
+    Context string
 }
 
 

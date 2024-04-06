@@ -153,7 +153,8 @@ templ home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines
 					</div>
 				</div>
 			</div>
-			<div id="fine-list-container" hx-get="/fines" hx-trigger="load once" hx-swap="OuterHTML" class="w-full text-center">loading latest..</div>
+			<button hx-get="/fines" hx-target="#fine-list-container" hx-swap="outerHTML" hx-trigger="click,load once" class="text-3xl">↻</button>
+			<div id="fine-list-container" class="w-full text-center">loading latest..</div>
 			<script src="https://unpkg.com/htmx.org"></script>
 			@pageFooter()
 		</body>
@@ -222,15 +223,21 @@ templ fineAdd(baseUrl string, isOpen bool, players []PlayerWithFines, presetFine
 								</div>
 							</section>
 							<div class="mt-4">
-								<label class="text-lg font-semibold">Who does this fine apply to? (optional):</label>
+								<label>Who?</label>
 								<select name="playerId" class="mt-1 w-full border-gray-300  bg-white rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
-									<option selected value="">N/A</option>
+									<option selected value="">[no player - just suggest fine]</option>
 									for _, p := range players {
 										<option value={ fmt.Sprintf("%v", p.ID) }>
 											{ fmt.Sprintf("%s", p.Name) }
 										</option>
 									}
 								</select>
+							</div>
+							<div>
+								<div class="mt-4">
+									<label for="reason" class="block">More Context (optional):</label>
+									<input type="text" name="context" id="reason" placeholder="More Context for the fine" class="w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+								</div>
 							</div>
 						</div>
 					</div>

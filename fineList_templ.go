@@ -27,7 +27,7 @@ func fineList(fines []FineWithPlayer, page int, isFineMaster bool) templ.Compone
 			var_1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, err = templBuffer.WriteString("<div class=\"container mx-auto text-center\"><div class=\"text-3xl p-10\">")
+		_, err = templBuffer.WriteString("<div class=\"container mx-auto text-center\" id=\"fine-list-container\"><div id=\"fine-list\" class=\"text-3xl p-10\">")
 		if err != nil {
 			return err
 		}
@@ -49,7 +49,7 @@ func fineList(fines []FineWithPlayer, page int, isFineMaster bool) templ.Compone
 		if err != nil {
 			return err
 		}
-		var_4 := `Amount`
+		var_4 := `Context`
 		_, err = templBuffer.WriteString(var_4)
 		if err != nil {
 			return err
@@ -58,7 +58,7 @@ func fineList(fines []FineWithPlayer, page int, isFineMaster bool) templ.Compone
 		if err != nil {
 			return err
 		}
-		var_5 := `Player`
+		var_5 := `Amount`
 		_, err = templBuffer.WriteString(var_5)
 		if err != nil {
 			return err
@@ -67,7 +67,7 @@ func fineList(fines []FineWithPlayer, page int, isFineMaster bool) templ.Compone
 		if err != nil {
 			return err
 		}
-		var_6 := `Approved`
+		var_6 := `Player`
 		_, err = templBuffer.WriteString(var_6)
 		if err != nil {
 			return err
@@ -76,8 +76,26 @@ func fineList(fines []FineWithPlayer, page int, isFineMaster bool) templ.Compone
 		if err != nil {
 			return err
 		}
-		var_7 := `Occured`
+		var_7 := `Approved`
 		_, err = templBuffer.WriteString(var_7)
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("</th><th scope=\"col\" class=\"px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider\">")
+		if err != nil {
+			return err
+		}
+		var_8 := `Contest`
+		_, err = templBuffer.WriteString(var_8)
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("</th><th scope=\"col\" class=\"px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider\">")
+		if err != nil {
+			return err
+		}
+		var_9 := `Occured`
+		_, err = templBuffer.WriteString(var_9)
 		if err != nil {
 			return err
 		}
@@ -95,12 +113,12 @@ func fineList(fines []FineWithPlayer, page int, isFineMaster bool) templ.Compone
 		if err != nil {
 			return err
 		}
-		var_8 := `<div class="py-3">
+		var_10 := `<div class="py-3">
 			<button hx-get={ fmt.Sprintf("/load-more?page=%d", page +1) } hx-target="this" hx-swap="outerHTML" class="px-4 py-2 bg-blue-500 text-white font-semibold rounded hover:bg-blue-700">
 				Load More
 			</button>
 		</div>`
-		_, err = templBuffer.WriteString(var_8)
+		_, err = templBuffer.WriteString(var_10)
 		if err != nil {
 			return err
 		}
@@ -123,9 +141,9 @@ func fineRow(isFineMaster bool, f FineWithPlayer) templ.Component {
 			defer templ.ReleaseBuffer(templBuffer)
 		}
 		ctx = templ.InitializeContext(ctx)
-		var_9 := templ.GetChildren(ctx)
-		if var_9 == nil {
-			var_9 = templ.NopComponent
+		var_11 := templ.GetChildren(ctx)
+		if var_11 == nil {
+			var_11 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
 		_, err = templBuffer.WriteString("<tr id=\"")
@@ -155,8 +173,17 @@ func fineRow(isFineMaster bool, f FineWithPlayer) templ.Component {
 		if err != nil {
 			return err
 		}
-		var var_10 string = f.Fine.Reason
-		_, err = templBuffer.WriteString(templ.EscapeString(var_10))
+		var var_12 string = f.Fine.Reason
+		_, err = templBuffer.WriteString(templ.EscapeString(var_12))
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("</td><td class=\"px-6 py-4 whitespace-nowrap text-sm text-gray-900\">")
+		if err != nil {
+			return err
+		}
+		var var_13 string = f.Fine.Context
+		_, err = templBuffer.WriteString(templ.EscapeString(var_13))
 		if err != nil {
 			return err
 		}
@@ -165,14 +192,14 @@ func fineRow(isFineMaster bool, f FineWithPlayer) templ.Component {
 			return err
 		}
 		if f.Fine.Approved {
-			var var_11 string = fmt.Sprintf("%v", f.Fine.Amount)
-			_, err = templBuffer.WriteString(templ.EscapeString(var_11))
+			var var_14 string = fmt.Sprintf("%v", f.Fine.Amount)
+			_, err = templBuffer.WriteString(templ.EscapeString(var_14))
 			if err != nil {
 				return err
 			}
 		} else {
-			var_12 := `----`
-			_, err = templBuffer.WriteString(var_12)
+			var_15 := `----`
+			_, err = templBuffer.WriteString(var_15)
 			if err != nil {
 				return err
 			}
@@ -181,8 +208,8 @@ func fineRow(isFineMaster bool, f FineWithPlayer) templ.Component {
 		if err != nil {
 			return err
 		}
-		var var_13 string = f.Player.Name
-		_, err = templBuffer.WriteString(templ.EscapeString(var_13))
+		var var_16 string = f.Player.Name
+		_, err = templBuffer.WriteString(templ.EscapeString(var_16))
 		if err != nil {
 			return err
 		}
@@ -195,8 +222,8 @@ func fineRow(isFineMaster bool, f FineWithPlayer) templ.Component {
 			if err != nil {
 				return err
 			}
-			var_14 := `✅`
-			_, err = templBuffer.WriteString(var_14)
+			var_17 := `✅`
+			_, err = templBuffer.WriteString(var_17)
 			if err != nil {
 				return err
 			}
@@ -217,8 +244,8 @@ func fineRow(isFineMaster bool, f FineWithPlayer) templ.Component {
 			if err != nil {
 				return err
 			}
-			var_15 := `Approve`
-			_, err = templBuffer.WriteString(var_15)
+			var_18 := `Approve`
+			_, err = templBuffer.WriteString(var_18)
 			if err != nil {
 				return err
 			}
@@ -227,8 +254,8 @@ func fineRow(isFineMaster bool, f FineWithPlayer) templ.Component {
 				return err
 			}
 		} else {
-			var_16 := `(Pending approval)`
-			_, err = templBuffer.WriteString(var_16)
+			var_19 := `(Pending approval)`
+			_, err = templBuffer.WriteString(var_19)
 			if err != nil {
 				return err
 			}
@@ -237,8 +264,54 @@ func fineRow(isFineMaster bool, f FineWithPlayer) templ.Component {
 		if err != nil {
 			return err
 		}
-		var var_17 string = humanize.Time(f.Fine.FineAt)
-		_, err = templBuffer.WriteString(templ.EscapeString(var_17))
+		if len(f.Fine.Contest) == 0 {
+			var var_20 = []any{bigSec}
+			err = templ.RenderCSSItems(ctx, templBuffer, var_20...)
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("<button hx-get=\"")
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString(templ.EscapeString(fmt.Sprintf("/fines/edit/%d?isContest=true", f.Fine.ID)))
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("\" hx-swap=\"outerHTML\" class=\"")
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_20).String()))
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("\">")
+			if err != nil {
+				return err
+			}
+			var_21 := `Contest`
+			_, err = templBuffer.WriteString(var_21)
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("</button>")
+			if err != nil {
+				return err
+			}
+		} else {
+			var var_22 string = f.Fine.Contest
+			_, err = templBuffer.WriteString(templ.EscapeString(var_22))
+			if err != nil {
+				return err
+			}
+		}
+		_, err = templBuffer.WriteString("</td><td>")
+		if err != nil {
+			return err
+		}
+		var var_23 string = humanize.Time(f.Fine.FineAt)
+		_, err = templBuffer.WriteString(templ.EscapeString(var_23))
 		if err != nil {
 			return err
 		}
@@ -267,17 +340,143 @@ func fineRow(isFineMaster bool, f FineWithPlayer) templ.Component {
 			if err != nil {
 				return err
 			}
-			var_18 := `edit`
-			_, err = templBuffer.WriteString(var_18)
+			var_24 := `edit`
+			_, err = templBuffer.WriteString(var_24)
 			if err != nil {
 				return err
 			}
-			_, err = templBuffer.WriteString("</button></td> <td></td>")
+			_, err = templBuffer.WriteString("</button></td>")
 			if err != nil {
 				return err
 			}
 		}
 		_, err = templBuffer.WriteString("</tr>")
+		if err != nil {
+			return err
+		}
+		if !templIsBuffer {
+			_, err = templBuffer.WriteTo(w)
+		}
+		return err
+	})
+}
+
+func fineContestRow(f FineWithPlayer) templ.Component {
+	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+		templBuffer, templIsBuffer := w.(*bytes.Buffer)
+		if !templIsBuffer {
+			templBuffer = templ.GetBuffer()
+			defer templ.ReleaseBuffer(templBuffer)
+		}
+		ctx = templ.InitializeContext(ctx)
+		var_25 := templ.GetChildren(ctx)
+		if var_25 == nil {
+			var_25 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		_, err = templBuffer.WriteString("<div class=\"px-2 py-2 gap-2 border rounded\"><p class=\"text-3xl p-10\">")
+		if err != nil {
+			return err
+		}
+		var_26 := `Contest this fine:`
+		_, err = templBuffer.WriteString(var_26)
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("</p><div class=\"py-2\"><input type=\"text\" name=\"contest\" value=\"")
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString(templ.EscapeString(f.Fine.Contest))
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("\" class=\"px-2 py-1 border rounded w-full\" placeholder=\"Reason\"></div><div class=\"py-2\"><input type=\"hidden\" name=\"fid\" value=\"")
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString(templ.EscapeString(fmt.Sprintf("%d", f.Fine.ID)))
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("\"></div><div class=\"py-2\">")
+		if err != nil {
+			return err
+		}
+		var var_27 = []any{bigPri}
+		err = templ.RenderCSSItems(ctx, templBuffer, var_27...)
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("<button class=\"")
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_27).String()))
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("\" hx-post=\"")
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString(templ.EscapeString(fmt.Sprintf("/fines/contest")))
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("\" hx-target=\"")
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString(templ.EscapeString(fmt.Sprintf("#fr-%d", f.Fine.ID)))
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("\" hx-swap=\"outerHTML\" hx-include=\"closest tr\" type=\"submit\">")
+		if err != nil {
+			return err
+		}
+		var_28 := `Save`
+		_, err = templBuffer.WriteString(var_28)
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("</button></div><div class=\"w-full\">")
+		if err != nil {
+			return err
+		}
+		var var_29 = []any{bigSec}
+		err = templ.RenderCSSItems(ctx, templBuffer, var_29...)
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("<a href=\"")
+		if err != nil {
+			return err
+		}
+		var var_30 templ.SafeURL = templ.SafeURL("/#fine-list")
+		_, err = templBuffer.WriteString(templ.EscapeString(string(var_30)))
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("\" class=\"")
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_29).String()))
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("\">")
+		if err != nil {
+			return err
+		}
+		var_31 := `Cancel`
+		_, err = templBuffer.WriteString(var_31)
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("</a></div></div>")
 		if err != nil {
 			return err
 		}
@@ -296,9 +495,9 @@ func fineEditRow(f FineWithPlayer) templ.Component {
 			defer templ.ReleaseBuffer(templBuffer)
 		}
 		ctx = templ.InitializeContext(ctx)
-		var_19 := templ.GetChildren(ctx)
-		if var_19 == nil {
-			var_19 = templ.NopComponent
+		var_32 := templ.GetChildren(ctx)
+		if var_32 == nil {
+			var_32 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
 		_, err = templBuffer.WriteString("<tr id=\"")
@@ -317,7 +516,15 @@ func fineEditRow(f FineWithPlayer) templ.Component {
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("\" class=\"px-2 py-1 border rounded w-full\" placeholder=\"Reason\"><input type=\"playerId\" name=\"playerId\" value=\"")
+		_, err = templBuffer.WriteString("\" class=\"px-2 py-1 border rounded w-full\" placeholder=\"Reason\"><input type=\"text\" name=\"context\" value=\"")
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString(templ.EscapeString(f.Fine.Context))
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("\" class=\"px-2 py-1 border rounded w-full\" placeholder=\"Context\"><input type=\"playerId\" name=\"playerId\" value=\"")
 		if err != nil {
 			return err
 		}
@@ -345,8 +552,8 @@ func fineEditRow(f FineWithPlayer) templ.Component {
 		if err != nil {
 			return err
 		}
-		var var_20 string = f.Player.Name
-		_, err = templBuffer.WriteString(templ.EscapeString(var_20))
+		var var_33 string = f.Player.Name
+		_, err = templBuffer.WriteString(templ.EscapeString(var_33))
 		if err != nil {
 			return err
 		}
@@ -364,8 +571,8 @@ func fineEditRow(f FineWithPlayer) templ.Component {
 		if err != nil {
 			return err
 		}
-		var_21 := `Approved`
-		_, err = templBuffer.WriteString(var_21)
+		var_34 := `Approved`
+		_, err = templBuffer.WriteString(var_34)
 		if err != nil {
 			return err
 		}
@@ -383,39 +590,12 @@ func fineEditRow(f FineWithPlayer) templ.Component {
 		if err != nil {
 			return err
 		}
-		var_22 := `Not Approved`
-		_, err = templBuffer.WriteString(var_22)
+		var_35 := `Not Approved`
+		_, err = templBuffer.WriteString(var_35)
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("</option></select></td><td>")
-		if err != nil {
-			return err
-		}
-		var_23 := `[`
-		_, err = templBuffer.WriteString(var_23)
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString(" ")
-		if err != nil {
-			return err
-		}
-		var var_24 string = f.Fine.FineAt.Format("2006-01-02")
-		_, err = templBuffer.WriteString(templ.EscapeString(var_24))
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString(" ")
-		if err != nil {
-			return err
-		}
-		var_25 := `]`
-		_, err = templBuffer.WriteString(var_25)
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString(" <input type=\"date\" id=\"fineAt\" name=\"fineAt\" value=\"")
+		_, err = templBuffer.WriteString("</option></select></td><td><input type=\"date\" id=\"fineAt\" name=\"fineAt\" value=\"")
 		if err != nil {
 			return err
 		}
@@ -427,8 +607,8 @@ func fineEditRow(f FineWithPlayer) templ.Component {
 		if err != nil {
 			return err
 		}
-		var var_26 = []any{bigDel}
-		err = templ.RenderCSSItems(ctx, templBuffer, var_26...)
+		var var_36 = []any{bigDel}
+		err = templ.RenderCSSItems(ctx, templBuffer, var_36...)
 		if err != nil {
 			return err
 		}
@@ -436,7 +616,7 @@ func fineEditRow(f FineWithPlayer) templ.Component {
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_26).String()))
+		_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_36).String()))
 		if err != nil {
 			return err
 		}
@@ -452,8 +632,8 @@ func fineEditRow(f FineWithPlayer) templ.Component {
 		if err != nil {
 			return err
 		}
-		var_27 := `Delete`
-		_, err = templBuffer.WriteString(var_27)
+		var_37 := `Delete`
+		_, err = templBuffer.WriteString(var_37)
 		if err != nil {
 			return err
 		}
@@ -461,8 +641,8 @@ func fineEditRow(f FineWithPlayer) templ.Component {
 		if err != nil {
 			return err
 		}
-		var var_28 = []any{bigPri}
-		err = templ.RenderCSSItems(ctx, templBuffer, var_28...)
+		var var_38 = []any{bigPri}
+		err = templ.RenderCSSItems(ctx, templBuffer, var_38...)
 		if err != nil {
 			return err
 		}
@@ -470,7 +650,7 @@ func fineEditRow(f FineWithPlayer) templ.Component {
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_28).String()))
+		_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_38).String()))
 		if err != nil {
 			return err
 		}
@@ -494,8 +674,8 @@ func fineEditRow(f FineWithPlayer) templ.Component {
 		if err != nil {
 			return err
 		}
-		var_29 := `Save`
-		_, err = templBuffer.WriteString(var_29)
+		var_39 := `Save`
+		_, err = templBuffer.WriteString(var_39)
 		if err != nil {
 			return err
 		}
@@ -503,8 +683,8 @@ func fineEditRow(f FineWithPlayer) templ.Component {
 		if err != nil {
 			return err
 		}
-		var var_30 = []any{bigSec}
-		err = templ.RenderCSSItems(ctx, templBuffer, var_30...)
+		var var_40 = []any{bigSec}
+		err = templ.RenderCSSItems(ctx, templBuffer, var_40...)
 		if err != nil {
 			return err
 		}
@@ -528,7 +708,7 @@ func fineEditRow(f FineWithPlayer) templ.Component {
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_30).String()))
+		_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_40).String()))
 		if err != nil {
 			return err
 		}
@@ -536,8 +716,8 @@ func fineEditRow(f FineWithPlayer) templ.Component {
 		if err != nil {
 			return err
 		}
-		var_31 := `Cancel`
-		_, err = templBuffer.WriteString(var_31)
+		var_41 := `Cancel`
+		_, err = templBuffer.WriteString(var_41)
 		if err != nil {
 			return err
 		}
