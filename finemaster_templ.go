@@ -187,7 +187,7 @@ func finemaster(pass string, players []PlayerWithFines, pFines []PresetFine, qp 
 					if err != nil {
 						return err
 					}
-					_, err = templBuffer.WriteString("<button hx-post=\"/fines\" hx-include=\"")
+					_, err = templBuffer.WriteString("<button hx-post=\"/fines\" hx-swap=\"this\" hx-include=\"")
 					if err != nil {
 						return err
 					}

@@ -105,6 +105,119 @@ func playerHandler(db *gorm.DB) http.HandlerFunc {
 	}
 }
 
+
+func fineEditHandler(db *gorm.DB) http.HandlerFunc {
+    return func(w http.ResponseWriter, r *http.Request) {
+        switch r.Method {
+        case "GET":
+            // Extract fine ID from query parameters
+            fineIDStr := chi.URLParam(r, "fid")
+            fineID, err := strconv.ParseUint(fineIDStr, 10, 64)
+			log.Printf("fineIDStr")
+			log.Printf("%s", fineIDStr)
+            if err != nil {
+                http.Error(w, fmt.Sprintf("Invalid fine ID - %s", fineIDStr), http.StatusBadRequest)
+                return
+            }
+
+            // Fetch the fine details from the database
+            fine, err := GetFineByID(db, uint(fineID))
+            if err != nil {
+                http.Error(w, "Fine not found", http.StatusNotFound)
+                return
+            } else { 
+				log.Printf("GOT FINE: \n\n %+v", fine)
+			}
+
+            // Fetch associated player details (assuming GetPlayerByID is a function you have)
+            player, err := GetPlayerByID(db, fine.PlayerID)
+            if err != nil {
+                http.Error(w, fmt.Sprintf("Player not found - %d", fine.PlayerID), http.StatusNotFound)
+                return
+            }
+
+            // Prepare the data for rendering
+            fineWithPlayer := FineWithPlayer{
+                Fine:   *fine,
+                Player: *player,
+            }
+
+			isEdit := r.URL.Query().Get("isEdit")
+
+			if (isEdit == "true") {
+				fineEditRow := fineEditRow(fineWithPlayer)
+				fineEditRow.Render(r.Context(), w)
+			} else {
+				fineRowComp := fineRow(true, fineWithPlayer)
+				fineRowComp.Render(r.Context(), w)
+			}
+
+        case "POST":
+            // Parse form data
+            if err := r.ParseForm(); err != nil {
+                http.Error(w, "Invalid form data", http.StatusBadRequest)
+                return
+            }
+
+            // Extract and validate form data
+            fineID, err := strconv.ParseUint(r.FormValue("fid"), 10, 64)
+            if err != nil {
+                http.Error(w, "Invalid fine ID", http.StatusBadRequest)
+                return
+            }
+
+            amountStr := r.FormValue("amount")
+            amount, err := strconv.ParseFloat(amountStr, 64)
+            if err != nil {
+                http.Error(w, "Invalid amount", http.StatusBadRequest)
+                return
+            }
+
+            reason := r.FormValue("reason")
+            approved := r.FormValue("approved") == "true"
+            playerId, err := strconv.ParseUint(r.FormValue("playerId"), 10, 64)
+            if err != nil {
+                http.Error(w, "Invalid fine ID", http.StatusBadRequest)
+                return
+            }
+
+
+            // Update the fine in the database
+            fine := Fine{
+                Model:    gorm.Model{ID: uint(fineID)},
+				PlayerID: uint(playerId),
+                Amount:   amount,
+                Reason:   reason,
+                Approved: approved,
+            }
+
+            if err := SaveFine(db, &fine); err != nil {
+                http.Error(w, "Failed to update fine", http.StatusInternalServerError)
+                return
+            }
+
+			player, err := GetPlayerByID(db, fine.PlayerID)
+			if err != nil {
+				http.Error(w, fmt.Sprintf("Player not found - %d", fine.PlayerID), http.StatusNotFound)
+				return
+			}
+
+			// Prepare the data for rendering
+			fineWithPlayer := FineWithPlayer{
+				Fine:   fine,
+				Player: *player,
+			}
+				
+			fineRowComp := fineRow(true, fineWithPlayer)
+			fineRowComp.Render(r.Context(), w)
+
+        default:
+            http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+        }
+    }
+}
+
+
 type FineWithPlayer struct {
 	Fine Fine
 	Player Player
@@ -197,7 +310,7 @@ func fineHandler(db *gorm.DB) http.HandlerFunc {
 					presetFine, err = GetPresetFine(db, pfId)
 					if err != nil {
 						http.Error(w, "Could not GetPresetFine", http.StatusBadRequest)
-						return
+						return 
 					}
 				}
 
@@ -519,6 +632,7 @@ func main() {
 	//r.HandleFunc("/players/{playerId}", playerHandler(db))
 	r.HandleFunc("/fines", fineHandler(db))
 	r.HandleFunc("/fines/approve", fineApproveHandler(db))
+	r.HandleFunc("/fines/edit/{fid}", fineEditHandler(db))
 	r.HandleFunc("/preset-fines", presetFineHandler(db))
 	r.HandleFunc("/preset-fines/approve", presetFineApproveHandler(db))
 	r.HandleFunc("/finemaster/{pass}", presetFineMasterHandler(db))

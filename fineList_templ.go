@@ -86,140 +86,7 @@ func fineList(fines []FineWithPlayer, page int, isFineMaster bool) templ.Compone
 			return err
 		}
 		for _, f := range fines {
-			_, err = templBuffer.WriteString("<tr")
-			if err != nil {
-				return err
-			}
-			if f.Fine.Approved {
-				_, err = templBuffer.WriteString(" class=\"bg-white divide-y divide-gray-200\"")
-				if err != nil {
-					return err
-				}
-			} else {
-				_, err = templBuffer.WriteString(" class=\"bg-yellow-200 divide-y divide-gray-200\"")
-				if err != nil {
-					return err
-				}
-			}
-			_, err = templBuffer.WriteString("><td class=\"px-6 py-4 whitespace-nowrap text-sm text-gray-900\">")
-			if err != nil {
-				return err
-			}
-			var var_8 string = f.Fine.Reason
-			_, err = templBuffer.WriteString(templ.EscapeString(var_8))
-			if err != nil {
-				return err
-			}
-			_, err = templBuffer.WriteString("</td><td class=\"px-6 py-4 whitespace-nowrap text-sm text-gray-900\">")
-			if err != nil {
-				return err
-			}
-			if f.Fine.Approved {
-				var var_9 string = fmt.Sprintf("%v", f.Fine.Amount)
-				_, err = templBuffer.WriteString(templ.EscapeString(var_9))
-				if err != nil {
-					return err
-				}
-			} else {
-				var_10 := `----`
-				_, err = templBuffer.WriteString(var_10)
-				if err != nil {
-					return err
-				}
-			}
-			_, err = templBuffer.WriteString("</td><td>")
-			if err != nil {
-				return err
-			}
-			var var_11 string = f.Player.Name
-			_, err = templBuffer.WriteString(templ.EscapeString(var_11))
-			if err != nil {
-				return err
-			}
-			_, err = templBuffer.WriteString("</td><td>")
-			if err != nil {
-				return err
-			}
-			if f.Fine.Approved {
-				_, err = templBuffer.WriteString("<div>")
-				if err != nil {
-					return err
-				}
-				var_12 := `✅`
-				_, err = templBuffer.WriteString(var_12)
-				if err != nil {
-					return err
-				}
-				_, err = templBuffer.WriteString("</div>")
-				if err != nil {
-					return err
-				}
-			} else if isFineMaster {
-				_, err = templBuffer.WriteString("<form hx-post=\"/fines/approve\" method=\"POST\"><input type=\"hidden\" name=\"fid\" value=\"")
-				if err != nil {
-					return err
-				}
-				_, err = templBuffer.WriteString(templ.EscapeString(fmt.Sprintf("%d", f.Fine.ID)))
-				if err != nil {
-					return err
-				}
-				_, err = templBuffer.WriteString("\"><input type=\"number\" name=\"amount\" id=\"amount-input-3\" class=\"px-2 py-1 border rounded\" placeholder=\"Set amount\"><button type=\"submit\" class=\"ml-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600\">")
-				if err != nil {
-					return err
-				}
-				var_13 := `Approve`
-				_, err = templBuffer.WriteString(var_13)
-				if err != nil {
-					return err
-				}
-				_, err = templBuffer.WriteString("</button></form>")
-				if err != nil {
-					return err
-				}
-			} else {
-				var_14 := `(Pending approval)`
-				_, err = templBuffer.WriteString(var_14)
-				if err != nil {
-					return err
-				}
-			}
-			_, err = templBuffer.WriteString("</td><td>")
-			if err != nil {
-				return err
-			}
-			var var_15 string = humanize.Time(f.Fine.CreatedAt)
-			_, err = templBuffer.WriteString(templ.EscapeString(var_15))
-			if err != nil {
-				return err
-			}
-			_, err = templBuffer.WriteString("</td>")
-			if err != nil {
-				return err
-			}
-			if isFineMaster {
-				_, err = templBuffer.WriteString("<td><button hx-delete=\"")
-				if err != nil {
-					return err
-				}
-				_, err = templBuffer.WriteString(templ.EscapeString(fmt.Sprintf("/fines?fid=%d", f.Fine.ID)))
-				if err != nil {
-					return err
-				}
-				_, err = templBuffer.WriteString("\">")
-				if err != nil {
-					return err
-				}
-				var_16 := `🗑`
-				_, err = templBuffer.WriteString(var_16)
-				if err != nil {
-					return err
-				}
-				_, err = templBuffer.WriteString("</button></td>")
-				if err != nil {
-					return err
-				}
-			}
-			_, err = templBuffer.WriteString("</tr>")
+			err = fineRow(isFineMaster, f).Render(ctx, templBuffer)
 			if err != nil {
 				return err
 			}
@@ -228,16 +95,426 @@ func fineList(fines []FineWithPlayer, page int, isFineMaster bool) templ.Compone
 		if err != nil {
 			return err
 		}
-		var_17 := `<div class="py-3">
+		var_8 := `<div class="py-3">
 			<button hx-get={ fmt.Sprintf("/load-more?page=%d", page +1) } hx-target="this" hx-swap="outerHTML" class="px-4 py-2 bg-blue-500 text-white font-semibold rounded hover:bg-blue-700">
 				Load More
 			</button>
 		</div>`
-		_, err = templBuffer.WriteString(var_17)
+		_, err = templBuffer.WriteString(var_8)
 		if err != nil {
 			return err
 		}
 		_, err = templBuffer.WriteString("--></div>")
+		if err != nil {
+			return err
+		}
+		if !templIsBuffer {
+			_, err = templBuffer.WriteTo(w)
+		}
+		return err
+	})
+}
+
+func fineRow(isFineMaster bool, f FineWithPlayer) templ.Component {
+	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+		templBuffer, templIsBuffer := w.(*bytes.Buffer)
+		if !templIsBuffer {
+			templBuffer = templ.GetBuffer()
+			defer templ.ReleaseBuffer(templBuffer)
+		}
+		ctx = templ.InitializeContext(ctx)
+		var_9 := templ.GetChildren(ctx)
+		if var_9 == nil {
+			var_9 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		_, err = templBuffer.WriteString("<tr id=\"")
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString(templ.EscapeString(fmt.Sprintf("fr-%d", f.Fine.ID)))
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("\"")
+		if err != nil {
+			return err
+		}
+		if f.Fine.Approved {
+			_, err = templBuffer.WriteString(" class=\"bg-white divide-y divide-gray-200\"")
+			if err != nil {
+				return err
+			}
+		} else {
+			_, err = templBuffer.WriteString(" class=\"bg-yellow-200 divide-y divide-gray-200\"")
+			if err != nil {
+				return err
+			}
+		}
+		_, err = templBuffer.WriteString("><td class=\"px-6 py-4 whitespace-nowrap text-sm text-gray-900\">")
+		if err != nil {
+			return err
+		}
+		var var_10 string = f.Fine.Reason
+		_, err = templBuffer.WriteString(templ.EscapeString(var_10))
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("</td><td class=\"px-6 py-4 whitespace-nowrap text-sm text-gray-900\">")
+		if err != nil {
+			return err
+		}
+		if f.Fine.Approved {
+			var var_11 string = fmt.Sprintf("%v", f.Fine.Amount)
+			_, err = templBuffer.WriteString(templ.EscapeString(var_11))
+			if err != nil {
+				return err
+			}
+		} else {
+			var_12 := `----`
+			_, err = templBuffer.WriteString(var_12)
+			if err != nil {
+				return err
+			}
+		}
+		_, err = templBuffer.WriteString("</td><td>")
+		if err != nil {
+			return err
+		}
+		var var_13 string = f.Player.Name
+		_, err = templBuffer.WriteString(templ.EscapeString(var_13))
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("</td><td>")
+		if err != nil {
+			return err
+		}
+		if f.Fine.Approved {
+			_, err = templBuffer.WriteString("<div>")
+			if err != nil {
+				return err
+			}
+			var_14 := `✅`
+			_, err = templBuffer.WriteString(var_14)
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("</div>")
+			if err != nil {
+				return err
+			}
+		} else if isFineMaster {
+			_, err = templBuffer.WriteString("<form hx-post=\"/fines/approve\" method=\"POST\"><input type=\"hidden\" name=\"fid\" value=\"")
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString(templ.EscapeString(fmt.Sprintf("%d", f.Fine.ID)))
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("\"><input type=\"number\" name=\"amount\" id=\"amount-input-3\" class=\"px-2 py-1 border rounded\" placeholder=\"Set amount\"><button type=\"submit\" class=\"ml-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600\">")
+			if err != nil {
+				return err
+			}
+			var_15 := `Approve`
+			_, err = templBuffer.WriteString(var_15)
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("</button></form>")
+			if err != nil {
+				return err
+			}
+		} else {
+			var_16 := `(Pending approval)`
+			_, err = templBuffer.WriteString(var_16)
+			if err != nil {
+				return err
+			}
+		}
+		_, err = templBuffer.WriteString("</td><td>")
+		if err != nil {
+			return err
+		}
+		var var_17 string = humanize.Time(f.Fine.CreatedAt)
+		_, err = templBuffer.WriteString(templ.EscapeString(var_17))
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("</td>")
+		if err != nil {
+			return err
+		}
+		if isFineMaster {
+			_, err = templBuffer.WriteString("<td><button hx-get=\"")
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString(templ.EscapeString(fmt.Sprintf("/fines/edit/%d?isEdit=true", f.Fine.ID)))
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("\" hx-target=\"")
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString(templ.EscapeString(fmt.Sprintf("#fr-%d", f.Fine.ID)))
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("\" hx-swap=\"outerHTML\" hx-target-error=\"#any-errors\">")
+			if err != nil {
+				return err
+			}
+			var_18 := `edit`
+			_, err = templBuffer.WriteString(var_18)
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("</button></td> <td></td>")
+			if err != nil {
+				return err
+			}
+		}
+		_, err = templBuffer.WriteString("</tr>")
+		if err != nil {
+			return err
+		}
+		if !templIsBuffer {
+			_, err = templBuffer.WriteTo(w)
+		}
+		return err
+	})
+}
+
+func fineEditRow(f FineWithPlayer) templ.Component {
+	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+		templBuffer, templIsBuffer := w.(*bytes.Buffer)
+		if !templIsBuffer {
+			templBuffer = templ.GetBuffer()
+			defer templ.ReleaseBuffer(templBuffer)
+		}
+		ctx = templ.InitializeContext(ctx)
+		var_19 := templ.GetChildren(ctx)
+		if var_19 == nil {
+			var_19 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		_, err = templBuffer.WriteString("<tr id=\"")
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString(templ.EscapeString(fmt.Sprintf("fr-%d", f.Fine.ID)))
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("\" class=\"bg-white divide-y divide-gray-200\"><td class=\"px-6 py-4\"><input type=\"text\" name=\"reason\" value=\"")
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString(templ.EscapeString(f.Fine.Reason))
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("\" class=\"px-2 py-1 border rounded w-full\" placeholder=\"Reason\"><input type=\"playerId\" name=\"playerId\" value=\"")
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString(templ.EscapeString(fmt.Sprintf("%v", f.Player.ID)))
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("\" class=\"invisible\"><input type=\"fid\" name=\"fid\" value=\"")
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString(templ.EscapeString(fmt.Sprintf("%v", f.Fine.ID)))
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("\" class=\"invisible\"></td><td class=\"px-6 py-4\"><input type=\"number\" name=\"amount\" value=\"")
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString(templ.EscapeString(fmt.Sprintf("%v", f.Fine.Amount)))
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("\" class=\"px-2 py-1 border rounded w-full\" placeholder=\"Amount\"></td><td>")
+		if err != nil {
+			return err
+		}
+		var var_20 string = f.Player.Name
+		_, err = templBuffer.WriteString(templ.EscapeString(var_20))
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("</td><td><select name=\"approved\" class=\"px-2 py-1 border rounded\"><option value=\"true\"")
+		if err != nil {
+			return err
+		}
+		if f.Fine.Approved {
+			_, err = templBuffer.WriteString(" selected")
+			if err != nil {
+				return err
+			}
+		}
+		_, err = templBuffer.WriteString(">")
+		if err != nil {
+			return err
+		}
+		var_21 := `Approved`
+		_, err = templBuffer.WriteString(var_21)
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("</option><option value=\"false\"")
+		if err != nil {
+			return err
+		}
+		if !f.Fine.Approved {
+			_, err = templBuffer.WriteString(" selected")
+			if err != nil {
+				return err
+			}
+		}
+		_, err = templBuffer.WriteString(">")
+		if err != nil {
+			return err
+		}
+		var_22 := `Not Approved`
+		_, err = templBuffer.WriteString(var_22)
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("</option></select></td><td><input type=\"text\" name=\"when\" value=\"")
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString(templ.EscapeString(humanize.Time(f.Fine.CreatedAt)))
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("\" class=\"px-2 py-1 border rounded w-full\" disabled></td><td>")
+		if err != nil {
+			return err
+		}
+		var var_23 = []any{bigDel}
+		err = templ.RenderCSSItems(ctx, templBuffer, var_23...)
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("<button class=\"")
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_23).String()))
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("\" hx-confirm=\"Are you sure you want to delete the fine by this player?\" hx-delete=\"")
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString(templ.EscapeString(fmt.Sprintf("/fines?fid=%d", f.Fine.ID)))
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("\">")
+		if err != nil {
+			return err
+		}
+		var_24 := `Delete`
+		_, err = templBuffer.WriteString(var_24)
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("</button>")
+		if err != nil {
+			return err
+		}
+		var var_25 = []any{bigPri}
+		err = templ.RenderCSSItems(ctx, templBuffer, var_25...)
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("<button class=\"")
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_25).String()))
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("\" hx-post=\"")
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString(templ.EscapeString(fmt.Sprintf("/fines/edit/%d", f.Fine.ID)))
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("\" hx-target=\"")
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString(templ.EscapeString(fmt.Sprintf("#fr-%d", f.Fine.ID)))
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("\" hx-swap=\"outerHTML\" hx-include=\"closest tr\" type=\"submit\">")
+		if err != nil {
+			return err
+		}
+		var_26 := `Save`
+		_, err = templBuffer.WriteString(var_26)
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("</button>")
+		if err != nil {
+			return err
+		}
+		var var_27 = []any{bigSec}
+		err = templ.RenderCSSItems(ctx, templBuffer, var_27...)
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("<button hx-get=\"")
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString(templ.EscapeString(fmt.Sprintf("/fines/edit/%d", f.Fine.ID)))
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("\" hx-target=\"")
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString(templ.EscapeString(fmt.Sprintf("#fr-%d", f.Fine.ID)))
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("\" hx-swap=\"outerHTML\" type=\"button\" class=\"")
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_27).String()))
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("\">")
+		if err != nil {
+			return err
+		}
+		var_28 := `Cancel`
+		_, err = templBuffer.WriteString(var_28)
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("</button></td></tr>")
 		if err != nil {
 			return err
 		}

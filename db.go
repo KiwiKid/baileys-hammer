@@ -128,6 +128,16 @@ func FetchActivePlayers(db *gorm.DB) ([]Player, error) {
     return players, nil
 }
 
+func GetFineByID(db *gorm.DB, fineID uint) (*Fine, error) {
+    var fine Fine
+    result := db.First(&fine, fineID)
+    if result.Error != nil {
+        return nil, result.Error
+    }
+    return &fine, nil
+}
+
+
 
 
 func GetPlayerByID(db *gorm.DB, playerID uint) (*Player, error) {

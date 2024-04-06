@@ -49,7 +49,7 @@ templ finemaster(pass string, players []PlayerWithFines, pFines []PresetFine, qp
 													<input type="hidden" name="presetFineId" value={ fmt.Sprintf("%v", pf.ID) }/>
 													<input type="hidden" name="approved" value="on"/>
 												</div>
-												<button hx-post="/fines" hx-include={ fmt.Sprintf(".fine-group-%d-%d", pf.ID, p.ID) } class={ bigAdd }>
+												<button hx-post="/fines" hx-swap="this" hx-include={ fmt.Sprintf(".fine-group-%d-%d", pf.ID, p.ID) } class={ bigAdd }>
 													{ fmt.Sprintf("%s ($%v)", pf.Reason, pf.Amount) }
 												</button>
 											</form>
