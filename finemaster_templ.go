@@ -32,7 +32,7 @@ func finemasterNav(finemasterBaseUrl string) templ.Component {
 			var_1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, err = templBuffer.WriteString("<nav class=\"fixed inset-x-0 bottom-0 bg-gray-800 text-white\"><div class=\"flex justify-between\"><a href=\"")
+		_, err = templBuffer.WriteString("<nav class=\"fixed inset-x-0 bottom-0 bg-gray-800 text-white pb-12\"><div class=\"flex justify-between\"><a href=\"")
 		if err != nil {
 			return err
 		}
@@ -300,14 +300,6 @@ func finemaster(pass string, players []PlayerWithFines, pFines []PresetFine, qp 
 					if err != nil {
 						return err
 					}
-					_, err = templBuffer.WriteString("\" hx-confirm=\"")
-					if err != nil {
-						return err
-					}
-					_, err = templBuffer.WriteString(templ.EscapeString(fmt.Sprintf("Hide %s from quick fines?", pf.Reason)))
-					if err != nil {
-						return err
-					}
 					_, err = templBuffer.WriteString("\" class=\"")
 					if err != nil {
 						return err
@@ -465,17 +457,17 @@ func presetFines(baseUrl string, isOpen bool, presetFines []PresetFine) templ.Co
 			if err != nil {
 				return err
 			}
-			for _, fine := range presetFines {
+			for _, pfine := range presetFines {
 				_, err = templBuffer.WriteString("<div class=\"mt-2 text-center\"><div>")
 				if err != nil {
 					return err
 				}
-				if !fine.Approved {
+				if !pfine.Approved {
 					_, err = templBuffer.WriteString("<button hx-post=\"")
 					if err != nil {
 						return err
 					}
-					_, err = templBuffer.WriteString(templ.EscapeString(fmt.Sprintf("/preset-fines/approve?pfid=%d", fine.ID)))
+					_, err = templBuffer.WriteString(templ.EscapeString(fmt.Sprintf("/preset-fines/approve?pfid=%d", pfine.ID)))
 					if err != nil {
 						return err
 					}
@@ -497,7 +489,7 @@ func presetFines(baseUrl string, isOpen bool, presetFines []PresetFine) templ.Co
 				if err != nil {
 					return err
 				}
-				var var_33 string = fine.Reason
+				var var_33 string = pfine.Reason
 				_, err = templBuffer.WriteString(templ.EscapeString(var_33))
 				if err != nil {
 					return err
@@ -515,7 +507,7 @@ func presetFines(baseUrl string, isOpen bool, presetFines []PresetFine) templ.Co
 				if err != nil {
 					return err
 				}
-				var var_35 string = fmt.Sprintf("$%.0f", fine.Amount)
+				var var_35 string = fmt.Sprintf("$%.0f", pfine.Amount)
 				_, err = templBuffer.WriteString(templ.EscapeString(var_35))
 				if err != nil {
 					return err
@@ -541,7 +533,15 @@ func presetFines(baseUrl string, isOpen bool, presetFines []PresetFine) templ.Co
 				if err != nil {
 					return err
 				}
-				_, err = templBuffer.WriteString(templ.EscapeString(fmt.Sprintf("/preset-fines?pfid=%d", fine.ID)))
+				_, err = templBuffer.WriteString(templ.EscapeString(fmt.Sprintf("/preset-fines?pfid=%d", pfine.ID)))
+				if err != nil {
+					return err
+				}
+				_, err = templBuffer.WriteString("\" hx-confirm=\"")
+				if err != nil {
+					return err
+				}
+				_, err = templBuffer.WriteString(templ.EscapeString(fmt.Sprintf("Remove %s from standard fines?", pfine.Reason)))
 				if err != nil {
 					return err
 				}
@@ -549,7 +549,7 @@ func presetFines(baseUrl string, isOpen bool, presetFines []PresetFine) templ.Co
 				if err != nil {
 					return err
 				}
-				var_37 := `🗑️`
+				var_37 := `Delete`
 				_, err = templBuffer.WriteString(var_37)
 				if err != nil {
 					return err
@@ -558,7 +558,7 @@ func presetFines(baseUrl string, isOpen bool, presetFines []PresetFine) templ.Co
 				if err != nil {
 					return err
 				}
-				if fine.NotQuickFine {
+				if pfine.NotQuickFine {
 					var_38 := `Hidden`
 					_, err = templBuffer.WriteString(var_38)
 					if err != nil {
@@ -582,7 +582,15 @@ func presetFines(baseUrl string, isOpen bool, presetFines []PresetFine) templ.Co
 					if err != nil {
 						return err
 					}
-					_, err = templBuffer.WriteString(templ.EscapeString(fmt.Sprintf("/preset-fines/hide?pfid=%d", fine.ID)))
+					_, err = templBuffer.WriteString(templ.EscapeString(fmt.Sprintf("/preset-fines/hide?pfid=%d", pfine.ID)))
+					if err != nil {
+						return err
+					}
+					_, err = templBuffer.WriteString("\" hx-confirm=\"")
+					if err != nil {
+						return err
+					}
+					_, err = templBuffer.WriteString(templ.EscapeString(fmt.Sprintf("Hide %s from quick fines? (delete to remove from \"Add Fine\" drop-down too)", pfine.Reason)))
 					if err != nil {
 						return err
 					}
@@ -590,7 +598,7 @@ func presetFines(baseUrl string, isOpen bool, presetFines []PresetFine) templ.Co
 					if err != nil {
 						return err
 					}
-					var_40 := `🚫`
+					var_40 := `Hide from Quick Fines`
 					_, err = templBuffer.WriteString(var_40)
 					if err != nil {
 						return err
