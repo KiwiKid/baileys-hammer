@@ -65,14 +65,22 @@ func DBInit() (*gorm.DB, error) {
         db.Migrator().AddColumn(&Fine{}, "Contest")
     }
 
+    if(!db.Migrator().HasColumn(&Fine{}, "FineAt")){
+        db.Migrator().AddColumn(&Fine{}, "FineAt")
+    }
+
+
+    
     if(!db.Migrator().HasColumn(&PresetFine{}, "Context")){
         db.Migrator().AddColumn(&PresetFine{}, "Context")
     }
 
-
-    if(!db.Migrator().HasColumn(&Fine{}, "FineAt")){
-        db.Migrator().AddColumn(&Fine{}, "FineAt")
+    if(!db.Migrator().HasColumn(&PresetFine{}, "NotQuickFine")){
+        db.Migrator().AddColumn(&PresetFine{}, "NotQuickFine")
     }
+
+
+
 
     result := db.Model(&Fine{}).Where("fine_at IS NULL").Updates(map[string]interface{}{
         "fine_at": gorm.Expr("created_at"),
@@ -104,7 +112,7 @@ func GetPlayersWithFines(db *gorm.DB) ([]PlayerWithFines, error) {
     var players []Player
     db.Preload("Fines", func(db *gorm.DB) *gorm.DB {
         return db.Order("fines.created_at DESC")
-    }).Find(&players).Where("active = true")
+    }).Find(&players).Where("active = true").Order("players.name")
 
     // Construct the PlayerWithFines slice
     for _, player := range players {
@@ -282,6 +290,25 @@ func ApproveFine(db *gorm.DB, id uint, amount float64) error {
     return nil
 }
 
+
+
+func QuickHideFine(db *gorm.DB, id uint) error {
+    // Find and update the fine's Approved field to true
+    result := db.Model(&PresetFine{}).Where("id = ?", id).Update("not_quick_fine", true)
+
+    // Check for errors during the operation
+    if result.Error != nil {
+        return result.Error
+    }
+    
+    // Check if the record was found and updated
+    if result.RowsAffected == 0 {
+        return gorm.ErrRecordNotFound
+    }
+    
+    return nil
+}
+
 func ApprovePresetFine(db *gorm.DB, id uint) error {
     // Find and update the fine's Approved field to true
     result := db.Model(&PresetFine{}).Where("id = ?", id).Update("approved", true)
@@ -317,6 +344,7 @@ type PresetFine struct {
     Reason string
     Amount float64
     Approved bool
+    NotQuickFine bool
     Context string
 }
 

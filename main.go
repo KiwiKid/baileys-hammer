@@ -513,6 +513,43 @@ func fineApproveHandler(db *gorm.DB) http.HandlerFunc {
 	}
 }
 
+func fineQuickHideHandler(db *gorm.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case "POST":
+			// Parse form data
+			if err := r.ParseForm(); err != nil {
+				http.Error(w, "Error parsing form data", http.StatusBadRequest)
+				return
+			}
+
+			pfIDStr := r.FormValue("pfid")
+
+			// Convert 'fid' to uint64
+			pfID, err := strconv.ParseUint(pfIDStr, 10, 64)
+			if err != nil || pfID == 0 {
+				http.Error(w, fmt.Sprintf("Error parsing fine ID: %v", err), http.StatusBadRequest)
+				return
+			}
+
+			if err := QuickHideFine(db, uint(pfID)); err != nil {
+				log.Printf("Error approving fine with specified amount: %v", err)
+				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+				return
+			}
+
+			// Redirect or handle response as needed
+			w.Header().Set("HX-Redirect", r.Header.Get("Referrer")+"#preset-fine")
+			w.Header().Set("HX-Reload", "true")
+			w.WriteHeader(http.StatusOK)
+			return
+		default:
+			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+			return
+		}
+	}
+}
+
 func presetFineApproveHandler(db *gorm.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		switch(r.Method){
@@ -551,9 +588,10 @@ func GenerateUrl(baseURL string, queryParams *HomeQueryParams) (*string, error, 
 }
 
 type HomeQueryParams struct {
-    FinesOpen bool `schema:"f"` // Assuming `pfid` is the query param name
-	PlayerOpen bool `schema:"p"` // Assuming `pfid` is the query param name
-	PresetFinesOpen bool `schema:"pf"` // Assuming `pfid` is the query param name
+    FinesOpen bool `schema:"f"`
+	FineListOpen bool `schema:"fl"`
+	PlayerOpen bool `schema:"p"`
+	PresetFinesOpen bool `schema:"pf"`
 }
 
 func presetFineHandler(db *gorm.DB) http.HandlerFunc {
@@ -623,10 +661,10 @@ func presetFineHandler(db *gorm.DB) http.HandlerFunc {
 }
 
 type FineMasterQueryParams struct {
-	FinesOpen bool `schema:"f"` // Assuming `pfid` is the query param name
-	PlayerOpen bool `schema:"p"` // Assuming `pfid` is the query param name
-	PresetFinesOpen bool `schema:"pf"` // Assuming `pfid` is the query param name
-	// Pass *string `schema:"pass"`
+	FinesOpen bool `schema:"f"`
+	PlayerOpen bool `schema:"p"`
+	PresetFinesOpen bool `schema:"pf"`
+	FineList bool `schema:"fl"`
 }
 
 func presetFineMasterHandler(db *gorm.DB) http.HandlerFunc {
@@ -686,6 +724,7 @@ func main() {
 	r.HandleFunc("/fines/contest", fineContestHandler(db))
 	r.HandleFunc("/preset-fines", presetFineHandler(db))
 	r.HandleFunc("/preset-fines/approve", presetFineApproveHandler(db))
+	r.HandleFunc("/preset-fines/hide", fineQuickHideHandler(db))
 	r.HandleFunc("/finemaster/{pass}", presetFineMasterHandler(db))
     r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 

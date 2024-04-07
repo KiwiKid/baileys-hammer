@@ -11,11 +11,11 @@ templ fineList(fines []FineWithPlayer, page int, isFineMaster bool) {
  		class="container mx-auto text-center"
  		id="fine-list-container"
 	>
-		<div id="fine-list" class="text-3xl p-10">
+		<div class="text-3xl p-10">
 			Fine List
 			<button hx-get="/fines" hx-target="#fine-list-container" hx-swap="outerHTML" hx-trigger="click" class="text-3xl">↻</button>
 		</div>
-		<table class="min-w-full divide-y divide-gray-200">
+		<table id="fine-list" class="min-w-full divide-y divide-gray-200">
 			<thead class="bg-gray-50">
 				<tr>
 					<th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -61,7 +61,7 @@ templ fineRow(isFineMaster bool, f FineWithPlayer) {
 		<td>{ f.Player.Name }</td>
 		<td class="text-sm text-gray-900 flex flex-col text-wrap">
 			<div>
-			{ f.Fine.Reason }
+				{ f.Fine.Reason }
 			</div>
 			<div class="text-sm text-gray-900 w-4 md:w-12 ">{ f.Fine.Context }</div>
 			<div>{ humanize.Time(f.Fine.FineAt) }</div>
@@ -101,7 +101,6 @@ templ fineRow(isFineMaster bool, f FineWithPlayer) {
 				(Pending approval)
 			}
 		</td>
-		
 		<td>
 			if len(f.Fine.Contest) == 0 {
 				<button

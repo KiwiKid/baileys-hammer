@@ -9,22 +9,23 @@ import (
 var baseUrl = "/"
 
 
-func makeSafeUrlWithAnchor(baseUrl string, finesOpen bool, playersOpen bool, presetFinesOpen bool, anchorTag string) templ.SafeURL {
-	url := makeUrl(baseUrl, finesOpen, playersOpen, presetFinesOpen) + "#" +  anchorTag
+func makeSafeUrlWithAnchor(baseUrl string, fineListOpen bool, finesOpen bool, playersOpen bool, presetFinesOpen bool, anchorTag string) templ.SafeURL {
+	url := makeUrl(baseUrl, fineListOpen, finesOpen, playersOpen, presetFinesOpen) + "#" +  anchorTag
 	return templ.SafeURL(url)
 }
 
-func makeSafeUrl(baseUrl string, finesOpen bool, playersOpen bool, presetFinesOpen bool) templ.SafeURL {
-	url := makeUrl(baseUrl, finesOpen, playersOpen, presetFinesOpen)
+func makeSafeUrl(baseUrl string, fineListOpen bool, finesOpen bool, playersOpen bool, presetFinesOpen bool) templ.SafeURL {
+	url := makeUrl(baseUrl, fineListOpen, finesOpen, playersOpen, presetFinesOpen)
 	return templ.SafeURL(url)
 }
 
-func makeUrl(fbaseUrl string, finesOpen bool, playersOpen bool, presetFinesOpen bool) string {
+func makeUrl(fbaseUrl string, fineListOpen bool, finesOpen bool, playersOpen bool, presetFinesOpen bool) string {
 
 	hp := HomeQueryParams{
 		FinesOpen: finesOpen,
 		PlayerOpen: playersOpen,
 		PresetFinesOpen: presetFinesOpen,
+		FineListOpen: fineListOpen,
 	}
 
 	url, err := GenerateUrl(fbaseUrl, &hp)
@@ -65,25 +66,15 @@ templ header() {
 }
 
 templ pageFooter() {
-	<div class="bg-yellow-400 border-l-4 border-yellow-800 text-yellow-800 p-2 mt-10 hidden" role="alert">
-		<p class="font-bold">
-			<details>
-				<summary class="text-center">🚧 Under Construction (Version { `0.2` }) 🚧</summary>
-				<div>
-					<h1>todo:</h1>
-					<ul>
-						<li>- Add Fine Status: </li>
-						<li>--- "Paid"</li>
-						<li>--- "Declined"</li>
-						<li>- Add option to delete player</li>
-					</ul>
-				</div>
-			</details>
-		</p>
-		<div id="any-errors"></div>
-		<script src="https://unpkg.com/htmx.org"></script>
-		<script src="https://unpkg.com/htmx.org@1.9.11/dist/ext/response-targets.js"></script>
-	</div>
+	<nav class="fixed inset-x-0 bottom-0 bg-gray-800 text-white">
+		
+			<div class="flex justify-between">
+				<a href={ makeSafeUrlWithAnchor(baseUrl, true, false, false, false, "fines") } class="flex-1 text-center py-3 hover:bg-gray-700">Standard</a>
+				<a href={ makeSafeUrlWithAnchor(baseUrl, false, true, false, false, "fine-add") } class="flex-1 text-center py-3 hover:bg-gray-700">Add</a>
+				<a href={ makeSafeUrlWithAnchor(baseUrl, false, false, false, false, "leaderboard") } class="flex-1 text-center py-3 hover:bg-gray-700">Leaderboard</a>
+				<a href={ makeSafeUrlWithAnchor(baseUrl, false, false, false, true, "fine-list") } class="flex-1 text-center py-3 hover:bg-gray-700">Recent</a>
+			</div>
+	</nav>
 }
 
 templ home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines []PresetFine, qp HomeQueryParams) {
@@ -94,66 +85,73 @@ templ home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines
 				<h1 class=" font-bold mb-4  text-center">🔨 Baileys Hammer 🔨</h1>
 				if len(approvedPFines) > 0 {
 					<div class="bg-sepia-200 shadow-xl m-10 rounded-lg">
-						<h3 class="text-2xl font-bold text-center">Fines</h3>
-						<ul class="list-inside space-y-3 text-lg font-handwriting text-brown-900">
-							for _, pf := range approvedPFines {
-								<li class="pl-6 border-l-4 border-gold-700 hover:bg-sepia-300 transition duration-300 ease-in-out">
-									{ fmt.Sprintf("$%v - %s", pf.Amount, pf.Reason) }
-								</li>
-							}
-						</ul>
-					</div>
-				}
-				if len(pendingPFines) > 0 {
-					<div class="w-full flex justify-center items-center">
-						<div _="on click toggle .hidden on next &lt;section/&gt;" class="flex justify-center items-center cursor-pointer">
-							<h3 class={ bigPri }>Pending Fines { fmt.Sprintf("(%d)", len(pendingPFines)) }</h3>
+						<div id="fines" class="flex justify-center w-full mt-4">
+							<a href={ makeSafeUrlWithAnchor(baseUrl, !qp.FineListOpen, false, false, false, "fines") } hx-transition="true" class={ bigPri }>Standard Fines</a>
 						</div>
-					</div>
-					<section class="bg-sepia-200 shadow-xl m-10 rounded-lg hidden">
-						<ul class="list-inside space-y-3 text-lg font-handwriting text-brown-900">
-							for _, pf := range pendingPFines {
-								<li class="pl-6 border-l-4 border-gold-700 hover:bg-sepia-300 transition duration-300 ease-in-out">
-									{ fmt.Sprintf("$%v - %s", pf.Amount, pf.Reason) }
-									<span class="ml-2 inline-block bg-red-100 text-red-800 font-bold px-2 py-1 rounded-full text-sm shadow-sm">(pending approval)</span>
-								</li>
+						if qp.FineListOpen {
+							<ul class="list-inside space-y-3 text-lg font-handwriting text-brown-900">
+								for _, pf := range approvedPFines {
+									<li class="pl-6 border-l-4 border-gold-700 hover:bg-sepia-300 transition duration-300 ease-in-out">
+										{ fmt.Sprintf("$%v - %s", pf.Amount, pf.Reason) }
+									</li>
+								}
+							</ul>
+							<a href={ makeSafeUrl(baseUrl, false, false, false, false) } hx-transition="true" class={ bigSec }>Close</a>
+
+								<div class="w-full flex justify-center items-center">
+								<div _="on click toggle .hidden on next &lt;section/&gt;" class="flex justify-center items-center cursor-pointer">
+									<h3 class={ bigPri }>Pending Fines { fmt.Sprintf("(%d)", len(pendingPFines)) }</h3>
+								</div>
+							</div>
+							if len(pendingPFines) > 0 {
+								<section class="bg-sepia-200 shadow-xl m-10 rounded-lg hidden">
+									<ul class="list-inside space-y-3 text-lg font-handwriting text-brown-900">
+										for _, pf := range pendingPFines {
+											<li class="pl-6 border-l-4 border-gold-700 hover:bg-sepia-300 transition duration-300 ease-in-out">
+												{ fmt.Sprintf("$%v - %s", pf.Amount, pf.Reason) }
+												<span class="ml-2 inline-block bg-red-100 text-red-800 font-bold px-2 py-1 rounded-full text-sm shadow-sm">(pending approval)</span>
+											</li>
+										}
+									</ul>
+								</section>
 							}
-						</ul>
-					</section>
+						}
+					</div>
 				}
 				@fineAdd(baseUrl, qp.FinesOpen, players, approvedPFines, false)
-				<div class="flex  bg-gray-100 mx-auto shadow-xl m-10">
-					<div class="w-full mt-10">
-						<h3 class="text-2xl font-bold text-center">Leaderboard</h3>
-						<ul>
-							for _, p := range players {
-								<li class="m-4">
-									<div
- 										_="on click toggle .hidden on next &lt;section/&gt;"
- 										class={ bigPri }
-									>
-										{ p.Name }
-										- 
-										{ fmt.Sprintf("$%d (%d)", p.TotalFines,  p.TotalFineCount) }
-									</div>
-									<section class="fines-info hidden">
+			</div>
+			<div class="flex  bg-gray-100 mx-auto shadow-xl m-10" id="leaderboard">
+				<div class="w-full mt-10">
+					<h3 class="text-2xl font-bold text-center">Leaderboard</h3>
+					<ul>
+						for _, p := range players {
+							<li class="m-4">
+								<div
+									_="on click toggle .hidden on next &lt;section/&gt;"
+									class={ bigPri }
+								>
+									{ p.Name }
+									- 
+									{ fmt.Sprintf("$%d (%d)", p.TotalFines,  p.TotalFineCount) }
+								</div>
+								<section class="fines-info hidden">
+									<div class="p-2">
 										<div class="p-2">
-											<div class="p-2">
-												for _, f := range p.Fines {
-													<div class="mt-1">
-														<p>{ f.Reason } { fmt.Sprintf("$%.0f - %s", f.Amount, humanize.Time(f.FineAt)) }</p>
-													</div>
-												}
-											</div>
+											for _, f := range p.Fines {
+												<div class="mt-1">
+													<p>{ f.Reason } { fmt.Sprintf("$%.0f - %s", f.Amount, humanize.Time(f.FineAt)) }</p>
+												</div>
+											}
 										</div>
-									</section>
-								</li>
-							}
-						</ul>
-					</div>
+									</div>
+								</section>
+							</li>
+						}
+					</ul>
 				</div>
 			</div>
-			<div id="fine-list-container" hx-get="/fines" hx-target="#fine-list-container" hx-swap="outerHTML" hx-trigger="load once" class="w-full text-center">loading latest..</div>
+			<div id="fine-list-container" hx-get="/fines" hx-target="#fine-list-container" hx-swap="outerHTML" hx-trigger="load once, click" class="w-full text-center">loading latest..</div>
+			<div class="mt-96"></div>
 			<script src="https://unpkg.com/htmx.org"></script>
 			@pageFooter()
 		</body>
@@ -225,7 +223,6 @@ templ fineAdd(baseUrl string, isOpen bool, players []PlayerWithFines, presetFine
 									</div>
 								</div>
 							</section>
-							
 							<div class="mt-4">
 								<label>Who:</label>
 								<select name="playerId" class="mt-1 w-full border-gray-300  bg-white rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
@@ -241,13 +238,13 @@ templ fineAdd(baseUrl string, isOpen bool, players []PlayerWithFines, presetFine
 					</div>
 					<div class="grid grid-cols-1 p-4 gap-4 mt-10">
 						<button type="submit" class={ bigAdd }>Add Fine</button>
-						<a href={ makeSafeUrlWithAnchor(baseUrl, false, false, false, "fine-add") } class={ bigSec }>Close</a>
+						<a href={ makeSafeUrlWithAnchor(baseUrl, false, false, false, false, "fine-add") } class={ bigSec }>Close</a>
 					</div>
 				</form>
 			</div>
 		} else {
 			<div class="flex justify-center w-full p-4" id="fine-add">
-				<a class={ bigPri } href={ makeSafeUrlWithAnchor(baseUrl, true, false, false, "fine-add") }>
+				<a class={ bigPri } href={ makeSafeUrlWithAnchor(baseUrl, false, true, false, false, "fine-add") }>
 					if isFineMaster {
 						Fine a Player
 					} else {

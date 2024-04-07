@@ -6,6 +6,22 @@ import (
 
 var finemasterBaseUrl = "/finemaster"
 
+func secureFineMasterbaseUrl( finemasterBaseUrl string, pass string) string {
+	return fmt.Sprintf("%s/%s", finemasterBaseUrl, pass)
+}
+
+templ finemasterNav(finemasterBaseUrl string) {
+	<nav class="fixed inset-x-0 bottom-0 bg-gray-800 text-white">
+		<div class="flex justify-between">
+			<a href={ makeSafeUrlWithAnchor(finemasterBaseUrl, true, false, false, false, "fine-add") } class="flex-1 text-center py-3 hover:bg-gray-700">Add</a>
+			<button _="on click toggle .hidden on .quick-fine then go to top of #quick-finer" class="flex-1 text-center py-3 hover:bg-gray-700">Quick Fine</button>
+			<a href={ makeSafeUrlWithAnchor(finemasterBaseUrl, false, false, false, true, "preset-fine") } class="flex-1 text-center py-3 hover:bg-gray-700">Standard Fines</a>
+			<a href={ makeSafeUrlWithAnchor(finemasterBaseUrl, false, false, true, false, "players-manage") } class="flex-1 text-center py-3 hover:bg-gray-700">Players</a>
+			<a href={ makeSafeUrlWithAnchor(finemasterBaseUrl, false, false, false, false, "fine-list-container") } class="flex-1 text-center py-3 hover:bg-gray-700">Recent</a>
+		</div>
+	</nav>
+}
+
 templ finemaster(pass string, players []PlayerWithFines, pFines []PresetFine, qp FineMasterQueryParams) {
 	<html hx-boost="true">
 		@header()
@@ -16,10 +32,9 @@ templ finemaster(pass string, players []PlayerWithFines, pFines []PresetFine, qp
 				</h1>
 			</div>
 			<div class="grid grid-cols-1 gap-2">
-				@fineAdd(fmt.Sprintf("%s/%s", finemasterBaseUrl, pass), qp.FinesOpen, players, pFines, true)
-				@playersManage(fmt.Sprintf("%s/%s", finemasterBaseUrl, pass), players, qp.PlayerOpen)
+				@fineAdd(secureFineMasterbaseUrl(finemasterBaseUrl, pass), qp.FinesOpen, players, pFines, true)
 			</div>
-			<div class="container mx-auto p-4">
+			<div class="container mx-auto p-4" id="quick-finer">
 				<div class="flex items-center justify-center bg-gray-100 mx-auto">
 					<ul>
 						for _, p := range players {
@@ -41,15 +56,16 @@ templ finemaster(pass string, players []PlayerWithFines, pFines []PresetFine, qp
 									</div>
 								</section>
 								<section class="hidden quick-fine">
+									
 									for _, pf := range pFines {
-										if pf.Approved {
+										if pf.Approved && !pf.NotQuickFine {
 											<form class=" inline-flex mx-2 space-y-2">
 												<div hidden class={ fmt.Sprintf("fine-group-%d-%d", pf.ID, p.ID) }>
 													<input type="hidden" name="playerId" value={ fmt.Sprintf("%v", p.ID) }/>
 													<input type="hidden" name="presetFineId" value={ fmt.Sprintf("%v", pf.ID) }/>
 													<input type="hidden" name="approved" value="on"/>
 												</div>
-												<button hx-post="/fines" hx-swap="this" hx-include={ fmt.Sprintf(".fine-group-%d-%d", pf.ID, p.ID) } class={ bigAdd }>
+												<button hx-post="/fines" hx-swap="this" hx-include={ fmt.Sprintf(".fine-group-%d-%d", pf.ID, p.ID) } hx-confirm={ fmt.Sprintf("Hide %s from quick fines?", pf.Reason) } class={ bigAdd }>
 													{ fmt.Sprintf("%s ($%v)", pf.Reason, pf.Amount) }
 												</button>
 											</form>
@@ -64,10 +80,13 @@ templ finemaster(pass string, players []PlayerWithFines, pFines []PresetFine, qp
 					Toggle Quick Fines
 				</div>
 			</div>
-			<div id="fine-list-container" hx-get="/fines" hx-trigger="load once" hx-swap="OuterHTML" class="w-full text-center">loading latest..</div>
+			@playersManage(secureFineMasterbaseUrl(finemasterBaseUrl, pass), players, qp.PlayerOpen)
 			@presetFines(fmt.Sprintf("%s/%s", finemasterBaseUrl, pass), qp.PresetFinesOpen, pFines)
-			@pageFooter()
+			<div id="fine-list-container" hx-get="/fines" hx-trigger="load once" hx-swap="OuterHTML" class="w-full text-center">loading latest..</div>
+			<div class="mt-96"></div>
+			@finemasterNav(fmt.Sprintf("%s/%s", finemasterBaseUrl, pass))
 		</body>
+		<script src="https://unpkg.com/htmx.org"></script>
 	</html>
 }
 
@@ -81,6 +100,7 @@ templ presetFines(baseUrl string, isOpen bool, presetFines []PresetFine) {
 			<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 				<div class="text-2xl">
 					<h1 class="font-bold text-center">Approve/Existing Preset Fines</h1>
+					<p>(These will be added to the quick toggle list)</p>
 					for _, fine := range presetFines {
 						<div class="mt-2 text-center">
 							<div>
@@ -90,7 +110,14 @@ templ presetFines(baseUrl string, isOpen bool, presetFines []PresetFine) {
 								{ fine.Reason }
 								- 
 								{ fmt.Sprintf("$%.0f", fine.Amount) }
-								<button hx-delete={ fmt.Sprintf("/preset-fines?pfid=%d", fine.ID) }>🗑</button>
+								<button class={ bigDel } hx-delete={ fmt.Sprintf("/preset-fines?pfid=%d", fine.ID) }>🗑️</button>
+
+								if fine.NotQuickFine {
+									Hidden
+								} else {
+									<button class={ bigPri } hx-post={ fmt.Sprintf("/preset-fines/hide?pfid=%d", fine.ID) }>🚫</button>
+								}
+
 							</div>
 						</div>
 					}
@@ -114,14 +141,14 @@ templ presetFines(baseUrl string, isOpen bool, presetFines []PresetFine) {
 						</div>
 					</form>
 					<div class="flex justify-center w-full">
-						<a href={ makeSafeUrl(baseUrl, false, false, false) } class={ bigSec }>Close</a>
+						<a href={ makeSafeUrl(baseUrl, false, false, false, false) } class={ bigSec }>Close</a>
 					</div>
 				</div>
 			</div>
 		</div>
 	} else {
 		<div class="flex justify-center w-full">
-			<a href={ makeSafeUrlWithAnchor(baseUrl, false, false, true, "preset-fine") } class={ bigPri }>Add Fines</a>
+			<a href={ makeSafeUrlWithAnchor(baseUrl, false, false, false, true, "preset-fine") } class={ bigPri }>Manage Standard Fines</a>
 		</div>
 	}
 }
@@ -149,13 +176,13 @@ templ playersManage(baseUrl string, players []PlayerWithFines, isOpen bool) {
 					}
 				</div>
 				<div class="flex justify-center w-full mt-4">
-					<a href={ makeSafeUrl(baseUrl, false, false, false) } hx-transition="true" class={ bigSec }>Close</a>
+					<a href={ makeSafeUrl(baseUrl, false, false, false, false) } hx-transition="true" class={ bigSec }>Close</a>
 				</div>
 			</div>
 		</div>
 	} else {
 		<div class="flex justify-center w-full">
-			<a href={ makeSafeUrlWithAnchor(baseUrl, false, true, false, "players-manage") } hx-transition="true" class={ bigPri }>Manage Players</a>
+			<a href={ makeSafeUrlWithAnchor(baseUrl, false, false, true, false, "players-manage") } hx-transition="true" class={ bigPri }>Manage Players</a>
 		</div>
 	}
 }
