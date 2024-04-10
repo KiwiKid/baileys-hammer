@@ -778,7 +778,7 @@ func playersManage(baseUrl string, players []PlayerWithFines, isOpen bool) templ
 		}
 		ctx = templ.ClearChildren(ctx)
 		if isOpen {
-			_, err = templBuffer.WriteString("<div class=\"flex items-center justify-center bg-gray-100\" id=\"players-manage\"><div class=\"px-8 py-6 text-left bg-white shadow-xl m-10\"><!--")
+			_, err = templBuffer.WriteString("<div class=\"flex items-center justify-center bg-gray-100  p-3\" id=\"players-manage\"><div class=\"px-8 py-6 text-left bg-white shadow-xl m-10\"><!--")
 			if err != nil {
 				return err
 			}
@@ -831,7 +831,7 @@ func playersManage(baseUrl string, players []PlayerWithFines, isOpen bool) templ
 			if err != nil {
 				return err
 			}
-			_, err = templBuffer.WriteString("</button></div></form><div><!--")
+			_, err = templBuffer.WriteString("</button></div></form><div class=\"p-6 max-w-36\"><!--")
 			if err != nil {
 				return err
 			}
@@ -942,7 +942,7 @@ func playersManage(baseUrl string, players []PlayerWithFines, isOpen bool) templ
 				return err
 			}
 		} else {
-			_, err = templBuffer.WriteString("<div class=\"flex justify-center w-full\">")
+			_, err = templBuffer.WriteString("<div class=\"flex justify-center w-full p-3\">")
 			if err != nil {
 				return err
 			}

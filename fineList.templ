@@ -12,7 +12,7 @@ templ fineList(fines []FineWithPlayer, page int, isFineMaster bool) {
  		id="fine-list-container"
 	>
 		<div class="text-3xl p-10">
-			Fine List
+			Recent Fine List
 			<button hx-get="/fines" hx-target="#fine-list-container" hx-swap="outerHTML" hx-trigger="click" class="text-3xl">↻</button>
 		</div>
 		<table id="fine-list" class="min-w-full divide-y divide-gray-200">
