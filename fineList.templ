@@ -92,7 +92,7 @@ templ fineRow(isFineMaster bool, f FineWithPlayer) {
 					/>
 					<button
  						type="submit"
- 						class="ml-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+ 						class={ bigAdd }
 					>
 						Approve
 					</button>
@@ -119,6 +119,7 @@ templ fineRow(isFineMaster bool, f FineWithPlayer) {
  					hx-target={ fmt.Sprintf("#fr-%d", f.Fine.ID) }
  					hx-swap="outerHTML"
  					hx-target-error="#any-errors"
+ 					class={ bigSec }
 				>edit</button>
 			</td>
 		}
@@ -146,7 +147,7 @@ templ fineContestRow(f FineWithPlayer) {
 		</div>
 		<div class="py-2">
 			<button
- 				class={ bigPri }
+ 				class={ bigAdd }
  				hx-post={ fmt.Sprintf("/fines/contest", ) }
  				hx-target={ fmt.Sprintf("#fr-%d", f.Fine.ID) }
  				hx-swap="outerHTML"
@@ -173,6 +174,7 @@ templ fineEditRow(f FineWithPlayer) {
  		class="bg-white divide-y divide-gray-200"
 	>
 		<td class="px-6 py-4">
+			<label for="reason">Reason</label>
 			<input
  				type="text"
  				name="reason"

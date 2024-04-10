@@ -1,10 +1,12 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
 	"sort"
+	"strconv"
 	"time"
 
 	"gorm.io/driver/sqlite"
@@ -382,6 +384,28 @@ func GetPresetFine(db *gorm.DB, id uint64) (*PresetFine, error) {
         return nil, err
     }
     return &presetFines, nil
+}
+
+func GetFineFromPreset(db *gorm.DB, pfID string) (*Fine, error) {
+    pfId, err := strconv.ParseUint(pfID, 10, 64)
+    if err != nil {
+        return nil, err
+    }
+    presetFine, err := GetPresetFine(db, pfId)
+    if err != nil {
+        return nil, err
+    }
+    var fine Fine
+    if presetFine != nil {
+        fine = Fine{
+            Amount: presetFine.Amount,
+            Reason: presetFine.Reason,
+            FineAt: time.Now(),
+        }
+        return &fine, nil
+    }
+
+    return nil, errors.New("failed to tget fine from preset")
 }
 
 

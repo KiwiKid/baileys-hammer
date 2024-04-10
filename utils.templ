@@ -1,0 +1,61 @@
+package main
+
+import (
+	"fmt"
+	"github.com/dustin/go-humanize"
+)
+
+templ tomSelectLinks() {
+	<link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.css" rel="stylesheet"/>
+	<script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+}
+
+func getIdStr(id string) string {
+	return fmt.Sprintf("#%s", id)
+}
+
+templ fineSuperSelect(players []PlayerWithFines, approvedPFines []PresetFine) {
+
+	<form hx-post="/fines-mulit" method="POST" class="flex flex-col space-y-4 bg-white shadow-md p-6 rounded-lg">
+		<div class="text-3xl text-center mx-auto">
+				Multi-Finer
+		</div>
+		<div class="flex flex-row">
+			<label for="select-fine" class="mt-2 pr-2 font-semibold text-gray-700">Fines</label>
+			<select id="select-fine" name="pfines[]" multiple placeholder="Select fine(s)..." class="border border-gray-300 rounded-md text-gray-700 flex-grow mb-2">
+				<option value="">Select a fine...</option>
+				for _, apf := range approvedPFines {
+					<option value={ fmt.Sprintf("%d", apf.ID) }>{ apf.Reason }</option>
+				}
+			</select>
+		</div>
+		<div class="flex flex-row">
+			<label for="select-player" class="mt-2 pr-2 font-semibold text-gray-700">Players</label>
+			<select id="select-player" name="players[]" multiple placeholder="Select player(s)..."  class="border border-gray-300 rounded-md text-gray-700 flex-grow mb-2">
+				<option value="">Select a player...</option>
+				for _, p := range players {
+					<option value={ fmt.Sprintf("%d", p.ID) }>{ p.Name }</option>
+				}
+			</select>
+		</div>
+		<button type="submit" class={ bigAdd }>Multi-Fine</button>
+		<div id="results-container"></div>
+		<script>
+		var settings = {};
+		new TomSelect("#select-fine",{});
+		new TomSelect("#select-player",{});
+		</script>
+	</form>
+}
+
+templ fineSuperSelectResults(players []PlayerWithFines, approvedPFines[]PresetFine, newFines []Fine) {
+	@fineSuperSelect(players, approvedPFines)
+	if len(newFines) > 0 {
+			<div> Added { fmt.Sprintf("%d", len(newFines)) } Fines</div>
+	} else {
+		<div class="bg-orange-100 border-l-4 border-orange-500 text-orange-700 p-4" role="alert">
+			<p>o fines added? Make sure to select fines/players above</p>
+		</div>
+	}
+}
+

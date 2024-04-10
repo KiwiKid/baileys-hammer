@@ -145,6 +145,10 @@ func finemaster(pass string, players []PlayerWithFines, pFines []PresetFine, qp 
 		if err != nil {
 			return err
 		}
+		err = tomSelectLinks().Render(ctx, templBuffer)
+		if err != nil {
+			return err
+		}
 		_, err = templBuffer.WriteString("<body><div class=\"bg-gray-900 text-center p-5\"><h1 class=\"text-xl md:text-3xl lg:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-teal-400\">")
 		if err != nil {
 			return err
@@ -162,7 +166,15 @@ func finemaster(pass string, players []PlayerWithFines, pFines []PresetFine, qp 
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("</div><div class=\"container mx-auto p-4\" id=\"quick-finer\"><div class=\"flex items-center justify-center bg-gray-100 mx-auto\"><ul>")
+		_, err = templBuffer.WriteString("</div>")
+		if err != nil {
+			return err
+		}
+		err = fineSuperSelect(players, pFines).Render(ctx, templBuffer)
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("<div class=\"container mx-auto p-4\" id=\"quick-finer\"><div class=\"flex items-center justify-center bg-gray-100 mx-auto\"><ul>")
 		if err != nil {
 			return err
 		}
@@ -283,7 +295,7 @@ func finemaster(pass string, players []PlayerWithFines, pFines []PresetFine, qp 
 					if err != nil {
 						return err
 					}
-					_, err = templBuffer.WriteString("\"><input type=\"hidden\" name=\"approved\" value=\"on\"></div>")
+					_, err = templBuffer.WriteString("\"><input type=\"hidden\" name=\"approved\" value=\"on\"><input type=\"hidden\" name=\"dontRedirect\" value=\"true\"></div>")
 					if err != nil {
 						return err
 					}
@@ -392,7 +404,15 @@ func finemaster(pass string, players []PlayerWithFines, pFines []PresetFine, qp 
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("</script></html>")
+		_, err = templBuffer.WriteString("</script>")
+		if err != nil {
+			return err
+		}
+		err = tomSelectLinks().Render(ctx, templBuffer)
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("</html>")
 		if err != nil {
 			return err
 		}

@@ -434,9 +434,11 @@ func fineHandler(db *gorm.DB) http.HandlerFunc {
 					}
 				}
 
-
-
-				w.Header().Set("HX-Redirect", r.Header.Get("Referrer"))
+				dontRedirect := r.FormValue("dontRedirect")
+				if dontRedirect != "true" {
+					w.Header().Set("HX-Redirect", r.Header.Get("Referrer"))
+				}
+				
 
 				w.WriteHeader(http.StatusOK)
 				return
@@ -466,6 +468,71 @@ func fineHandler(db *gorm.DB) http.HandlerFunc {
 	}
 	}
 }
+
+func fineMultiHandler(db *gorm.DB) http.HandlerFunc {
+    return func(w http.ResponseWriter, r *http.Request) {
+        if r.Method != "POST" {
+            http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+            return
+        }
+
+        if err := r.ParseForm(); err != nil {
+            http.Error(w, "Invalid form data", http.StatusBadRequest)
+            return
+        }
+
+        pfineIDs := r.Form["pfines[]"]
+        playerIDs := r.Form["players[]"]
+		savedFines := []Fine{}
+
+        for _, pfineIDStr := range pfineIDs {
+			
+			fine, err :=  GetFineFromPreset(db, pfineIDStr)
+			if err != nil {
+			   http.Error(w, "Invalid player ID", http.StatusBadRequest)
+			   return
+		   }
+                        for _, playerIDStr := range playerIDs {
+				playerID, err := strconv.ParseUint(playerIDStr, 10, 64)
+                if err != nil {
+                    http.Error(w, "Invalid player ID", http.StatusBadRequest)
+                    return
+                }
+
+				fine.PlayerID = uint(playerID)
+
+
+                 err = SaveFine(db, fine)
+                 if err != nil {
+					http.Error(w, "Invalid player ID", http.StatusBadRequest)
+                    return
+                 } else {
+					savedFines = append(savedFines, *fine)
+				 }
+
+                
+            }
+        }
+
+		playersWithFines, err := GetPlayersWithFines(db)
+		if err != nil {
+			log.Printf("Error fetching players with fines: %v", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+
+		pFines, err := GetPresetFines(db, true)
+		if err != nil {
+			log.Printf("Error retrieving preset fines: %v", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+
+		res := fineSuperSelectResults(playersWithFines, pFines, savedFines)
+		res.Render(r.Context(), w)
+    }
+}
+
 
 func fineApproveHandler(db *gorm.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -719,6 +786,7 @@ func main() {
 	r.HandleFunc("/players", playerHandler(db))
 	//r.HandleFunc("/players/{playerId}", playerHandler(db))
 	r.HandleFunc("/fines", fineHandler(db))
+	r.HandleFunc("/fines-mulit", fineMultiHandler(db))
 	r.HandleFunc("/fines/approve", fineApproveHandler(db))
 	r.HandleFunc("/fines/edit/{fid}", fineEditHandler(db))
 	r.HandleFunc("/fines/contest", fineContestHandler(db))
