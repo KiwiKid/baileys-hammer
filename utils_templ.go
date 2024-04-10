@@ -11,7 +11,6 @@ import "bytes"
 
 import (
 	"fmt"
-	"github.com/dustin/go-humanize"
 )
 
 func tomSelectLinks() templ.Component {
