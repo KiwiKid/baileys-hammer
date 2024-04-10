@@ -41,8 +41,21 @@ templ fineSuperSelect(players []PlayerWithFines, approvedPFines []PresetFine) {
 		<div id="results-container"></div>
 		<script>
 		var settings = {};
-		new TomSelect("#select-fine",{});
-		new TomSelect("#select-player",{});
+		new TomSelect("#select-fine",{
+			plugins: {
+				no_active_items: 'true',
+				remove_button: {
+					title:'Remove this fine',
+				}
+			},
+		});
+		new TomSelect("#select-player",{
+			plugins: {
+				remove_button:{
+					title:'Remove this player'
+				}
+			},
+		});
 		</script>
 	</form>
 }

@@ -194,8 +194,21 @@ func fineSuperSelect(players []PlayerWithFines, approvedPFines []PresetFine) tem
 		}
 		var_13 := `
 		var settings = {};
-		new TomSelect("#select-fine",{});
-		new TomSelect("#select-player",{});
+		new TomSelect("#select-fine",{
+			plugins: {
+				no_active_items: 'true',
+				remove_button: {
+					title:'Remove this fine',
+				}
+			},
+		});
+		new TomSelect("#select-player",{
+			plugins: {
+				remove_button:{
+					title:'Remove this player'
+				}
+			},
+		});
 		`
 		_, err = templBuffer.WriteString(var_13)
 		if err != nil {
