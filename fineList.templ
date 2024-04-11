@@ -145,8 +145,7 @@ templ fineContextRow(f FineWithPlayer, matches []Match) {
 			value={ fmt.Sprintf("%d", f.Fine.ID) }
 		/>
 		<div class="mt-2">
-			<div hx-get="/match-list?type=select" hx-trigger="load once"></div>
-			
+			<div hx-get={ fmt.Sprintf("/match-list?type=select&matchId=%d", f.Fine.MatchId) } hx-trigger="load once"></div>
 		</div>
 		<button
 			class={ add }

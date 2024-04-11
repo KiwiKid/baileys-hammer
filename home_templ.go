@@ -17,23 +17,63 @@ import (
 
 var baseUrl = "/"
 
-func makeSafeUrlWithAnchor(baseUrl string, fineListOpen bool, finesOpen bool, playersOpen bool, presetFinesOpen bool, anchorTag string) templ.SafeURL {
-	url := makeUrl(baseUrl, fineListOpen, finesOpen, playersOpen, presetFinesOpen) + "#" + anchorTag
+func makeSafeUrlWithAnchor(baseUrl string, fineListOpen bool, finesOpen bool, playersOpen bool, presetFinesOpen bool, manageOpen bool, anchorTag string) templ.SafeURL {
+	url := makeUrl(baseUrl, fineListOpen, finesOpen, playersOpen, presetFinesOpen, manageOpen) + "#" + anchorTag
 	return templ.SafeURL(url)
 }
 
-func makeSafeUrl(baseUrl string, fineListOpen bool, finesOpen bool, playersOpen bool, presetFinesOpen bool) templ.SafeURL {
-	url := makeUrl(baseUrl, fineListOpen, finesOpen, playersOpen, presetFinesOpen)
+func makeSafeUrlWithAnchorV2(baseUrl string, anchorTag string, useAnchor bool) templ.SafeURL {
+	anchor := ""
+	if useAnchor {
+		anchor = "#" + anchorTag
+	}
+	switch anchorTag {
+	case "fine-add":
+		{
+			url := makeUrl(baseUrl, false, true, false, false, false) + anchor
+			return templ.SafeURL(url)
+		}
+	case "preset-fine":
+		{
+			url := makeUrl(baseUrl, false, false, false, true, false) + anchor
+			return templ.SafeURL(url)
+		}
+	case "players-manage":
+		{
+			url := makeUrl(baseUrl, false, false, true, false, false) + anchor
+			return templ.SafeURL(url)
+		}
+	case "fine-list-container":
+		{
+			url := makeUrl(baseUrl, true, false, false, false, false) + anchor
+			return templ.SafeURL(url)
+		}
+	case "standard-matches":
+		{
+			url := makeUrl(baseUrl, false, false, false, false, true) + anchor
+			return templ.SafeURL(url)
+		}
+	default:
+		{
+			panic(fmt.Sprintf("Failed to match anchor [%s] tag ", anchorTag))
+		}
+	}
+
+}
+
+func makeSafeUrl(baseUrl string, fineListOpen bool, finesOpen bool, playersOpen bool, presetFinesOpen bool, matchesManage bool) templ.SafeURL {
+	url := makeUrl(baseUrl, fineListOpen, finesOpen, playersOpen, presetFinesOpen, matchesManage)
 	return templ.SafeURL(url)
 }
 
-func makeUrl(fbaseUrl string, fineListOpen bool, finesOpen bool, playersOpen bool, presetFinesOpen bool) string {
+func makeUrl(fbaseUrl string, fineListOpen bool, finesOpen bool, playersOpen bool, presetFinesOpen bool, matchesOpen bool) string {
 
 	hp := HomeQueryParams{
 		FinesOpen:       finesOpen,
 		PlayerOpen:      playersOpen,
 		PresetFinesOpen: presetFinesOpen,
 		FineListOpen:    fineListOpen,
+		MatchesOpen:     matchesOpen,
 	}
 
 	url, err := GenerateUrl(fbaseUrl, &hp)
@@ -151,7 +191,7 @@ func pageFooter() templ.Component {
 		if err != nil {
 			return err
 		}
-		var var_7 templ.SafeURL = makeSafeUrlWithAnchor(baseUrl, true, false, false, false, "fines")
+		var var_7 templ.SafeURL = makeSafeUrlWithAnchor(baseUrl, true, false, false, false, false, "fines")
 		_, err = templBuffer.WriteString(templ.EscapeString(string(var_7)))
 		if err != nil {
 			return err
@@ -169,7 +209,7 @@ func pageFooter() templ.Component {
 		if err != nil {
 			return err
 		}
-		var var_9 templ.SafeURL = makeSafeUrlWithAnchor(baseUrl, false, true, false, false, "fine-add")
+		var var_9 templ.SafeURL = makeSafeUrlWithAnchor(baseUrl, false, true, false, false, false, "fine-add")
 		_, err = templBuffer.WriteString(templ.EscapeString(string(var_9)))
 		if err != nil {
 			return err
@@ -187,7 +227,7 @@ func pageFooter() templ.Component {
 		if err != nil {
 			return err
 		}
-		var var_11 templ.SafeURL = makeSafeUrlWithAnchor(baseUrl, false, false, false, false, "leaderboard")
+		var var_11 templ.SafeURL = makeSafeUrlWithAnchor(baseUrl, false, false, false, false, false, "leaderboard")
 		_, err = templBuffer.WriteString(templ.EscapeString(string(var_11)))
 		if err != nil {
 			return err
@@ -205,7 +245,7 @@ func pageFooter() templ.Component {
 		if err != nil {
 			return err
 		}
-		var var_13 templ.SafeURL = makeSafeUrlWithAnchor(baseUrl, false, false, false, true, "fine-list-container")
+		var var_13 templ.SafeURL = makeSafeUrlWithAnchor(baseUrl, false, false, false, true, false, "fine-list-container")
 		_, err = templBuffer.WriteString(templ.EscapeString(string(var_13)))
 		if err != nil {
 			return err
@@ -282,7 +322,7 @@ func home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines 
 			if err != nil {
 				return err
 			}
-			var var_18 templ.SafeURL = makeSafeUrlWithAnchor(baseUrl, !qp.FineListOpen, false, false, false, "fines")
+			var var_18 templ.SafeURL = makeSafeUrlWithAnchor(baseUrl, !qp.FineListOpen, false, false, false, false, "fines")
 			_, err = templBuffer.WriteString(templ.EscapeString(string(var_18)))
 			if err != nil {
 				return err
@@ -341,7 +381,7 @@ func home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines 
 				if err != nil {
 					return err
 				}
-				var var_22 templ.SafeURL = makeSafeUrl(baseUrl, false, false, false, false)
+				var var_22 templ.SafeURL = makeSafeUrl(baseUrl, false, false, false, false, false)
 				_, err = templBuffer.WriteString(templ.EscapeString(string(var_22)))
 				if err != nil {
 					return err
@@ -739,7 +779,7 @@ func fineAddV2(baseUrl string, isOpen bool, players []PlayerWithFines, presetFin
 			if err != nil {
 				return err
 			}
-			var var_48 templ.SafeURL = makeSafeUrlWithAnchor(baseUrl, false, false, false, false, "fine-add")
+			var var_48 templ.SafeURL = makeSafeUrlWithAnchor(baseUrl, false, false, false, false, false, "fine-add")
 			_, err = templBuffer.WriteString(templ.EscapeString(string(var_48)))
 			if err != nil {
 				return err
@@ -787,7 +827,7 @@ func fineAddV2(baseUrl string, isOpen bool, players []PlayerWithFines, presetFin
 			if err != nil {
 				return err
 			}
-			var var_52 templ.SafeURL = makeSafeUrlWithAnchor(baseUrl, false, true, false, false, "fine-add")
+			var var_52 templ.SafeURL = makeSafeUrlWithAnchor(baseUrl, false, true, false, false, false, "fine-add")
 			_, err = templBuffer.WriteString(templ.EscapeString(string(var_52)))
 			if err != nil {
 				return err
@@ -1098,7 +1138,7 @@ func fineAdd(baseUrl string, isOpen bool, players []PlayerWithFines, presetFines
 			if err != nil {
 				return err
 			}
-			var var_76 templ.SafeURL = makeSafeUrlWithAnchor(baseUrl, false, false, false, false, "fine-add")
+			var var_76 templ.SafeURL = makeSafeUrlWithAnchor(baseUrl, false, false, false, false, false, "fine-add")
 			_, err = templBuffer.WriteString(templ.EscapeString(string(var_76)))
 			if err != nil {
 				return err
@@ -1146,7 +1186,7 @@ func fineAdd(baseUrl string, isOpen bool, players []PlayerWithFines, presetFines
 			if err != nil {
 				return err
 			}
-			var var_79 templ.SafeURL = makeSafeUrlWithAnchor(baseUrl, false, true, false, false, "fine-add")
+			var var_79 templ.SafeURL = makeSafeUrlWithAnchor(baseUrl, false, true, false, false, false, "fine-add")
 			_, err = templBuffer.WriteString(templ.EscapeString(string(var_79)))
 			if err != nil {
 				return err

@@ -441,7 +441,15 @@ func fineContextRow(f FineWithPlayer, matches []Match) templ.Component {
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("\"><div class=\"mt-2\"><div hx-get=\"/match-list?type=select\" hx-trigger=\"load once\"></div></div>")
+		_, err = templBuffer.WriteString("\"><div class=\"mt-2\"><div hx-get=\"")
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString(templ.EscapeString(fmt.Sprintf("/match-list?type=select&matchId=%d", f.Fine.MatchId)))
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("\" hx-trigger=\"load once\"></div></div>")
 		if err != nil {
 			return err
 		}

@@ -80,8 +80,13 @@ func matchListHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) 
 				return
 			}
 			resType := r.URL.Query().Get("type")
+			matchIdStr := r.URL.Query().Get("matchId")
+			matchId, err := strconv.ParseInt(matchIdStr, 10, 64)
+			if err != nil {
+				matchId = 0
+			}
 			if resType == "select" {
-				matchComp := matchSelector(match)
+				matchComp := matchSelector(match, uint(matchId))
 				matchComp.Render(r.Context(), w)
 			} else {
 				matchComp := matchListPage(match, isOpen)
@@ -109,7 +114,12 @@ func matchHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 			fmt.Printf("matchHandler %s", matchIdStr)
 
 			if matchIdStr == "" {
-				matchComp := createMatch(isOpen)
+				matches, err := GetMatches(db, 1, 0, 9999)
+				if err != nil {
+					http.Error(w, "Could not get matches", http.StatusNotFound)
+					return
+				}
+				matchComp := matchesManage(r.Header.Get("Referrer"), true, matches)
 				matchComp.Render(r.Context(), w)
 				return
 			}

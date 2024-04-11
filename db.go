@@ -25,6 +25,7 @@ type Player struct {
 type Fine struct {
     gorm.Model
     PlayerID uint
+    MatchId uint
     FineAt time.Time
     Reason   string
     Amount   float64
@@ -61,6 +62,10 @@ func DBInit() (*gorm.DB, error) {
 
     if(!db.Migrator().HasColumn(&Fine{}, "Context")){
         db.Migrator().AddColumn(&Fine{}, "Context")
+    }
+
+    if(!db.Migrator().HasColumn(&Fine{}, "MatchId")){
+        db.Migrator().AddColumn(&Fine{}, "MatchId")
     }
 
     if(!db.Migrator().HasColumn(&Fine{}, "Contest")){
@@ -268,10 +273,11 @@ func UpdateFineContestByID(db *gorm.DB, fineID uint, contest string) error {
 }
 
 
-func UpdateFineContextByID(db *gorm.DB, fineID uint, context string) error {
+func UpdateFineContextByID(db *gorm.DB, fineID uint, matchId uint, context string) error {
     // Create a map with the fields you want to update
     updates := map[string]interface{}{
         "Context": context,
+        "MatchId": matchId,
     }
 
     // Find the Fine by ID and update the Contest field
@@ -475,8 +481,9 @@ type MatchState struct {
 func GetMatches(db *gorm.DB, season uint64, page int, pageSize int) ([]Match, error) {
     var matches []Match
     offset := (page - 1) * pageSize
-
-    result := db.Order("created_at DESC").Where("season_id = ?", season).Offset(offset).Limit(pageSize).Find(&matches)
+//.Where("season_id = ?", season)
+log.Printf("ingoring %d", season)
+    result := db.Order("created_at DESC").Offset(offset).Limit(pageSize).Find(&matches)
     if result.Error != nil {
         return nil, result.Error
     }

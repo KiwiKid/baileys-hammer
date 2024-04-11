@@ -2,6 +2,23 @@ package main
 
 import "fmt"
 
+templ matchSelector(matches []Match, selectedMatchId uint) {
+	<div class="flex flex-row">
+		<label>
+			<select id="matchId" name="matchId" class="transform scale-15 border border-gray-300 rounded-md text-gray-700 flex-grow mb-2">
+				for _, m := range matches {
+					<option
+						value={ fmt.Sprintf("%v",m.ID) }
+						if selectedMatchId == m.ID {
+							selected
+						}
+					>vs { m.Opponent }</option>
+				}
+			</select>
+		</label>
+	</div>
+}
+
 templ matchListPage(matches []Match, isOpen bool) {
 	<html hx-boost="true">
 		@header()
@@ -21,12 +38,8 @@ templ matchListPage(matches []Match, isOpen bool) {
 				}
 				<div
  					id="add-match-container"
- 					if isOpen {
-						hx-get="/match?isOpen=true"
-					} else {
-						hx-get="/match?isOpen=false"
-					}
- 					hx-trigger="load once"
+ 					hx-get="/match?isOpen=true"
+ 					hx-trigger="click"
  					hx-swap="OuterHTML"
  					class="w-full text-center"
 				>loading add match</div>
@@ -79,45 +92,33 @@ templ listEvents(events []MatchEvent) {
 	</div>
 }
 
-templ createMatch(isOpen bool) {
-	<div>
-		[createMatch
-		: 
-		{ fmt.Sprintf("%v", isOpen) }
-		]
-		if isOpen {
-			<div class="container mx-auto bg-gray-200 shadow-xl m-10">
-				<form action="/match" method="POST" class="max-w-xl mx-auto my-8 p-4 border border-gray-200 rounded-lg shadow">
-					<h2 class="text-lg font-semibold mb-4">Create New Match</h2>
-					<div class="mb-4">
-						<label for="location" class="block text-sm font-medium text-gray-700">Location</label>
-						<input type="text" name="location" id="location" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"/>
-					</div>
-					<div class="mb-4">
-						<label for="start-time" class="block text-sm font-medium text-gray-700">Start Time</label>
-						<input type="datetime-local" name="startTime" id="start-time" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"/>
-					</div>
-					<div class="mb-4">
-						<label for="opponent" class="block text-sm font-medium text-gray-700">Opponent</label>
-						<input type="text" name="opponent" id="opponent" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"/>
-					</div>
-					<div class="mb-4">
-						<label for="subtitle" class="block text-sm font-medium text-gray-700">Subtitle (optional)</label>
-						<input type="text" name="subtitle" id="subtitle" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"/>
-					</div>
-					<div class="flex items-center justify-between mt-4">
-						<button type="submit" class={ bigPri }>Create Match</button>
-					</div>
-					<div class="flex items-center justify-between mt-4">
-						<button hx-get="/match-list?isOpen=false" class={ bigSec }>Close</button>
-					</div>
-				</form>
+templ createMatch() {
+	<div class="container mx-auto bg-gray-200 shadow-xl m-10">
+		<form action="/match" method="POST" class="max-w-xl mx-auto my-8 p-4 border border-gray-200 rounded-lg shadow">
+			<h2 class="text-lg font-semibold mb-4">Create New Match</h2>
+			<div class="mb-4">
+				<label for="location" class="block text-sm font-medium text-gray-700">Location</label>
+				<input type="text" name="location" id="location" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"/>
 			</div>
-		} else {
-			<div class="flex justify-center w-full">
-				<a href={ templ.SafeURL("/match-list?isOpen=true") } class={ bigAdd }>Add Match</a>
+			<div class="mb-4">
+				<label for="start-time" class="block text-sm font-medium text-gray-700">Start Time</label>
+				<input type="datetime-local" name="startTime" id="start-time" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"/>
 			</div>
-		}
+			<div class="mb-4">
+				<label for="opponent" class="block text-sm font-medium text-gray-700">Opponent</label>
+				<input type="text" name="opponent" id="opponent" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"/>
+			</div>
+			<div class="mb-4">
+				<label for="subtitle" class="block text-sm font-medium text-gray-700">Subtitle (optional)</label>
+				<input type="text" name="subtitle" id="subtitle" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"/>
+			</div>
+			<div class="flex items-center justify-between mt-4">
+				<button type="submit" class={ bigPri }>Create Match</button>
+			</div>
+			<div class="flex items-center justify-between mt-4">
+				<button hx-get="/match-list?isOpen=false" class={ bigSec }>Close</button>
+			</div>
+		</form>
 	</div>
 }
 

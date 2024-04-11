@@ -148,9 +148,17 @@ func fineContextHandler(db *gorm.DB) http.HandlerFunc {
 			http.Error(w, "Invalid fine ID", http.StatusBadRequest)
 			return
 		}
+
+		matchIdStr := r.FormValue("matchId")
+		matchId, err := strconv.ParseUint(matchIdStr, 10, 64)
+		if err != nil {
+			http.Error(w, "Invalid fine ID", http.StatusBadRequest)
+			return
+		}
+
 		contest := r.FormValue("context")
 
-		err = UpdateFineContextByID(db, uint(fineID), contest)
+		err = UpdateFineContextByID(db, uint(fineID), uint(matchId), contest)
 		if err != nil {
 			http.Error(w, "Invalid fine ID", http.StatusBadRequest)
 			return
@@ -213,7 +221,7 @@ func fineEditHandler(db *gorm.DB) http.HandlerFunc {
 				fineContestRow.Render(r.Context(), w)
 				return
 			} else if(isContext == "true") {
-				matches, err := GetMatches(db, 1, 1, 9999)
+				matches, err := GetMatches(db, 1, 0, 9999)
 				if err != nil {
 					http.Error(w, fmt.Sprintf("Player not found - %d", fine.PlayerID), http.StatusNotFound)
 					return
@@ -823,6 +831,7 @@ type HomeQueryParams struct {
 	FineListOpen bool `schema:"fl"`
 	PlayerOpen bool `schema:"p"`
 	PresetFinesOpen bool `schema:"pf"`
+	MatchesOpen bool `schema:"m"`
 }
 
 func presetFineHandler(db *gorm.DB) http.HandlerFunc {
@@ -896,6 +905,7 @@ type FineMasterQueryParams struct {
 	PlayerOpen bool `schema:"p"`
 	PresetFinesOpen bool `schema:"pf"`
 	FineList bool `schema:"fl"`
+	MatchesOpen bool `schema:"m"`
 }
 
 func presetFineMasterHandler(db *gorm.DB) http.HandlerFunc {
@@ -933,7 +943,13 @@ func presetFineMasterHandler(db *gorm.DB) http.HandlerFunc {
 			return
 		}
 
-		finemaster := finemaster(pass, playersWithFines, pFines, *queryParams)
+		matches, err := GetMatches(db, 1, 0, 9999)
+		if err != nil {
+			log.Printf("Error retrieving preset fines: %v", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+		finemaster := finemaster(pass, playersWithFines, pFines, matches, *queryParams)
 		finemaster.Render(r.Context(), w)
 	}
 }

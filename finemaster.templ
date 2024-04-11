@@ -13,16 +13,16 @@ func secureFineMasterbaseUrl( finemasterBaseUrl string, pass string) string {
 templ finemasterNav(finemasterBaseUrl string) {
 	<nav class="fixed inset-x-0 bottom-0 bg-gray-800 text-white pb-12">
 		<div class="flex justify-between">
-			<a href={ makeSafeUrlWithAnchor(finemasterBaseUrl, true, false, false, false, "fine-add") } class="flex-1 text-center py-3 hover:bg-gray-700">Add</a>
+			<a href={ makeSafeUrlWithAnchorV2(finemasterBaseUrl, "fine-add", true) } class="flex-1 text-center py-3 hover:bg-gray-700">Add</a>
 			<button _="on click toggle .hidden on .quick-fine then go to top of #quick-finer" class="flex-1 text-center py-3 hover:bg-gray-700">Quick Fine</button>
-			<a href={ makeSafeUrlWithAnchor(finemasterBaseUrl, false, false, false, true, "preset-fine") } class="flex-1 text-center py-3 hover:bg-gray-700">Standard Fines</a>
-			<a href={ makeSafeUrlWithAnchor(finemasterBaseUrl, false, false, true, false, "players-manage") } class="flex-1 text-center py-3 hover:bg-gray-700">Players</a>
-			<a href={ makeSafeUrlWithAnchor(finemasterBaseUrl, false, false, false, false, "fine-list-container") } class="flex-1 text-center py-3 hover:bg-gray-700">Recent</a>
+			<a href={ makeSafeUrlWithAnchor(finemasterBaseUrl, false, false, false, true, false, "preset-fine") } class="flex-1 text-center py-3 hover:bg-gray-700">Standard Fines</a>
+			<a href={ makeSafeUrlWithAnchor(finemasterBaseUrl, false, false, true, false, false, "players-manage") } class="flex-1 text-center py-3 hover:bg-gray-700">Players</a>
+			<a href={ makeSafeUrlWithAnchor(finemasterBaseUrl, false, false, false, false, false, "fine-list-container") } class="flex-1 text-center py-3 hover:bg-gray-700">Recent</a>
 		</div>
 	</nav>
 }
 
-templ finemaster(pass string, players []PlayerWithFines, pFines []PresetFine, qp FineMasterQueryParams) {
+templ finemaster(pass string, players []PlayerWithFines, pFines []PresetFine, matches []Match, qp FineMasterQueryParams) {
 	<html hx-boost="true">
 		@header()
 		@tomSelectLinks()
@@ -86,6 +86,7 @@ templ finemaster(pass string, players []PlayerWithFines, pFines []PresetFine, qp
 			</div>
 			@playersManage(secureFineMasterbaseUrl(finemasterBaseUrl, pass), players, qp.PlayerOpen)
 			@presetFines(fmt.Sprintf("%s/%s", finemasterBaseUrl, pass), qp.PresetFinesOpen, pFines)
+			@matchesManage(secureFineMasterbaseUrl(finemasterBaseUrl, pass), qp.MatchesOpen, matches)
 			<div id="fine-list-container" class="h-screen" hx-get="/fines" hx-trigger="load once" hx-swap="OuterHTML" class="w-full text-center">loading latest..</div>
 			<div class="mt-96"></div>
 			@finemasterNav(fmt.Sprintf("%s/%s", finemasterBaseUrl, pass))
@@ -153,14 +154,30 @@ templ presetFines(baseUrl string, isOpen bool, presetFines []PresetFine) {
 						</div>
 					</form>
 					<div class="flex justify-center w-full">
-						<a href={ makeSafeUrl(baseUrl, false, false, false, false) } class={ bigSec }>Close</a>
+						<a href={ makeSafeUrl(baseUrl, false, false, false, false, false) } class={ bigSec }>Close</a>
 					</div>
 				</div>
 			</div>
 		</div>
 	} else {
 		<div class="flex justify-center w-full">
-			<a href={ makeSafeUrlWithAnchor(baseUrl, false, false, false, true, "preset-fine") } class={ bigPri }>Manage Standard Fines</a>
+			<a href={ makeSafeUrlWithAnchor(baseUrl, false, false, false, true, false, "preset-fine") } class={ bigPri }>Manage Standard Fines</a>
+		</div>
+	}
+}
+
+templ matchesManage(baseUrl string, isOpen bool, matches []Match) {
+	if isOpen {
+		<div class="px-8 py-6 text-left bg-white shadow-xl m-10" id="preset-fine">
+			<h3 class="text-2xl font-bold text-center">Add/Edit Matches</h3>
+			<div class="w-full flex justify-center items-center py-2">
+				<p>Edit existing matches, or add new ones</p>
+			</div>
+			@createMatch()
+		</div>
+	} else {
+		<div class="flex justify-center w-full">
+			<a href={ makeSafeUrlWithAnchorV2(baseUrl, "standard-matches", true) } class={ bigPri }>Manage Standard Matches</a>
 		</div>
 	}
 }
@@ -188,13 +205,13 @@ templ playersManage(baseUrl string, players []PlayerWithFines, isOpen bool) {
 					}
 				</div>
 				<div class="flex justify-center w-full mt-4">
-					<a href={ makeSafeUrl(baseUrl, false, false, false, false) } hx-transition="true" class={ bigSec }>Close</a>
+					<a href={ makeSafeUrl(baseUrl, false, false, false, false, false) } hx-transition="true" class={ bigSec }>Close</a>
 				</div>
 			</div>
 		</div>
 	} else {
 		<div class="flex justify-center w-full p-3">
-			<a href={ makeSafeUrlWithAnchor(baseUrl, false, false, true, false, "players-manage") } hx-transition="true" class={ bigPri }>Manage Players</a>
+			<a href={ makeSafeUrlWithAnchorV2(baseUrl, "players-manage", true) } hx-transition="true" class={ bigPri }>Manage Players</a>
 		</div>
 	}
 }
