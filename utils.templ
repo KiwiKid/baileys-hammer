@@ -22,55 +22,54 @@ templ success(msg string) {
 templ errMsg(msg string) {
 	<div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-lg">
 		<p class="text-lg font-semibold">{ msg }</p>
-	</div>
+	</div> 
 }
 
 templ fineSuperSelect(players []PlayerWithFines, approvedPFines []PresetFine) {
-	<form hx-post="/fines-mulit" method="POST" class="flex flex-col space-y-4 bg-white shadow-md p-6 rounded-lg">
-		<div class="text-3xl text-center mx-auto">
-			Multi-Finer
-		</div>
-		<div class="flex flex-row">
-			<label for="select-fine" class="mt-2 pr-2 font-semibold text-gray-700">Fines</label>
-			<select id="select-fine" name="pfines[]" multiple placeholder="Select fine(s)..." class="border border-gray-300 rounded-md text-gray-700 flex-grow mb-2">
-				<option value="">Select a fine...</option>
-				for _, apf := range approvedPFines {
-					<option value={ fmt.Sprintf("%d", apf.ID) }>{ apf.Reason }</option>
-				}
-			</select>
-		</div>
-		<div class="flex flex-row">
-			<label for="select-player" class="mt-2 pr-2 font-semibold text-gray-700">Players</label>
-			<select id="select-player" name="players[]" multiple placeholder="Select player(s)..." class="border border-gray-300 rounded-md text-gray-700 flex-grow mb-2">
-				<option value="">Select a player...</option>
-				for _, p := range players {
-					<option value={ fmt.Sprintf("%d", p.ID) }>{ p.Name }</option>
-				}
-			</select>
-		</div>
-		<button type="submit" class={ bigAdd }>Multi-Fine</button>
-		<div id="results-container"></div>
-		<script>
-		var settings = {};
-		new TomSelect("#select-fine",{
-			maxOptions: 20,
-			plugins: {
-				no_active_items: 'true',
-				remove_button: {
-					title:'Remove this fine',
-				}
-			},
-		});
-		new TomSelect("#select-player",{
-			maxOptions: 20,
-			plugins: {
-				remove_button:{
-					title:'Remove this player'
-				}
-			},
-		});
-		</script>
-	</form>
+	<div class="container mx-auto bg-gray-200 shadow-xl m-10">
+		<form hx-post="/fines-mulit" method="POST" class="flex flex-col space-y-4 bg-white shadow-md p-6 rounded-lg">
+			<div class="flex flex-row">
+				<label for="select-fine" class="mt-2 pr-2 font-semibold text-gray-700">Fines</label>
+				<select id="select-fine" name="pfines[]" multiple placeholder="Select fine(s)..." class="border border-gray-300 rounded-md text-gray-700 flex-grow mb-2">
+					<option value="">Select a fine...</option>
+					for _, apf := range approvedPFines {
+						<option value={ fmt.Sprintf("%d", apf.ID) }>{ apf.Reason }</option>
+					}
+				</select>
+			</div>
+			<div class="flex flex-row">
+				<label for="select-player" class="mt-2 pr-2 font-semibold text-gray-700">Players</label>
+				<select id="select-player" name="players[]" multiple placeholder="Select player(s)..." class="border border-gray-300 rounded-md text-gray-700 flex-grow mb-2">
+					<option value="">Select a player...</option>
+					for _, p := range players {
+						<option value={ fmt.Sprintf("%d", p.ID) }>{ p.Name }</option>
+					}
+				</select>
+			</div>
+			<button type="submit" class={ bigAdd }>Multi-Fine</button>
+			<div id="results-container"></div>
+			<script>
+			var settings = {};
+			new TomSelect("#select-fine",{
+				maxOptions: 20,
+				plugins: {
+					no_active_items: 'true',
+					remove_button: {
+						title:'Remove this fine',
+					}
+				},
+			});
+			new TomSelect("#select-player",{
+				maxOptions: 20,
+				plugins: {
+					remove_button:{
+						title:'Remove this player'
+					}
+				},
+			});
+			</script>
+		</form>
+	</div>
 }
 
 templ fineSuperSelectResults(players []PlayerWithFines, approvedPFines[]PresetFine, newFines []Fine) {

@@ -162,19 +162,19 @@ func finemaster(pass string, players []PlayerWithFines, pFines []PresetFine, qp 
 		if err != nil {
 			return err
 		}
+		err = fineAddV2(secureFineMasterbaseUrl(finemasterBaseUrl, pass), qp.FinesOpen, players, pFines, true).Render(ctx, templBuffer)
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("</div><div>")
+		if err != nil {
+			return err
+		}
 		err = fineAdd(secureFineMasterbaseUrl(finemasterBaseUrl, pass), qp.FinesOpen, players, pFines, true).Render(ctx, templBuffer)
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("</div>")
-		if err != nil {
-			return err
-		}
-		err = fineSuperSelect(players, pFines).Render(ctx, templBuffer)
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString("<div class=\"container mx-auto p-4\" id=\"quick-finer\"><div class=\"flex items-center justify-center bg-gray-100 mx-auto\"><ul>")
+		_, err = templBuffer.WriteString("</div><div class=\"container mx-auto p-4\" id=\"quick-finer\"><div class=\"flex items-center justify-center bg-gray-100 mx-auto\"><ul>")
 		if err != nil {
 			return err
 		}

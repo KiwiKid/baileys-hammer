@@ -118,7 +118,7 @@ templ home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines
 						}
 					</div>
 				}
-				@fineAdd(baseUrl, qp.FinesOpen, players, approvedPFines, false)
+				@fineAddV2(baseUrl, qp.FinesOpen, players, approvedPFines, false)
 			</div>
 			<div class="flex bg-gray-100 mx-auto shadow-xl m-10" id="leaderboard">
 				<div class="w-full mt-10">
@@ -182,6 +182,41 @@ templ fineAddRes(createdFines []Fine, createdPFines []PresetFine){
 		}
 	</div>
 }
+
+
+templ fineAddV2(baseUrl string, isOpen bool, players []PlayerWithFines, presetFines []PresetFine, isFineMaster bool) {
+	<div class="container mx-auto bg-gray-200 shadow-xl m-10">
+		if isOpen {
+			<div class="flex justify-center w-full p-4" id="fine-add">
+				<div class="flex flex-col justify-center w-full p-4">
+
+					@fineSuperSelect(players, presetFines)
+					<p>Select players and fines below</p>
+					<div class="flex justify-center w-full p-4">
+						<a class={ bigPri } href={ makeSafeUrlWithAnchor(baseUrl, false, false, false, false, "fine-add") }>
+							if isFineMaster {
+								Close Fine a Player
+							} else {
+								Close Suggest a Fine
+							}
+						</a>
+					</div>
+				</div>
+			</div>
+		} else {
+			<div class="flex justify-center w-full p-4" id="fine-add">
+				<a class={ bigPri } href={ makeSafeUrlWithAnchor(baseUrl, false, true, false, false, "fine-add") }>
+					if isFineMaster {
+						Fine a Player
+					} else {
+						Suggest a Fine
+					}
+				</a>
+			</div>
+		}
+	</div>
+}
+
 templ fineAdd(baseUrl string, isOpen bool, players []PlayerWithFines, presetFines []PresetFine, isFineMaster bool) {
 	<div class="container mx-auto bg-gray-200 shadow-xl m-10">
 		if isOpen {

@@ -14,7 +14,7 @@ templ fineList(fines []FineWithPlayer, page int, isFineMaster bool) {
 	>
 		<div class="text-3xl p-10">
 			Recent Fine List
-			<button hx-get="/fines"  hx-target="#fine-list-container" hx-swap="outerHTML" hx-trigger="click" class="text-3xl">↻</button>
+			<button hx-get="/fines" hx-target="#fine-list-container" hx-swap="outerHTML" hx-trigger="click" class="text-3xl">↻</button>
 		</div>
 		<table id="fine-list" class="min-w-full divide-y divide-gray-200">
 			<tbody class="bg-white divide-y divide-gray-200">
@@ -44,7 +44,10 @@ templ fineRow(isFineMaster bool, f FineWithPlayer) {
 		<td class="text-lg text-gray-900 flex flex-col text-wrap">
 			
 			<div>
-				{ f.Fine.Reason }
+				{ f.Fine.Reason } 
+				if f.Fine.Approved {
+					{ fmt.Sprintf("$%v", f.Fine.Amount) }
+				}
 			</div>
 			
 			<div>{ humanize.Time(f.Fine.FineAt) }</div>
@@ -55,7 +58,7 @@ templ fineRow(isFineMaster bool, f FineWithPlayer) {
 					<button
 						hx-get={ fmt.Sprintf("/fines/edit/%d?isContext=true", f.Fine.ID) }
 						hx-swap="outerHTML"
-						class={ bigPri }
+						class={ pri }
 					>
 					if len(f.Fine.Context) == 0 {
 						Add Context	
@@ -66,13 +69,6 @@ templ fineRow(isFineMaster bool, f FineWithPlayer) {
 				</div>
 			</div>
 		</td>
-		if f.Fine.Approved {
-		<td class="whitespace-nowrap text-sm text-gray-900">
-			
-				{ fmt.Sprintf("%v", f.Fine.Amount) }
-			
-		</td>
-		}
 		<td>
 			if f.Fine.Approved {
 				<div>✅</div>
@@ -105,11 +101,11 @@ templ fineRow(isFineMaster bool, f FineWithPlayer) {
 				</form>
 			}
 			if len(f.Fine.Contest) == 0 {
-				<div class="w-36"> 
+				<div class="max-w-96"> 
 					<button
 						hx-get={ fmt.Sprintf("/fines/edit/%d?isContest=true", f.Fine.ID) }
 						hx-swap="outerHTML"
-						class={ bigPri }
+						class={ pri }
 					>Contest</button>
 				</div>
 			} else {
@@ -130,41 +126,36 @@ templ fineRow(isFineMaster bool, f FineWithPlayer) {
 	</tr>
 }
 
-templ fineContextRow(f FineWithPlayer){
-	<div class="px-2 py-2 gap-2 border rounded">
-		<p class="text-sm p-10 w-full">Add Context for this fine:</p>
-		<div class="py-2">
-			<input
- 				type="text"
- 				name="context"
- 				value={ f.Fine.Context }
- 				class="px-2 py-1 border rounded w-full"
- 				placeholder="Reason"
-			/>
-		</div>
-		<div class="py-2">
-			<input
- 				type="hidden"
- 				name="fid"
- 				value={ fmt.Sprintf("%d", f.Fine.ID) }
-			/>
-		</div>
-		<div class="py-2">
-			<button
- 				class={ bigAdd }
- 				hx-post={ "/fines/context" }
-	
- 				hx-swap="outerHTML"
- 				hx-include="closest tr"
- 				type="submit"
-			>
-				Save
-			</button>
-		</div>
+templ fineContextRow(f FineWithPlayer) {
+	<div class="border rounded-lg flex flex-col items-center p-4 space-y-4">
+		<p class="text-sm w-full text-gray-700">Add Context for this fine:</p>
 		<div class="w-full">
+			<input
+				type="text"
+				name="context"
+				value={ f.Fine.Context }
+				class="px-4 py-2 border border-gray-300 rounded-lg w-full focus:ring-blue-500 focus:border-blue-500"
+				placeholder="Reason"
+			/>
+		</div>
+		<input
+			type="hidden"
+			name="fid"
+			value={ fmt.Sprintf("%d", f.Fine.ID) }
+		/>
+		<button
+			class={ add }
+			hx-post={ "/fines/context" }
+			hx-swap="outerHTML"
+			hx-include="closest tr"
+			type="submit"
+		>
+			Save
+		</button>
+		<div class="w-full text-center">
 			<a
- 				href={ templ.SafeURL("/#fine-list-container") }
- 				class={ bigSec }
+				href={ templ.SafeURL("/#fine-list-container") }
+				class={ sec }
 			>
 				Close
 			</a>
@@ -173,39 +164,35 @@ templ fineContextRow(f FineWithPlayer){
 }
 
 templ fineContestRow(f FineWithPlayer) {
-	<div class="px-2 py-2 gap-2 border rounded" id="contest-form">
-		<p class="text-xl p-10">Contest this fine:</p>
-		<div class="py-2">
+	<div class="border rounded-lg flex flex-col items-center p-4 space-y-4" id="contest-form">
+		<p class="text-sm w-full text-gray-700">Contest fine:</p>
+		<div class="w-full">
 			<input
  				type="text"
  				name="contest"
  				value={ f.Fine.Contest }
- 				class="px-2 py-1 border rounded w-full"
- 				placeholder="Reason"
+ 				class="px-4 py-2 border border-gray-300 rounded-lg w-full focus:ring-blue-500 focus:border-blue-500"
+ 				placeholder="Why do you contest this fine?"
 			/>
 		</div>
-		<div class="py-2">
-			<input
- 				type="hidden"
- 				name="fid"
- 				value={ fmt.Sprintf("%d", f.Fine.ID) }
-			/>
-		</div>
-		<div class="py-2">
-			<button
- 				class={ bigAdd }
- 				hx-post={ fmt.Sprintf("/fines/contest", ) }
- 				hx-swap="outerHTML"
- 				hx-include="closest #contest-form"
- 				type="submit"
-			>
-				Save
-			</button>
-		</div>
-		<div class="w-full">
+		<input
+			type="hidden"
+			name="fid"
+			value={ fmt.Sprintf("%d", f.Fine.ID) }
+		/>
+		<button
+			class={ add }
+			hx-post={ fmt.Sprintf("/fines/contest", ) }
+			hx-swap="outerHTML"
+			hx-include="closest #contest-form"
+			type="submit"
+		>
+			Save
+		</button>
+		<div class="w-full text-center">
 			<a
  				href={ templ.SafeURL("/#fine-list-container") }
- 				class={ bigSec }
+ 				class={ sec }
 			>
 				Cancel
 			</a>
@@ -303,7 +290,7 @@ templ fineEditRow(f FineWithPlayer) {
  				hx-target={ fmt.Sprintf("#fr-%d", f.Fine.ID) }
  				hx-swap="outerHTML"
  				type="button"
- 				class={ bigSec }
+ 				class={ sec }
 			>
 				Cancel
 			</button>
