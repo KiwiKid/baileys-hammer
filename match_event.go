@@ -274,7 +274,7 @@ func matchEventListHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Requ
 
 			matchEvents, getFErr := GetMatchEvents(db, matchId)
 			if getFErr != nil {
-				http.Error(w, "Invalid form data", http.StatusBadRequest)
+				http.Error(w, "Invalid GetMatchEvents data", http.StatusBadRequest)
 				return
 			}
 

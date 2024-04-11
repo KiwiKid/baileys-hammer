@@ -33,7 +33,7 @@ templ finemaster(pass string, players []PlayerWithFines, pFines []PresetFine, qp
 				</h1>
 			</div>
 			<div class="grid grid-cols-1 gap-2">
-				@fineAdd(secureFineMasterbaseUrl(finemasterBaseUrl, pass), qp.FinesOpen, players, pFines, true)
+				@fineAdd(secureFineMasterbaseUrl(finemasterBaseUrl, pass), qp.FinesOpen, players, pFines, true, [])
 			</div>
 			@fineSuperSelect(players, pFines)
 			<div class="container mx-auto p-4" id="quick-finer">
@@ -83,11 +83,8 @@ templ finemaster(pass string, players []PlayerWithFines, pFines []PresetFine, qp
 				</div>
 			</div>
 			@playersManage(secureFineMasterbaseUrl(finemasterBaseUrl, pass), players, qp.PlayerOpen)
-
 			@presetFines(fmt.Sprintf("%s/%s", finemasterBaseUrl, pass), qp.PresetFinesOpen, pFines)
-
-
-			<div id="fine-list-container" class="h-screen"  hx-get="/fines" hx-trigger="load once" hx-swap="OuterHTML" class="w-full text-center">loading latest..</div>
+			<div id="fine-list-container" class="h-screen" hx-get="/fines" hx-trigger="load once" hx-swap="OuterHTML" class="w-full text-center">loading latest..</div>
 			<div class="mt-96"></div>
 			@finemasterNav(fmt.Sprintf("%s/%s", finemasterBaseUrl, pass))
 		</body>
@@ -109,16 +106,14 @@ templ presetFines(baseUrl string, isOpen bool, presetFines []PresetFine) {
 					<p>(These will be added to the quick toggle list)</p>
 					for _, pfine := range presetFines {
 						if !pfine.Approved {
-
-						<div class="mt-2 text-center">
-							<div>
-									<button hx-post={ fmt.Sprintf("/preset-fines/approve?pfid=%d", pfine.ID) } hx-swap="outerHTML" class={ bigAdd }>☐ ✨ { pfine.Reason } { fmt.Sprintf("$%.0f", pfine.Amount) } </button>								
-								<button class={ bigDel } hx-delete={ fmt.Sprintf("/preset-fines?pfid=%d", pfine.ID) } hx-confirm={ fmt.Sprintf("Remove %s from standard fines?", pfine.Reason) }>Delete</button>
+							<div class="mt-2 text-center">
+								<div>
+									<button hx-post={ fmt.Sprintf("/preset-fines/approve?pfid=%d", pfine.ID) } hx-swap="outerHTML" class={ bigAdd }>☐ ✨ { pfine.Reason } { fmt.Sprintf("$%.0f", pfine.Amount) }</button>
+									<button class={ bigDel } hx-delete={ fmt.Sprintf("/preset-fines?pfid=%d", pfine.ID) } hx-confirm={ fmt.Sprintf("Remove %s from standard fines?", pfine.Reason) }>Delete</button>
+								</div>
 							</div>
-						</div>
+						}
 					}
-					}
-
 					for _, pfine := range presetFines {
 						if pfine.Approved {
 							<div class="mt-2 text-center">

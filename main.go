@@ -109,7 +109,7 @@ func fineContestHandler(db *gorm.DB) http.HandlerFunc {
     return func(w http.ResponseWriter, r *http.Request) {
 
 		if err := r.ParseForm(); err != nil {
-			http.Error(w, "Invalid form data", http.StatusBadRequest)
+			http.Error(w, "fineContestHandler - Invalid form data", http.StatusBadRequest)
 			return
 		}
 
@@ -140,7 +140,7 @@ func fineContextHandler(db *gorm.DB) http.HandlerFunc {
     return func(w http.ResponseWriter, r *http.Request) {
 
 		if err := r.ParseForm(); err != nil {
-			http.Error(w, "Invalid form data", http.StatusBadRequest)
+			http.Error(w, "fineContextHandler - Invalid form data", http.StatusBadRequest)
 			return
 		}
 
@@ -229,14 +229,14 @@ func fineEditHandler(db *gorm.DB) http.HandlerFunc {
         case "POST":
             // Parse form data
             if err := r.ParseForm(); err != nil {
-                http.Error(w, "Invalid form data", http.StatusBadRequest)
+                http.Error(w, "fineEditHandler - Invalid form data", http.StatusBadRequest)
                 return
             }
 
             // Extract and validate form data
             fineID, err := strconv.ParseUint(r.FormValue("fid"), 10, 64)
             if err != nil {
-                http.Error(w, "Invalid fine ID", http.StatusBadRequest)
+                http.Error(w, "fineEditHandler - Invalid fine ID", http.StatusBadRequest)
                 return
             }
 
@@ -338,13 +338,13 @@ func fineHandler(db *gorm.DB) http.HandlerFunc {
 			}
 			fines, getFErr := FetchLatestFines(db, int(pageId), int(limit))
 			if getFErr != nil {
-				http.Error(w, "Invalid form data", http.StatusBadRequest)
+				http.Error(w, "fineHandler - FetchLatestFines", http.StatusBadRequest)
 				return
 			}
 
 			players, getPlayerErr := GetPlayers(db, 0, 100)
 			if getPlayerErr != nil {
-				http.Error(w, "Invalid form data", http.StatusBadRequest)
+				http.Error(w, "fineHandler - GetPlayers error", http.StatusBadRequest)
 				return
 			}
 
@@ -380,36 +380,22 @@ func fineHandler(db *gorm.DB) http.HandlerFunc {
 			case "POST": {
 
 				if err := r.ParseForm(); err != nil {
-					http.Error(w, "Invalid form data", http.StatusBadRequest)
+					http.Error(w, "fineHandler - Invalid form data", http.StatusBadRequest)
 					return
 				}
-			
+				createdFines := []Fine{}
+				createdPFines := []PresetFine{}
+
+				playerIdStr := r.FormValue("playerId")
 				context := r.FormValue("context")
 
-				var presetFine *PresetFine
-				presetFineStr := r.FormValue("presetFineId")
-				if(len(presetFineStr) > 0 && presetFineStr != "-1"){
-					pfId, err := strconv.ParseUint(r.FormValue("presetFineId"), 10, 64)
-					if err != nil {
-						http.Error(w, "Invalid presetFineId", http.StatusBadRequest)
-						return
-					}
-					presetFine, err = GetPresetFine(db, pfId)
-					if err != nil {
-						http.Error(w, "Could not GetPresetFine", http.StatusBadRequest)
-						return 
-					}
-				}
+				reason := r.FormValue("reason")
 
-				var fine Fine
-				if presetFine != nil {
-					fine = Fine{
-						Amount: presetFine.Amount,
-						Reason: presetFine.Reason,
-						Context: context,
-						FineAt: time.Now(),
-					}
-				} else {
+
+				log.Printf("WOAH WOAH WOAH WOAH playerIdStr %d fineOption: %s", len(playerIdStr), r.FormValue("fineOption") )
+
+				if(len(playerIdStr) == 0 || r.FormValue("fineOption") == "applyAgain") {
+
 					amountStr := r.FormValue("amount")
 					if len(amountStr) == 0 {
 						amountStr = "1"
@@ -421,8 +407,6 @@ func fineHandler(db *gorm.DB) http.HandlerFunc {
 						return
 					}
 
-
-					reason := r.FormValue("reason")
 
 					log.Printf("%+v %+v", r.FormValue("fineOption"), r.FormValue("fineOption") == "applyAgain")
 
@@ -439,47 +423,114 @@ func fineHandler(db *gorm.DB) http.HandlerFunc {
 							http.Error(w, "SavePresetFine failed", http.StatusBadRequest)
 							return
 						}else{
-							log.Println("Saved preset fine")
+							createdPFines = append(createdPFines, *suggestedPFine)
 						}
 					}
-
-					fine = Fine{
-						Amount: amount,
-						Reason: reason,
-						FineAt: time.Now(),
-						Context: context,
-					}
 				}
+				if (len(playerIdStr) > 0) {
+					log.Printf("WOAH WOAH WOAH WOAH %s", playerIdStr)
+				
 
-				playerIdStr := r.FormValue("playerId")
-				if(len(playerIdStr) > 0){
 					playerId, err := strconv.ParseUint(playerIdStr, 10, 64)
 					if err != nil {
 						log.Printf("Error get playerIdStr fine: %v", err)
 						http.Error(w, "Internal playerIdStr Error", http.StatusInternalServerError)
 						return
 					}
-					fine.PlayerID = uint(playerId)
-					
-					fine.Approved = r.FormValue("approved") == "on"
 				
-					log.Printf("SAVE FINE WITH %s", fine.Context)
-					log.Printf("SAVE FINE WITH RASON %s", fine.Reason)
-					if err := SaveFine(db, &fine); err != nil {
-						log.Printf("Error saving fine: %v", err)
-						http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-						return
+					approved := r.FormValue("approved") == "on"
+
+					presetFineIds := r.Form["presetFineId"]
+
+
+
+					for _, pfIdStr := range presetFineIds {
+						if len(pfIdStr) == 0 {
+							http.Error(w, "Invalid form data", http.StatusBadRequest)
+							return
+						}
+						amountStr := r.FormValue("amount")
+						if len(amountStr) == 0 {
+							amountStr = "1"
+						}
+						amount, err := strconv.ParseFloat(amountStr, 64) // 64 specifies the bit size of the float type
+						if err != nil {
+							// Handle the error if the conversion fails
+							errComp := errMsg("Invalid amount")
+							errComp.Render(r.Context(), w)
+						}
+						if pfIdStr == "-1" && len(presetFineIds) > 1 {
+							errComp := errMsg("Cannot select \"Fine is not listed here\" with others")
+							errComp.Render(r.Context(), w)
+						}
+	
+						if pfIdStr == "-1" {
+
+							fine := Fine{
+								Amount: amount,
+								Reason: reason,
+								FineAt: time.Now(),
+								Context: context,
+								PlayerID: uint(playerId),
+								Approved: approved,
+							}
+
+							if err := SaveFine(db, &fine); err != nil {
+								log.Printf("Error saving fine: %v", err)
+								http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+								return
+							} else {
+								createdFines = append(createdFines, fine)
+							}
+						} else {
+
+							// Parse the string ID to an unsigned integer
+							pfId, err := strconv.ParseUint(pfIdStr, 10, 64)
+							if err != nil {
+								http.Error(w, "Invalid strconv.ParseUint(pfIdStr", http.StatusBadRequest)
+								return
+							}
+						
+							// Assuming a function GetPresetFineByID that returns a *PresetFine struct for a given ID
+							presetFine, err := GetPresetFine(db, pfId)
+							if err != nil {
+								http.Error(w, "Invalid GetPresetFine data", http.StatusBadRequest)
+								return
+							}
+						
+							
+
+							
+							fine := Fine{
+								Amount: presetFine.Amount,
+								Reason: presetFine.Reason,
+								FineAt: time.Now(),
+								Context: context,
+								PlayerID: uint(playerId),
+								Approved: approved,
+							}
+
+							if err := SaveFine(db, &fine); err != nil {
+								log.Printf("Error saving fine: %v", err)
+								http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+								return
+							} else {
+								createdFines = append(createdFines, fine)
+							}
+						}
+					
 					}
 				}
 
-				dontRedirect := r.FormValue("dontRedirect")
+			/*	dontRedirect := r.FormValue("dontRedirect")
 				if dontRedirect != "true" {
 					w.Header().Set("HX-Redirect", r.Header.Get("Referrer"))
-				}
+				}*/
 				
+				log.Printf("fineAddRes fineAddRes fineAddRes WOAH")
 
-				w.WriteHeader(http.StatusOK)
-				return
+				success := fineAddRes(createdFines, createdPFines)
+				success.Render(r.Context(), w)
 			}
 		case "DELETE":
 
@@ -515,7 +566,7 @@ func fineMultiHandler(db *gorm.DB) http.HandlerFunc {
         }
 
         if err := r.ParseForm(); err != nil {
-            http.Error(w, "Invalid form data", http.StatusBadRequest)
+            http.Error(w, "fineMultiHandler - Invalid form data", http.StatusBadRequest)
             return
         }
 
@@ -707,7 +758,7 @@ func presetFineHandler(db *gorm.DB) http.HandlerFunc {
         switch r.Method {
         case "POST":
 			if err := r.ParseForm(); err != nil {
-				http.Error(w, "Invalid form data", http.StatusBadRequest)
+				http.Error(w, "presetFineHandler - Invalid form data", http.StatusBadRequest)
 				return
 			}
 	
