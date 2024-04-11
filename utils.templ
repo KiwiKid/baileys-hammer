@@ -113,10 +113,14 @@ templ fineSuperSelect(players []PlayerWithFines, approvedPFines []PresetFine) {
 templ fineSuperSelectResults(players []PlayerWithFines, approvedPFines[]PresetFine, newFines []Fine) {
 	@fineSuperSelect(players, approvedPFines)
 	if len(newFines) > 0 {
-		@success(fmt.Sprintf("Added %d Fines", len(newFines)))
+		<details class="list-none">
+		<summary class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-lg">
+			{ fmt.Sprintf("Added %d Fines", len(newFines)) }
+		</summary>
 		for _, nf := range newFines {
 			<div>{ fmt.Sprintf("%+v", nf)}</div>
 		}
+		</details>
 	} else {
 		<div class="bg-orange-100 border-l-4 border-orange-500 text-orange-700 p-4" role="alert">
 			<p>o fines added? Make sure to select fines/players above</p>
