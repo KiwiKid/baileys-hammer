@@ -201,6 +201,8 @@ func fineEditHandler(db *gorm.DB) http.HandlerFunc {
 			isContest := r.URL.Query().Get("isContest")
 			isContext := r.URL.Query().Get("isContext")
 
+			
+
 
 			if (isEdit == "true") {
 				fineEditRow := fineEditRow(fineWithPlayer)
@@ -211,8 +213,13 @@ func fineEditHandler(db *gorm.DB) http.HandlerFunc {
 				fineContestRow.Render(r.Context(), w)
 				return
 			} else if(isContext == "true") {
+				matches, err := GetMatches(db, 1, 1, 9999)
+				if err != nil {
+					http.Error(w, fmt.Sprintf("Player not found - %d", fine.PlayerID), http.StatusNotFound)
+					return
+				}
 				log.Printf("\nIS CONTEST \n")
-				fineContestRow := fineContextRow(fineWithPlayer)
+				fineContestRow := fineContextRow(fineWithPlayer, matches)
 				fineContestRow.Render(r.Context(), w)
 				return
 			} else {

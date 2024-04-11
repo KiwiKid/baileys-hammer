@@ -79,9 +79,15 @@ func matchListHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) 
 				http.Error(w, fmt.Sprintf("Error retrieving match: %v", err), http.StatusInternalServerError)
 				return
 			}
-
-			matchComp := matchListPage(match, isOpen)
-			matchComp.Render(r.Context(), w)
+			resType := r.URL.Query().Get("type")
+			if resType == "select" {
+				matchComp := matchSelector(match)
+				matchComp.Render(r.Context(), w)
+			} else {
+				matchComp := matchListPage(match, isOpen)
+				matchComp.Render(r.Context(), w)
+			}
+			
 		
 			default:
 				http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)

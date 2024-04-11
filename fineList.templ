@@ -53,7 +53,7 @@ templ fineRow(isFineMaster bool, f FineWithPlayer) {
 			<div>{ humanize.Time(f.Fine.FineAt) }</div>
 		</td>
 		<td>
-		<div class="text-sm text-gray-900 text-wrap">{ f.Fine.Context }
+			<div class="text-sm text-gray-900 text-wrap">{ f.Fine.Context }
 				 <div> 
 					<button
 						hx-get={ fmt.Sprintf("/fines/edit/%d?isContext=true", f.Fine.ID) }
@@ -126,7 +126,7 @@ templ fineRow(isFineMaster bool, f FineWithPlayer) {
 	</tr>
 }
 
-templ fineContextRow(f FineWithPlayer) {
+templ fineContextRow(f FineWithPlayer, matches []Match) {
 	<div class="border rounded-lg flex flex-col items-center p-4 space-y-4">
 		<p class="text-sm w-full text-gray-700">Add Context for this fine:</p>
 		<div class="w-full">
@@ -137,12 +137,17 @@ templ fineContextRow(f FineWithPlayer) {
 				class="px-4 py-2 border border-gray-300 rounded-lg w-full focus:ring-blue-500 focus:border-blue-500"
 				placeholder="Reason"
 			/>
+			
 		</div>
 		<input
 			type="hidden"
 			name="fid"
 			value={ fmt.Sprintf("%d", f.Fine.ID) }
 		/>
+		<div class="mt-2">
+			<div hx-get="/match-list?type=select" hx-trigger="load once"></div>
+			
+		</div>
 		<button
 			class={ add }
 			hx-post={ "/fines/context" }

@@ -403,7 +403,7 @@ func fineRow(isFineMaster bool, f FineWithPlayer) templ.Component {
 	})
 }
 
-func fineContextRow(f FineWithPlayer) templ.Component {
+func fineContextRow(f FineWithPlayer, matches []Match) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		templBuffer, templIsBuffer := w.(*bytes.Buffer)
 		if !templIsBuffer {
@@ -441,7 +441,7 @@ func fineContextRow(f FineWithPlayer) templ.Component {
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("\">")
+		_, err = templBuffer.WriteString("\"><div class=\"mt-2\"><div hx-get=\"/match-list?type=select\" hx-trigger=\"load once\"></div></div>")
 		if err != nil {
 			return err
 		}
