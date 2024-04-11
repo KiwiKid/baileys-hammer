@@ -191,7 +191,6 @@ templ fineAddV2(baseUrl string, isOpen bool, players []PlayerWithFines, presetFi
 				<div class="flex flex-col justify-center w-full p-4">
 
 					@fineSuperSelect(players, presetFines)
-					<p>Select players and fines below</p>
 					<div class="flex justify-center w-full p-4">
 						<a class={ bigPri } href={ makeSafeUrlWithAnchor(baseUrl, false, false, false, false, "fine-add") }>
 							if isFineMaster {

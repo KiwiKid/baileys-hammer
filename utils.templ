@@ -28,6 +28,7 @@ templ errMsg(msg string) {
 templ fineSuperSelect(players []PlayerWithFines, approvedPFines []PresetFine) {
 	<div class="container mx-auto bg-gray-200 shadow-xl m-10">
 		<form hx-post="/fines-mulit" method="POST" class="flex flex-col space-y-4 bg-white shadow-md p-6 rounded-lg">
+			<p>Select players and fines below:</p>
 			<div class="flex flex-row">
 				<label for="select-fine" class="mt-2 pr-2 font-semibold text-gray-700">Fines</label>
 				<select id="select-fine" name="pfines[]" multiple placeholder="Select fine(s)..." class="border border-gray-300 rounded-md text-gray-700 flex-grow mb-2">
