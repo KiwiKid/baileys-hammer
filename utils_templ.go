@@ -129,7 +129,7 @@ func fineSuperSelect(players []PlayerWithFines, approvedPFines []PresetFine) tem
 			var_7 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, err = templBuffer.WriteString("<div class=\"container mx-auto bg-gray-200 shadow-xl m-10\"><form hx-post=\"/fines-mulit\" method=\"POST\" class=\"flex flex-col space-y-4 bg-white shadow-md p-6 rounded-lg\"><p>")
+		_, err = templBuffer.WriteString("<div class=\"container mx-auto bg-gray-200 shadow-xl m-10\" id=\"fine-ss\" hx-get=\"/fines/add\" hx-trigger=\"pageLoaded\" hx-target=\"#fine-ss\"><form id=\"ss-form\" hx-post=\"/fines-multi\" method=\"POST\" class=\"flex flex-col space-y-4 bg-white shadow-md p-6 rounded-lg\"><p>")
 		if err != nil {
 			return err
 		}
@@ -262,14 +262,51 @@ func fineSuperSelect(players []PlayerWithFines, approvedPFines []PresetFine) tem
 			var settings = {};
 			new TomSelect("#select-fine",{
 				maxOptions: 20,
+				create: true,
+				persist: false,
 				plugins: {
 					no_active_items: 'true',
 					remove_button: {
 						title:'Remove this fine',
 					}
 				},
+				createFilter: function(input) {
+					var match = input.match(/^[^,]*$/); // Example filter: disallow commas in input
+					if(match) return !this.options.hasOwnProperty(input);
+					return false;
+				},
+				onOptionAdd: function(value, item) {
+					this.lock();
+					fetch('/fines/add', { // Replace with your actual endpoint URL
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json',
+						},
+						body: JSON.stringify({ reason: value }),
+					})
+					.then(response => {
+						if (response.ok) {
+							htmx.trigger("#ss-form", "pageLoaded")
+							return response.json();
+							
+						} else {
+							throw new Error('Server responded with an error');
+						}
+					})
+					.then(data => {
+						console.log(data.message); // Log the success message
+						// The item is already added to the select; you might want to do something else here
+					})
+					.catch(error => {
+						console.error('Error adding fine:', error);
+						this.removeItem(value); // Remove the item if the server request failed
+					})
+					.finally(() => {
+						this.unlock(); // Re-enable the select
+					});
+				},
 			});
-			new TomSelect("#select-player",{
+			new TomSelect("#select-player", {
 				maxOptions: 20,
 				plugins: {
 					remove_button:{
@@ -315,13 +352,32 @@ func fineSuperSelectResults(players []PlayerWithFines, approvedPFines []PresetFi
 			if err != nil {
 				return err
 			}
+			_, err = templBuffer.WriteString(" ")
+			if err != nil {
+				return err
+			}
+			for _, nf := range newFines {
+				_, err = templBuffer.WriteString("<div>")
+				if err != nil {
+					return err
+				}
+				var var_19 string = fmt.Sprintf("%+v", nf)
+				_, err = templBuffer.WriteString(templ.EscapeString(var_19))
+				if err != nil {
+					return err
+				}
+				_, err = templBuffer.WriteString("</div>")
+				if err != nil {
+					return err
+				}
+			}
 		} else {
 			_, err = templBuffer.WriteString("<div class=\"bg-orange-100 border-l-4 border-orange-500 text-orange-700 p-4\" role=\"alert\"><p>")
 			if err != nil {
 				return err
 			}
-			var_19 := `o fines added? Make sure to select fines/players above`
-			_, err = templBuffer.WriteString(var_19)
+			var_20 := `o fines added? Make sure to select fines/players above`
+			_, err = templBuffer.WriteString(var_20)
 			if err != nil {
 				return err
 			}

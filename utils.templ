@@ -26,8 +26,8 @@ templ errMsg(msg string) {
 }
 
 templ fineSuperSelect(players []PlayerWithFines, approvedPFines []PresetFine) {
-	<div class="container mx-auto bg-gray-200 shadow-xl m-10">
-		<form hx-post="/fines-mulit" method="POST" class="flex flex-col space-y-4 bg-white shadow-md p-6 rounded-lg">
+	<div class="container mx-auto bg-gray-200 shadow-xl m-10" id="fine-ss" hx-get="/fines/add" hx-trigger="pageLoaded" hx-target="#fine-ss">
+		<form id="ss-form" hx-post="/fines-multi" method="POST" class="flex flex-col space-y-4 bg-white shadow-md p-6 rounded-lg">
 			<p>Select players and fines below:</p>
 			<div class="flex flex-row">
 				<label for="select-fine" class="mt-2 pr-2 font-semibold text-gray-700">Fines</label>
@@ -53,14 +53,51 @@ templ fineSuperSelect(players []PlayerWithFines, approvedPFines []PresetFine) {
 			var settings = {};
 			new TomSelect("#select-fine",{
 				maxOptions: 20,
+				create: true,
+				persist: false,
 				plugins: {
 					no_active_items: 'true',
 					remove_button: {
 						title:'Remove this fine',
 					}
 				},
+				createFilter: function(input) {
+					var match = input.match(/^[^,]*$/); // Example filter: disallow commas in input
+					if(match) return !this.options.hasOwnProperty(input);
+					return false;
+				},
+				onOptionAdd: function(value, item) {
+					this.lock();
+					fetch('/fines/add', { // Replace with your actual endpoint URL
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json',
+						},
+						body: JSON.stringify({ reason: value }),
+					})
+					.then(response => {
+						if (response.ok) {
+							htmx.trigger("#ss-form", "pageLoaded")
+							return response.json();
+							
+						} else {
+							throw new Error('Server responded with an error');
+						}
+					})
+					.then(data => {
+						console.log(data.message); // Log the success message
+						// The item is already added to the select; you might want to do something else here
+					})
+					.catch(error => {
+						console.error('Error adding fine:', error);
+						this.removeItem(value); // Remove the item if the server request failed
+					})
+					.finally(() => {
+						this.unlock(); // Re-enable the select
+					});
+				},
 			});
-			new TomSelect("#select-player",{
+			new TomSelect("#select-player", {
 				maxOptions: 20,
 				plugins: {
 					remove_button:{
@@ -77,6 +114,9 @@ templ fineSuperSelectResults(players []PlayerWithFines, approvedPFines[]PresetFi
 	@fineSuperSelect(players, approvedPFines)
 	if len(newFines) > 0 {
 		@success(fmt.Sprintf("Added %d Fines", len(newFines)))
+		for _, nf := range newFines {
+			<div>{ fmt.Sprintf("%+v", nf)}</div>
+		}
 	} else {
 		<div class="bg-orange-100 border-l-4 border-orange-500 text-orange-700 p-4" role="alert">
 			<p>o fines added? Make sure to select fines/players above</p>

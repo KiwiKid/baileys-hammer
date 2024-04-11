@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -129,9 +130,6 @@ func fineContestHandler(db *gorm.DB) http.HandlerFunc {
 
 		success := success("Added Contest")
 		success.Render(r.Context(), w)
-
-		// Optionally, you can set the status code to 200 OK or any appropriate status
-		w.WriteHeader(http.StatusOK)
 	}
 }
 
@@ -160,9 +158,6 @@ func fineContextHandler(db *gorm.DB) http.HandlerFunc {
 
 		success := success("Added Context")
 		success.Render(r.Context(), w)
-
-		// Optionally, you can set the status code to 200 OK or any appropriate status
-		w.WriteHeader(http.StatusOK)
 	}
 }
 
@@ -531,6 +526,7 @@ func fineHandler(db *gorm.DB) http.HandlerFunc {
 
 				success := fineAddRes(createdFines, createdPFines)
 				success.Render(r.Context(), w)
+				return
 			}
 		case "DELETE":
 
@@ -558,6 +554,72 @@ func fineHandler(db *gorm.DB) http.HandlerFunc {
 	}
 }
 
+func fineAddHandler(db *gorm.DB) http.HandlerFunc {
+    return func(w http.ResponseWriter, r *http.Request) {
+        switch(r.Method) {
+		case "POST": {
+			var input struct {
+				Reason string `json:"reason"`
+			}
+			if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+				http.Error(w, "Invalid request body", http.StatusBadRequest)
+				return
+			}
+			defer r.Body.Close()
+
+			var suggestedPFine = &PresetFine{
+				Reason: input.Reason,
+				Approved: true,
+			}
+			err := SavePresetFine(db, suggestedPFine)
+			if err != nil {
+				http.Error(w, "SavePresetFine failed", http.StatusBadRequest)
+				return
+			}
+
+			// Assuming you have a function to write JSON response
+			success := success(fmt.Sprintf("Added Fine - %s", input.Reason))
+			success.Render(r.Context(), w)
+		}
+	case "GET": {
+
+		playersWithFines, err := GetPlayersWithFines(db)
+		if err != nil {
+			log.Printf("Error fetching players with fines: %v", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+
+		pFines, err := GetPresetFines(db, false)
+		if err != nil {
+			log.Printf("Error retrieving preset fines: %v", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+
+		var approvedPFines = []PresetFine{}
+		var pendingPFines = []PresetFine{}
+
+		for _, f := range pFines {
+			if f.Approved {
+				approvedPFines = append(approvedPFines, f)
+			}else{
+				pendingPFines = append(pendingPFines, f)
+			}
+		}
+
+		fsComp := fineSuperSelect(playersWithFines, pFines)
+		fsComp.Render(r.Context(), w)
+
+	}
+	default:
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	}
+}
+
+
 func fineMultiHandler(db *gorm.DB) http.HandlerFunc {
     return func(w http.ResponseWriter, r *http.Request) {
         if r.Method != "POST" {
@@ -574,33 +636,36 @@ func fineMultiHandler(db *gorm.DB) http.HandlerFunc {
         playerIDs := r.Form["players[]"]
 		savedFines := []Fine{}
 
+		log.Printf("pfineIDs: %+v %d", len(pfineIDs), len(playerIDs))
+		
+
+
         for _, pfineIDStr := range pfineIDs {
 			
-			fine, err :=  GetFineFromPreset(db, pfineIDStr)
-			if err != nil {
-			   http.Error(w, "Invalid player ID", http.StatusBadRequest)
-			   return
-		   }
-                        for _, playerIDStr := range playerIDs {
-				playerID, err := strconv.ParseUint(playerIDStr, 10, 64)
-                if err != nil {
-                    http.Error(w, "Invalid player ID", http.StatusBadRequest)
-                    return
-                }
 
-				fine.PlayerID = uint(playerID)
+                for _, playerIDStr := range playerIDs {
+					playerID, err := strconv.ParseUint(playerIDStr, 10, 64)
+					if err != nil {
+						http.Error(w, "Invalid player ID", http.StatusBadRequest)
+						return
+					}
+					fine, err :=  GetFineFromPreset(db, pfineIDStr)
+					if err != nil {
+						http.Error(w, "Invalid player ID", http.StatusBadRequest)
+						return
+					}
+					fine.PlayerID = uint(playerID)
 
 
-                 err = SaveFine(db, fine)
-                 if err != nil {
-					http.Error(w, "Invalid player ID", http.StatusBadRequest)
-                    return
-                 } else {
-					savedFines = append(savedFines, *fine)
-				 }
-
-                
-            }
+					err = SaveFine(db, fine)
+					if err != nil {
+						http.Error(w, "Invalid player ID", http.StatusBadRequest)
+						return
+					} else {
+						savedFines = append(savedFines, *fine)
+						log.Printf("FINE\n\n%+v", fine)
+					}
+            	}
         }
 
 		playersWithFines, err := GetPlayersWithFines(db)
@@ -878,7 +943,8 @@ func main() {
 	r.HandleFunc("/players", playerHandler(db))
 	//r.HandleFunc("/players/{playerId}", playerHandler(db))
 	r.HandleFunc("/fines", fineHandler(db))
-	r.HandleFunc("/fines-mulit", fineMultiHandler(db))
+	r.HandleFunc("/fines/add", fineAddHandler(db))
+	r.HandleFunc("/fines-multi", fineMultiHandler(db))
 	r.HandleFunc("/fines/approve", fineApproveHandler(db))
 	r.HandleFunc("/fines/edit/{fid}", fineEditHandler(db))
 	r.HandleFunc("/fines/contest", fineContestHandler(db))
