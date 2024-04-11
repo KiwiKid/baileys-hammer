@@ -67,14 +67,13 @@ templ header() {
 
 templ pageFooter() {
 	<nav class="fixed inset-x-0 bottom-0 bg-gray-800 text-white">
-		<div class="flex justify-between">
-			<a href={ makeSafeUrlWithAnchor(baseUrl, true, false, false, false, "fines") } class="flex-1 text-center py-3 hover:bg-gray-700">Standard</a>
-			<a href={ makeSafeUrlWithAnchor(baseUrl, false, true, false, false, "fine-add") } class="flex-1 text-center py-3 hover:bg-gray-700">Add</a>
-			<a href={ makeSafeUrlWithAnchor(baseUrl, false, false, false, false, "leaderboard") } class="flex-1 text-center py-3 hover:bg-gray-700">Leaderboard</a>
-			<a href={ makeSafeUrlWithAnchor(baseUrl, false, false, false, true, "fine-list") } class="flex-1 text-center py-3 hover:bg-gray-700">Recent</a>
+		<div class="flex justify-between"> 
+			<a href={ makeSafeUrlWithAnchor(baseUrl, true, false, false, false, "fines") } class="flex-1 text-center py-3 hover:bg-gray-700 text-3xl">Standard</a>
+			<a href={ makeSafeUrlWithAnchor(baseUrl, false, true, false, false, "fine-add") } class="flex-1 text-center py-3 hover:bg-gray-700 text-3xl">Add</a>
+			<a href={ makeSafeUrlWithAnchor(baseUrl, false, false, false, false, "leaderboard") } class="flex-1 text-center py-3 hover:bg-gray-700 text-3xl">Leaderboard</a>
+			<a href={ makeSafeUrlWithAnchor(baseUrl, false, false, false, true, "fine-list-container") } class="flex-1 text-center py-3 hover:bg-gray-700 text-3xl">Recent</a>
 		</div>
 	</nav>
-
 }
 
 templ home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines []PresetFine, qp HomeQueryParams) {
@@ -83,8 +82,6 @@ templ home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines
 		<body class="text-2xl">
 			<div class="container mx-auto bg-gray-200 shadow-xl">
 				<h1 class=" font-bold mb-4  text-center">🔨 Baileys Hammer 🔨</h1>
-
-
 				if len(approvedPFines) > 0 {
 					<div class="bg-sepia-200 shadow-xl m-10 rounded-lg">
 						<div id="fines" class="flex justify-center w-full mt-4">
@@ -121,7 +118,7 @@ templ home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines
 				}
 				@fineAdd(baseUrl, qp.FinesOpen, players, approvedPFines, false)
 			</div>
-			<div class="flex  bg-gray-100 mx-auto shadow-xl m-10" id="leaderboard">
+			<div class="flex bg-gray-100 mx-auto shadow-xl m-10" id="leaderboard">
 				<div class="w-full mt-10">
 					<h3 class="text-2xl font-bold text-center">Leaderboard</h3>
 					<ul>
@@ -151,8 +148,7 @@ templ home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines
 					</ul>
 				</div>
 			</div>
-			<div id="fine-list-container" hx-get="/fines" hx-target="#fine-list-container" hx-swap="outerHTML" hx-trigger="load once, click" class="w-full text-center">loading latest..</div>
-			<div class="mt-96"></div>
+			<div id="fine-list-container" class="h-screen" hx-get="/fines" hx-target="#fine-list-container" hx-swap="outerHTML" hx-trigger="load once, click" class="w-full text-center">loading latest..</div>
 			<script src="https://unpkg.com/htmx.org"></script>
 			@pageFooter()
 		</body>

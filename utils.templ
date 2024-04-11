@@ -13,11 +13,16 @@ func getIdStr(id string) string {
 	return fmt.Sprintf("#%s", id)
 }
 
-templ fineSuperSelect(players []PlayerWithFines, approvedPFines []PresetFine) {
+templ success(msg string) {
+	<div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-lg">
+    <p class="text-lg font-semibold">{ msg }</p>
+</div>
+}
 
+templ fineSuperSelect(players []PlayerWithFines, approvedPFines []PresetFine) {
 	<form hx-post="/fines-mulit" method="POST" class="flex flex-col space-y-4 bg-white shadow-md p-6 rounded-lg">
 		<div class="text-3xl text-center mx-auto">
-				Multi-Finer
+			Multi-Finer
 		</div>
 		<div class="flex flex-row">
 			<label for="select-fine" class="mt-2 pr-2 font-semibold text-gray-700">Fines</label>
@@ -30,7 +35,7 @@ templ fineSuperSelect(players []PlayerWithFines, approvedPFines []PresetFine) {
 		</div>
 		<div class="flex flex-row">
 			<label for="select-player" class="mt-2 pr-2 font-semibold text-gray-700">Players</label>
-			<select id="select-player" name="players[]" multiple placeholder="Select player(s)..."  class="border border-gray-300 rounded-md text-gray-700 flex-grow mb-2">
+			<select id="select-player" name="players[]" multiple placeholder="Select player(s)..." class="border border-gray-300 rounded-md text-gray-700 flex-grow mb-2">
 				<option value="">Select a player...</option>
 				for _, p := range players {
 					<option value={ fmt.Sprintf("%d", p.ID) }>{ p.Name }</option>
@@ -42,6 +47,7 @@ templ fineSuperSelect(players []PlayerWithFines, approvedPFines []PresetFine) {
 		<script>
 		var settings = {};
 		new TomSelect("#select-fine",{
+			maxOptions: 20,
 			plugins: {
 				no_active_items: 'true',
 				remove_button: {
@@ -50,6 +56,7 @@ templ fineSuperSelect(players []PlayerWithFines, approvedPFines []PresetFine) {
 			},
 		});
 		new TomSelect("#select-player",{
+			maxOptions: 20,
 			plugins: {
 				remove_button:{
 					title:'Remove this player'
@@ -63,7 +70,7 @@ templ fineSuperSelect(players []PlayerWithFines, approvedPFines []PresetFine) {
 templ fineSuperSelectResults(players []PlayerWithFines, approvedPFines[]PresetFine, newFines []Fine) {
 	@fineSuperSelect(players, approvedPFines)
 	if len(newFines) > 0 {
-			<div> Added { fmt.Sprintf("%d", len(newFines)) } Fines</div>
+		<div>Added { fmt.Sprintf("%d", len(newFines)) } Fines</div>
 	} else {
 		<div class="bg-orange-100 border-l-4 border-orange-500 text-orange-700 p-4" role="alert">
 			<p>o fines added? Make sure to select fines/players above</p>

@@ -267,6 +267,29 @@ func UpdateFineContestByID(db *gorm.DB, fineID uint, contest string) error {
     return nil
 }
 
+
+func UpdateFineContextByID(db *gorm.DB, fineID uint, context string) error {
+    // Create a map with the fields you want to update
+    updates := map[string]interface{}{
+        "Context": context,
+    }
+
+    // Find the Fine by ID and update the Contest field
+    result := db.Model(&Fine{}).Where("id = ?", fineID).Updates(updates)
+
+    // Check if the update operation resulted in an error
+    if result.Error != nil {
+        return result.Error
+    }
+
+    // Optionally, check if the record was found and updated
+    if result.RowsAffected == 0 {
+        return fmt.Errorf("no fine found with ID %d", fineID)
+    }
+
+    return nil
+}
+
 func ApproveFine(db *gorm.DB, id uint, amount float64) error {
     // Find and update the fine's Approved field to true
     updates := map[string]interface{}{

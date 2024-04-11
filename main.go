@@ -127,8 +127,39 @@ func fineContestHandler(db *gorm.DB) http.HandlerFunc {
 			return
 		}
 
-		w.Header().Set("HX-Redirect", "/fine-list")
-		w.Header().Set("HX-Refresh", "true")
+		success := success("Added Contest")
+		success.Render(r.Context(), w)
+
+		// Optionally, you can set the status code to 200 OK or any appropriate status
+		w.WriteHeader(http.StatusOK)
+	}
+}
+
+
+func fineContextHandler(db *gorm.DB) http.HandlerFunc {
+    return func(w http.ResponseWriter, r *http.Request) {
+
+		if err := r.ParseForm(); err != nil {
+			http.Error(w, "Invalid form data", http.StatusBadRequest)
+			return
+		}
+
+		// Extract and validate form data
+		fineID, err := strconv.ParseUint(r.FormValue("fid"), 10, 64)
+		if err != nil {
+			http.Error(w, "Invalid fine ID", http.StatusBadRequest)
+			return
+		}
+		contest := r.FormValue("context")
+
+		err = UpdateFineContextByID(db, uint(fineID), contest)
+		if err != nil {
+			http.Error(w, "Invalid fine ID", http.StatusBadRequest)
+			return
+		}
+
+		success := success("Added Context")
+		success.Render(r.Context(), w)
 
 		// Optionally, you can set the status code to 200 OK or any appropriate status
 		w.WriteHeader(http.StatusOK)
@@ -173,6 +204,8 @@ func fineEditHandler(db *gorm.DB) http.HandlerFunc {
 
 			isEdit := r.URL.Query().Get("isEdit")
 			isContest := r.URL.Query().Get("isContest")
+			isContext := r.URL.Query().Get("isContext")
+
 
 			if (isEdit == "true") {
 				fineEditRow := fineEditRow(fineWithPlayer)
@@ -180,6 +213,11 @@ func fineEditHandler(db *gorm.DB) http.HandlerFunc {
 			} else if(isContest == "true") {
 				log.Printf("\nIS CONTEST \n")
 				fineContestRow := fineContestRow(fineWithPlayer)
+				fineContestRow.Render(r.Context(), w)
+				return
+			} else if(isContext == "true") {
+				log.Printf("\nIS CONTEST \n")
+				fineContestRow := fineContextRow(fineWithPlayer)
 				fineContestRow.Render(r.Context(), w)
 				return
 			} else {
@@ -570,8 +608,11 @@ func fineApproveHandler(db *gorm.DB) http.HandlerFunc {
 			}
 
 			// Redirect or handle response as needed
-			w.Header().Set("HX-Redirect", r.Header.Get("Referrer"))
-			w.WriteHeader(http.StatusOK)
+			//w.Header().Set("HX-Redirect", r.Header.Get("Referrer"))
+			//w.WriteHeader(http.StatusOK)
+
+			success := success("Approved")
+			success.Render(r.Context(), w)
 			return
 		default:
 			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
@@ -635,8 +676,8 @@ func presetFineApproveHandler(db *gorm.DB) http.HandlerFunc {
 				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 				return
 			}
-			w.Header().Set("HX-Redirect", r.Header.Get("Referrer"))
-			w.WriteHeader(http.StatusOK)
+			success := success("Approved (will appear in fine list)")
+			success.Render(r.Context(), w)
 			return
 			}
 			default: 
@@ -790,6 +831,7 @@ func main() {
 	r.HandleFunc("/fines/approve", fineApproveHandler(db))
 	r.HandleFunc("/fines/edit/{fid}", fineEditHandler(db))
 	r.HandleFunc("/fines/contest", fineContestHandler(db))
+	r.HandleFunc("/fines/context", fineContextHandler(db))
 	r.HandleFunc("/preset-fines", presetFineHandler(db))
 	r.HandleFunc("/preset-fines/approve", presetFineApproveHandler(db))
 	r.HandleFunc("/preset-fines/hide", fineQuickHideHandler(db))

@@ -147,7 +147,7 @@ func pageFooter() templ.Component {
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("\" class=\"flex-1 text-center py-3 hover:bg-gray-700\">")
+		_, err = templBuffer.WriteString("\" class=\"flex-1 text-center py-3 hover:bg-gray-700 text-3xl\">")
 		if err != nil {
 			return err
 		}
@@ -165,7 +165,7 @@ func pageFooter() templ.Component {
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("\" class=\"flex-1 text-center py-3 hover:bg-gray-700\">")
+		_, err = templBuffer.WriteString("\" class=\"flex-1 text-center py-3 hover:bg-gray-700 text-3xl\">")
 		if err != nil {
 			return err
 		}
@@ -183,7 +183,7 @@ func pageFooter() templ.Component {
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("\" class=\"flex-1 text-center py-3 hover:bg-gray-700\">")
+		_, err = templBuffer.WriteString("\" class=\"flex-1 text-center py-3 hover:bg-gray-700 text-3xl\">")
 		if err != nil {
 			return err
 		}
@@ -196,12 +196,12 @@ func pageFooter() templ.Component {
 		if err != nil {
 			return err
 		}
-		var var_12 templ.SafeURL = makeSafeUrlWithAnchor(baseUrl, false, false, false, true, "fine-list")
+		var var_12 templ.SafeURL = makeSafeUrlWithAnchor(baseUrl, false, false, false, true, "fine-list-container")
 		_, err = templBuffer.WriteString(templ.EscapeString(string(var_12)))
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("\" class=\"flex-1 text-center py-3 hover:bg-gray-700\">")
+		_, err = templBuffer.WriteString("\" class=\"flex-1 text-center py-3 hover:bg-gray-700 text-3xl\">")
 		if err != nil {
 			return err
 		}
@@ -429,7 +429,7 @@ func home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines 
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("</div><div class=\"flex  bg-gray-100 mx-auto shadow-xl m-10\" id=\"leaderboard\"><div class=\"w-full mt-10\"><h3 class=\"text-2xl font-bold text-center\">")
+		_, err = templBuffer.WriteString("</div><div class=\"flex bg-gray-100 mx-auto shadow-xl m-10\" id=\"leaderboard\"><div class=\"w-full mt-10\"><h3 class=\"text-2xl font-bold text-center\">")
 		if err != nil {
 			return err
 		}
@@ -520,7 +520,7 @@ func home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines 
 				return err
 			}
 		}
-		_, err = templBuffer.WriteString("</ul></div></div><div id=\"fine-list-container\" hx-get=\"/fines\" hx-target=\"#fine-list-container\" hx-swap=\"outerHTML\" hx-trigger=\"load once, click\" class=\"w-full text-center\">")
+		_, err = templBuffer.WriteString("</ul></div></div><div id=\"fine-list-container\" class=\"h-screen\" hx-get=\"/fines\" hx-target=\"#fine-list-container\" hx-swap=\"outerHTML\" hx-trigger=\"load once, click\" class=\"w-full text-center\">")
 		if err != nil {
 			return err
 		}
@@ -529,7 +529,7 @@ func home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines 
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("</div><div class=\"mt-96\"></div><script src=\"https://unpkg.com/htmx.org\">")
+		_, err = templBuffer.WriteString("</div><script src=\"https://unpkg.com/htmx.org\">")
 		if err != nil {
 			return err
 		}

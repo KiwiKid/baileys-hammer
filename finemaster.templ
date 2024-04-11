@@ -87,7 +87,7 @@ templ finemaster(pass string, players []PlayerWithFines, pFines []PresetFine, qp
 			@presetFines(fmt.Sprintf("%s/%s", finemasterBaseUrl, pass), qp.PresetFinesOpen, pFines)
 
 
-			<div id="fine-list-container" hx-get="/fines" hx-trigger="load once" hx-swap="OuterHTML" class="w-full text-center">loading latest..</div>
+			<div id="fine-list-container" class="h-screen"  hx-get="/fines" hx-trigger="load once" hx-swap="OuterHTML" class="w-full text-center">loading latest..</div>
 			<div class="mt-96"></div>
 			@finemasterNav(fmt.Sprintf("%s/%s", finemasterBaseUrl, pass))
 		</body>
@@ -108,22 +108,33 @@ templ presetFines(baseUrl string, isOpen bool, presetFines []PresetFine) {
 					<h1 class="font-bold text-center">Approve/Existing Preset Fines</h1>
 					<p>(These will be added to the quick toggle list)</p>
 					for _, pfine := range presetFines {
+						if !pfine.Approved {
+
 						<div class="mt-2 text-center">
 							<div>
-								if !pfine.Approved {
-									<button hx-post={ fmt.Sprintf("/preset-fines/approve?pfid=%d", pfine.ID) }>☐ ✨</button>
-								}
-								{ pfine.Reason }
-								- 
-								{ fmt.Sprintf("$%.0f", pfine.Amount) }
+									<button hx-post={ fmt.Sprintf("/preset-fines/approve?pfid=%d", pfine.ID) } hx-swap="outerHTML" class={ bigAdd }>☐ ✨ { pfine.Reason } { fmt.Sprintf("$%.0f", pfine.Amount) } </button>								
 								<button class={ bigDel } hx-delete={ fmt.Sprintf("/preset-fines?pfid=%d", pfine.ID) } hx-confirm={ fmt.Sprintf("Remove %s from standard fines?", pfine.Reason) }>Delete</button>
-								if pfine.NotQuickFine {
-									Hidden
-								} else {
-									<button class={ bigPri } hx-post={ fmt.Sprintf("/preset-fines/hide?pfid=%d", pfine.ID) } hx-confirm={ fmt.Sprintf("Hide %s from quick fines? (delete to remove from \"Add Fine\" drop-down too)", pfine.Reason) }>Hide from Quick Fines</button>
-								}
 							</div>
 						</div>
+					}
+					}
+
+					for _, pfine := range presetFines {
+						if pfine.Approved {
+							<div class="mt-2 text-center">
+								<div>
+									{ pfine.Reason }
+									- 
+									{ fmt.Sprintf("$%.0f", pfine.Amount) }
+									<button class={ bigDel } hx-delete={ fmt.Sprintf("/preset-fines?pfid=%d", pfine.ID) } hx-confirm={ fmt.Sprintf("Remove %s from standard fines?", pfine.Reason) }>Delete</button>
+									if pfine.NotQuickFine {
+										Hidden
+									} else {
+										<button class={ bigPri } hx-post={ fmt.Sprintf("/preset-fines/hide?pfid=%d", pfine.ID) } hx-confirm={ fmt.Sprintf("Hide %s from quick fines? (delete to remove from \"Add Fine\" drop-down too)", pfine.Reason) }>Hide from Quick Fines</button>
+									}
+								</div>
+							</div>
+						}
 					}
 				</div>
 				<div>
