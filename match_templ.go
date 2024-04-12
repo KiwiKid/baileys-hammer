@@ -570,7 +570,7 @@ func editMatch(closeLink templ.SafeURL, match Match) templ.Component {
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString(templ.EscapeString(match.StartTime.Format("2006-01-02")))
+		_, err = templBuffer.WriteString(templ.EscapeString(match.StartTime.Format("2006-01-02T15:04")))
 		if err != nil {
 			return err
 		}
