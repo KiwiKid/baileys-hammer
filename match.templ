@@ -6,6 +6,7 @@ templ matchSelector(matches []Match, selectedMatchId uint) {
 	<div class="flex flex-row">
 		<label>
 			<select id="matchId" name="matchId" class="transform scale-15 border border-gray-300 rounded-md text-gray-700 flex-grow mb-2">
+				<option>NA</option>
 				for _, m := range matches {
 					<option
  						value={ fmt.Sprintf("%v",m.ID) }
@@ -22,9 +23,6 @@ templ matchSelector(matches []Match, selectedMatchId uint) {
 templ matchListPage(matches []Match, isOpen bool) {
 	<html hx-boost="true">
 		@header()
-		[matchListPage:
-		{ fmt.Sprintf("%+v", matches) }
-		]
 		<body class="text-2xl">
 			<div class="container mx-auto bg-gray-200 shadow-xl m-10">
 				if len(matches) > 0 {
@@ -51,10 +49,6 @@ templ matchListPage(matches []Match, isOpen bool) {
 
 templ matchPage(data MatchPageData) {
 	<html hx-boost="true">
-		[matchPage
-		: 
-		{ fmt.Sprintf("%v", data) }
-		]
 		@header()
 		<body class="text-2xl">
 			<div class="container mx-auto bg-gray-200 shadow-xl m-10">

@@ -4,13 +4,14 @@ import (
 
 "fmt"
 "github.com/dustin/go-humanize"
+	*time.Time
 )
 
 templ fineList(fines []FineWithPlayer, page int, isFineMaster bool) {
 	<div
  		class="container mx-auto text-center"
  		id="fine-list-container"
-		class="h-screen"
+ 		class="h-screen"
 	>
 		<div class="text-3xl p-10">
 			Recent Fine List
@@ -42,29 +43,31 @@ templ fineRow(isFineMaster bool, f FineWithPlayer) {
 	>
 		<td><div class="text-bold">{ f.Player.Name }</div></td>
 		<td class="text-lg text-gray-900 flex flex-col text-wrap">
-			
 			<div>
-				{ f.Fine.Reason } 
+				{ f.Fine.Reason }
+				{ f.Match.Opponent }
+				- 
+				{ niceDate(f.Match.StartTime) }
 				if f.Fine.Approved {
 					{ fmt.Sprintf("$%v", f.Fine.Amount) }
 				}
 			</div>
-			
 			<div>{ humanize.Time(f.Fine.FineAt) }</div>
 		</td>
 		<td>
-			<div class="text-sm text-gray-900 text-wrap">{ f.Fine.Context }
-				 <div> 
+			<div class="text-sm text-gray-900 text-wrap">
+				{ f.Fine.Context }
+				<div>
 					<button
-						hx-get={ fmt.Sprintf("/fines/edit/%d?isContext=true", f.Fine.ID) }
-						hx-swap="outerHTML"
-						class={ pri }
+ 						hx-get={ fmt.Sprintf("/fines/edit/%d?isContext=true", f.Fine.ID) }
+ 						hx-swap="outerHTML"
+ 						class={ pri }
 					>
-					if len(f.Fine.Context) == 0 {
-						Add Context	
-					} else {
-						Edit Context
-					}
+						if len(f.Fine.Context) == 0 {
+							Add Context	
+						} else {
+							Edit Context
+						}
 					</button>
 				</div>
 			</div>
@@ -101,11 +104,11 @@ templ fineRow(isFineMaster bool, f FineWithPlayer) {
 				</form>
 			}
 			if len(f.Fine.Contest) == 0 {
-				<div class="max-w-96"> 
+				<div class="max-w-96">
 					<button
-						hx-get={ fmt.Sprintf("/fines/edit/%d?isContest=true", f.Fine.ID) }
-						hx-swap="outerHTML"
-						class={ pri }
+ 						hx-get={ fmt.Sprintf("/fines/edit/%d?isContest=true", f.Fine.ID) }
+ 						hx-swap="outerHTML"
+ 						class={ pri }
 					>Contest</button>
 				</div>
 			} else {
@@ -131,35 +134,34 @@ templ fineContextRow(f FineWithPlayer, matches []Match) {
 		<p class="text-sm w-full text-gray-700">Add Context for this fine:</p>
 		<div class="w-full">
 			<input
-				type="text"
-				name="context"
-				value={ f.Fine.Context }
-				class="px-4 py-2 border border-gray-300 rounded-lg w-full focus:ring-blue-500 focus:border-blue-500"
-				placeholder="Reason"
+ 				type="text"
+ 				name="context"
+ 				value={ f.Fine.Context }
+ 				class="px-4 py-2 border border-gray-300 rounded-lg w-full focus:ring-blue-500 focus:border-blue-500"
+ 				placeholder="Reason"
 			/>
-			
 		</div>
 		<input
-			type="hidden"
-			name="fid"
-			value={ fmt.Sprintf("%d", f.Fine.ID) }
+ 			type="hidden"
+ 			name="fid"
+ 			value={ fmt.Sprintf("%d", f.Fine.ID) }
 		/>
 		<div class="mt-2">
 			<div hx-get={ fmt.Sprintf("/match-list?type=select&matchId=%d", f.Fine.MatchId) } hx-trigger="load once"></div>
 		</div>
 		<button
-			class={ add }
-			hx-post={ "/fines/context" }
-			hx-swap="outerHTML"
-			hx-include="closest tr"
-			type="submit"
+ 			class={ add }
+ 			hx-post={ "/fines/context" }
+ 			hx-swap="outerHTML"
+ 			hx-include="closest tr"
+ 			type="submit"
 		>
 			Save
 		</button>
 		<div class="w-full text-center">
 			<a
-				href={ templ.SafeURL("/#fine-list-container") }
-				class={ sec }
+ 				href={ templ.SafeURL("/#fine-list-container") }
+ 				class={ sec }
 			>
 				Close
 			</a>
@@ -180,16 +182,16 @@ templ fineContestRow(f FineWithPlayer) {
 			/>
 		</div>
 		<input
-			type="hidden"
-			name="fid"
-			value={ fmt.Sprintf("%d", f.Fine.ID) }
+ 			type="hidden"
+ 			name="fid"
+ 			value={ fmt.Sprintf("%d", f.Fine.ID) }
 		/>
 		<button
-			class={ add }
-			hx-post={ fmt.Sprintf("/fines/contest", ) }
-			hx-swap="outerHTML"
-			hx-include="closest #contest-form"
-			type="submit"
+ 			class={ add }
+ 			hx-post={ fmt.Sprintf("/fines/contest", ) }
+ 			hx-swap="outerHTML"
+ 			hx-include="closest #contest-form"
+ 			type="submit"
 		>
 			Save
 		</button>

@@ -197,10 +197,20 @@ func fineEditHandler(db *gorm.DB) http.HandlerFunc {
                 return
             }
 
+			match := &Match{}
+			if fine.MatchId > 0 {
+				match, err = GetMatch(db, uint64(fine.MatchId))
+				if err != nil {
+					http.Error(w, fmt.Sprintf("GetMatch Match not found - %d", fine.MatchId), http.StatusNotFound)
+					return
+				}
+			}
+
             // Prepare the data for rendering
             fineWithPlayer := FineWithPlayer{
                 Fine:   *fine,
                 Player: *player,
+				Match:  *match,
             }
 
 			isEdit := r.URL.Query().Get("isEdit")
@@ -309,6 +319,7 @@ func fineEditHandler(db *gorm.DB) http.HandlerFunc {
 type FineWithPlayer struct {
 	Fine Fine
 	Player Player
+	Match Match
 }
 
 func fineHandler(db *gorm.DB) http.HandlerFunc {

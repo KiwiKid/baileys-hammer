@@ -15,7 +15,7 @@ templ finemasterNav(finemasterBaseUrl string) {
 		<div class="flex justify-between">
 			<a href={ makeSafeUrlWithAnchorV2(finemasterBaseUrl, "fine-add", true) } class="flex-1 text-center py-3 hover:bg-gray-700">Add</a>
 			<button _="on click toggle .hidden on .quick-fine then go to top of #quick-finer" class="flex-1 text-center py-3 hover:bg-gray-700">Quick Fine</button>
-			<a href={ makeSafeUrlWithAnchor(finemasterBaseUrl, false, false, false, true, false, "preset-fine") } class="flex-1 text-center py-3 hover:bg-gray-700">Standard Fines</a>
+			<a href={ makeSafeUrlWithAnchor(finemasterBaseUrl, false, false, false, true, false, "preset-fine") } class="flex-1 text-center py-3 hover:bg-gray-700">Fine List</a>
 			<a href={ makeSafeUrlWithAnchor(finemasterBaseUrl, false, false, true, false, false, "players-manage") } class="flex-1 text-center py-3 hover:bg-gray-700">Players</a>
 			<a href={ makeSafeUrlWithAnchor(finemasterBaseUrl, false, false, false, false, false, "fine-list-container") } class="flex-1 text-center py-3 hover:bg-gray-700">Recent</a>
 		</div>
@@ -101,12 +101,14 @@ templ presetFines(baseUrl string, isOpen bool, presetFines []PresetFine) {
 		<div class="px-8 py-6 text-left bg-white shadow-xl m-10" id="preset-fine">
 			<h3 class="text-2xl font-bold text-center">Add or Approve Fines</h3>
 			<div class="w-full flex justify-center items-center py-2">
-				<p>Approve fines submitted, or add new fines</p>
+				<p>Make fines submitted appear in the drop-down list, or add new fines to the drop down</p>
 			</div>
 			<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 				<div class="text-2xl">
-					<h1 class="font-bold text-center">Approve/Existing Preset Fines</h1>
-					<p>(These will be added to the quick toggle list)</p>
+					<h1 class="font-bold text-center">Manage Listed Fines</h1>
+					<p>
+						Deleting these fines will NOT delete any player specific fines, they just control the list of fines.
+					</p>
 					for _, pfine := range presetFines {
 						if !pfine.Approved {
 							<div class="mt-2 text-center">
@@ -124,11 +126,11 @@ templ presetFines(baseUrl string, isOpen bool, presetFines []PresetFine) {
 									{ pfine.Reason }
 									- 
 									{ fmt.Sprintf("$%.0f", pfine.Amount) }
-									<button class={ bigDel } hx-delete={ fmt.Sprintf("/preset-fines?pfid=%d", pfine.ID) } hx-confirm={ fmt.Sprintf("Remove %s from standard fines?", pfine.Reason) }>Delete</button>
+									<button class={ bigDel } hx-delete={ fmt.Sprintf("/preset-fines?pfid=%d", pfine.ID) } hx-confirm={ fmt.Sprintf("Remove %s from standard fines?", pfine.Reason) }>Remove from default fine list</button>
 									if pfine.NotQuickFine {
 										Hidden
 									} else {
-										<button class={ bigPri } hx-post={ fmt.Sprintf("/preset-fines/hide?pfid=%d", pfine.ID) } hx-confirm={ fmt.Sprintf("Hide %s from quick fines? (delete to remove from \"Add Fine\" drop-down too)", pfine.Reason) }>Hide from Quick Fines</button>
+										<button class={ bigPri } hx-post={ fmt.Sprintf("/preset-fines/hide?pfid=%d", pfine.ID) } hx-confirm={ fmt.Sprintf("Hide %s from quick fines? (delete this PRESET fine to remove from \"Add Fine\" drop-down too - will not remove any specific player fines - just the item in the list)", pfine.Reason) }>Hide from Quick Fines</button>
 									}
 								</div>
 							</div>
@@ -150,7 +152,7 @@ templ presetFines(baseUrl string, isOpen bool, presetFines []PresetFine) {
 							<label class="block"><input type="checkbox" checked="checked" name="approved" class="text-2xl m-2 py-2 mt-2 p-2 "/>Approved</label>
 						</div>
 						<div class="flex items-center justify-between mt-4">
-							<button type="submit" class={ bigAdd }>Add Preset Fine</button>
+							<button type="submit" class={ bigAdd }>Add New Fine</button>
 						</div>
 					</form>
 					<div class="flex justify-center w-full">
@@ -161,7 +163,7 @@ templ presetFines(baseUrl string, isOpen bool, presetFines []PresetFine) {
 		</div>
 	} else {
 		<div class="flex justify-center w-full">
-			<a href={ makeSafeUrlWithAnchor(baseUrl, false, false, false, true, false, "preset-fine") } class={ bigPri }>Manage Standard Fines</a>
+			<a href={ makeSafeUrlWithAnchor(baseUrl, false, false, false, true, false, "preset-fine") } class={ bigPri }>Manage Fine List</a>
 		</div>
 	}
 }
@@ -177,7 +179,7 @@ templ matchesManage(baseUrl string, isOpen bool, matches []Match) {
 		</div>
 	} else {
 		<div class="flex justify-center w-full">
-			<a href={ makeSafeUrlWithAnchorV2(baseUrl, "standard-matches", true) } class={ bigPri }>Manage Standard Matches</a>
+			<a href={ makeSafeUrlWithAnchorV2(baseUrl, "standard-matches", true) } class={ bigPri }>Manage Matches</a>
 		</div>
 	}
 }

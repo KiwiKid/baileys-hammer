@@ -11,6 +11,7 @@ import "bytes"
 
 import (
 	"fmt"
+	"time"
 )
 
 func tomSelectLinks() templ.Component {
@@ -114,6 +115,10 @@ func errMsg(msg string) templ.Component {
 		}
 		return err
 	})
+}
+
+func niceDate(date time.Time) string {
+	return date.Format("January 2, 2006")
 }
 
 func fineSuperSelect(players []PlayerWithFines, approvedPFines []PresetFine) templ.Component {

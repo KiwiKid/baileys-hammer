@@ -72,7 +72,7 @@ func finemasterNav(finemasterBaseUrl string) templ.Component {
 		if err != nil {
 			return err
 		}
-		var_6 := `Standard Fines`
+		var_6 := `Fine List`
 		_, err = templBuffer.WriteString(var_6)
 		if err != nil {
 			return err
@@ -454,7 +454,7 @@ func presetFines(baseUrl string, isOpen bool, presetFines []PresetFine) templ.Co
 			if err != nil {
 				return err
 			}
-			var_29 := `Approve fines submitted, or add new fines`
+			var_29 := `Make fines submitted appear in the drop-down list, or add new fines to the drop down`
 			_, err = templBuffer.WriteString(var_29)
 			if err != nil {
 				return err
@@ -463,7 +463,7 @@ func presetFines(baseUrl string, isOpen bool, presetFines []PresetFine) templ.Co
 			if err != nil {
 				return err
 			}
-			var_30 := `Approve/Existing Preset Fines`
+			var_30 := `Manage Listed Fines`
 			_, err = templBuffer.WriteString(var_30)
 			if err != nil {
 				return err
@@ -472,7 +472,7 @@ func presetFines(baseUrl string, isOpen bool, presetFines []PresetFine) templ.Co
 			if err != nil {
 				return err
 			}
-			var_31 := `(These will be added to the quick toggle list)`
+			var_31 := `Deleting these fines will NOT delete any player specific fines, they just control the list of fines.`
 			_, err = templBuffer.WriteString(var_31)
 			if err != nil {
 				return err
@@ -645,7 +645,7 @@ func presetFines(baseUrl string, isOpen bool, presetFines []PresetFine) templ.Co
 					if err != nil {
 						return err
 					}
-					var_42 := `Delete`
+					var_42 := `Remove from default fine list`
 					_, err = templBuffer.WriteString(var_42)
 					if err != nil {
 						return err
@@ -686,7 +686,7 @@ func presetFines(baseUrl string, isOpen bool, presetFines []PresetFine) templ.Co
 						if err != nil {
 							return err
 						}
-						_, err = templBuffer.WriteString(templ.EscapeString(fmt.Sprintf("Hide %s from quick fines? (delete to remove from \"Add Fine\" drop-down too)", pfine.Reason)))
+						_, err = templBuffer.WriteString(templ.EscapeString(fmt.Sprintf("Hide %s from quick fines? (delete this PRESET fine to remove from \"Add Fine\" drop-down too - will not remove any specific player fines - just the item in the list)", pfine.Reason)))
 						if err != nil {
 							return err
 						}
@@ -749,7 +749,7 @@ func presetFines(baseUrl string, isOpen bool, presetFines []PresetFine) templ.Co
 			if err != nil {
 				return err
 			}
-			var_49 := `Add Preset Fine`
+			var_49 := `Add New Fine`
 			_, err = templBuffer.WriteString(var_49)
 			if err != nil {
 				return err
@@ -824,7 +824,7 @@ func presetFines(baseUrl string, isOpen bool, presetFines []PresetFine) templ.Co
 			if err != nil {
 				return err
 			}
-			var_55 := `Manage Standard Fines`
+			var_55 := `Manage Fine List`
 			_, err = templBuffer.WriteString(var_55)
 			if err != nil {
 				return err
@@ -916,7 +916,7 @@ func matchesManage(baseUrl string, isOpen bool, matches []Match) templ.Component
 			if err != nil {
 				return err
 			}
-			var_61 := `Manage Standard Matches`
+			var_61 := `Manage Matches`
 			_, err = templBuffer.WriteString(var_61)
 			if err != nil {
 				return err

@@ -102,7 +102,7 @@ templ header() {
 
 templ pageFooter() {
 	<nav class="fixed inset-x-0 bottom-0 bg-gray-800 text-white">
-		<div class="flex justify-between"> 
+		<div class="flex justify-between">
 			<a href={ makeSafeUrlWithAnchor(baseUrl, true, false, false, false,false, "fines") } class="flex-1 text-center py-3 hover:bg-gray-700 text-3xl">Standard</a>
 			<a href={ makeSafeUrlWithAnchor(baseUrl, false, true, false, false,false, "fine-add") } class="flex-1 text-center py-3 hover:bg-gray-700 text-3xl">Add</a>
 			<a href={ makeSafeUrlWithAnchor(baseUrl, false, false, false, false,false, "leaderboard") } class="flex-1 text-center py-3 hover:bg-gray-700 text-3xl">Leaderboard</a>
@@ -121,7 +121,7 @@ templ home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines
 				if len(approvedPFines) > 0 {
 					<div class="bg-sepia-200 shadow-xl m-10 rounded-lg">
 						<div id="fines" class="flex justify-center w-full mt-4">
-							<a href={ makeSafeUrlWithAnchor(baseUrl, !qp.FineListOpen, false, false, false, false, "fines") } hx-transition="true" class={ bigPri }>Standard Fines</a>
+							<a href={ makeSafeUrlWithAnchor(baseUrl, !qp.FineListOpen, false, false, false, false, "fines") } hx-transition="true" class={ bigPri }>Fine List</a>
 						</div>
 						if qp.FineListOpen {
 							<ul class="list-inside space-y-3 text-lg font-handwriting text-brown-900">
@@ -191,7 +191,7 @@ templ home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines
 	</html>
 }
 
-templ fineAddRes(createdFines []Fine, createdPFines []PresetFine){
+templ fineAddRes(createdFines []Fine, createdPFines []PresetFine) {
 	<div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-lg" hx-swap-oob="true" id="created-fines">
 		if len(createdFines) > 0 {
 			if len(createdFines) == 1 {
@@ -201,29 +201,28 @@ templ fineAddRes(createdFines []Fine, createdPFines []PresetFine){
 			}
 			for _, cf := range createdFines {
 				<li>
-				{ fmt.Sprintf("%+v", cf.PlayerID) } - { cf.Reason }
+					{ fmt.Sprintf("%+v", cf.PlayerID) }
+					- 
+					{ cf.Reason }
 				</li>
 			}
-			
 		}
 		if len(createdPFines) > 0 {
 			<div>Sudgested Fine:</div>
 			for _, cf := range createdPFines {
-			<li>
-				{ cf.Reason }
-			</li>
-		}
+				<li>
+					{ cf.Reason }
+				</li>
+			}
 		}
 	</div>
 }
-
 
 templ fineAddV2(baseUrl string, isOpen bool, players []PlayerWithFines, presetFines []PresetFine, isFineMaster bool) {
 	<div class="container mx-auto bg-gray-200 shadow-xl m-10">
 		if isOpen {
 			<div class="flex justify-center w-full p-4" id="fine-add">
 				<div class="flex flex-col justify-center w-full p-4">
-
 					@fineSuperSelect(players, presetFines)
 					<div class="flex justify-center w-full p-4">
 						<a class={ bigPri } href={ makeSafeUrlWithAnchor(baseUrl, false, false, false, false, false, "fine-add") }>
@@ -264,26 +263,27 @@ templ fineAdd(baseUrl string, isOpen bool, players []PlayerWithFines, presetFine
 				<form hx-post="/fines" hx-target="#created-fines" class="mt-4">
 					<div class="mt-4">
 						<div class="border-t pt-4">
-								<div class="mt-2">
-									<label for="presetFineId" class="text-lg font-semibold">Fines
-										<select
-											id="presetFineId"
-											name="presetFineId"
-											class="bg-white w-full border border-gray-300 rounded-md text-gray-700 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-											placeholder="-- Select Fine --"
-										>
-											<option selected value="">--!!!! Select Fine --</option>
-											<option value="-1">-- !!! Fine is not listed here --</option>
-											<!-- Dynamic options will be inserted here -->
-											for _, fp := range presetFines {
-												if fp.Approved {
-													<option value={ fmt.Sprintf("%v", fp.ID) }>
-														{ fmt.Sprintf("%s ($%v)", fp.Reason, fp.Amount) }
-													</option>
-												}
+							<div class="mt-2">
+								<label for="presetFineId" class="text-lg font-semibold">
+									Fines
+									<select
+ 										id="presetFineId"
+ 										name="presetFineId"
+ 										class="bg-white w-full border border-gray-300 rounded-md text-gray-700 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+ 										placeholder="-- Select Fine --"
+									>
+										<option selected value="">--!!!! Select Fine --</option>
+										<option value="-1">-- !!! Fine is not listed here --</option>
+										<!-- Dynamic options will be inserted here -->
+										for _, fp := range presetFines {
+											if fp.Approved {
+												<option value={ fmt.Sprintf("%v", fp.ID) }>
+													{ fmt.Sprintf("%s ($%v)", fp.Reason, fp.Amount) }
+												</option>
 											}
-										</select>
-										<script>
+										}
+									</select>
+									<script>
 											new TomSelect("#presetFineId", {
 												maxItems: 999,
 												plugins: {
@@ -300,8 +300,7 @@ templ fineAdd(baseUrl string, isOpen bool, players []PlayerWithFines, presetFine
 												},
 											});
 										</script>
-								
-									</label>
+								</label>
 							</div>
 							<section class="hidden" id="newFine">
 								<div class="pt-4 border border-2 rounded">

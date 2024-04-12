@@ -339,7 +339,7 @@ func home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines 
 			if err != nil {
 				return err
 			}
-			var_19 := `Standard Fines`
+			var_19 := `Fine List`
 			_, err = templBuffer.WriteString(var_19)
 			if err != nil {
 				return err
@@ -677,6 +677,10 @@ func fineAddRes(createdFines []Fine, createdPFines []PresetFine) templ.Component
 				}
 				var_42 := `- `
 				_, err = templBuffer.WriteString(var_42)
+				if err != nil {
+					return err
+				}
+				_, err = templBuffer.WriteString(" ")
 				if err != nil {
 					return err
 				}
