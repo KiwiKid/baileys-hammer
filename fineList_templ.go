@@ -137,9 +137,20 @@ func fineRow(isFineMaster bool, f FineWithPlayer) templ.Component {
 		if err != nil {
 			return err
 		}
-		if len(f.Match.Opponent) > 0 {
-			var var_8 string = f.Match.Opponent
+		if f.Fine.Approved {
+			var var_8 string = fmt.Sprintf("$%v", f.Fine.Amount)
 			_, err = templBuffer.WriteString(templ.EscapeString(var_8))
+			if err != nil {
+				return err
+			}
+		}
+		_, err = templBuffer.WriteString("</div><div>")
+		if err != nil {
+			return err
+		}
+		if len(f.Match.Opponent) > 0 {
+			var var_9 string = f.Match.Opponent
+			_, err = templBuffer.WriteString(templ.EscapeString(var_9))
 			if err != nil {
 				return err
 			}
@@ -147,8 +158,8 @@ func fineRow(isFineMaster bool, f FineWithPlayer) templ.Component {
 			if err != nil {
 				return err
 			}
-			var_9 := `- `
-			_, err = templBuffer.WriteString(var_9)
+			var_10 := `- `
+			_, err = templBuffer.WriteString(var_10)
 			if err != nil {
 				return err
 			}
@@ -157,18 +168,11 @@ func fineRow(isFineMaster bool, f FineWithPlayer) templ.Component {
 				return err
 			}
 			if f.Match.StartTime != nil {
-				var var_10 string = niceDate(f.Match.StartTime)
-				_, err = templBuffer.WriteString(templ.EscapeString(var_10))
+				var var_11 string = niceDate(f.Match.StartTime)
+				_, err = templBuffer.WriteString(templ.EscapeString(var_11))
 				if err != nil {
 					return err
 				}
-			}
-		}
-		if f.Fine.Approved {
-			var var_11 string = fmt.Sprintf("$%v", f.Fine.Amount)
-			_, err = templBuffer.WriteString(templ.EscapeString(var_11))
-			if err != nil {
-				return err
 			}
 		}
 		_, err = templBuffer.WriteString("</div><div>")

@@ -156,15 +156,15 @@ func fineContextHandler(db *gorm.DB) http.HandlerFunc {
 			return
 		}
 
-		contest := r.FormValue("context")
+		context := r.FormValue("context")
 
-		err = UpdateFineContextByID(db, uint(fineID), uint(matchId), contest)
+		err = UpdateFineContextByID(db, uint(fineID), uint(matchId), context)
 		if err != nil {
 			http.Error(w, "Invalid UpdateFineContextByID ID", http.StatusBadRequest)
 			return
 		}
 
-		success := success("Added Context")
+		success := success(fmt.Sprintf("Added Context - m:%d - %s", matchId, context))
 		success.Render(r.Context(), w)
 	}
 }
@@ -300,10 +300,14 @@ func fineEditHandler(db *gorm.DB) http.HandlerFunc {
 				return
 			}
 
+			match, _ := GetMatch(db, uint64(fine.MatchId))
+			
+
 			// Prepare the data for rendering
 			fineWithPlayer := FineWithPlayer{
 				Fine:   fine,
 				Player: *player,
+				Match: *match,
 			}
 				
 			fineRowComp := fineRow(true, fineWithPlayer)
@@ -356,10 +360,22 @@ func fineHandler(db *gorm.DB) http.HandlerFunc {
 				return
 			}
 
-			players, getPlayerErr := GetPlayers(db, 0, 100)
+			players, getPlayerErr := GetPlayers(db, 0, 1000)
 			if getPlayerErr != nil {
 				http.Error(w, "fineHandler - GetPlayers error", http.StatusBadRequest)
 				return
+			}
+
+			// Get all relevant matches
+			matches, getMatchErr := GetMatches(db, 0, 0, 1000)
+			if getMatchErr != nil {
+				http.Error(w, "fineHandler - GetMatches error", http.StatusBadRequest)
+				return
+			}
+
+			matchMap := make(map[uint]Match)
+			for _, match := range matches {
+				matchMap[match.ID] = match
 			}
 
 			finemasterPage := false
@@ -381,9 +397,13 @@ func fineHandler(db *gorm.DB) http.HandlerFunc {
 						break
 					}
 				}
+
+				matchedMatch := matchMap[fine.MatchId]
+				
 				fineWithPlayers = append(fineWithPlayers, FineWithPlayer{
 					Fine:   fine,
 					Player: matchedPlayer,
+					Match: matchedMatch,
 				})
 			}
 			
