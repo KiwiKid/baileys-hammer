@@ -220,7 +220,7 @@ func handleCreateMatchEvent(db *gorm.DB, form NewMatchEventForm, w http.Response
 
     // Redirect to the new match
     w.Header().Set("HX-Redirect", fmt.Sprintf("/match/%d", matchEvt.MatchId))
-    w.WriteHeader(http.StatusOK)
+    w.WriteHeader(http.StatusOK);
 }
 
 
