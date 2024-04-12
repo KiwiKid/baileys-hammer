@@ -1,7 +1,6 @@
 package main
 
 import (
-
 "fmt"
 "github.com/dustin/go-humanize"
 )
@@ -44,9 +43,13 @@ templ fineRow(isFineMaster bool, f FineWithPlayer) {
 		<td class="text-lg text-gray-900 flex flex-col text-wrap">
 			<div>
 				{ f.Fine.Reason }
-				{ f.Match.Opponent }
-				- 
-				{ niceDate(f.Match.StartTime) }
+				if len(f.Match.Opponent) > 0 {
+					{ f.Match.Opponent }
+					- 
+					if f.Match.StartTime != nil {
+						{ niceDate(f.Match.StartTime) }
+					}
+				}
 				if f.Fine.Approved {
 					{ fmt.Sprintf("$%v", f.Fine.Amount) }
 				}
