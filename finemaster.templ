@@ -176,6 +176,9 @@ templ matchesManage(baseUrl string, isOpen bool, matches []Match) {
 				<p>Edit existing matches, or add new ones</p>
 			</div>
 			@createMatch(makeSafeUrl(baseUrl, false, false, false, false, false))
+			for _, m := range matches {
+				@editMatch(makeSafeUrl(baseUrl, false, false, false, false, false), m)
+			}
 		</div>
 	} else {
 		<div class="flex justify-center w-full">

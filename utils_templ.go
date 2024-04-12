@@ -117,7 +117,7 @@ func errMsg(msg string) templ.Component {
 	})
 }
 
-func niceDate(date time.Time) string {
+func niceDate(date *time.Time) string {
 	return date.Format("January 2, 2006")
 }
 

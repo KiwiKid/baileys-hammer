@@ -116,6 +116,36 @@ templ createMatch(closeLink templ.SafeURL) {
 	</div>
 }
 
+templ editMatch(closeLink templ.SafeURL, match Match) {
+	<div class="container mx-auto bg-gray-200 shadow-xl m-10">
+		<form action={ fmt.Sprintf("/match/%d",match) } method="POST" class="max-w-xl mx-auto my-8 p-4 border border-gray-200 rounded-lg shadow">
+			<h2 class="text-lg font-semibold mb-4">Edit Match - vs { match.Opponent }</h2>
+			<div class="mb-4">
+				<label for="location" class="block text-sm font-medium text-gray-700">Location</label>
+				<input type="text" name="location" id="location" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" value={ match.Location }/>
+			</div>
+			<div class="mb-4">
+				<label for="start-time" class="block text-sm font-medium text-gray-700">Start Time</label>
+				<input type="datetime-local" name="startTime" id="start-time" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" value={ match.StartTime.Format("2006-01-02") }/>
+			</div>
+			<div class="mb-4">
+				<label for="opponent" class="block text-sm font-medium text-gray-700">Opponent</label>
+				<input type="text" name="opponent" id="opponent" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" value={ match.Opponent }/>
+			</div>
+			<div class="mb-4">
+				<label for="subtitle" class="block text-sm font-medium text-gray-700">Subtitle (optional)</label>
+				<input type="text" name="subtitle" id="subtitle" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" value={ match.Subtitle }/>
+			</div>
+			<div class="flex items-center justify-between mt-4">
+				<button type="submit" class={ bigPri }>Edit Match</button>
+			</div>
+			<div class="flex items-center justify-between mt-4">
+				<a href={ closeLink } class={ bigSec }>Close</a>
+			</div>
+		</form>
+	</div>
+}
+
 /*
 
 templ createNewEvent(matchId uint64) {

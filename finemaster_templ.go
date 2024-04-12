@@ -881,6 +881,12 @@ func matchesManage(baseUrl string, isOpen bool, matches []Match) templ.Component
 			if err != nil {
 				return err
 			}
+			for _, m := range matches {
+				err = editMatch(makeSafeUrl(baseUrl, false, false, false, false, false), m).Render(ctx, templBuffer)
+				if err != nil {
+					return err
+				}
+			}
 			_, err = templBuffer.WriteString("</div>")
 			if err != nil {
 				return err
