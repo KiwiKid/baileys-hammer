@@ -877,7 +877,7 @@ func matchesManage(baseUrl string, isOpen bool, matches []Match) templ.Component
 			if err != nil {
 				return err
 			}
-			err = createMatch().Render(ctx, templBuffer)
+			err = createMatch(makeSafeUrl(baseUrl, false, false, false, false, false)).Render(ctx, templBuffer)
 			if err != nil {
 				return err
 			}

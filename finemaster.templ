@@ -173,7 +173,7 @@ templ matchesManage(baseUrl string, isOpen bool, matches []Match) {
 			<div class="w-full flex justify-center items-center py-2">
 				<p>Edit existing matches, or add new ones</p>
 			</div>
-			@createMatch()
+			@createMatch(makeSafeUrl(baseUrl, false, false, false, false, false))
 		</div>
 	} else {
 		<div class="flex justify-center w-full">

@@ -117,14 +117,14 @@ func fineContestHandler(db *gorm.DB) http.HandlerFunc {
 		// Extract and validate form data
 		fineID, err := strconv.ParseUint(r.FormValue("fid"), 10, 64)
 		if err != nil {
-			http.Error(w, "Invalid fine ID", http.StatusBadRequest)
+			http.Error(w, fmt.Sprintf("Invalid fid - %s", r.FormValue("fid")), http.StatusBadRequest)
 			return
 		}
 		contest := r.FormValue("contest")
 
 		err = UpdateFineContestByID(db, uint(fineID), contest)
 		if err != nil {
-			http.Error(w, "Invalid fine ID", http.StatusBadRequest)
+			http.Error(w, fmt.Sprintf("Invalid UpdateFineContestByID - %v", err), http.StatusBadRequest)
 			return
 		}
 
@@ -145,14 +145,14 @@ func fineContextHandler(db *gorm.DB) http.HandlerFunc {
 		// Extract and validate form data
 		fineID, err := strconv.ParseUint(r.FormValue("fid"), 10, 64)
 		if err != nil {
-			http.Error(w, "Invalid fine ID", http.StatusBadRequest)
+			http.Error(w, fmt.Sprintf("Invalid fid - %s - %v", r.FormValue("fid"), err), http.StatusBadRequest)
 			return
 		}
 
 		matchIdStr := r.FormValue("matchId")
 		matchId, err := strconv.ParseUint(matchIdStr, 10, 64)
 		if err != nil {
-			http.Error(w, "Invalid fine ID", http.StatusBadRequest)
+			http.Error(w, fmt.Sprintf("Invalid matchId ID - %s", matchIdStr), http.StatusBadRequest)
 			return
 		}
 
@@ -160,7 +160,7 @@ func fineContextHandler(db *gorm.DB) http.HandlerFunc {
 
 		err = UpdateFineContextByID(db, uint(fineID), uint(matchId), contest)
 		if err != nil {
-			http.Error(w, "Invalid fine ID", http.StatusBadRequest)
+			http.Error(w, "Invalid UpdateFineContextByID ID", http.StatusBadRequest)
 			return
 		}
 
@@ -176,8 +176,6 @@ func fineEditHandler(db *gorm.DB) http.HandlerFunc {
             // Extract fine ID from query parameters
             fineIDStr := chi.URLParam(r, "fid")
             fineID, err := strconv.ParseUint(fineIDStr, 10, 64)
-			log.Printf("fineIDStr")
-			log.Printf("%s", fineIDStr)
             if err != nil {
                 http.Error(w, fmt.Sprintf("Invalid fine ID - %s", fineIDStr), http.StatusBadRequest)
                 return
@@ -186,7 +184,7 @@ func fineEditHandler(db *gorm.DB) http.HandlerFunc {
             // Fetch the fine details from the database
             fine, err := GetFineByID(db, uint(fineID))
             if err != nil {
-                http.Error(w, "Fine not found", http.StatusNotFound)
+                http.Error(w, "GetFineByID not found", http.StatusNotFound)
                 return
             } else { 
 				log.Printf("GOT FINE: \n\n %+v", fine)
@@ -195,7 +193,7 @@ func fineEditHandler(db *gorm.DB) http.HandlerFunc {
             // Fetch associated player details (assuming GetPlayerByID is a function you have)
             player, err := GetPlayerByID(db, fine.PlayerID)
             if err != nil {
-                http.Error(w, fmt.Sprintf("Player not found - %d", fine.PlayerID), http.StatusNotFound)
+                http.Error(w, fmt.Sprintf("GetPlayerByID Player not found - %d", fine.PlayerID), http.StatusNotFound)
                 return
             }
 
@@ -216,26 +214,21 @@ func fineEditHandler(db *gorm.DB) http.HandlerFunc {
 				fineEditRow := fineEditRow(fineWithPlayer)
 				fineEditRow.Render(r.Context(), w)
 			} else if(isContest == "true") {
-				log.Printf("\nIS CONTEST \n")
 				fineContestRow := fineContestRow(fineWithPlayer)
 				fineContestRow.Render(r.Context(), w)
-				return
 			} else if(isContext == "true") {
 				matches, err := GetMatches(db, 1, 0, 9999)
 				if err != nil {
 					http.Error(w, fmt.Sprintf("Player not found - %d", fine.PlayerID), http.StatusNotFound)
 					return
 				}
-				log.Printf("\nIS CONTEST \n")
 				fineContestRow := fineContextRow(fineWithPlayer, matches)
 				fineContestRow.Render(r.Context(), w)
-				return
 			} else {
 				fineRowComp := fineRow(true, fineWithPlayer)
 				fineRowComp.Render(r.Context(), w)
-				return
 			}
-
+			return
         case "POST":
             // Parse form data
             if err := r.ParseForm(); err != nil {
@@ -261,7 +254,7 @@ func fineEditHandler(db *gorm.DB) http.HandlerFunc {
             approved := r.FormValue("approved") == "true"
             playerId, err := strconv.ParseUint(r.FormValue("playerId"), 10, 64)
             if err != nil {
-                http.Error(w, "Invalid fine ID", http.StatusBadRequest)
+                http.Error(w, "Invalid playerId ID", http.StatusBadRequest)
                 return
             }
 

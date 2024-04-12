@@ -8,8 +8,8 @@ templ matchSelector(matches []Match, selectedMatchId uint) {
 			<select id="matchId" name="matchId" class="transform scale-15 border border-gray-300 rounded-md text-gray-700 flex-grow mb-2">
 				for _, m := range matches {
 					<option
-						value={ fmt.Sprintf("%v",m.ID) }
-						if selectedMatchId == m.ID {
+ 						value={ fmt.Sprintf("%v",m.ID) }
+ 						if selectedMatchId == m.ID {
 							selected
 						}
 					>vs { m.Opponent }</option>
@@ -92,7 +92,7 @@ templ listEvents(events []MatchEvent) {
 	</div>
 }
 
-templ createMatch() {
+templ createMatch(closeLink templ.SafeURL) {
 	<div class="container mx-auto bg-gray-200 shadow-xl m-10">
 		<form action="/match" method="POST" class="max-w-xl mx-auto my-8 p-4 border border-gray-200 rounded-lg shadow">
 			<h2 class="text-lg font-semibold mb-4">Create New Match</h2>
@@ -116,7 +116,7 @@ templ createMatch() {
 				<button type="submit" class={ bigPri }>Create Match</button>
 			</div>
 			<div class="flex items-center justify-between mt-4">
-				<button hx-get="/match-list?isOpen=false" class={ bigSec }>Close</button>
+				<a href={ closeLink } class={ bigSec }>Close</a>
 			</div>
 		</form>
 	</div>
