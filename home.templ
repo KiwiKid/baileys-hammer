@@ -101,9 +101,9 @@ templ header() {
 }
 
 templ pageFooter() {
-	<nav class="fixed inset-x-0 bottom-0 bg-gray-800 text-white">
+	<nav class="fixed inset-x-0 bottom-0 bg-gray-800 text-white pb-18">
 		<div class="flex justify-between">
-			<a href={ makeSafeUrlWithAnchor(baseUrl, true, false, false, false,false, "fines") } class="flex-1 text-center py-3 hover:bg-gray-700 text-3xl">Standard</a>
+			<a href={ makeSafeUrlWithAnchor(baseUrl, true, false, false, false,false, "fines") } class="flex-1 text-center py-3 hover:bg-gray-700 text-3xl">List</a>
 			<a href={ makeSafeUrlWithAnchor(baseUrl, false, true, false, false,false, "fine-add") } class="flex-1 text-center py-3 hover:bg-gray-700 text-3xl">Add</a>
 			<a href={ makeSafeUrlWithAnchor(baseUrl, false, false, false, false,false, "leaderboard") } class="flex-1 text-center py-3 hover:bg-gray-700 text-3xl">Leaderboard</a>
 			<a href={ makeSafeUrlWithAnchor(baseUrl, false, false, false, true,false, "fine-list-container") } class="flex-1 text-center py-3 hover:bg-gray-700 text-3xl">Recent</a>

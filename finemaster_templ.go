@@ -32,7 +32,7 @@ func finemasterNav(finemasterBaseUrl string) templ.Component {
 			var_1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, err = templBuffer.WriteString("<nav class=\"fixed inset-x-0 bottom-0 bg-gray-800 text-white pb-12\"><div class=\"flex justify-between\"><a href=\"")
+		_, err = templBuffer.WriteString("<nav class=\"fixed inset-x-0 bottom-0 bg-gray-800 text-white pb-18\"><div class=\"flex justify-between\"><a href=\"")
 		if err != nil {
 			return err
 		}

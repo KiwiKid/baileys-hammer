@@ -187,7 +187,7 @@ func pageFooter() templ.Component {
 			var_6 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, err = templBuffer.WriteString("<nav class=\"fixed inset-x-0 bottom-0 bg-gray-800 text-white\"><div class=\"flex justify-between\"><a href=\"")
+		_, err = templBuffer.WriteString("<nav class=\"fixed inset-x-0 bottom-0 bg-gray-800 text-white pb-18\"><div class=\"flex justify-between\"><a href=\"")
 		if err != nil {
 			return err
 		}
@@ -200,7 +200,7 @@ func pageFooter() templ.Component {
 		if err != nil {
 			return err
 		}
-		var_8 := `Standard`
+		var_8 := `List`
 		_, err = templBuffer.WriteString(var_8)
 		if err != nil {
 			return err
