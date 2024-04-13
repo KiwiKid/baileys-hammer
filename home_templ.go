@@ -109,9 +109,9 @@ func downArrow() templ.Component {
 	})
 }
 
-var pri = "bg-blue-500 hover:bg-blue-600 text-white font-bold py-1 px-1 rounded-lg hover:scale-105 transition transform ease-out duration-200"
+var pri = "bg-blue-500 p-1 hover:bg-blue-600 text-white font-bold py-1 px-1 rounded-lg hover:scale-105 transition transform ease-out duration-200"
 
-var sec = "bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg hover:scale-105 transition transform ease-out duration-200"
+var sec = "bg-gray-500 p-1 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg hover:scale-105 transition transform ease-out duration-200"
 
 var add = "bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:scale-105 transition transform ease-out duration-200"
 var del = "bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg hover:scale-105 transition transform ease-out duration-200"
@@ -613,7 +613,7 @@ func home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines 
 				return err
 			}
 		}
-		_, err = templBuffer.WriteString("</ul></div></div><div id=\"fine-list-container\" class=\"h-screen\" hx-get=\"/fines\" hx-target=\"#fine-list-container\" hx-swap=\"outerHTML\" hx-trigger=\"load once, click\" class=\"w-full text-center\">")
+		_, err = templBuffer.WriteString("</ul></div></div><div id=\"fine-list-container\" class=\"h-full\" hx-get=\"/fines\" hx-target=\"#fine-list-container\" hx-swap=\"outerHTML\" hx-trigger=\"load once, click\" class=\"w-full text-center\">")
 		if err != nil {
 			return err
 		}
@@ -794,7 +794,11 @@ func fineAddV2(baseUrl string, isOpen bool, players []PlayerWithFines, presetFin
 			return err
 		}
 		if isOpen {
-			_, err = templBuffer.WriteString("<div class=\"flex justify-center w-full p-4\" id=\"fine-add\"><div class=\"flex flex-col justify-center w-full p-4\"><div class=\"flex justify-center w-full p-4\">")
+			_, err = templBuffer.WriteString("<div class=\"flex justify-center w-full p-4\" id=\"fine-add\"><div class=\"flex flex-col justify-center w-full p-4\">")
+			if err != nil {
+				return err
+			}
+			err = fineSuperSelect(players, presetFines).Render(ctx, templBuffer)
 			if err != nil {
 				return err
 			}
@@ -837,15 +841,7 @@ func fineAddV2(baseUrl string, isOpen bool, players []PlayerWithFines, presetFin
 					return err
 				}
 			}
-			_, err = templBuffer.WriteString("</a></div>")
-			if err != nil {
-				return err
-			}
-			err = fineSuperSelect(players, presetFines).Render(ctx, templBuffer)
-			if err != nil {
-				return err
-			}
-			_, err = templBuffer.WriteString("</div></div>")
+			_, err = templBuffer.WriteString("</a></div></div>")
 			if err != nil {
 				return err
 			}

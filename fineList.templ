@@ -7,7 +7,7 @@ import (
 
 templ fineList(fines []FineWithPlayer, page int, isFineMaster bool) {
 	<div
-		class="container mx-auto bg-gray-200 shadow-xl p-2 h-screen mt-10"
+		class="m-2 bg-gray-200 h-full shadow-xl p-2 h-full mt-10"
 		id="fine-list-container"
 	>
 		<div class="text-center">
@@ -15,8 +15,8 @@ templ fineList(fines []FineWithPlayer, page int, isFineMaster bool) {
 				<span class="flex-grow text-center">Recent Fine List</span>
 				<span class="text-3xl ml-2">↻</span>
 			</div>
-			<table id="fine-list" class="min-w-full divide-y divide-gray-200">
-				<tbody class="divide-y divide-gray-200">
+			<table id="fine-list" class="min-w-full">
+				<tbody class="divide-y divide-gray-900 ">
 					for _, f := range fines {
 						@fineRow(isFineMaster, f)
 					}
@@ -29,11 +29,11 @@ templ fineList(fines []FineWithPlayer, page int, isFineMaster bool) {
 
 templ fineRow(isFineMaster bool, f FineWithPlayer) {
 	<tr
- 		id={ fmt.Sprintf("fr-%d", f.Fine.ID) } class="bg-white divide-y divide-gray-200 p-2"
+ 		id={ fmt.Sprintf("fr-%d", f.Fine.ID) } class="bg-gray-200 p-2" 
 	>
-		<td class="p-2"><div class="text-bold">{ f.Player.Name }</div></td>
+		<td class="p-2 text-2xl"><div class="text-bold">{ f.Player.Name }</div></td>
 		<td class="p-2 text-gray-900 flex flex-col text-wrap">
-			<div class="text-xl p-1">
+			<div class="text-3xl p-1">
 				if f.Fine.Approved {
 					{ fmt.Sprintf("$%v - ", f.Fine.Amount) }
 				}
@@ -51,7 +51,7 @@ templ fineRow(isFineMaster bool, f FineWithPlayer) {
 			<div class="italic"> { humanize.Time(f.Fine.FineAt) }</div>
 		</td>
 		<td>
-			<div class="text-sm text-gray-900 text-wrap">
+			<div class="text-lg text-gray-900 text-wrap">
 				{ f.Fine.Context }
 				<div>
 					<button

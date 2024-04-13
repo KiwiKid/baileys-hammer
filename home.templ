@@ -77,9 +77,9 @@ templ downArrow() {
 	</svg>
 }
 
-var pri = "bg-blue-500 hover:bg-blue-600 text-white font-bold py-1 px-1 rounded-lg hover:scale-105 transition transform ease-out duration-200"
+var pri = "bg-blue-500 p-1 hover:bg-blue-600 text-white font-bold py-1 px-1 rounded-lg hover:scale-105 transition transform ease-out duration-200"
 
-var sec = "bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg hover:scale-105 transition transform ease-out duration-200"
+var sec = "bg-gray-500 p-1 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg hover:scale-105 transition transform ease-out duration-200"
 
 var add = "bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:scale-105 transition transform ease-out duration-200"
 var del = "bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg hover:scale-105 transition transform ease-out duration-200"
@@ -193,7 +193,7 @@ templ home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines
 					</ul>
 				</div>
 			</div>
-			<div id="fine-list-container" class="h-screen" hx-get="/fines" hx-target="#fine-list-container" hx-swap="outerHTML" hx-trigger="load once, click" class="w-full text-center">loading latest..</div>
+			<div id="fine-list-container" class="h-full" hx-get="/fines" hx-target="#fine-list-container" hx-swap="outerHTML" hx-trigger="load once, click" class="w-full text-center">loading latest..</div>
 			<script src="https://unpkg.com/htmx.org"></script>
 			@pageFooter()
 		</body>
@@ -232,17 +232,14 @@ templ fineAddV2(baseUrl string, isOpen bool, players []PlayerWithFines, presetFi
 		if isOpen {
 			<div class="flex justify-center w-full p-4" id="fine-add">
 				<div class="flex flex-col justify-center w-full p-4">
-					<div class="flex justify-center w-full p-4">
-						<a class={ bigPri } href={ makeSafeUrlWithAnchor(baseUrl, false, false, false, false, false, "fine-add") }>
-							if isFineMaster {
-								Close Fine a Player
-							} else {
-								Close Suggest a Fine
-							}
-						</a>
-					</div>
 					@fineSuperSelect(players, presetFines)
-					
+					<a class={ bigPri } href={ makeSafeUrlWithAnchor(baseUrl, false, false, false, false, false, "fine-add") }>
+						if isFineMaster {
+							Close Fine a Player
+						} else {
+							Close Suggest a Fine
+						}
+					</a>
 				</div>
 			</div>
 		} else {

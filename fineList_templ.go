@@ -27,7 +27,7 @@ func fineList(fines []FineWithPlayer, page int, isFineMaster bool) templ.Compone
 			var_1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, err = templBuffer.WriteString("<div class=\"container mx-auto bg-gray-200 shadow-xl p-2 h-screen mt-10\" id=\"fine-list-container\"><div class=\"text-center\"><div class=\"flex justify-center items-center mb-4 cursor-pointer\" hx-get=\"/fines\" hx-target=\"#fine-list-container\" hx-swap=\"outerHTML\" hx-trigger=\"click\"><span class=\"flex-grow text-center\">")
+		_, err = templBuffer.WriteString("<div class=\"m-2 bg-gray-200 h-full shadow-xl p-2 h-full mt-10\" id=\"fine-list-container\"><div class=\"text-center\"><div class=\"flex justify-center items-center mb-4 cursor-pointer\" hx-get=\"/fines\" hx-target=\"#fine-list-container\" hx-swap=\"outerHTML\" hx-trigger=\"click\"><span class=\"flex-grow text-center\">")
 		if err != nil {
 			return err
 		}
@@ -45,7 +45,7 @@ func fineList(fines []FineWithPlayer, page int, isFineMaster bool) templ.Compone
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("</span></div><table id=\"fine-list\" class=\"min-w-full divide-y divide-gray-200\"><tbody class=\"divide-y divide-gray-200\">")
+		_, err = templBuffer.WriteString("</span></div><table id=\"fine-list\" class=\"min-w-full\"><tbody class=\"divide-y divide-gray-900 \">")
 		if err != nil {
 			return err
 		}
@@ -87,7 +87,7 @@ func fineRow(isFineMaster bool, f FineWithPlayer) templ.Component {
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("\" class=\"bg-white divide-y divide-gray-200 p-2\"><td class=\"p-2\"><div class=\"text-bold\">")
+		_, err = templBuffer.WriteString("\" class=\"bg-gray-200 p-2\"><td class=\"p-2 text-2xl\"><div class=\"text-bold\">")
 		if err != nil {
 			return err
 		}
@@ -96,7 +96,7 @@ func fineRow(isFineMaster bool, f FineWithPlayer) templ.Component {
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("</div></td><td class=\"p-2 text-gray-900 flex flex-col text-wrap\"><div class=\"text-xl p-1\">")
+		_, err = templBuffer.WriteString("</div></td><td class=\"p-2 text-gray-900 flex flex-col text-wrap\"><div class=\"text-3xl p-1\">")
 		if err != nil {
 			return err
 		}
@@ -156,7 +156,7 @@ func fineRow(isFineMaster bool, f FineWithPlayer) templ.Component {
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("</div></td><td><div class=\"text-sm text-gray-900 text-wrap\">")
+		_, err = templBuffer.WriteString("</div></td><td><div class=\"text-lg text-gray-900 text-wrap\">")
 		if err != nil {
 			return err
 		}
