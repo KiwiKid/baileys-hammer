@@ -794,7 +794,7 @@ func presetFines(baseUrl string, isOpen bool, presetFines []PresetFine) templ.Co
 				return err
 			}
 		} else {
-			_, err = templBuffer.WriteString("<div class=\"flex justify-center w-full\">")
+			_, err = templBuffer.WriteString("<div class=\"flex justify-center w-full m-10\">")
 			if err != nil {
 				return err
 			}

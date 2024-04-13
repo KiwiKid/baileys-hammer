@@ -6,6 +6,7 @@ import (
 
 var finemasterBaseUrl = "/finemaster"
 
+
 func secureFineMasterbaseUrl( finemasterBaseUrl string, pass string) string {
 	return fmt.Sprintf("%s/%s", finemasterBaseUrl, pass)
 }
@@ -162,7 +163,7 @@ templ presetFines(baseUrl string, isOpen bool, presetFines []PresetFine) {
 			</div>
 		</div>
 	} else {
-		<div class="flex justify-center w-full">
+		<div class="flex justify-center w-full m-10">
 			<a href={ makeSafeUrlWithAnchor(baseUrl, false, false, false, true, false, "preset-fine") } class={ bigPri }>Manage Fine List</a>
 		</div>
 	}

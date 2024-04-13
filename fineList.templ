@@ -7,47 +7,39 @@ import (
 
 templ fineList(fines []FineWithPlayer, page int, isFineMaster bool) {
 	<div
- 		class="container mx-auto text-center"
- 		id="fine-list-container"
- 		class="h-screen"
+		class="container mx-auto bg-gray-200 shadow-xl p-2 h-screen mt-10"
+		id="fine-list-container"
 	>
-		<div class="text-3xl p-10">
-			Recent Fine List
-			<button hx-get="/fines" hx-target="#fine-list-container" hx-swap="outerHTML" hx-trigger="click" class="text-3xl">↻</button>
+		<div class="text-center">
+			<div class="flex justify-center items-center mb-4 cursor-pointer" hx-get="/fines" hx-target="#fine-list-container" hx-swap="outerHTML" hx-trigger="click">
+				<span class="flex-grow text-center">Recent Fine List</span>
+				<span class="text-3xl ml-2">↻</span>
+			</div>
+			<table id="fine-list" class="min-w-full divide-y divide-gray-200">
+				<tbody class="divide-y divide-gray-200">
+					for _, f := range fines {
+						@fineRow(isFineMaster, f)
+					}
+				</tbody>
+			</table>
 		</div>
-		<table id="fine-list" class="min-w-full divide-y divide-gray-200">
-			<tbody class="bg-white divide-y divide-gray-200">
-				for _, f := range fines {
-					@fineRow(isFineMaster, f)
-				}
-			</tbody>
-		</table>
-		<!--<div class="py-3">
-			<button hx-get={ fmt.Sprintf("/load-more?page=%d", page +1) } hx-target="this" hx-swap="outerHTML" class="px-4 py-2 bg-blue-500 text-white font-semibold rounded hover:bg-blue-700">
-				Load More
-			</button>
-		</div>-->
 	</div>
+
 }
 
 templ fineRow(isFineMaster bool, f FineWithPlayer) {
 	<tr
- 		id={ fmt.Sprintf("fr-%d", f.Fine.ID) }
- 		if f.Fine.Approved {
-			class="bg-white divide-y divide-gray-200"
-		} else {
-			class="bg-yellow-200 divide-y divide-gray-200"
-		}
+ 		id={ fmt.Sprintf("fr-%d", f.Fine.ID) } class="bg-white divide-y divide-gray-200 p-2"
 	>
-		<td><div class="text-bold">{ f.Player.Name }</div></td>
-		<td class="text-lg text-gray-900 flex flex-col text-wrap">
-			<div>
-				{ f.Fine.Reason }
+		<td class="p-2"><div class="text-bold">{ f.Player.Name }</div></td>
+		<td class="p-2 text-gray-900 flex flex-col text-wrap">
+			<div class="text-xl p-1">
 				if f.Fine.Approved {
-					{ fmt.Sprintf("$%v", f.Fine.Amount) }
+					{ fmt.Sprintf("$%v - ", f.Fine.Amount) }
 				}
+				{ f.Fine.Reason }
 			</div>
-			<div>
+			<div class="italic">
 			if len(f.Match.Opponent) > 0 {
 					{ f.Match.Opponent }
 					- 
@@ -56,7 +48,7 @@ templ fineRow(isFineMaster bool, f FineWithPlayer) {
 					}
 				}
 			</div>
-			<div>{ humanize.Time(f.Fine.FineAt) }</div>
+			<div class="italic"> { humanize.Time(f.Fine.FineAt) }</div>
 		</td>
 		<td>
 			<div class="text-sm text-gray-900 text-wrap">
@@ -77,35 +69,35 @@ templ fineRow(isFineMaster bool, f FineWithPlayer) {
 			</div>
 		</td>
 		<td>
-			if f.Fine.Approved {
-				<div>✅</div>
-			} else if isFineMaster {
-				<form hx-post="/fines/approve" hx-swap="outerHTML" ethod="POST">
-					<input
- 						type="hidden"
- 						name="fid"
- 						value={ fmt.Sprintf("%d", f.Fine.ID) }
-					/>
-					$
-					<input
- 						type="number"
- 						name="amount"
- 						id="amount-input-3"
- 						class="px-2 py-1 border rounded"
- 						placeholder="Set amount"
- 						if f.Fine.Amount > 0 {
-							value={ fmt.Sprintf("%v", f.Fine.Amount) }
-						} else {
-							value="2"
-						}
-					/>
-					<button
- 						type="submit"
- 						class={ bigAdd }
-					>
-						Approve
-					</button>
-				</form>
+			if isFineMaster {
+				<div>
+					<form hx-post="/fines/approve" hx-swap="outerHTML" ethod="POST">
+						<input
+							type="hidden"
+							name="fid"
+							value={ fmt.Sprintf("%d", f.Fine.ID) }
+						/>
+						$
+						<input
+							type="number"
+							name="amount"
+							id="amount-input-3"
+							class="px-2 py-1 border rounded"
+							placeholder="Set amount"
+							if f.Fine.Amount > 0 {
+								value={ fmt.Sprintf("%v", f.Fine.Amount) }
+							} else {
+								value="2"
+							}
+						/>
+						<button
+							type="submit"
+							class={ bigAdd }
+						>
+							Approve
+						</button>
+					</form>
+				</div>
 			}
 			if len(f.Fine.Contest) == 0 {
 				<div class="max-w-96">
@@ -116,7 +108,9 @@ templ fineRow(isFineMaster bool, f FineWithPlayer) {
 					>Contest</button>
 				</div>
 			} else {
+				<div>
 				{ f.Fine.Contest }
+				</div>
 			}
 		</td>
 		if isFineMaster {

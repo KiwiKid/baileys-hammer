@@ -7,6 +7,8 @@ import (
 )
 
 var baseUrl = "/"
+var containerClass = "container flex mx-auto bg-gray-200 shadow-xl p-2"
+var con = "bg-sepia-200 shadow-xl m-10 rounded-lg"
 
 
 func makeSafeUrlWithAnchor(baseUrl string, fineListOpen bool, finesOpen bool, playersOpen bool, presetFinesOpen bool, manageOpen bool, anchorTag string) templ.SafeURL {
@@ -75,7 +77,7 @@ templ downArrow() {
 	</svg>
 }
 
-var pri = "bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:scale-105 transition transform ease-out duration-200"
+var pri = "bg-blue-500 hover:bg-blue-600 text-white font-bold py-1 px-1 rounded-lg hover:scale-105 transition transform ease-out duration-200"
 
 var sec = "bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg hover:scale-105 transition transform ease-out duration-200"
 
@@ -116,10 +118,10 @@ templ home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines
 		@header()
 		@tomSelectLinks()
 		<body class="text-2xl">
-			<div class="container mx-auto bg-gray-200 shadow-xl">
-				<h1 class=" font-bold mb-4  text-center">🔨 Baileys Hammer 🔨</h1>
+			<div>
+				<h1 class="font-bold mb-4 text-center">🔨 Baileys Hammer 🔨</h1>
 				if len(approvedPFines) > 0 {
-					<div class="bg-sepia-200 shadow-xl m-10 rounded-lg">
+					<div class={ containerClass }>
 						<div id="fines" class="flex justify-center w-full mt-4">
 							<a href={ makeSafeUrlWithAnchor(baseUrl, !qp.FineListOpen, false, false, false, false, "fines") } hx-transition="true" class={ bigPri }>
 							if qp.FineListOpen {
@@ -161,7 +163,7 @@ templ home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines
 				}
 				@fineAddV2(baseUrl, qp.FinesOpen, players, approvedPFines, false)
 			</div>
-			<div class="flex bg-gray-100 mx-auto shadow-xl m-10" id="leaderboard">
+			<div class={ containerClass } id="leaderboard">
 				<div class="w-full mt-10">
 					<h3 class="text-2xl font-bold text-center">Leaderboard</h3>
 					<ul>
