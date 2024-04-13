@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 	"time"
-
+	"github.com/dustin/go-humanize"
 )
 
 var baseUrl = "/"
@@ -78,7 +78,7 @@ templ downArrow() {
 	</svg>
 }
 
-var pri = "bg-blue-500 p-1 hover:bg-blue-600 text-white font-bold py-1 px-1 rounded-lg hover:scale-105 transition transform ease-out duration-200"
+var pri = "bg-blue-500 p-1 hover:bg-blue-600 text-white font-bold md:p-4 py-1 px-1 rounded-lg hover:scale-105 transition transform ease-out duration-200"
 
 var sec = "bg-gray-500 p-1 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg hover:scale-105 transition transform ease-out duration-200"
 
@@ -191,32 +191,33 @@ templ home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines
 								</div>
 								<section class="fines-info hidden">
 									<div class="p-2">
-										<div class="p-2">
-											for _, f := range p.Fines {
-												<div class="mt-4 bg-gray-100 p-4 rounded-lg flex flex-col">
-													<div>
+										for _, f := range p.Fines {
+											<div class="mt-4 bg-gray-100 p-4 rounded-lg flex flex-row flex-wrap justify-between">
+												<div class="w-full sm:w-1/2 p-1">
 													{ f.Reason }
-													</div>
-													<div>
-													{ fmt.Sprintf("%d", f.Amount) }
-													</div>
-													<div>
-													 if f.FineAt.Before(twoWeeksAgo) {
-														{ f.FineAt.Format("2006-01-02") }
-													 } else {
-														{ f.FineAt.Format("2006-01-02") }
-													 }
-													</div>
-													<div>
-													{ f.Context }
-													</div>
-													<div>
-													{ f.Contest }
-													</div>
 												</div>
-											}
-										</div>
+												<div class="w-full sm:w-1/2 p-1">
+													{ fmt.Sprintf("$%.0f", f.Amount) }
+												</div>
+												<div class="w-full sm:w-1/2 p-1">
+													if f.FineAt.After(twoWeeksAgo) {
+														{ humanize.Time(f.FineAt) }
+													} else {
+														{ f.FineAt.Format("2006-01-02") }
+													}
+												</div>
+												<div class="w-full sm:w-1/2 p-1">
+													{ f.Context }
+												</div>
+												if len(f.Contest) > 0 {
+												<div class="w-full sm:w-1/2 p-1">
+														{ f.Contest }
+												</div>	
+												}
+											</div>
+										}
 									</div>
+
 								</section>
 							</li>
 						} 

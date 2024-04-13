@@ -11,6 +11,7 @@ import "bytes"
 
 import (
 	"fmt"
+	"github.com/dustin/go-humanize"
 	"log"
 	"time"
 )
@@ -109,7 +110,7 @@ func downArrow() templ.Component {
 	})
 }
 
-var pri = "bg-blue-500 p-1 hover:bg-blue-600 text-white font-bold py-1 px-1 rounded-lg hover:scale-105 transition transform ease-out duration-200"
+var pri = "bg-blue-500 p-1 hover:bg-blue-600 text-white font-bold md:p-4 py-1 px-1 rounded-lg hover:scale-105 transition transform ease-out duration-200"
 
 var sec = "bg-gray-500 p-1 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg hover:scale-105 transition transform ease-out duration-200"
 
@@ -577,12 +578,12 @@ func home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines 
 			if err != nil {
 				return err
 			}
-			_, err = templBuffer.WriteString("</div><section class=\"fines-info hidden\"><div class=\"p-2\"><div class=\"p-2\">")
+			_, err = templBuffer.WriteString("</div><section class=\"fines-info hidden\"><div class=\"p-2\">")
 			if err != nil {
 				return err
 			}
 			for _, f := range p.Fines {
-				_, err = templBuffer.WriteString("<div class=\"mt-4 bg-gray-100 p-4 rounded-lg flex flex-col\"><div>")
+				_, err = templBuffer.WriteString("<div class=\"mt-4 bg-gray-100 p-4 rounded-lg flex flex-row flex-wrap justify-between\"><div class=\"w-full sm:w-1/2 p-1\">")
 				if err != nil {
 					return err
 				}
@@ -591,21 +592,21 @@ func home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines 
 				if err != nil {
 					return err
 				}
-				_, err = templBuffer.WriteString("</div><div>")
+				_, err = templBuffer.WriteString("</div><div class=\"w-full sm:w-1/2 p-1\">")
 				if err != nil {
 					return err
 				}
-				var var_38 string = fmt.Sprintf("%d", f.Amount)
+				var var_38 string = fmt.Sprintf("$%.0f", f.Amount)
 				_, err = templBuffer.WriteString(templ.EscapeString(var_38))
 				if err != nil {
 					return err
 				}
-				_, err = templBuffer.WriteString("</div><div>")
+				_, err = templBuffer.WriteString("</div><div class=\"w-full sm:w-1/2 p-1\">")
 				if err != nil {
 					return err
 				}
-				if f.FineAt.Before(twoWeeksAgo) {
-					var var_39 string = f.FineAt.Format("2006-01-02")
+				if f.FineAt.After(twoWeeksAgo) {
+					var var_39 string = humanize.Time(f.FineAt)
 					_, err = templBuffer.WriteString(templ.EscapeString(var_39))
 					if err != nil {
 						return err
@@ -617,7 +618,7 @@ func home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines 
 						return err
 					}
 				}
-				_, err = templBuffer.WriteString("</div><div>")
+				_, err = templBuffer.WriteString("</div><div class=\"w-full sm:w-1/2 p-1\">")
 				if err != nil {
 					return err
 				}
@@ -626,21 +627,31 @@ func home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines 
 				if err != nil {
 					return err
 				}
-				_, err = templBuffer.WriteString("</div><div>")
+				_, err = templBuffer.WriteString("</div>")
 				if err != nil {
 					return err
 				}
-				var var_42 string = f.Contest
-				_, err = templBuffer.WriteString(templ.EscapeString(var_42))
-				if err != nil {
-					return err
+				if len(f.Contest) > 0 {
+					_, err = templBuffer.WriteString("<div class=\"w-full sm:w-1/2 p-1\">")
+					if err != nil {
+						return err
+					}
+					var var_42 string = f.Contest
+					_, err = templBuffer.WriteString(templ.EscapeString(var_42))
+					if err != nil {
+						return err
+					}
+					_, err = templBuffer.WriteString("</div>")
+					if err != nil {
+						return err
+					}
 				}
-				_, err = templBuffer.WriteString("</div></div>")
+				_, err = templBuffer.WriteString("</div>")
 				if err != nil {
 					return err
 				}
 			}
-			_, err = templBuffer.WriteString("</div></div></section></li>")
+			_, err = templBuffer.WriteString("</div></section></li>")
 			if err != nil {
 				return err
 			}
