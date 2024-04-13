@@ -33,7 +33,7 @@ func niceDate(date *time.Time) string {
 templ fineSuperSelect(players []PlayerWithFines, approvedPFines []PresetFine) {
 	<div class="container mx-auto bg-gray-200 shadow-xl m-10" id="fine-ss" hx-get="/fines/add" hx-trigger="pageLoaded" hx-target="#fine-ss">
 		<form id="ss-form" hx-post="/fines-multi" method="POST" class="flex flex-col space-y-4 bg-white shadow-md p-6 rounded-lg">
-			<p>Select players and fines below:</p>
+			<p class="font-bold">Select players and fines:</p>
 			<div class="flex flex-row">
 				<label for="select-fine" class="mt-2 pr-2 font-semibold text-gray-700">Fines</label>
 				<select id="select-fine" name="pfines[]" multiple placeholder="Select fine(s)..." class="border border-gray-300 rounded-md text-gray-700 flex-grow mb-2">
@@ -52,7 +52,7 @@ templ fineSuperSelect(players []PlayerWithFines, approvedPFines []PresetFine) {
 					}
 				</select>
 			</div>
-			<button type="submit" class={ bigAdd }>Multi-Fine</button>
+			<button type="submit" class={ bigAdd }>Create Fine(s)</button>
 			<div id="results-container"></div>
 			<script>
 			var settings = {};
@@ -123,7 +123,7 @@ templ fineSuperSelectResults(players []PlayerWithFines, approvedPFines[]PresetFi
 				{ fmt.Sprintf("Added %d Fines", len(newFines)) }
 			</summary>
 			for _, nf := range newFines {
-				<div>{ fmt.Sprintf("%+v", nf   ) }</div>
+				<div>{ fmt.Sprintf("%d %s",nf.PlayerID,  nf.Reason  ) }</div>
 			}
 		</details>
 	} else {

@@ -3,7 +3,8 @@ package main
 import (
 	"fmt"
 	"log"
-	"github.com/dustin/go-humanize"
+	"time"
+
 )
 
 var baseUrl = "/"
@@ -113,6 +114,8 @@ templ pageFooter() {
 	</nav>
 }
 
+var twoWeeksAgo = time.Now().AddDate(0, 0, -14)
+
 templ home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines []PresetFine, qp HomeQueryParams) {
 	<html hx-boost="true">
 		@header()
@@ -121,7 +124,7 @@ templ home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines
 			<div>
 				<h1 class="font-bold mb-4 text-center">🔨 Baileys Hammer 🔨</h1>
 				if len(approvedPFines) > 0 {
-					<div class={ containerClass }>
+					<div class="container mx-auto bg-gray-200 shadow-xl p-2">
 						<div id="fines" class="flex justify-center w-full mt-4">
 							<a href={ makeSafeUrlWithAnchor(baseUrl, !qp.FineListOpen, false, false, false, false, "fines") } hx-transition="true" class={ bigPri }>
 							if qp.FineListOpen {
@@ -140,7 +143,16 @@ templ home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines
 									</li>
 								}
 							</ul>
-							<a href={ makeSafeUrl(baseUrl, false, false, false, false, false) } hx-transition="true" class={ bigSec }>Close</a>
+							<div id="fines" class="flex justify-center w-full mt-4">
+							<a href={ makeSafeUrlWithAnchor(baseUrl, !qp.FineListOpen, false, false, false, false, "fines") } hx-transition="true" class={ bigPri }>
+								if qp.FineListOpen {
+									Close Fine List
+								} else { 
+									Fine List
+								}
+
+								</a>
+							</div>
 							<div class="w-full flex justify-center items-center">
 								<div _="on click toggle .hidden on next &lt;section/&gt;" class="flex justify-center items-center cursor-pointer">
 									<h3 class={ bigPri }>Pending Fines { fmt.Sprintf("(%d)", len(pendingPFines)) }</h3>
@@ -164,7 +176,7 @@ templ home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines
 				@fineAddV2(baseUrl, qp.FinesOpen, players, approvedPFines, false)
 			</div>
 			<div class={ containerClass } id="leaderboard">
-				<div class="w-full mt-10">
+				<div class="w-full">
 					<h3 class="text-2xl font-bold text-center">Leaderboard</h3>
 					<ul>
 						for _, p := range players {
@@ -181,15 +193,33 @@ templ home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines
 									<div class="p-2">
 										<div class="p-2">
 											for _, f := range p.Fines {
-												<div class="mt-1">
-													<p>{ f.Reason } { fmt.Sprintf("$%.0f - %s", f.Amount, humanize.Time(f.FineAt)) }</p>
+												<div class="mt-4 bg-gray-100 p-4 rounded-lg flex flex-col">
+													<div>
+													{ f.Reason }
+													</div>
+													<div>
+													{ fmt.Sprintf("%d", f.Amount) }
+													</div>
+													<div>
+													 if f.FineAt.Before(twoWeeksAgo) {
+														{ f.FineAt.Format("2006-01-02") }
+													 } else {
+														{ f.FineAt.Format("2006-01-02") }
+													 }
+													</div>
+													<div>
+													{ f.Context }
+													</div>
+													<div>
+													{ f.Contest }
+													</div>
 												</div>
 											}
 										</div>
 									</div>
 								</section>
 							</li>
-						}
+						} 
 					</ul>
 				</div>
 			</div>

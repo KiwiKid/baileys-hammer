@@ -134,11 +134,11 @@ func fineSuperSelect(players []PlayerWithFines, approvedPFines []PresetFine) tem
 			var_7 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, err = templBuffer.WriteString("<div class=\"container mx-auto bg-gray-200 shadow-xl m-10\" id=\"fine-ss\" hx-get=\"/fines/add\" hx-trigger=\"pageLoaded\" hx-target=\"#fine-ss\"><form id=\"ss-form\" hx-post=\"/fines-multi\" method=\"POST\" class=\"flex flex-col space-y-4 bg-white shadow-md p-6 rounded-lg\"><p>")
+		_, err = templBuffer.WriteString("<div class=\"container mx-auto bg-gray-200 shadow-xl m-10\" id=\"fine-ss\" hx-get=\"/fines/add\" hx-trigger=\"pageLoaded\" hx-target=\"#fine-ss\"><form id=\"ss-form\" hx-post=\"/fines-multi\" method=\"POST\" class=\"flex flex-col space-y-4 bg-white shadow-md p-6 rounded-lg\"><p class=\"font-bold\">")
 		if err != nil {
 			return err
 		}
-		var_8 := `Select players and fines below:`
+		var_8 := `Select players and fines:`
 		_, err = templBuffer.WriteString(var_8)
 		if err != nil {
 			return err
@@ -254,7 +254,7 @@ func fineSuperSelect(players []PlayerWithFines, approvedPFines []PresetFine) tem
 		if err != nil {
 			return err
 		}
-		var_16 := `Multi-Fine`
+		var_16 := `Create Fine(s)`
 		_, err = templBuffer.WriteString(var_16)
 		if err != nil {
 			return err
@@ -371,7 +371,7 @@ func fineSuperSelectResults(players []PlayerWithFines, approvedPFines []PresetFi
 				if err != nil {
 					return err
 				}
-				var var_20 string = fmt.Sprintf("%+v", nf)
+				var var_20 string = fmt.Sprintf("%d %s", nf.PlayerID, nf.Reason)
 				_, err = templBuffer.WriteString(templ.EscapeString(var_20))
 				if err != nil {
 					return err

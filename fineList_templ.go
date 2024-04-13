@@ -27,7 +27,7 @@ func fineList(fines []FineWithPlayer, page int, isFineMaster bool) templ.Compone
 			var_1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, err = templBuffer.WriteString("<div class=\"m-2 bg-gray-200 h-full shadow-xl p-2 h-full mt-10\" id=\"fine-list-container\"><div class=\"text-center\"><div class=\"flex justify-center items-center mb-4 cursor-pointer\" hx-get=\"/fines\" hx-target=\"#fine-list-container\" hx-swap=\"outerHTML\" hx-trigger=\"click\"><span class=\"flex-grow text-center\">")
+		_, err = templBuffer.WriteString("<div class=\"m-2 bg-gray-200 h-full shadow-xl p-2 h-full mt-10\" id=\"fine-list-container\"><div class=\"text-center\"><div class=\"flex justify-center items-center mb-4 cursor-pointer\" hx-get=\"/fines\" hx-target=\"#fine-list-container\" hx-swap=\"outerHTML\" hx-trigger=\"click\"><span class=\"flex-grow text-center font-bold\">")
 		if err != nil {
 			return err
 		}

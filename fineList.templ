@@ -12,7 +12,7 @@ templ fineList(fines []FineWithPlayer, page int, isFineMaster bool) {
 	>
 		<div class="text-center">
 			<div class="flex justify-center items-center mb-4 cursor-pointer" hx-get="/fines" hx-target="#fine-list-container" hx-swap="outerHTML" hx-trigger="click">
-				<span class="flex-grow text-center">Recent Fine List</span>
+				<span class="flex-grow text-center font-bold">Recent Fine List</span>
 				<span class="text-3xl ml-2">↻</span>
 			</div>
 			<table id="fine-list" class="min-w-full">
