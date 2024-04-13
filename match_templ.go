@@ -107,7 +107,7 @@ func matchListPage(matches []Match, isOpen bool) templ.Component {
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("<body class=\"text-2xl\"><div class=\"container mx-auto bg-gray-200 shadow-xl m-10\">")
+		_, err = templBuffer.WriteString("<body class=\"text-2xl p-1\"><div class=\"container mx-auto bg-gray-200 shadow-xl m-10\">")
 		if err != nil {
 			return err
 		}
@@ -201,7 +201,7 @@ func matchPage(data MatchPageData) templ.Component {
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("<body class=\"text-2xl\"><div class=\"container mx-auto bg-gray-200 shadow-xl m-10\"><h1 class=\" font-bold mb-4  text-center\">")
+		_, err = templBuffer.WriteString("<body class=\"text-2xl p-1\"><div class=\"container mx-auto bg-gray-200 shadow-xl m-10\"><h1 class=\" font-bold mb-4  text-center\">")
 		if err != nil {
 			return err
 		}

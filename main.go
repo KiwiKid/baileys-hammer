@@ -626,7 +626,6 @@ func fineAddHandler(db *gorm.DB) http.HandlerFunc {
 				return
 			}
 
-			// Assuming you have a function to write JSON response
 			success := success(fmt.Sprintf("Added Fine - %s", input.Reason))
 			success.Render(r.Context(), w)
 		}

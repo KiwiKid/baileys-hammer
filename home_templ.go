@@ -300,7 +300,7 @@ func home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines 
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("<body class=\"text-2xl\"><div><h1 class=\"font-bold mb-4 text-center\">")
+		_, err = templBuffer.WriteString("<body class=\"text-2xl p-1\"><div><h1 class=\"font-bold mb-4 text-center\">")
 		if err != nil {
 			return err
 		}

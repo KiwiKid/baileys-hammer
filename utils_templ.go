@@ -482,13 +482,34 @@ func fineSuperSelectResults(players []PlayerWithFines, approvedPFines []PresetFi
 			if err != nil {
 				return err
 			}
-			for _, nf := range newFines {
+			if len(newFines) > 0 {
+				for _, nf := range newFines {
+					_, err = templBuffer.WriteString("<div>")
+					if err != nil {
+						return err
+					}
+					var var_28 string = fmt.Sprintf("%d %s", nf.PlayerID, nf.Reason)
+					_, err = templBuffer.WriteString(templ.EscapeString(var_28))
+					if err != nil {
+						return err
+					}
+					_, err = templBuffer.WriteString("</div>")
+					if err != nil {
+						return err
+					}
+				}
+			} else {
 				_, err = templBuffer.WriteString("<div>")
 				if err != nil {
 					return err
 				}
-				var var_28 string = fmt.Sprintf("%d %s", nf.PlayerID, nf.Reason)
-				_, err = templBuffer.WriteString(templ.EscapeString(var_28))
+				var_29 := `No fines created? `
+				_, err = templBuffer.WriteString(var_29)
+				if err != nil {
+					return err
+				}
+				var var_30 string = fmt.Sprintf("%d %d", len(approvedPFines))
+				_, err = templBuffer.WriteString(templ.EscapeString(var_30))
 				if err != nil {
 					return err
 				}
@@ -506,8 +527,8 @@ func fineSuperSelectResults(players []PlayerWithFines, approvedPFines []PresetFi
 			if err != nil {
 				return err
 			}
-			var_29 := `o fines added? Make sure to select fines/players above`
-			_, err = templBuffer.WriteString(var_29)
+			var_31 := `o fines added? Make sure to select fines/players above`
+			_, err = templBuffer.WriteString(var_31)
 			if err != nil {
 				return err
 			}

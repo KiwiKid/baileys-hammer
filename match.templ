@@ -23,7 +23,7 @@ templ matchSelector(matches []Match, selectedMatchId uint) {
 templ matchListPage(matches []Match, isOpen bool) {
 	<html hx-boost="true">
 		@header()
-		<body class="text-2xl">
+		<body class="text-2xl p-1">
 			<div class="container mx-auto bg-gray-200 shadow-xl m-10">
 				if len(matches) > 0 {
 					for _, match := range matches {
@@ -50,7 +50,7 @@ templ matchListPage(matches []Match, isOpen bool) {
 templ matchPage(data MatchPageData) {
 	<html hx-boost="true">
 		@header()
-		<body class="text-2xl">
+		<body class="text-2xl p-1">
 			<div class="container mx-auto bg-gray-200 shadow-xl m-10">
 				<h1 class=" font-bold mb-4  text-center">🔨 Baileys Hammer 🔨</h1>
 				<div id="live-match" class="max-w-4xl mx-auto my-8 p-4 border border-gray-200 rounded-lg shadow">

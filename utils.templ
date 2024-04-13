@@ -15,17 +15,17 @@ func getIdStr(id string) string {
 	return fmt.Sprintf("#%s", id)
 }
 
-templ contextSuccess(matchId uint64, contextStr string, fineAt time.Time){
-	@successComp(){
+templ contextSuccess(matchId uint64, contextStr string, fineAt time.Time) {
+	@successComp() {
 		<h1>Added Context</h1>
 		<div>{ fmt.Sprintf("%d", matchId) }</div>
 		<div>{ contextStr }</div>
 		<div>
-		if fineAt.After(twoWeeksAgo) {
-			{ humanize.Time(fineAt) }
-		} else {
-			{ fineAt.Format("2006-01-02T15:04") }
-		}
+			if fineAt.After(twoWeeksAgo) {
+				{ humanize.Time(fineAt) }
+			} else {
+				{ fineAt.Format("2006-01-02T15:04") }
+			}
 		</div>
 	}
 }
@@ -144,8 +144,12 @@ templ fineSuperSelectResults(players []PlayerWithFines, approvedPFines[]PresetFi
 			<summary class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-lg">
 				{ fmt.Sprintf("Added %d Fines", len(newFines)) }
 			</summary>
-			for _, nf := range newFines {
-				<div>{ fmt.Sprintf("%d %s",nf.PlayerID,  nf.Reason  ) }</div>
+			if len(newFines) > 0 {
+				for _, nf := range newFines {
+					<div>{ fmt.Sprintf("%d %s",nf.PlayerID,  nf.Reason  ) }</div>
+				}
+			} else {
+				<div>No fines created? { fmt.Sprintf("%d %d", len(approvedPFines)) }</div>
 			}
 		</details>
 	} else {
