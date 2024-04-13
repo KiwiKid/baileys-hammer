@@ -161,13 +161,22 @@ func fineContextHandler(db *gorm.DB) http.HandlerFunc {
 
 		context := r.FormValue("context")
 
-		err = UpdateFineContextByID(db, uint(fineID), uint(matchId), context)
+
+		fineAtStr := r.FormValue("fineAt")
+		fineAt, err := time.Parse("2006-01-02T15:04", fineAtStr)
+		if err != nil {
+			// Handle parsing error, perhaps set a default value or return an error response
+			http.Error(w, fmt.Sprintf("Failed to parse fineAt time - \"%s\" %v", fineAtStr, err), http.StatusBadRequest)
+			return
+		}
+
+		err = UpdateFineContextByID(db, uint(fineID), uint(matchId), context, fineAt)
 		if err != nil {
 			http.Error(w, "Invalid UpdateFineContextByID ID", http.StatusBadRequest)
 			return
 		}
-
-		success := success(fmt.Sprintf("Added Context - m:%d - %s", matchId, context))
+		
+		success := contextSuccess(matchId, context,  fineAt)
 		success.Render(r.Context(), w)
 	}
 }
@@ -272,10 +281,10 @@ func fineEditHandler(db *gorm.DB) http.HandlerFunc {
             }
 
 			fineAtStr := r.FormValue("fineAt")
-			fineAt, err := time.Parse("2006-01-02", fineAtStr)
+			fineAt, err := time.Parse("2006-01-02T15:04", fineAtStr)
 			if err != nil {
 				// Handle parsing error, perhaps set a default value or return an error response
-				http.Error(w, "Failed to parse fineAt time", http.StatusBadRequest)
+				http.Error(w, fmt.Sprintf("Failed to parse fineAt time - \"%s\" %v", fineAtStr, err), http.StatusBadRequest)
 				return
 			}
 			context := r.FormValue("context")
@@ -431,8 +440,6 @@ func fineHandler(db *gorm.DB) http.HandlerFunc {
 				reason := r.FormValue("reason")
 
 
-				log.Printf("WOAH WOAH WOAH WOAH playerIdStr %d fineOption: %s", len(playerIdStr), r.FormValue("fineOption") )
-
 				if(len(playerIdStr) == 0 || r.FormValue("fineOption") == "applyAgain") {
 
 					amountStr := r.FormValue("amount")
@@ -467,7 +474,6 @@ func fineHandler(db *gorm.DB) http.HandlerFunc {
 					}
 				}
 				if (len(playerIdStr) > 0) {
-					log.Printf("WOAH WOAH WOAH WOAH %s", playerIdStr)
 				
 
 					playerId, err := strconv.ParseUint(playerIdStr, 10, 64)
@@ -566,7 +572,6 @@ func fineHandler(db *gorm.DB) http.HandlerFunc {
 					w.Header().Set("HX-Redirect", r.Header.Get("Referrer"))
 				}*/
 				
-				log.Printf("fineAddRes fineAddRes fineAddRes WOAH")
 
 				success := fineAddRes(createdFines, createdPFines)
 				success.Render(r.Context(), w)

@@ -273,11 +273,12 @@ func UpdateFineContestByID(db *gorm.DB, fineID uint, contest string) error {
 }
 
 
-func UpdateFineContextByID(db *gorm.DB, fineID uint, matchId uint, context string) error {
+func UpdateFineContextByID(db *gorm.DB, fineID uint, matchId uint, context string, fineAt time.Time) error {
     // Create a map with the fields you want to update
     updates := map[string]interface{}{
         "Context": context,
         "MatchId": matchId,
+        "FineAt": fineAt,
     }
 
     // Find the Fine by ID and update the Contest field
@@ -482,7 +483,6 @@ func GetMatches(db *gorm.DB, season uint64, page int, pageSize int) ([]Match, er
     var matches []Match
     offset := (page - 1) * pageSize
 //.Where("season_id = ?", season)
-log.Printf("ingoring %d", season)
     result := db.Order("created_at DESC").Offset(offset).Limit(pageSize).Find(&matches)
     if result.Error != nil {
         return nil, result.Error

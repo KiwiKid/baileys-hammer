@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"time"
+	"github.com/dustin/go-humanize"
 )
 
 templ tomSelectLinks() {
@@ -12,6 +13,27 @@ templ tomSelectLinks() {
 
 func getIdStr(id string) string {
 	return fmt.Sprintf("#%s", id)
+}
+
+templ contextSuccess(matchId uint64, contextStr string, fineAt time.Time){
+	@successComp(){
+		<h1>Added Context</h1>
+		<div>{ fmt.Sprintf("%d", matchId) }</div>
+		<div>{ contextStr }</div>
+		<div>
+		if fineAt.After(twoWeeksAgo) {
+			{ humanize.Time(fineAt) }
+		} else {
+			{ fineAt.Format("2006-01-02T15:04") }
+		}
+		</div>
+	}
+}
+
+templ successComp() {
+	<div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-lg">
+		<p class="text-lg font-semibold">{ children... }</p>
+	</div>
 }
 
 templ success(msg string) {

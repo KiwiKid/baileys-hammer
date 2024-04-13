@@ -33,13 +33,13 @@ templ fineRow(isFineMaster bool, f FineWithPlayer) {
 	>
 		<td class="p-2 text-2xl"><div class="text-bold">{ f.Player.Name }</div></td>
 		<td class="p-2 text-gray-900 flex flex-col text-wrap">
-			<div class="text-3xl p-1">
-				if f.Fine.Approved {
-					{ fmt.Sprintf("$%v - ", f.Fine.Amount) }
-				}
+			<div class="text-3xl">
 				{ f.Fine.Reason }
 			</div>
 			<div class="italic">
+				if f.Fine.Approved {
+					{ fmt.Sprintf("$%v - ", f.Fine.Amount) }
+				}
 				if len(f.Match.Opponent) > 0 {
 					{ f.Match.Opponent }
 					- 
@@ -131,15 +131,31 @@ templ fineRow(isFineMaster bool, f FineWithPlayer) {
 
 templ fineContextRow(f FineWithPlayer, matches []Match) {
 	<div class="border rounded-lg flex flex-col items-center p-4 space-y-4">
-		<p class="text-sm w-full text-gray-700">Add Context for this fine:</p>
+		<p class="text-sm w-full text-gray-700">Add (optional) context for this fine:</p>
 		<div class="w-full">
-			<input
- 				type="text"
- 				name="context"
- 				value={ f.Fine.Context }
- 				class="px-4 py-2 border border-gray-300 rounded-lg w-full focus:ring-blue-500 focus:border-blue-500"
- 				placeholder="Reason"
-			/>
+			<label>
+				Context:
+				<input
+ 					type="text"
+ 					name="context"
+ 					value={ f.Fine.Context }
+ 					class="px-4 py-2 border border-gray-300 rounded-lg w-full focus:ring-blue-500 focus:border-blue-500"
+ 					placeholder="Reason"
+				/>
+			</label>
+		</div>
+		<div class="w-full">
+			<label>
+				Specific Date/Time:
+				<p class="italic text-md">(defaults to create time)</p>
+				<input
+ 					type="datetime-local"
+ 					id="fineAt"
+ 					name="fineAt"
+ 					value={ f.Fine.FineAt.Format("2006-01-02T15:04") }
+ 					class="px-2 py-1 border rounded w-full"
+				/>
+			</label>
 		</div>
 		<input
  			type="hidden"

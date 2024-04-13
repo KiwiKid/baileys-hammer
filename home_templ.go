@@ -110,14 +110,14 @@ func downArrow() templ.Component {
 	})
 }
 
-var pri = "bg-blue-500 p-1 hover:bg-blue-600 text-white font-bold md:p-4 py-1 px-1 rounded-lg hover:scale-105 transition transform ease-out duration-200"
+var pri = " text-3xl bg-blue-500 p-1 hover:bg-blue-600 text-white font-bold md:p-4 py-1 px-1 rounded-lg hover:scale-105 transition transform ease-out duration-200"
 
-var sec = "bg-gray-500 p-1 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg hover:scale-105 transition transform ease-out duration-200"
+var sec = " text-3xl bg-gray-500 p-1 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg hover:scale-105 transition transform ease-out duration-200"
 
-var add = "bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:scale-105 transition transform ease-out duration-200"
-var del = "bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg hover:scale-105 transition transform ease-out duration-200"
+var add = " text-3xl bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:scale-105 transition transform ease-out duration-200"
+var del = " text-3xl bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg hover:scale-105 transition transform ease-out duration-200"
 
-var bigBtnTxt = "mx-auto items-center justify-center w-4/5 text-center py-2 px-4 text-lg rounded-md border hover:bg-opacity-75 focus:outline-none"
+var bigBtnTxt = "mx-auto items-center justify-center w-4/5 text-center py-2 px-4  rounded-md border hover:bg-opacity-75 focus:outline-none"
 var bigPri = fmt.Sprintf("%s %s", bigBtnTxt, pri)
 var bigSec = fmt.Sprintf("%s %s", bigBtnTxt, sec)
 var bigAdd = fmt.Sprintf("%s %s", bigBtnTxt, add)
