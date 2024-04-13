@@ -66,7 +66,7 @@ func matchEventHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request)
 		}else{
             log.Printf("GOT %d active players", len(players))
         }
-
+        
         match, err := GetMatch(db, matchId)
         if err != nil {
             http.Error(w, err.Error(), http.StatusBadRequest)

@@ -150,10 +150,13 @@ func fineContextHandler(db *gorm.DB) http.HandlerFunc {
 		}
 
 		matchIdStr := r.FormValue("matchId")
-		matchId, err := strconv.ParseUint(matchIdStr, 10, 64)
-		if err != nil {
-			http.Error(w, fmt.Sprintf("Invalid matchId ID - %s", matchIdStr), http.StatusBadRequest)
-			return
+		var matchId uint64 = 0;
+		if matchIdStr != "NA" {
+			matchId, err = strconv.ParseUint(matchIdStr, 10, 64)
+			if err != nil {
+				http.Error(w, fmt.Sprintf("Invalid matchId ID - %s", matchIdStr), http.StatusBadRequest)
+				return
+			}
 		}
 
 		context := r.FormValue("context")
@@ -300,8 +303,10 @@ func fineEditHandler(db *gorm.DB) http.HandlerFunc {
 				return
 			}
 
-			match, _ := GetMatch(db, uint64(fine.MatchId))
-			
+			match := &Match{}
+			if fine.MatchId > 0 {
+				match, _ = GetMatch(db, uint64(fine.MatchId))
+			}
 
 			// Prepare the data for rendering
 			fineWithPlayer := FineWithPlayer{
