@@ -7,8 +7,8 @@ import (
 
 templ fineList(fines []FineWithPlayer, page int, isFineMaster bool) {
 	<div
-		class="m-2 bg-gray-200 h-full shadow-xl p-2 h-full mt-10"
-		id="fine-list-container"
+ 		class="m-2 bg-gray-200 h-full shadow-xl p-2 h-full mt-10"
+ 		id="fine-list-container"
 	>
 		<div class="text-center">
 			<div class="flex justify-center items-center mb-4 cursor-pointer" hx-get="/fines" hx-target="#fine-list-container" hx-swap="outerHTML" hx-trigger="click">
@@ -24,12 +24,12 @@ templ fineList(fines []FineWithPlayer, page int, isFineMaster bool) {
 			</table>
 		</div>
 	</div>
-
 }
 
 templ fineRow(isFineMaster bool, f FineWithPlayer) {
 	<tr
- 		id={ fmt.Sprintf("fr-%d", f.Fine.ID) } class="bg-gray-200 p-2" 
+ 		id={ fmt.Sprintf("fr-%d", f.Fine.ID) }
+ 		class="bg-gray-200 p-2"
 	>
 		<td class="p-2 text-2xl"><div class="text-bold">{ f.Player.Name }</div></td>
 		<td class="p-2 text-gray-900 flex flex-col text-wrap">
@@ -40,7 +40,7 @@ templ fineRow(isFineMaster bool, f FineWithPlayer) {
 				{ f.Fine.Reason }
 			</div>
 			<div class="italic">
-			if len(f.Match.Opponent) > 0 {
+				if len(f.Match.Opponent) > 0 {
 					{ f.Match.Opponent }
 					- 
 					if f.Match.StartTime != nil {
@@ -48,7 +48,7 @@ templ fineRow(isFineMaster bool, f FineWithPlayer) {
 					}
 				}
 			</div>
-			<div class="italic"> { humanize.Time(f.Fine.FineAt) }</div>
+			<div class="italic">{ humanize.Time(f.Fine.FineAt) }</div>
 		</td>
 		<td>
 			<div class="text-lg text-gray-900 text-wrap">
@@ -70,34 +70,36 @@ templ fineRow(isFineMaster bool, f FineWithPlayer) {
 		</td>
 		<td>
 			if isFineMaster {
-				<div>
-					<form hx-post="/fines/approve" hx-swap="outerHTML" ethod="POST">
-						<input
-							type="hidden"
-							name="fid"
-							value={ fmt.Sprintf("%d", f.Fine.ID) }
-						/>
-						$
-						<input
-							type="number"
-							name="amount"
-							id="amount-input-3"
-							class="px-2 py-1 border rounded"
-							placeholder="Set amount"
-							if f.Fine.Amount > 0 {
-								value={ fmt.Sprintf("%v", f.Fine.Amount) }
-							} else {
-								value="2"
-							}
-						/>
-						<button
-							type="submit"
-							class={ bigAdd }
-						>
-							Approve
-						</button>
-					</form>
-				</div>
+				if !f.Fine.Approved {
+					<div>
+						<form hx-post="/fines/approve" hx-swap="outerHTML" ethod="POST">
+							<input
+ 								type="hidden"
+ 								name="fid"
+ 								value={ fmt.Sprintf("%d", f.Fine.ID) }
+							/>
+							$
+							<input
+ 								type="number"
+ 								name="amount"
+ 								id="amount-input-3"
+ 								class="px-2 py-1 border rounded"
+ 								placeholder="Set amount"
+ 								if f.Fine.Amount > 0 {
+									value={ fmt.Sprintf("%v", f.Fine.Amount) }
+								} else {
+									value="2"
+								}
+							/>
+							<button
+ 								type="submit"
+ 								class={ bigAdd }
+							>
+								Approve
+							</button>
+						</form>
+					</div>
+				}
 			}
 			if len(f.Fine.Contest) == 0 {
 				<div class="max-w-96">
@@ -109,7 +111,7 @@ templ fineRow(isFineMaster bool, f FineWithPlayer) {
 				</div>
 			} else {
 				<div>
-				{ f.Fine.Contest }
+					{ f.Fine.Contest }
 				</div>
 			}
 		</td>

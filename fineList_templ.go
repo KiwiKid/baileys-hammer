@@ -212,75 +212,77 @@ func fineRow(isFineMaster bool, f FineWithPlayer) templ.Component {
 			return err
 		}
 		if isFineMaster {
-			_, err = templBuffer.WriteString("<div><form hx-post=\"/fines/approve\" hx-swap=\"outerHTML\" ethod=\"POST\"><input type=\"hidden\" name=\"fid\" value=\"")
-			if err != nil {
-				return err
-			}
-			_, err = templBuffer.WriteString(templ.EscapeString(fmt.Sprintf("%d", f.Fine.ID)))
-			if err != nil {
-				return err
-			}
-			_, err = templBuffer.WriteString("\"> ")
-			if err != nil {
-				return err
-			}
-			var_16 := `$`
-			_, err = templBuffer.WriteString(var_16)
-			if err != nil {
-				return err
-			}
-			_, err = templBuffer.WriteString(" <input type=\"number\" name=\"amount\" id=\"amount-input-3\" class=\"px-2 py-1 border rounded\" placeholder=\"Set amount\"")
-			if err != nil {
-				return err
-			}
-			if f.Fine.Amount > 0 {
-				_, err = templBuffer.WriteString(" value=\"")
+			if !f.Fine.Approved {
+				_, err = templBuffer.WriteString("<div><form hx-post=\"/fines/approve\" hx-swap=\"outerHTML\" ethod=\"POST\"><input type=\"hidden\" name=\"fid\" value=\"")
 				if err != nil {
 					return err
 				}
-				_, err = templBuffer.WriteString(templ.EscapeString(fmt.Sprintf("%v", f.Fine.Amount)))
+				_, err = templBuffer.WriteString(templ.EscapeString(fmt.Sprintf("%d", f.Fine.ID)))
 				if err != nil {
 					return err
 				}
-				_, err = templBuffer.WriteString("\"")
+				_, err = templBuffer.WriteString("\"> ")
 				if err != nil {
 					return err
 				}
-			} else {
-				_, err = templBuffer.WriteString(" value=\"2\"")
+				var_16 := `$`
+				_, err = templBuffer.WriteString(var_16)
 				if err != nil {
 					return err
 				}
-			}
-			_, err = templBuffer.WriteString(">")
-			if err != nil {
-				return err
-			}
-			var var_17 = []any{bigAdd}
-			err = templ.RenderCSSItems(ctx, templBuffer, var_17...)
-			if err != nil {
-				return err
-			}
-			_, err = templBuffer.WriteString("<button type=\"submit\" class=\"")
-			if err != nil {
-				return err
-			}
-			_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_17).String()))
-			if err != nil {
-				return err
-			}
-			_, err = templBuffer.WriteString("\">")
-			if err != nil {
-				return err
-			}
-			var_18 := `Approve`
-			_, err = templBuffer.WriteString(var_18)
-			if err != nil {
-				return err
-			}
-			_, err = templBuffer.WriteString("</button></form></div>")
-			if err != nil {
-				return err
+				_, err = templBuffer.WriteString(" <input type=\"number\" name=\"amount\" id=\"amount-input-3\" class=\"px-2 py-1 border rounded\" placeholder=\"Set amount\"")
+				if err != nil {
+					return err
+				}
+				if f.Fine.Amount > 0 {
+					_, err = templBuffer.WriteString(" value=\"")
+					if err != nil {
+						return err
+					}
+					_, err = templBuffer.WriteString(templ.EscapeString(fmt.Sprintf("%v", f.Fine.Amount)))
+					if err != nil {
+						return err
+					}
+					_, err = templBuffer.WriteString("\"")
+					if err != nil {
+						return err
+					}
+				} else {
+					_, err = templBuffer.WriteString(" value=\"2\"")
+					if err != nil {
+						return err
+					}
+				}
+				_, err = templBuffer.WriteString(">")
+				if err != nil {
+					return err
+				}
+				var var_17 = []any{bigAdd}
+				err = templ.RenderCSSItems(ctx, templBuffer, var_17...)
+				if err != nil {
+					return err
+				}
+				_, err = templBuffer.WriteString("<button type=\"submit\" class=\"")
+				if err != nil {
+					return err
+				}
+				_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_17).String()))
+				if err != nil {
+					return err
+				}
+				_, err = templBuffer.WriteString("\">")
+				if err != nil {
+					return err
+				}
+				var_18 := `Approve`
+				_, err = templBuffer.WriteString(var_18)
+				if err != nil {
+					return err
+				}
+				_, err = templBuffer.WriteString("</button></form></div>")
+				if err != nil {
+					return err
+				}
 			}
 		}
 		if len(f.Fine.Contest) == 0 {
