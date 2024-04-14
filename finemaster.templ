@@ -23,7 +23,7 @@ templ finemasterNav(finemasterBaseUrl string) {
 	</nav>
 }
 
-templ finemaster(pass string, players []PlayerWithFines, pFines []PresetFine, matches []Match, qp FineMasterQueryParams) {
+templ finemaster(pass string, players []PlayerWithFines, fineWithPlayers []FineWithPlayer, pFines []PresetFine, matches []Match, qp FineMasterQueryParams) {
 	<html hx-boost="true">
 		@header()
 		@tomSelectLinks()
@@ -83,9 +83,9 @@ templ finemaster(pass string, players []PlayerWithFines, pFines []PresetFine, ma
 				</div>
 			</div>
 			@playersManage(secureFineMasterbaseUrl(finemasterBaseUrl, pass), players, qp.PlayerOpen)
-			@presetFines(fmt.Sprintf("%s/%s", finemasterBaseUrl, pass), qp.PresetFinesOpen, pFines)
+			@presetFines(fmt.Sprintf("%s/%s", finemasterBaseUrl, pass), pass, qp.PresetFinesOpen, pFines)
 			@matchesManage(secureFineMasterbaseUrl(finemasterBaseUrl, pass), qp.MatchesOpen, matches)
-			<div id="fine-list-container" class="h-screen" hx-get="/fines" hx-trigger="load once" hx-swap="OuterHTML" class="w-full text-center">loading latest..</div>
+			@fineList(fineWithPlayers, 0, qp.PresetFineUpdated, false)
 			<div class="mt-96"></div>
 			@finemasterNav(fmt.Sprintf("%s/%s", finemasterBaseUrl, pass))
 		</body>
@@ -94,7 +94,106 @@ templ finemaster(pass string, players []PlayerWithFines, pFines []PresetFine, ma
 	</html>
 }
 
-templ presetFines(baseUrl string, isOpen bool, presetFines []PresetFine) {
+templ editPresetFine(baseUrl string, passCode string, pFine PresetFine) {
+	<div id={ fmt.Sprintf("pf-%d", pFine.ID) } class="px-8 py-6 text-left bg-white shadow-xl m-10">
+		<form hx-post="/preset-fines" class="mt-4">
+			<input type="hidden" name="pass" value={ passCode }/>
+			<input type="hidden" name="pfid" value={ fmt.Sprintf("%d", pFine.ID) }/>
+			<div>
+				<label for="reason" class="block">
+					<input required value={ pFine.Reason } type="text" name="reason" id="reason" placeholder="Reason for the fine" class="w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600"/>
+				</label>
+			</div>
+			<div class="mt-4">
+				<label for="amount" class="block">
+					Amount ($) 
+					<input required value={ fmt.Sprintf("%.2f", pFine.Amount) } type="number" step="0.01" name="amount" id="amount" placeholder="Amount" class="p-2 w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600"/>
+				</label>
+			</div>
+			<div class="mt-4">
+				<label for="displayOrder" class="block">
+					Display Order 
+					<input
+ 						if pFine.DisplayOrder > 0 {
+							value={ fmt.Sprintf("%d", pFine.DisplayOrder) }
+						}
+ 						type="number"
+ 						step="0.01"
+ 						name="displayOrder"
+ 						id="displayOrder"
+ 						placeholder="1-9999"
+ 						class="p-2 w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600"
+					/>
+				</label>
+			</div>
+			<div class="mt-4">
+				<label class="block">
+					<input
+ 						type="checkbox"
+ 						name="approved"
+ 						class="text-2xl m-2 py-2 mt-2 p-2 "
+ 						if pFine.IsKudos {
+							checked="checked"
+						}
+					/>
+					Is Kudos (🚧)
+				</label>
+			</div>
+			<div class="mt-4">
+				<label class="block">
+					<input
+ 						type="checkbox"
+ 						name="approved"
+ 						class="text-2xl m-2 py-2 mt-2 p-2 "
+ 						if pFine.Approved {
+							checked="checked"
+						}
+					/>
+					Approved
+				</label>
+			</div>
+			<div class="flex items-center justify-between mt-4">
+				<button type="submit" class={ bigAdd }>Save Edits</button>
+			</div>
+			<div class="flex items-center justify-between mt-4">
+				if pFine.NotQuickFine {
+					<button class={ bigPri } hx-post={ fmt.Sprintf("/preset-fines/show?pfid=%d", pFine.ID) }>Show in Quick Fines</button>
+				} else {
+					<button class={ bigPri } hx-post={ fmt.Sprintf("/preset-fines/hide?pfid=%d", pFine.ID) }>Hide from Quick Fines</button>
+				}
+				<button class={ bigDel } hx-delete={ fmt.Sprintf("/preset-fines?pfid=%d", pFine.ID) } hx-confirm={ fmt.Sprintf("Remove %s from standard fines?", pFine.Reason) }>Remove from default fine list</button>
+			</div>
+		</form>
+		<div class="flex justify-center w-full">
+			<a href={ makeSafeUrl(baseUrl, false, false, false, false, false) } class={ bigSec }>Close</a>
+		</div>
+	</div>
+}
+
+templ newPresetFine(baseUrl string) {
+	<form hx-post="/preset-fines" class="mt-4">
+		<div>
+			<label for="reason" class="block">
+				<input required type="text" name="reason" id="reason" placeholder="Reason for the fine" class="w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600"/>
+			</label>
+		</div>
+		<div class="mt-4">
+			<label for="amount" class="block">Amount ($)</label>
+			<input required type="number" step="0.01" name="amount" id="amount" placeholder="Amount" class="p-2 w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600"/>
+		</div>
+		<div class="mt-4">
+			<label class="block"><input type="checkbox" checked="checked" name="approved" class="text-2xl m-2 py-2 mt-2 p-2 "/>Approved</label>
+		</div>
+		<div class="flex items-center justify-between mt-4">
+			<button type="submit" class={ bigAdd }>Add New Fine</button>
+		</div>
+	</form>
+	<div class="flex justify-center w-full">
+		<a href={ makeSafeUrl(baseUrl, false, false, false, false, false) } class={ bigSec }>Close</a>
+	</div>
+}
+
+templ presetFines(baseUrl string, passCode string, isOpen bool, presetFines []PresetFine) {
 	if isOpen {
 		<div class="px-8 py-6 text-left bg-white shadow-xl m-10" id="preset-fine">
 			<h3 class="text-2xl font-bold text-center">Add or Approve Fines</h3>
@@ -103,12 +202,12 @@ templ presetFines(baseUrl string, isOpen bool, presetFines []PresetFine) {
 			</div>
 			<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 				<div class="text-2xl">
-					<h1 class="font-bold text-center">Manage Listed Fines</h1>
+					<h1 class="font-bold text-center">Manage Listed Fines { fmt.Sprintf("(%d)", len(presetFines)) }</h1>
 					<p>
-						Deleting these fines will NOT delete any player specific fines, they just control the list of fines.
+						Deleting these fines will NOT delete any player specific fines, just the selection options.
 					</p>
 					for _, pfine := range presetFines {
-						if !pfine.Approved {
+						if !pfine.Approved && false {
 							<div class="mt-2 text-center">
 								<div>
 									<button hx-post={ fmt.Sprintf("/preset-fines/approve?pfid=%d", pfine.ID) } hx-swap="outerHTML" class={ bigAdd }>☐ ✨ { pfine.Reason } { fmt.Sprintf("$%.0f", pfine.Amount) }</button>
@@ -117,50 +216,15 @@ templ presetFines(baseUrl string, isOpen bool, presetFines []PresetFine) {
 							</div>
 						}
 					}
+					@newPresetFine(baseUrl)
 					for _, pfine := range presetFines {
-						if pfine.Approved {
-							<div class="mt-2 text-center">
-								<div>
-									{ pfine.Reason }
-									- 
-									{ fmt.Sprintf("$%.0f", pfine.Amount) }
-									<button class={ bigDel } hx-delete={ fmt.Sprintf("/preset-fines?pfid=%d", pfine.ID) } hx-confirm={ fmt.Sprintf("Remove %s from standard fines?", pfine.Reason) }>Remove from default fine list</button>
-									if pfine.NotQuickFine {
-										Hidden
-									} else {
-										<button class={ bigPri } hx-post={ fmt.Sprintf("/preset-fines/hide?pfid=%d", pfine.ID) } hx-confirm={ fmt.Sprintf("Hide %s from quick fines? (delete this PRESET fine to remove from \"Add Fine\" drop-down too - will not remove any specific player fines - just the item in the list)", pfine.Reason) }>Hide from Quick Fines</button>
-									}
-								</div>
-							</div>
-						}
+						@editPresetFine(baseUrl, passCode, pfine)
 					}
-				</div>
-				<div>
-					<form hx-post="/preset-fines" class="mt-4">
-						<div>
-							<label for="reason" class="block">
-								<input required type="text" name="reason" id="reason" placeholder="Reason for the fine" class="w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600"/>
-							</label>
-						</div>
-						<div class="mt-4">
-							<label for="amount" class="block">Amount ($)</label>
-							<input required type="number" step="0.01" name="amount" id="amount" placeholder="Amount" class="p-2 w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600"/>
-						</div>
-						<div class="mt-4">
-							<label class="block"><input type="checkbox" checked="checked" name="approved" class="text-2xl m-2 py-2 mt-2 p-2 "/>Approved</label>
-						</div>
-						<div class="flex items-center justify-between mt-4">
-							<button type="submit" class={ bigAdd }>Add New Fine</button>
-						</div>
-					</form>
-					<div class="flex justify-center w-full">
-						<a href={ makeSafeUrl(baseUrl, false, false, false, false, false) } class={ bigSec }>Close</a>
-					</div>
 				</div>
 			</div>
 		</div>
 	} else {
-		<div class="flex justify-center w-full m-10">
+		<div class="flex justify-center w-full p-3">
 			<a href={ makeSafeUrlWithAnchor(baseUrl, false, false, false, true, false, "preset-fine") } class={ bigPri }>Manage Fine List</a>
 		</div>
 	}
@@ -207,7 +271,7 @@ templ playersManage(baseUrl string, players []PlayerWithFines, isOpen bool) {
 						<button type="submit" hx-delete={ fmt.Sprintf("/players?playerId=%d", p.ID) } hx-confirm={ fmt.Sprintf("Are you sure you want to delete %s?", p.Name) } class={ bigDel }>Delete { p.Name }</button>
 					}
 				</div>
-				<div class="flex justify-center w-full mt-4">
+				<div class="flex justify-center w-full p-3">
 					<a href={ makeSafeUrl(baseUrl, false, false, false, false, false) } hx-transition="true" class={ bigSec }>Close</a>
 				</div>
 			</div>

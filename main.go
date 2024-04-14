@@ -361,9 +361,9 @@ func fineHandler(db *gorm.DB) http.HandlerFunc {
 			}
 
 			limitStr := r.URL.Query().Get("limit")
-			var limit = 50
+			var limit = 999999
 			if len(limitStr) == 0{
-				limit = 50
+				limit = 999999
 			}else {
 				limit, err := strconv.ParseInt(limitStr, 10, 64)
 				if err != nil || limit == 0 {
@@ -371,61 +371,22 @@ func fineHandler(db *gorm.DB) http.HandlerFunc {
 					return 
 				}
 			}
-			fines, getFErr := FetchLatestFines(db, int(pageId), int(limit))
-			if getFErr != nil {
-				http.Error(w, "fineHandler - FetchLatestFines", http.StatusBadRequest)
-				return
+		
+		finemasterPage := false
+		splitUrl := strings.Split(r.Header.Get("Referer"), "/")
+		for _, urlBit := range splitUrl {
+			if(urlBit == "finemaster"){
+				finemasterPage = true
+			}
+		}
+
+			fineWithPlayers, err := GetFineWithPlayers(db, 0, limit)
+			if err != nil {
+				http.Error(w, fmt.Sprintf("Error parsing limitStr %v", err), http.StatusBadRequest)
+				return 
 			}
 
-			players, getPlayerErr := GetPlayers(db, 0, 1000)
-			if getPlayerErr != nil {
-				http.Error(w, "fineHandler - GetPlayers error", http.StatusBadRequest)
-				return
-			}
-
-			// Get all relevant matches
-			matches, getMatchErr := GetMatches(db, 0, 0, 1000)
-			if getMatchErr != nil {
-				http.Error(w, "fineHandler - GetMatches error", http.StatusBadRequest)
-				return
-			}
-
-			matchMap := make(map[uint]Match)
-			for _, match := range matches {
-				matchMap[match.ID] = match
-			}
-
-			finemasterPage := false
-			splitUrl := strings.Split(r.Header.Get("Referer"), "/")
-			for _, urlBit := range splitUrl {
-				if(urlBit == "finemaster"){
-					finemasterPage = true
-				}
-			}
-			w.WriteHeader(http.StatusOK)
-
-			var fineWithPlayers []FineWithPlayer
-
-			for _, fine := range fines {
-				var matchedPlayer Player
-				for _, player := range players {
-					if fine.PlayerID == player.ID {
-						matchedPlayer = player 
-						break
-					}
-				}
-
-				matchedMatch := matchMap[fine.MatchId]
-				
-				fineWithPlayers = append(fineWithPlayers, FineWithPlayer{
-					Fine:   fine,
-					Player: matchedPlayer,
-					Match: matchedMatch,
-				})
-			}
-			
-
-			fineList := fineList(fineWithPlayers, pageId, finemasterPage)
+			fineList := fineList(fineWithPlayers, pageId, 0, finemasterPage)
 			fineList.Render(r.Context(), w)
 		}
 			case "POST": {
@@ -437,11 +398,22 @@ func fineHandler(db *gorm.DB) http.HandlerFunc {
 				createdFines := []Fine{}
 				createdPFines := []PresetFine{}
 
+			
 				playerIdStr := r.FormValue("playerId")
 				context := r.FormValue("context")
 
 				reason := r.FormValue("reason")
 
+				displayOrderStr := r.FormValue("displayOrder")
+
+				displayOrder, err := strconv.ParseInt(displayOrderStr, 10, 64)
+				if err != nil || displayOrder == 0 {
+					http.Error(w, fmt.Sprintf("Error parsing displayOrder %v", err), http.StatusBadRequest)
+					return 
+				}
+				isKudos := r.FormValue("isKudos") == "true"
+
+				icon := r.FormValue("icon")
 
 				if(len(playerIdStr) == 0 || r.FormValue("fineOption") == "applyAgain") {
 
@@ -455,6 +427,7 @@ func fineHandler(db *gorm.DB) http.HandlerFunc {
 						http.Error(w, "Invalid amount", http.StatusBadRequest)
 						return
 					}
+					
 
 
 					log.Printf("%+v %+v", r.FormValue("fineOption"), r.FormValue("fineOption") == "applyAgain")
@@ -465,6 +438,9 @@ func fineHandler(db *gorm.DB) http.HandlerFunc {
 							Approved: false,
 							Amount: amount,
 							Context: context,
+							DisplayOrder: displayOrder,
+							IsKudos: isKudos,
+							Icon: icon,
 						}
 						err := SavePresetFine(db, suggestedPFine)
 						if err != nil {
@@ -792,31 +768,39 @@ func fineQuickHideHandler(db *gorm.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case "POST":
-			// Parse form data
+			showOrHide := chi.URLParam(r, "showOrHide") == "show"
+
 			if err := r.ParseForm(); err != nil {
 				http.Error(w, "Error parsing form data", http.StatusBadRequest)
 				return
 			}
 
 			pfIDStr := r.FormValue("pfid")
-
+			pass := r.FormValue("pass")
 			// Convert 'fid' to uint64
 			pfID, err := strconv.ParseUint(pfIDStr, 10, 64)
 			if err != nil || pfID == 0 {
 				http.Error(w, fmt.Sprintf("Error parsing fine ID: %v", err), http.StatusBadRequest)
 				return
 			}
-
-			if err := QuickHideFine(db, uint(pfID)); err != nil {
-				log.Printf("Error approving fine with specified amount: %v", err)
-				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-				return
+			if showOrHide { 
+				if err := QuickHideFine(db, uint(pfID), false); err != nil {
+					log.Printf("Error approving fine with specified amount: %v", err)
+					http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+					return
+				}
+			} else {
+				if err := QuickHideFine(db, uint(pfID), true); err != nil {
+					log.Printf("Error approving fine with specified amount: %v", err)
+					http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+					return
+				}
 			}
-
-			// Redirect or handle response as needed
-			w.Header().Set("HX-Redirect", r.Header.Get("Referrer")+"#preset-fine")
+			
+			var url = fmt.Sprintf("/finemaster/%s?pf=true&upf=%d#pf-%d", pass, pfID, pfID)
+			log.Printf("REdirecting to %s", url)
+			w.Header().Set("HX-Redirect", url)
 			w.Header().Set("HX-Reload", "true")
-			w.WriteHeader(http.StatusOK)
 			return
 		default:
 			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
@@ -874,21 +858,49 @@ func presetFineHandler(db *gorm.DB) http.HandlerFunc {
     return func(w http.ResponseWriter, r *http.Request) {
         switch r.Method {
         case "POST":
+			pass := r.FormValue("pass")
+			realPass := os.Getenv("PASS")
+			if(pass != realPass) {
+				log.Printf("Error fetching presetFineMasterHandler")
+				http.Error(w, "Not this time mate.", http.StatusInternalServerError)
+				return
+			}
+			
 			if err := r.ParseForm(); err != nil {
 				http.Error(w, "presetFineHandler - Invalid form data", http.StatusBadRequest)
 				return
 			}
-	
+
+			
+
 			// Manual assignment of form values to struct
 			presetFine := PresetFine{
 				Reason: r.FormValue("reason"),
+				Icon: r.FormValue("icon"),
+				IsKudos: r.FormValue("isKudos") == "on",
 				Approved: true,
+			}
+
+			pfIdStr := r.FormValue("pfid")
+			pfID, err := strconv.ParseUint(pfIdStr, 10, 64)
+			if err != nil || pfID > 0 {
+				presetFine.ID = uint(pfID);
+			}
+
+			displayOrderStr := r.FormValue("displayOrder")
+			var displayOrder uint64 = 0;
+			if len(displayOrderStr) > 0 {
+				displayOrder, err = strconv.ParseUint(displayOrderStr, 10, 64)
+				if err == nil {
+					presetFine.DisplayOrder = int64(displayOrder)
+				}
 			}
 
 			amountStr := r.FormValue("amount")
 			if len(amountStr) == 0 {
 				amountStr = "2"
 			}
+
 
 			// Parse Amount as float64 from form value
 			if amount, err := strconv.ParseFloat(amountStr, 64); err == nil {
@@ -899,15 +911,19 @@ func presetFineHandler(db *gorm.DB) http.HandlerFunc {
 				return
 			}
 
-			// Save PresetFine to the database
+			
 			if err := SavePresetFine(db, &presetFine); err != nil {
 				log.Printf("Error saving preset fine: %v", err)
 				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 				return
 			}
 
+			var url = fmt.Sprintf("/finemaster/%s?pf=true&upf=%d#pf-%d", pass, presetFine.ID, presetFine.ID)
+			log.Printf("REdirecting to %s", url)
+			w.Header().Set("HX-Redirect", url)
 
-			w.Header().Set("HX-Redirect", r.Header.Get("Referrer"))
+			w.Header().Set("HX-Reload", "true")
+
 
 			// Optionally, you can set the status code to 200 OK or any appropriate status
 			w.WriteHeader(http.StatusOK)
@@ -940,6 +956,7 @@ type FineMasterQueryParams struct {
 	FinesOpen bool `schema:"f"`
 	PlayerOpen bool `schema:"p"`
 	PresetFinesOpen bool `schema:"pf"`
+	PresetFineUpdated uint `schema:"upf"`
 	FineList bool `schema:"fl"`
 	MatchesOpen bool `schema:"m"`
 }
@@ -949,8 +966,6 @@ func presetFineMasterHandler(db *gorm.DB) http.HandlerFunc {
 		pass := chi.URLParam(r, "pass")
 
 		realPass := os.Getenv("PASS")
-		log.Printf("presetFineMasterHandler: %s (%s)", pass, realPass)
-
 		if(pass != realPass) {
 			log.Printf("Error fetching presetFineMasterHandler")
 			http.Error(w, "Not this time mate.", http.StatusInternalServerError)
@@ -985,7 +1000,14 @@ func presetFineMasterHandler(db *gorm.DB) http.HandlerFunc {
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 			return
 		}
-		finemaster := finemaster(pass, playersWithFines, pFines, matches, *queryParams)
+
+		fineWithPlayers, err := GetFineWithPlayers(db, 0, 999999)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Error parsing limitStr %v", err), http.StatusBadRequest)
+			return 
+		}
+
+		finemaster := finemaster(pass, playersWithFines, fineWithPlayers, pFines, matches, *queryParams)
 		finemaster.Render(r.Context(), w)
 	}
 }
@@ -1010,7 +1032,7 @@ func main() {
 	r.HandleFunc("/fines/context", fineContextHandler(db))
 	r.HandleFunc("/preset-fines", presetFineHandler(db))
 	r.HandleFunc("/preset-fines/approve", presetFineApproveHandler(db))
-	r.HandleFunc("/preset-fines/hide", fineQuickHideHandler(db))
+	r.HandleFunc("/preset-fines/{showOrHide}", fineQuickHideHandler(db))
 	r.HandleFunc("/finemaster/{pass}", presetFineMasterHandler(db))
     r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 
@@ -1047,7 +1069,13 @@ func main() {
 			}
 		}
 
-		home := home(playersWithFines, approvedPFines, pendingPFines, *queryParams)
+		fineWithPlayers, err := GetFineWithPlayers(db, 0, 999999)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Error parsing limitStr %v", err), http.StatusBadRequest)
+			return 
+		}
+
+		home := home(playersWithFines, approvedPFines, pendingPFines, fineWithPlayers, *queryParams)
 		home.Render(r.Context(), w)
 	})
 

@@ -86,8 +86,17 @@ func DBInit() (*gorm.DB, error) {
         db.Migrator().AddColumn(&PresetFine{}, "NotQuickFine")
     }
 
+    if(!db.Migrator().HasColumn(&PresetFine{}, "DisplayOrder")){
+        db.Migrator().AddColumn(&PresetFine{}, "DisplayOrder")
+    }
 
+    if(!db.Migrator().HasColumn(&PresetFine{}, "Icon")){
+        db.Migrator().AddColumn(&PresetFine{}, "Icon")
+    }
 
+    if(!db.Migrator().HasColumn(&PresetFine{}, "IsKudos")){
+        db.Migrator().AddColumn(&PresetFine{}, "IsKudos")
+    }
 
     result := db.Model(&Fine{}).Where("fine_at IS NULL").Updates(map[string]interface{}{
         "fine_at": gorm.Expr("created_at"),
@@ -214,12 +223,10 @@ func DeletePlayer(db *gorm.DB, playerId uint) error {
     return nil
 }
 
-// FetchLatestFines fetches a paginated list of the latest fines.
 func FetchLatestFines(db *gorm.DB, page int, pageSize int) ([]Fine, error) {
     var fines []Fine
     offset := (page - 1) * pageSize
 
-    // Query the latest fines with pagination
     result := db.Order("created_at DESC").Offset(offset).Limit(pageSize).Find(&fines)
     if result.Error != nil {
         return nil, result.Error
@@ -324,9 +331,9 @@ func ApproveFine(db *gorm.DB, id uint, amount float64) error {
 
 
 
-func QuickHideFine(db *gorm.DB, id uint) error {
+func QuickHideFine(db *gorm.DB, id uint, showOrHide bool) error {
     // Find and update the fine's Approved field to true
-    result := db.Model(&PresetFine{}).Where("id = ?", id).Update("not_quick_fine", true)
+    result := db.Model(&PresetFine{}).Where("id = ?", id).Update("not_quick_fine", showOrHide)
 
     // Check for errors during the operation
     if result.Error != nil {
@@ -378,6 +385,54 @@ type PresetFine struct {
     Approved bool
     NotQuickFine bool
     Context string
+    DisplayOrder int64
+    Icon string
+    IsKudos bool
+}
+
+func GetFineWithPlayers(db *gorm.DB, pageId uint64, limit int) ([]FineWithPlayer, error) {
+    fines, getFErr := FetchLatestFines(db, int(pageId), int(limit))
+    if getFErr != nil {
+        return []FineWithPlayer{}, getFErr
+    }
+
+    players, getPlayerErr := GetPlayers(db, 0, 1000)
+    if getPlayerErr != nil {
+        return []FineWithPlayer{}, getPlayerErr
+    }
+
+    // Get all relevant matches
+    matches, getMatchErr := GetMatches(db, 0, 0, 1000)
+    if getMatchErr != nil {
+        return []FineWithPlayer{}, getMatchErr
+    }
+
+    matchMap := make(map[uint]Match)
+    for _, match := range matches {
+        matchMap[match.ID] = match
+    }
+
+    var fineWithPlayers []FineWithPlayer
+
+    for _, fine := range fines {
+        var matchedPlayer Player
+        for _, player := range players {
+            if fine.PlayerID == player.ID {
+                matchedPlayer = player 
+                break
+            }
+        }
+
+        matchedMatch := matchMap[fine.MatchId]
+        
+        fineWithPlayers = append(fineWithPlayers, FineWithPlayer{
+            Fine:   fine,
+            Player: matchedPlayer,
+            Match: matchedMatch,
+        })
+    }
+
+    return fineWithPlayers, nil
 }
 
 
@@ -401,7 +456,7 @@ func DeletePresetFineByID(db *gorm.DB, id uint) error {
 
 func GetPresetFines(db *gorm.DB, includeUnapproved bool) ([]PresetFine, error) {
     var presetFines []PresetFine
-    if err := db.Find(&presetFines).Where("approved = ?", includeUnapproved).Error; err != nil {
+    if err := db.Find(&presetFines).Where("approved = ?", includeUnapproved).Order("display_order").Error; err != nil {
         return nil, err
     }
     return presetFines, nil

@@ -119,7 +119,7 @@ templ pageFooter() {
 
 var twoWeeksAgo = time.Now().AddDate(0, 0, -14)
 
-templ home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines []PresetFine, qp HomeQueryParams) {
+templ home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines []PresetFine, fineWithPlayers []FineWithPlayer, qp HomeQueryParams) {
 	<html hx-boost="true">
 		@header()
 		@tomSelectLinks()
@@ -128,7 +128,7 @@ templ home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines
 				<h1 class="font-bold mb-4 text-center">🔨 Baileys Hammer 🔨</h1>
 				if len(approvedPFines) > 0 {
 					<div class="container mx-auto bg-gray-200 shadow-xl p-2">
-						<div id="fines" class="flex justify-center w-full mt-4">
+						<div id="fines" class="flex justify-center w-full p-3">
 							<a href={ makeSafeUrlWithAnchor(baseUrl, !qp.FineListOpen, false, false, false, false, "fines") } hx-transition="true" class={ bigPri }>
 								if qp.FineListOpen {
 									Close Fine List
@@ -145,7 +145,7 @@ templ home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines
 									</li>
 								}
 							</ul>
-							<div id="fines" class="flex justify-center w-full mt-4">
+							<div id="fines" class="flex justify-center w-full p-3">
 								<a href={ makeSafeUrlWithAnchor(baseUrl, !qp.FineListOpen, false, false, false, false, "fines") } hx-transition="true" class={ bigPri }>
 									if qp.FineListOpen {
 										Close Fine List
@@ -224,7 +224,7 @@ templ home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines
 					</ul>
 				</div>
 			</div>
-			<div id="fine-list-container" class="h-full" hx-get="/fines" hx-target="#fine-list-container" hx-swap="outerHTML" hx-trigger="load once, click" class="w-full text-center">loading latest..</div>
+			@fineList(fineWithPlayers, 0, 0,false)
 			<script src="https://unpkg.com/htmx.org"></script>
 			@pageFooter()
 		</body>
@@ -261,7 +261,7 @@ templ fineAddRes(createdFines []Fine, createdPFines []PresetFine) {
 templ fineAddV2(baseUrl string, isOpen bool, players []PlayerWithFines, presetFines []PresetFine, isFineMaster bool) {
 	<div class="container mx-auto bg-gray-200 shadow-xl m-10">
 		if isOpen {
-			<div class="flex justify-center w-full p-4" id="fine-add">
+			<div class="flex justify-center w-full p-3" id="fine-add">
 				<div class="flex flex-col justify-center w-full p-4">
 					@fineSuperSelect(players, presetFines)
 					<a class={ bigPri } href={ makeSafeUrlWithAnchor(baseUrl, false, false, false, false, false, "fine-add") }>

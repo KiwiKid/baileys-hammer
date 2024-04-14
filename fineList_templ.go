@@ -25,7 +25,7 @@ func getFinesTotal(fines []FineWithPlayer) float64 {
 	return 0
 }
 
-func fineList(fines []FineWithPlayer, page int, isFineMaster bool) templ.Component {
+func fineList(fines []FineWithPlayer, page int, presetFineUpdated uint, isFineMaster bool) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		templBuffer, templIsBuffer := w.(*bytes.Buffer)
 		if !templIsBuffer {
@@ -83,6 +83,16 @@ func fineList(fines []FineWithPlayer, page int, isFineMaster bool) templ.Compone
 			err = fineRow(isFineMaster, f).Render(ctx, templBuffer)
 			if err != nil {
 				return err
+			}
+			_, err = templBuffer.WriteString(" ")
+			if err != nil {
+				return err
+			}
+			if presetFineUpdated == f.Fine.ID {
+				err = success("updated!").Render(ctx, templBuffer)
+				if err != nil {
+					return err
+				}
 			}
 		}
 		_, err = templBuffer.WriteString("</tbody></table></div></div>")
