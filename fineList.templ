@@ -31,9 +31,9 @@ templ fineRow(isFineMaster bool, f FineWithPlayer) {
  		id={ fmt.Sprintf("fr-%d", f.Fine.ID) }
  		class="bg-gray-200 p-2"
 	>
-		<td class="p-2 text-2xl"><div class="text-bold">{ f.Player.Name }</div></td>
 		<td class="p-2 text-gray-900 flex flex-col text-wrap">
-			<div class="text-3xl">
+			<div class="text-bold text-3xl">{ f.Player.Name }</div>
+			<div class="text-2xl">
 				{ f.Fine.Reason }
 			</div>
 			<div class="italic">
@@ -58,7 +58,7 @@ templ fineRow(isFineMaster bool, f FineWithPlayer) {
 					<button
  						hx-get={ fmt.Sprintf("/fines/edit/%d?isContext=true", f.Fine.ID) }
  						hx-swap="outerHTML"
- 						class={ pri }
+ 						class={ smPri }
 					>
 						if len(f.Fine.Context) == 0 {
 							Add Context	
@@ -107,7 +107,7 @@ templ fineRow(isFineMaster bool, f FineWithPlayer) {
 					<button
  						hx-get={ fmt.Sprintf("/fines/edit/%d?isContest=true", f.Fine.ID) }
  						hx-swap="outerHTML"
- 						class={ pri }
+ 						class={ smPri }
 					>Contest</button>
 				</div>
 			} else {

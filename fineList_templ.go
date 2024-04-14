@@ -87,7 +87,7 @@ func fineRow(isFineMaster bool, f FineWithPlayer) templ.Component {
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("\" class=\"bg-gray-200 p-2\"><td class=\"p-2 text-2xl\"><div class=\"text-bold\">")
+		_, err = templBuffer.WriteString("\" class=\"bg-gray-200 p-2\"><td class=\"p-2 text-gray-900 flex flex-col text-wrap\"><div class=\"text-bold text-3xl\">")
 		if err != nil {
 			return err
 		}
@@ -96,7 +96,7 @@ func fineRow(isFineMaster bool, f FineWithPlayer) templ.Component {
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("</div></td><td class=\"p-2 text-gray-900 flex flex-col text-wrap\"><div class=\"text-3xl\">")
+		_, err = templBuffer.WriteString("</div><div class=\"text-2xl\">")
 		if err != nil {
 			return err
 		}
@@ -172,7 +172,7 @@ func fineRow(isFineMaster bool, f FineWithPlayer) templ.Component {
 		if err != nil {
 			return err
 		}
-		var var_15 = []any{pri}
+		var var_15 = []any{smPri}
 		err = templ.RenderCSSItems(ctx, templBuffer, var_15...)
 		if err != nil {
 			return err
@@ -293,7 +293,7 @@ func fineRow(isFineMaster bool, f FineWithPlayer) templ.Component {
 			if err != nil {
 				return err
 			}
-			var var_21 = []any{pri}
+			var var_21 = []any{smPri}
 			err = templ.RenderCSSItems(ctx, templBuffer, var_21...)
 			if err != nil {
 				return err
