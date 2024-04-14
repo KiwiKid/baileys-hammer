@@ -396,6 +396,10 @@ func fineSuperSelect(players []PlayerWithFines, approvedPFines []PresetFine) tem
 					if(match) return !this.options.hasOwnProperty(input);
 					return false;
 				},
+				onItemAdd:function(){
+					this.setTextboxValue('');
+					this.refreshOptions();
+				},
 				onOptionAdd: function(value, item) {
 					this.lock();
 					fetch('/fines/add', { // Replace with your actual endpoint URL
@@ -408,6 +412,7 @@ func fineSuperSelect(players []PlayerWithFines, approvedPFines []PresetFine) tem
 					.then(response => {
 						if (response.ok) {
 							htmx.trigger("#ss-form", "pageLoaded")
+							htmx.process(response.body)
 							return response.json();
 							
 						} else {
@@ -434,6 +439,10 @@ func fineSuperSelect(players []PlayerWithFines, approvedPFines []PresetFine) tem
 						title:'Remove this player'
 					}
 				},
+				onItemAdd:function(){
+					this.setTextboxValue('');
+					this.refreshOptions();
+				}
 			});
 			`
 		_, err = templBuffer.WriteString(var_25)

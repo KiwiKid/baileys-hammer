@@ -336,6 +336,10 @@ templ fineAdd(baseUrl string, isOpen bool, players []PlayerWithFines, presetFine
 														return '<div>' + escape(data.text) + '</div>';
 													}
 												},
+												onItemAdd:function(){
+													this.setTextboxValue('');
+													this.refreshOptions();
+												}
 											});
 										</script>
 								</label>

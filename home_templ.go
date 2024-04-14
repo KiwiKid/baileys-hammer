@@ -1070,6 +1070,10 @@ func fineAdd(baseUrl string, isOpen bool, players []PlayerWithFines, presetFines
 														return '<div>' + escape(data.text) + '</div>';
 													}
 												},
+												onItemAdd:function(){
+													this.setTextboxValue('');
+													this.refreshOptions();
+												}
 											});
 										`
 			_, err = templBuffer.WriteString(var_70)
