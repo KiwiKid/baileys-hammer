@@ -188,10 +188,24 @@ templ home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines
 								>
 									{ p.Name }
 									- 
+									
 									{ fmt.Sprintf("$%d (%d)", p.TotalFines,  p.TotalFineCount) }
+									
+									if len(p.Role) > 0 {
+										- { p.Role }
+									} else {
+										- NA
+									}
 								</div>
 								<section class="fines-info hidden">
-									<div class="p-2">
+									<div class="p-2">.
+										if len(p.Role) > 0 {
+										<div>
+											<div>{ p.Role } - ( { p.RoleDescription })</div>
+										</div>
+										} else {
+											<div>No role?</div>
+										}
 										for _, f := range p.Fines {
 											<div class="mt-4 bg-gray-100 p-4 rounded-lg flex flex-row flex-wrap justify-between">
 												<div class="w-full sm:w-1/2 p-1">

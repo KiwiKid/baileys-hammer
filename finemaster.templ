@@ -254,7 +254,7 @@ templ playersManage(baseUrl string, players []PlayerWithFines, isOpen bool) {
 		<div class="flex items-center justify-center bg-gray-100  p-3" id="players-manage">
 			<div class="px-8 py-6 text-left bg-white shadow-xl m-10">
 				<!-- Section for Adding New Player -->
-				<h3 class="text-2xl font-bold text-center">Add New Player</h3>
+				<h3 class="text-2xl font-bold text-center">Add New Player ({ fmt.Sprintf("%d", len(players)) })</h3>
 				<form hx-post="/players" method="POST" class="mt-4">
 					<div>
 						<label for="name" class="block">Name</label>
@@ -274,6 +274,7 @@ templ playersManage(baseUrl string, players []PlayerWithFines, isOpen bool) {
 				<div class="flex justify-center w-full p-3">
 					<a href={ makeSafeUrl(baseUrl, false, false, false, false, false) } hx-transition="true" class={ bigSec }>Close</a>
 				</div>
+				@playerRoleSelector(players, nil)
 			</div>
 		</div>
 	} else {

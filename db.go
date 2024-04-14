@@ -19,6 +19,8 @@ type Player struct {
     Name   string `gorm:"unique" form:"name"`
     Fines  []Fine
     Active bool
+    Role string
+    RoleDescription string
 }
 
 // Fine represents a fine assigned to a player
@@ -76,6 +78,14 @@ func DBInit() (*gorm.DB, error) {
         db.Migrator().AddColumn(&Fine{}, "FineAt")
     }
 
+    if(!db.Migrator().HasColumn(&Player{}, "RoleDescription")){
+        db.Migrator().AddColumn(&Player{}, "RoleDescription")
+    }
+
+    if(!db.Migrator().HasColumn(&Player{}, "Role")){
+        db.Migrator().AddColumn(&Player{}, "Role")
+    }
+
 
     
     if(!db.Migrator().HasColumn(&PresetFine{}, "Context")){
@@ -115,6 +125,8 @@ type PlayerWithFines struct {
     Name        string
     TotalFineCount int
     TotalFines  int
+    Role string
+    RoleDescription string
     Fines []Fine
     PendingFines []Fine
     PendingFineSum int
@@ -128,7 +140,9 @@ func GetPlayersWithFines(db *gorm.DB) ([]PlayerWithFines, error) {
     var players []Player
     db.Preload("Fines", func(db *gorm.DB) *gorm.DB {
         return db.Order("fines.created_at DESC")
-    }).Find(&players).Where("active = true").Order("players.name")
+    }).Find(&players).Order("players.name")
+    //.Where("active = true")
+    
 
     // Construct the PlayerWithFines slice
     for _, player := range players {
@@ -151,6 +165,8 @@ func GetPlayersWithFines(db *gorm.DB) ([]PlayerWithFines, error) {
             Name:        player.Name,
             TotalFineCount: len(approvedFines),
             TotalFines:  fineSum,
+            Role: player.Role,
+            RoleDescription: player.RoleDescription,
             Fines: approvedFines,
             PendingFines: pendingFines,
             PendingFineSum: pendingSum,

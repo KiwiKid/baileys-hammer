@@ -35,9 +35,27 @@ func playerHandler(db *gorm.DB) http.HandlerFunc {
 					return 
 				}
 
-				
+
+				displayType := r.URL.Query().Get("type")
+
+				if displayType == "role-selector" {
+					playersWithFines, err := GetPlayersWithFines(db)
+					if err != nil {
+						log.Printf("Error fetching players with fines: %v", err)
+						http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+						return
+					}
+
+					playerList := playerRoleSelector(playersWithFines, player)
+					playerList.Render(r.Context(), w)
+					return
+				}
+
 				playerList := playerName(*player)
 				playerList.Render(r.Context(), w)
+				
+				
+				
 
 			case "POST": {
 				if err := r.ParseForm(); err != nil {
