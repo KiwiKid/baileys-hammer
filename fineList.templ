@@ -46,9 +46,10 @@ templ fineRow(isFineMaster bool, f FineWithPlayer) {
 					if f.Match.StartTime != nil {
 						{ niceDate(f.Match.StartTime) }
 					}
+				} else {
+					({ humanize.Time(f.Fine.FineAt) })
 				}
 			</div>
-			<div class="italic">{ humanize.Time(f.Fine.FineAt) }</div>
 		</td>
 		<td>
 			<div class="text-lg text-gray-900 text-wrap">
@@ -144,10 +145,13 @@ templ fineContextRow(f FineWithPlayer, matches []Match) {
 				/>
 			</label>
 		</div>
+		<div class="mt-2">
+			<div hx-get={ fmt.Sprintf("/match-list?type=select&matchId=%d", f.Fine.MatchId) } hx-trigger="load once"></div>
+		</div>
+		<div>OR</div>
 		<div class="w-full">
 			<label>
-				Specific Date/Time:
-				<p class="italic text-md">(defaults to create time)</p>
+				Date/Time:
 				<input
  					type="datetime-local"
  					id="fineAt"
@@ -155,6 +159,7 @@ templ fineContextRow(f FineWithPlayer, matches []Match) {
  					value={ f.Fine.FineAt.Format("2006-01-02T15:04") }
  					class="px-2 py-1 border rounded w-full"
 				/>
+				<p class="italic text-md">(defaults to create time)</p>
 			</label>
 		</div>
 		<input
@@ -162,9 +167,7 @@ templ fineContextRow(f FineWithPlayer, matches []Match) {
  			name="fid"
  			value={ fmt.Sprintf("%d", f.Fine.ID) }
 		/>
-		<div class="mt-2">
-			<div hx-get={ fmt.Sprintf("/match-list?type=select&matchId=%d", f.Fine.MatchId) } hx-trigger="load once"></div>
-		</div>
+		
 		<button
  			class={ add }
  			hx-post={ "/fines/context" }
