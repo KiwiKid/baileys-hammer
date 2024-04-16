@@ -274,7 +274,9 @@ templ playersManage(baseUrl string, players []PlayerWithFines, isOpen bool) {
 				<div class="flex justify-center w-full p-3">
 					<a href={ makeSafeUrl(baseUrl, false, false, false, false, false) } hx-transition="true" class={ bigSec }>Close</a>
 				</div>
-				@playerRoleSelector(players, nil)
+				if UseRoles(ctx) {
+					@playerRoleSelector(players, nil)
+				}
 			</div>
 		</div>
 	} else {

@@ -10,8 +10,7 @@ templ playerName(player Player) {
 
 templ playerRoleSelector(players []PlayerWithFines, selectedPlayer *Player) {
 	<div class="" id="players-ss" hx-get="/players?type=role-selector" method="GET" hx-trigger="customEvent" hx-target="#players-ss">
-	[playerRoleSelector]
-		<form class="todo hidden">
+		<form class="todo">
 			<div class="container">
 				<h1>Set Player Role:</h1>
 				<div class="flex flex-row">

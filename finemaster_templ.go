@@ -1333,9 +1333,11 @@ func playersManage(baseUrl string, players []PlayerWithFines, isOpen bool) templ
 			if err != nil {
 				return err
 			}
-			err = playerRoleSelector(players, nil).Render(ctx, templBuffer)
-			if err != nil {
-				return err
+			if UseRoles(ctx) {
+				err = playerRoleSelector(players, nil).Render(ctx, templBuffer)
+				if err != nil {
+					return err
+				}
 			}
 			_, err = templBuffer.WriteString("</div></div>")
 			if err != nil {

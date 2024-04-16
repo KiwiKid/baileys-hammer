@@ -59,21 +59,12 @@ func playerRoleSelector(players []PlayerWithFines, selectedPlayer *Player) templ
 			var_3 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, err = templBuffer.WriteString("<div class=\"\" id=\"players-ss\" hx-get=\"/players?type=role-selector\" method=\"GET\" hx-trigger=\"customEvent\" hx-target=\"#players-ss\">")
+		_, err = templBuffer.WriteString("<div class=\"\" id=\"players-ss\" hx-get=\"/players?type=role-selector\" method=\"GET\" hx-trigger=\"customEvent\" hx-target=\"#players-ss\"><form class=\"todo\"><div class=\"container\"><h1>")
 		if err != nil {
 			return err
 		}
-		var_4 := `[playerRoleSelector]`
+		var_4 := `Set Player Role:`
 		_, err = templBuffer.WriteString(var_4)
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString(" <form class=\"todo hidden\"><div class=\"container\"><h1>")
-		if err != nil {
-			return err
-		}
-		var_5 := `Set Player Role:`
-		_, err = templBuffer.WriteString(var_5)
 		if err != nil {
 			return err
 		}
@@ -81,8 +72,8 @@ func playerRoleSelector(players []PlayerWithFines, selectedPlayer *Player) templ
 		if err != nil {
 			return err
 		}
-		var_6 := `Players`
-		_, err = templBuffer.WriteString(var_6)
+		var_5 := `Players`
+		_, err = templBuffer.WriteString(var_5)
 		if err != nil {
 			return err
 		}
@@ -90,8 +81,8 @@ func playerRoleSelector(players []PlayerWithFines, selectedPlayer *Player) templ
 		if err != nil {
 			return err
 		}
-		var_7 := `Select a player...`
-		_, err = templBuffer.WriteString(var_7)
+		var_6 := `Select a player...`
+		_, err = templBuffer.WriteString(var_6)
 		if err != nil {
 			return err
 		}
@@ -112,8 +103,8 @@ func playerRoleSelector(players []PlayerWithFines, selectedPlayer *Player) templ
 			if err != nil {
 				return err
 			}
-			var var_8 string = p.Name
-			_, err = templBuffer.WriteString(templ.EscapeString(var_8))
+			var var_7 string = p.Name
+			_, err = templBuffer.WriteString(templ.EscapeString(var_7))
 			if err != nil {
 				return err
 			}
@@ -126,8 +117,8 @@ func playerRoleSelector(players []PlayerWithFines, selectedPlayer *Player) templ
 		if err != nil {
 			return err
 		}
-		var_9 := `Role      `
-		_, err = templBuffer.WriteString(var_9)
+		var_8 := `Role      `
+		_, err = templBuffer.WriteString(var_8)
 		if err != nil {
 			return err
 		}
@@ -153,8 +144,8 @@ func playerRoleSelector(players []PlayerWithFines, selectedPlayer *Player) templ
 		if err != nil {
 			return err
 		}
-		var_10 := `Role Description      `
-		_, err = templBuffer.WriteString(var_10)
+		var_9 := `Role Description      `
+		_, err = templBuffer.WriteString(var_9)
 		if err != nil {
 			return err
 		}
@@ -180,8 +171,8 @@ func playerRoleSelector(players []PlayerWithFines, selectedPlayer *Player) templ
 		if err != nil {
 			return err
 		}
-		var var_11 = []any{bigPri}
-		err = templ.RenderCSSItems(ctx, templBuffer, var_11...)
+		var var_10 = []any{bigPri}
+		err = templ.RenderCSSItems(ctx, templBuffer, var_10...)
 		if err != nil {
 			return err
 		}
@@ -189,7 +180,7 @@ func playerRoleSelector(players []PlayerWithFines, selectedPlayer *Player) templ
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_11).String()))
+		_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_10).String()))
 		if err != nil {
 			return err
 		}
@@ -197,8 +188,8 @@ func playerRoleSelector(players []PlayerWithFines, selectedPlayer *Player) templ
 		if err != nil {
 			return err
 		}
-		var_12 := `Set Role `
-		_, err = templBuffer.WriteString(var_12)
+		var_11 := `Set Role `
+		_, err = templBuffer.WriteString(var_11)
 		if err != nil {
 			return err
 		}
@@ -206,7 +197,7 @@ func playerRoleSelector(players []PlayerWithFines, selectedPlayer *Player) templ
 		if err != nil {
 			return err
 		}
-		var_13 := `
+		var_12 := `
 	new TomSelect("#select-player-role", {
 		maxOptions: 999,
 		onItemAdd: function(value){
@@ -221,7 +212,7 @@ func playerRoleSelector(players []PlayerWithFines, selectedPlayer *Player) templ
 		}
 	});
 	`
-		_, err = templBuffer.WriteString(var_13)
+		_, err = templBuffer.WriteString(var_12)
 		if err != nil {
 			return err
 		}
