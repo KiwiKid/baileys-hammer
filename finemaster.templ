@@ -45,6 +45,14 @@ templ finemaster(pass string, players []PlayerWithFines, fineWithPlayers []FineW
 									{ p.Name }
 									- 
 									{ fmt.Sprintf("$%d (%d)", p.TotalFines, p.TotalFineCount) }
+									if UseRoles(ctx) {
+										if len(p.Role) > 0 {
+											- 
+											{ p.Role }
+										} else {
+											No Role?
+										}
+									}
 								</div>
 								<section class="fines-info hidden">
 									<div class="p-2">

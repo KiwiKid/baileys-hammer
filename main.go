@@ -496,7 +496,7 @@ func fineHandler(db *gorm.DB) http.HandlerFunc {
 
 					playerId, err := strconv.ParseUint(playerIdStr, 10, 64)
 					if err != nil {
-						log.Printf("Error get playerIdStr fine: %v", err)
+						log.Printf(" fineHanlder - POST -  Error get playerIdStr fine: %v", err)
 						http.Error(w, "Internal playerIdStr Error", http.StatusInternalServerError)
 						return
 					}
@@ -550,7 +550,7 @@ func fineHandler(db *gorm.DB) http.HandlerFunc {
 							// Parse the string ID to an unsigned integer
 							pfId, err := strconv.ParseUint(pfIdStr, 10, 64)
 							if err != nil {
-								http.Error(w, "Invalid strconv.ParseUint(pfIdStr", http.StatusBadRequest)
+								http.Error(w, "fine handler - POST Invalid strconv.ParseUint(pfIdStr", http.StatusBadRequest)
 								return
 							}
 						

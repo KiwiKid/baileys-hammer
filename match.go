@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/a-h/templ"
 	"github.com/go-chi/chi"
 	"gorm.io/gorm"
 )
@@ -14,6 +15,7 @@ import (
 type MatchPageData struct {
 	Match Match
 	isOpen bool
+	Msg string
 }
 
 type NewMatchForm struct {
@@ -103,12 +105,10 @@ func matchListHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) 
 func matchHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("matchHandler")
 	var matchId uint
-	var isOpen bool = false
 	var err error
 	return func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case "GET":
-			isOpen = r.URL.Query().Get("isOpen") == "true"
 
 			matchIdStr := chi.URLParam(r, "matchId")
 			fmt.Printf("matchHandler %s", matchIdStr)
@@ -138,13 +138,11 @@ func matchHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 	
-			// Prepare the data for the template
-			matchData := MatchPageData{
-				Match:  *match,
-				isOpen: isOpen,
-			}
+
+			var url = templ.SafeURL(r.Header.Get("Referrer"))
 	
-			matchComp := matchPage(matchData)
+			
+			matchComp := editMatch(url, *match)
 			matchComp.Render(r.Context(), w)
 			return
 		case "POST":
@@ -183,8 +181,11 @@ func matchHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			w.Header().Set("HX-Redirect", fmt.Sprintf("/match/%d", matchId))
-			return
+
+			var url = templ.SafeURL(r.Header.Get("Referrer"))
+
+			matchComp := editMatch(url, match)
+			matchComp.Render(r.Context(), w)
 		default:
 			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 			return
@@ -200,6 +201,24 @@ func RenderTemplate(w http.ResponseWriter, r *http.Request, data interface{}) {
 	fmt.Fprintf(w, "Template rendering with data: %+v\n", data) // Placeholder implementation
 }
 
+func GetMatchAndEvents(db *gorm.DB, matchId uint64)(*MatchState, []MatchEvent, error) {
+	matchEvents, getFErr := GetMatchEvents(db, matchId)
+	if getFErr != nil {
+		return nil, []MatchEvent{}, getFErr
+	}
+
+	players, err := GetPlayers(db, 1, 9999)
+	if err != nil {
+		log.Printf("Invalid GetPlayers")
+		return nil, []MatchEvent{}, err
+	}
+
+	initialState := MatchState{MatchID: matchId, PlayersOn: []PlayerState{}, ScoreFor: 0, ScoreAgainst: 0}
+	matchState := ConstructMatchState(matchEvents, initialState, 90, players)
+
+	return &matchState, matchEvents, nil
+
+}
 
 func ConstructMatchState(events []MatchEvent, currentState MatchState, currentTime int, allPlayers []Player) MatchState {
     if len(events) == 0 {

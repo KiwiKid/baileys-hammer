@@ -69,7 +69,7 @@ templ matchPage(data MatchPageData) {
 								}
  								hx-trigger="load once"
 							></div>
-							<div hx-get={ fmt.Sprintf("/match/%d/events", data.Match.ID) } hx-trigger="load once">loading events...</div>
+							<div id={ fmt.Sprintf("event-list-%d", data.Match.ID) } hx-get={ fmt.Sprintf("/match/%d/events", data.Match.ID) } hx-trigger="load once">loading events...</div>
 						}
 					</div>
 				</div>
@@ -108,7 +108,7 @@ templ createMatch(closeLink templ.SafeURL) {
 				<input type="text" name="subtitle" id="subtitle" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"/>
 			</div>
 			<div class="flex items-center justify-between mt-4">
-				<button type="submit" class={ bigPri }>Create Match</button>
+				<button type="submit" class={ bigAdd }>Create Match</button>
 			</div>
 			<div class="flex items-center justify-between mt-4">
 				<a href={ closeLink } class={ bigSec }>Close</a>
@@ -119,7 +119,7 @@ templ createMatch(closeLink templ.SafeURL) {
 
 templ editMatch(closeLink templ.SafeURL, match Match) {
 	<div class="container mx-auto bg-gray-200 shadow-xl m-10">
-		<form action={ fmt.Sprintf("/match/%d",match) } method="POST" class="max-w-xl mx-auto my-8 p-4 border border-gray-200 rounded-lg shadow">
+		<form hx-post={ fmt.Sprintf("/match/%v", match.ID) } class="max-w-xl mx-auto my-8 p-4 border border-gray-200 rounded-lg shadow">
 			<h2 class="text-lg font-semibold mb-4">Edit Match - vs { match.Opponent }</h2>
 			<div class="mb-4">
 				<label for="location" class="block text-sm font-medium text-gray-700">Location</label>
@@ -137,8 +137,11 @@ templ editMatch(closeLink templ.SafeURL, match Match) {
 				<label for="subtitle" class="block text-sm font-medium text-gray-700">Subtitle (optional)</label>
 				<input type="text" name="subtitle" id="subtitle" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" value={ match.Subtitle }/>
 			</div>
+			if UseMatchEventTracker(ctx) {
+				<div id={ fmt.Sprintf("match-event-list-%d", match.ID) } hx-get={ fmt.Sprintf("/match/%v/events", match.ID) } hx-trigger="load"></div>
+			}
 			<div class="flex items-center justify-between mt-4">
-				<button type="submit" class={ bigPri }>Edit Match</button>
+				<button type="submit" class={ bigAdd }>Update Match</button>
 			</div>
 			<div class="flex items-center justify-between mt-4">
 				<a href={ closeLink } class={ bigSec }>Close</a>
@@ -147,15 +150,18 @@ templ editMatch(closeLink templ.SafeURL, match Match) {
 	</div>
 }
 
-/*
-
 templ createNewEvent(matchId uint64) {
-	<form action={ fmt.Sprintf("/match/%d/event", matchId) } method="POST" class="max-w-xl mx-auto my-8 p-4 border border-gray-200 rounded-lg shadow">
+	<form hx-post={ fmt.Sprintf("/match/%d/event", matchId) } class="max-w-xl mx-auto my-8 p-4 border border-gray-200 rounded-lg shadow">
 		[createNewEvent
 		: 
 		{ fmt.Sprintf("%v", matchId) }
 		]
 		<h2 class="text-lg font-semibold mb-4">Create New Event</h2>
+		<input
+ 			type="hidden"
+ 			name="matchId"
+ 			value={ fmt.Sprintf("%d", matchId) }
+		/>
 		<div class="mb-4">
 			<label for="event-name" class="block text-sm font-medium text-gray-700">Event Name</label>
 			<input type="text" name="eventName" id="event-name" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"/>
@@ -163,22 +169,22 @@ templ createNewEvent(matchId uint64) {
 		<div class="mb-4">
 			<label for="event-type" class="block text-sm font-medium text-gray-700">Event Type</label>
 			<select name="eventType" id="event-type" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+				<option value="goal">Goal</option>
+				<option value="own-goal">Opponent Goal (Own Goal)</option>
+				<option value="opponent-goal">Opponent Goal</option>
 				<option value="subbed-off">Subbed Off</option>
 				<option value="subbed-on">Subbed On</option>
-				<option value="goal">Goal</option>
-				<option value="assist">Assist</option>
-				<option value="own-goal">Own Goal</option>
 			</select>
 		</div>
 		<div class="mb-4">
 			<label for="event-time-offset" class="block text-sm font-medium text-gray-700">Event Time Offset</label>
-			<select name="eventTimeOffset" id="event-time-offset" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"></select>
+			<select name="eventTimeOffset" id="event-time-offset" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+				<option value="now">Now</option>
+			</select>
 		</div>
 		<button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
 			Create Event
 		</button>
 	</form>
 }
-
-*/
 

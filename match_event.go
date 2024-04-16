@@ -11,7 +11,7 @@ import (
 	"gorm.io/gorm"
 )
 
-var EVENT_TYPES = []string{"subbed-off", "subbed-on"}
+var EVENT_TYPES = []string{"subbed-off", "subbed-on", "goal", "assist", "own-goal", "opponent-goal"}
 
 type TimeOpt struct {
 	Name string
@@ -55,13 +55,13 @@ func matchEventHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request)
 		fmt.Printf("matchHandler %s", matchIdStr)
 		matchId, err := strconv.ParseUint(matchIdStr, 10, 64)
 		if err != nil {
-			http.Error(w, fmt.Sprintf("Error parsing match ID: %v", err), http.StatusBadRequest)
+			http.Error(w, fmt.Sprintf("matchEventHandler - Error parsing match ID: %v", err), http.StatusBadRequest)
 			return
 		}
 
         players, err := FetchActivePlayers(db)
 		if err != nil {
-			http.Error(w, fmt.Sprintf("Error FetchActivePlayers: %v", err), http.StatusBadRequest)
+			http.Error(w, fmt.Sprintf("matchEventHandler - Error FetchActivePlayers: %v", err), http.StatusBadRequest)
 			return
 		}else{
             log.Printf("GOT %d active players", len(players))
@@ -88,7 +88,7 @@ func matchEventHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request)
 			isOpen = r.URL.Query().Get("isOpen") == "true"
 
 			if eventIdStr == "" {
-				matchComp := addMatchEvent(*meta, matchId, isOpen)
+				matchComp := createNewEvent(matchId)
 				matchComp.Render(r.Context(), w)
 				return
 			} else {
@@ -106,10 +106,12 @@ func matchEventHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request)
 
 
 
-            log.Println("matchEventHandler")
+            log.Printf("matchEventHandler %+v", r)
 			form, err := parseForm(r, *match)
             if err != nil {
-                http.Error(w, err.Error(), http.StatusBadRequest)
+                var errMessage = fmt.Sprintf("matchEventHandler - POST parseForm failed - %v \n\n%+v", match, err)
+                errComp := errMsg(errMessage)
+				errComp.Render(r.Context(), w)
                 return
             }
 
@@ -121,7 +123,14 @@ func matchEventHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request)
                 handleEditMatchEvent(db, form, *match, w)
             }
 
-            log.Println("matchEventHandlerend")
+            matchState, matchEvents, getMatchErr := GetMatchAndEvents(db, matchId)
+			if getMatchErr != nil {
+				errComp := errMsg(fmt.Sprintf("Invalid amount %v", getMatchErr))
+				errComp.Render(r.Context(), w)
+			}
+
+			fineList := listMatchEvents(*matchState, matchEvents)
+			fineList.Render(GetContext(r), w)
 
 		default:
 			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
@@ -145,9 +154,11 @@ type NewMatchEventForm struct {
 
 
 func parseForm(r *http.Request, match Match) (NewMatchEventForm, error) {
+    log.Printf("parseForm")
     if err := r.ParseForm(); err != nil {
-        return NewMatchEventForm{}, fmt.Errorf("invalid form data")
+        return NewMatchEventForm{}, fmt.Errorf("invalid form data - %+v", err)
     }
+    log.Printf("parseForm1")
 
    /* startTime, err := time.Parse("2006-01-02T15:04", r.FormValue("eventTime"))
     if err != nil {
@@ -156,13 +167,14 @@ func parseForm(r *http.Request, match Match) (NewMatchEventForm, error) {
 
     var eventTimeOffsetStr = r.FormValue("eventTimeOffset")
     var eventTimeStr = r.FormValue("eventTime")
+    log.Printf("parseForm2")
 
     var eventTime time.Time
     if(eventTimeOffsetStr == "now"){
         if eventTimeStr != "" {
             newStartTime, startErr := time.Parse("2006-01-02T15:04", eventTimeStr)
             if startErr != nil {
-                return NewMatchEventForm{}, startErr
+                return NewMatchEventForm{}, fmt.Errorf("invalid eventTimeStr data - %s- %+v", eventTimeStr, startErr)
             }
             eventTime = newStartTime
         } else {
@@ -171,10 +183,11 @@ func parseForm(r *http.Request, match Match) (NewMatchEventForm, error) {
     } else {
         eventTimeOffset, err := strconv.ParseUint(eventTimeOffsetStr, 10, 64)
         if err != nil {
-            return NewMatchEventForm{}, err
+            return NewMatchEventForm{}, fmt.Errorf("invalid eventTimeOffsetStr data - %s %+v", eventTimeOffsetStr, err)
         }
         eventTime = eventTime.Add(-time.Minute * time.Duration(eventTimeOffset))
     }
+    log.Printf("parseForm3")
 
     matchIdStr := r.FormValue("matchId")
     matchId, err := strconv.ParseUint(matchIdStr, 10, 64) // Convert string to int
@@ -182,20 +195,20 @@ func parseForm(r *http.Request, match Match) (NewMatchEventForm, error) {
         // Handle the error if the conversion fails
         return NewMatchEventForm{}, fmt.Errorf("invalid MatchId: %s %+v",matchIdStr,  err)
     }
-
-    eventMinStr := r.FormValue("eventMinute")
-    eventMin, err := strconv.Atoi(eventMinStr) // Convert string to int
+    log.Printf("parseForm4")
+     /*eventMinStr := r.FormValue("eventMinute")
+  eventMin, err := strconv.Atoi(eventMinStr) // Convert string to int
     if err != nil {
         // Handle the error if the conversion fails
         return NewMatchEventForm{}, fmt.Errorf("invalid eventMinute: %s %+v", eventMinStr,  err)
-    }
+    }*/
 
     return NewMatchEventForm{
         EventName:  r.FormValue("location"),
         EventType: r.FormValue("eventType"),
         MatchId: matchId,
         EventTime: &eventTime,
-        EventMinute: eventMin,
+        EventMinute: 0,
     }, nil
 }
 
@@ -218,9 +231,10 @@ func handleCreateMatchEvent(db *gorm.DB, form NewMatchEventForm, w http.Response
         log.Printf("Created Match event ✨ \n%+v", matchEvt)
     }
 
+    
     // Redirect to the new match
-    w.Header().Set("HX-Redirect", fmt.Sprintf("/match/%d", matchEvt.MatchId))
-    w.WriteHeader(http.StatusOK);
+   // w.Header().Set("HX-Redirect", fmt.Sprintf("/match/%d", matchEvt.MatchId))
+   // w.WriteHeader(http.StatusOK);
 }
 
 
@@ -272,23 +286,14 @@ func matchEventListHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Requ
             log.Printf("matchEventListHandler - GetMatchEvents(%d)", matchId)
 
 
-			matchEvents, getFErr := GetMatchEvents(db, matchId)
-			if getFErr != nil {
-				http.Error(w, "Invalid GetMatchEvents data", http.StatusBadRequest)
-				return
+			matchState, matchEvents, getMatchErr := GetMatchAndEvents(db, matchId)
+			if getMatchErr != nil {
+				errComp := errMsg(fmt.Sprintf("Invalid amount %v", getMatchErr))
+				errComp.Render(r.Context(), w)
 			}
 
-            players, err := GetPlayers(db, 1, 9999)
-			if err != nil {
-				http.Error(w, "Invalid GetPlayers", http.StatusBadRequest)
-				return
-			}
-
-            initialState := MatchState{PlayersOn: []PlayerState{}, ScoreFor: 0, ScoreAgainst: 0}
-            matchState := ConstructMatchState(matchEvents, initialState, 90, players)
-
-			fineList := listMatchEvents(matchState, matchEvents)
-			fineList.Render(r.Context(), w)
+			fineList := listMatchEvents(*matchState, matchEvents)
+			fineList.Render(GetContext(r), w)
 		}
         default: 
             http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
