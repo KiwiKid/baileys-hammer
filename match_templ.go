@@ -708,7 +708,7 @@ func editMatch(closeLink templ.SafeURL, match Match, successMsg string) templ.Co
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("<div class=\"flex items-center justify-between mt-4\">")
+		_, err = templBuffer.WriteString("<div class=\"flex items-center justify-between mt-4 hidden\">")
 		if err != nil {
 			return err
 		}

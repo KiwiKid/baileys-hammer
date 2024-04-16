@@ -160,7 +160,7 @@ templ editMatch(closeLink templ.SafeURL, match Match, successMsg string) {
 				<div id={ fmt.Sprintf("match-event-list-%d", match.ID) } hx-get={ fmt.Sprintf("/match/%v/events", match.ID) } hx-trigger="load"></div>
 			}
 			@success(successMsg)
-			<div class="flex items-center justify-between mt-4">
+			<div class="flex items-center justify-between mt-4 hidden">
 				<button type="submit" class={ bigAdd }>Update Match</button>
 			</div>
 			<div class="flex items-center justify-between mt-4">
