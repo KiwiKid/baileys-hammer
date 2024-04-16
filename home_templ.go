@@ -622,20 +622,30 @@ func home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines 
 					if err != nil {
 						return err
 					}
-					var_40 := `- ( `
-					_, err = templBuffer.WriteString(var_40)
-					if err != nil {
-						return err
-					}
-					var var_41 string = p.RoleDescription
-					_, err = templBuffer.WriteString(templ.EscapeString(var_41))
-					if err != nil {
-						return err
-					}
-					var_42 := `)`
-					_, err = templBuffer.WriteString(var_42)
-					if err != nil {
-						return err
+					if len(p.RoleDescription) > 0 {
+						var_40 := `- ( `
+						_, err = templBuffer.WriteString(var_40)
+						if err != nil {
+							return err
+						}
+						_, err = templBuffer.WriteString(" ")
+						if err != nil {
+							return err
+						}
+						var var_41 string = p.RoleDescription
+						_, err = templBuffer.WriteString(templ.EscapeString(var_41))
+						if err != nil {
+							return err
+						}
+						_, err = templBuffer.WriteString(" ")
+						if err != nil {
+							return err
+						}
+						var_42 := `)`
+						_, err = templBuffer.WriteString(var_42)
+						if err != nil {
+							return err
+						}
 					}
 					_, err = templBuffer.WriteString("</div></div>")
 					if err != nil {

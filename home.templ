@@ -201,7 +201,14 @@ templ home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines
 										if UseRoles(ctx) {
 											if len(p.Role) > 0 {
 												<div>
-													<div>{ p.Role } - ( { p.RoleDescription })</div>
+													<div>
+														{ p.Role }
+														if len(p.RoleDescription) > 0 {
+															- ( 
+															{ p.RoleDescription }
+															)
+														}
+													</div>
 												</div>
 											} else {
 												<div>No role?</div>
