@@ -244,7 +244,7 @@ templ matchesManage(baseUrl string, isOpen bool, matches []Match, pwfs []PlayerW
 			</div>
 			@createMatch(makeSafeUrl(baseUrl, false, false, false, false, false), pwfs)
 			for _, m := range matches {
-				@editMatch(makeSafeUrl(baseUrl, false, false, false, false, false), m)
+				@editMatch(makeSafeUrl(baseUrl, false, false, false, false, false), m, "")
 			}
 		</div>
 	} else {
