@@ -99,7 +99,7 @@ var F = fmt.Sprintf
 
 templ header() {
 	<head>
-		<title>🔨 Baileys Hammer 🔨</title>
+		<title>{ GetTitle(ctx) }</title>
 		<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet"/>
 		<script src="https://unpkg.com/hyperscript.org@0.9.12"></script>
 		<script src="https://js.sentry-cdn.com/92ea17e9008bb6e6c7e88a3da4ee4aab.min.js" crossorigin="anonymous"></script>
@@ -125,7 +125,7 @@ templ home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines
 		@tomSelectLinks()
 		<body class="text-2xl p-1">
 			<div>
-				<h1 class="font-bold mb-4 text-center">🔨 Baileys Hammer 🔨</h1>
+				<h1 class="font-bold mb-4 text-center">{ GetTitle(ctx) }</h1>
 				if len(approvedPFines) > 0 {
 					<div class="container mx-auto bg-gray-200 shadow-xl p-2">
 						<div id="fines" class="flex justify-center w-full p-3">
@@ -188,23 +188,26 @@ templ home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines
 								>
 									{ p.Name }
 									- 
-									
 									{ fmt.Sprintf("$%d (%d)", p.TotalFines,  p.TotalFineCount) }
-									
-									if len(p.Role) > 0 {
-										- { p.Role }
-									} else {
-										- NA
+									if UseRoles(ctx) {
+										if len(p.Role) > 0 {
+											- 
+											{ p.Role }
+										} else {
+											- NA
+										}
 									}
 								</div>
 								<section class="fines-info hidden">
-									<div class="p-2">.
-										if len(p.Role) > 0 {
-										<div>
-											<div>{ p.Role } - ( { p.RoleDescription })</div>
-										</div>
-										} else {
-											<div>No role?</div>
+									<div class="p-2">
+										if UseRoles(ctx) {
+											if len(p.Role) > 0 {
+												<div>
+													<div>{ p.Role } - ( { p.RoleDescription })</div>
+												</div>
+											} else {
+												<div>No role?</div>
+											}
 										}
 										for _, f := range p.Fines {
 											<div class="mt-4 bg-gray-100 p-4 rounded-lg flex flex-row flex-wrap justify-between">

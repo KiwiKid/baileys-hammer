@@ -18,6 +18,13 @@ import (
 
 var decoder = schema.NewDecoder()
 
+type Context struct {
+    Title   string
+	UseRoles bool
+	UseMatchEventTracker bool
+}
+
+
 func playerHandler(db *gorm.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		switch(r.Method){
@@ -1026,11 +1033,15 @@ func presetFineMasterHandler(db *gorm.DB) http.HandlerFunc {
 		}
 
 		finemaster := finemaster(pass, playersWithFines, fineWithPlayers, pFines, matches, *queryParams)
-		finemaster.Render(r.Context(), w)
+		finemaster.Render(GetContext(r), w)
 	}
 }
 
+
+
 func main() {
+
+	
 	log.Printf("Started")
 	db, err := DBInit()
 	if err != nil {
@@ -1094,7 +1105,7 @@ func main() {
 		}
 
 		home := home(playersWithFines, approvedPFines, pendingPFines, fineWithPlayers, *queryParams)
-		home.Render(r.Context(), w)
+		home.Render(GetContext(r), w)
 	})
 
 	r.HandleFunc("/match-list", matchListHandler(db))
