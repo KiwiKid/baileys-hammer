@@ -87,7 +87,7 @@ templ listEvents(events []MatchEvent) {
 	</div>
 }
 
-templ createMatch(closeLink templ.SafeURL) {
+templ createMatch(closeLink templ.SafeURL, players []PlayerWithFines) {
 	<div class="container mx-auto bg-gray-200 shadow-xl m-10">
 		<form action="/match" method="POST" class="max-w-xl mx-auto my-8 p-4 border border-gray-200 rounded-lg shadow">
 			<h2 class="text-lg font-semibold mb-4">Create New Match</h2>
@@ -102,6 +102,17 @@ templ createMatch(closeLink templ.SafeURL) {
 			<div class="mb-4">
 				<label for="opponent" class="block text-sm font-medium text-gray-700">Opponent</label>
 				<input type="text" name="opponent" id="opponent" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"/>
+			</div>
+			<div id="player-select" class="hidden mt-4">
+				<label class="text-lg font-semibold">Player:</label>
+				<select name="playerId" class="mt-1 w-full border-gray-300  bg-white rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+					<option selected value="">N/A</option>
+					for _, p := range players {
+						<option value={ S("%v", p.ID) }>
+							{ S("%s", p.Name) }
+						</option>
+					}
+				</select>
 			</div>
 			<div class="mb-4">
 				<label for="subtitle" class="block text-sm font-medium text-gray-700">Subtitle (optional)</label>
@@ -137,6 +148,8 @@ templ editMatch(closeLink templ.SafeURL, match Match) {
 				<label for="subtitle" class="block text-sm font-medium text-gray-700">Subtitle (optional)</label>
 				<input type="text" name="subtitle" id="subtitle" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" value={ match.Subtitle }/>
 			</div>
+			<div id="player-select-potd"></div>
+			<div id="player-select-dud-of-day"></div>
 			if UseMatchEventTracker(ctx) {
 				<div id={ fmt.Sprintf("match-event-list-%d", match.ID) } hx-get={ fmt.Sprintf("/match/%v/events", match.ID) } hx-trigger="load"></div>
 			}

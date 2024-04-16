@@ -116,10 +116,16 @@ func matchHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 			if matchIdStr == "" {
 				matches, err := GetMatches(db, 1, 0, 9999)
 				if err != nil {
+					errComp := errMsg("Could not get matches")
+					errComp.Render(r.Context(), w)
+				}
+
+				pwfs, err := GetPlayersWithFines(db, []uint64{})
+				if err != nil {
 					http.Error(w, "Could not get matches", http.StatusNotFound)
 					return
 				}
-				matchComp := matchesManage(r.Header.Get("Referrer"), true, matches)
+				matchComp := matchesManage(r.Header.Get("Referrer"), true, matches, pwfs)
 				matchComp.Render(r.Context(), w)
 				return
 			}

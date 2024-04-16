@@ -10,12 +10,18 @@ type Config struct {
 	Title                 string
 	UseRoles              bool
 	UseMatchEventTracker  bool
+	UsePlayerOfTheDayName string
+	UseDudOfTheDayName string
 }
 
 var config = &Config{
 	Title: "🔨 Baileys Hammer 🔨",
 	UseRoles: true,
 	UseMatchEventTracker: false,
+	UsePlayerOfTheDayName: "",
+	UseDudOfTheDayName: "",
+	//UsePlayerOfTheDayName: "Player of the Day",
+	//UseDudOfTheDayName: "Dick of the Day",
 }
 
 // Use a custom type for keys to avoid conflicts in context values.
@@ -25,6 +31,8 @@ const (
 	titleKey                 contextKey = "Title"
 	useRolesKey              contextKey = "UseRoles"
 	useMatchEventTrackerKey  contextKey = "UseMatchEventTracker"
+	UsePlayerOfTheDayNameKey contextKey = "UsePlayerOfTheDayName"
+	UseDudOfTheDayNameKey contextKey = "UseDudOfTheDayName"
 )
 
 func GetTitle(ctx context.Context) string {
@@ -48,9 +56,28 @@ func UseMatchEventTracker(ctx context.Context) bool {
 	return false
 }
 
+func UsePlayerOfTheDayName(ctx context.Context) string {
+	if usePlayerOfTheDay, ok := ctx.Value(UsePlayerOfTheDayNameKey).(string); ok {
+		return usePlayerOfTheDay
+	}
+	return ""
+}
+
+
+func UseDudOfTheDayName(ctx context.Context) string {
+	if useDudOfTheDay, ok := ctx.Value(UseDudOfTheDayNameKey).(string); ok {
+		return useDudOfTheDay
+	}
+	return ""
+}
+
+
+
 func GetContext(r *http.Request) context.Context {
 	ctx := context.WithValue(r.Context(), titleKey, config.Title)
 	ctx = context.WithValue(ctx, useRolesKey, config.UseRoles)
 	ctx = context.WithValue(ctx, useMatchEventTrackerKey, config.UseMatchEventTracker)
+	ctx = context.WithValue(ctx, UsePlayerOfTheDayNameKey, config.UsePlayerOfTheDayName)
+	ctx = context.WithValue(ctx, UseDudOfTheDayNameKey, config.UseDudOfTheDayName)
 	return ctx
 }

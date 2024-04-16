@@ -28,6 +28,7 @@ templ finemaster(pass string, players []PlayerWithFines, fineWithPlayers []FineW
 		@header()
 		@tomSelectLinks()
 		<body class="p-1">
+			<div hx-get={ fmt.Sprintf("/players?type=super-input") } hx-trigger="load once"></div>
 			<div class="bg-gray-900 text-center p-5">
 				<h1 class="text-xl md:text-3xl lg:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-teal-400">
 					Fine Master Zone
@@ -49,8 +50,6 @@ templ finemaster(pass string, players []PlayerWithFines, fineWithPlayers []FineW
 										if len(p.Role) > 0 {
 											- 
 											{ p.Role }
-										} else {
-											No Role?
 										}
 									}
 								</div>
@@ -92,7 +91,7 @@ templ finemaster(pass string, players []PlayerWithFines, fineWithPlayers []FineW
 			</div>
 			@playersManage(secureFineMasterbaseUrl(finemasterBaseUrl, pass), players, qp.PlayerOpen)
 			@presetFines(fmt.Sprintf("%s/%s", finemasterBaseUrl, pass), pass, qp.PresetFinesOpen, pFines)
-			@matchesManage(secureFineMasterbaseUrl(finemasterBaseUrl, pass), qp.MatchesOpen, matches)
+			@matchesManage(secureFineMasterbaseUrl(finemasterBaseUrl, pass), qp.MatchesOpen, matches, players)
 			@fineList(fineWithPlayers, 0, qp.PresetFineUpdated, false)
 			<div class="mt-96"></div>
 			@finemasterNav(fmt.Sprintf("%s/%s", finemasterBaseUrl, pass))
@@ -238,14 +237,14 @@ templ presetFines(baseUrl string, passCode string, isOpen bool, presetFines []Pr
 	}
 }
 
-templ matchesManage(baseUrl string, isOpen bool, matches []Match) {
+templ matchesManage(baseUrl string, isOpen bool, matches []Match, pwfs []PlayerWithFines) {
 	if isOpen {
 		<div class="px-8 py-6 text-left bg-white shadow-xl m-10" id="preset-fine">
 			<h3 class="text-2xl font-bold text-center">Add/Edit Matches</h3>
 			<div class="w-full flex justify-center items-center py-2">
 				<p>Edit existing matches, or add new ones</p>
 			</div>
-			@createMatch(makeSafeUrl(baseUrl, false, false, false, false, false))
+			@createMatch(makeSafeUrl(baseUrl, false, false, false, false, false), pwfs)
 			for _, m := range matches {
 				@editMatch(makeSafeUrl(baseUrl, false, false, false, false, false), m)
 			}

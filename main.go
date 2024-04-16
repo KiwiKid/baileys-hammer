@@ -29,23 +29,25 @@ func playerHandler(db *gorm.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		switch(r.Method){
 			case "GET":
-				playerIdStr := r.URL.Query().Get("playerId")
-				playerId, err := strconv.ParseUint(playerIdStr, 10, 64)
-				if err != nil || playerId == 0 {
-					http.Error(w, fmt.Sprintf("Error playerHandler playerId %v", err), http.StatusBadRequest)
-					return 
-				}
 
-				player, err := GetPlayerByID(db, uint(playerId))
-				if err != nil {
-					http.Error(w, fmt.Sprintf("Error playerHandler GetPlayerByID %v", err), http.StatusBadRequest)
-					return 
-				}
+
+
 
 
 				displayType := r.URL.Query().Get("type")
 
 				if displayType == "role-selector" {
+					playerIdStr := r.URL.Query().Get("playerId")
+					playerId, err := strconv.ParseUint(playerIdStr, 10, 64)
+					if err != nil {
+						http.Error(w, fmt.Sprintf("role-selector Error playerHandler playerId %v", err), http.StatusBadRequest)
+						return 
+					}
+					if playerId == 0 {
+						http.Error(w, fmt.Sprintf("role-selector Error playerHandler playerId %v", err), http.StatusBadRequest)
+						return 
+					}
+
 					playerIds := []uint64{
 						playerId,
 					}
@@ -57,12 +59,32 @@ func playerHandler(db *gorm.DB) http.HandlerFunc {
 					}
 
 					playerList := playerRoleSelector(playersWithFines[0], "")
-					playerList.Render(r.Context(), w)
+					playerList.Render(GetContext(r), w)
 					return
+				} else if displayType == "super-input" {
+
+					playerIdStr := r.URL.Query().Get("playerId")
+					
+					var playerId uint64
+					var err error
+					if len(playerIdStr) > 0 {
+						playerId, err = strconv.ParseUint(playerIdStr, 10, 64)
+						if err != nil {
+							http.Error(w, fmt.Sprintf("super-input - Error playerHandler playerId \"%s\" [%d] %v", playerIdStr, len(playerIdStr), err), http.StatusBadRequest)
+							return
+						}
+					}
+						playersWithFines, err := GetPlayersWithFines(db, []uint64{})
+						if err != nil || len(playersWithFines) == 0 {
+							log.Printf("Error fetching players with fines: %v", err)
+							http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+							return
+						}
+
+						playerList := playerInputSelector(playersWithFines, playerId)
+						playerList.Render(GetContext(r), w)
 				}
 
-				playerList := playerName(*player)
-				playerList.Render(r.Context(), w)
 				
 				
 				
@@ -104,7 +126,7 @@ func playerHandler(db *gorm.DB) http.HandlerFunc {
 				}
 
 				playerList := playerRoleSelector(playersWithFines[0], fmt.Sprintf("Updated player"))
-				playerList.Render(r.Context(), w)
+				playerList.Render(GetContext(r), w)
 				return
 	
 			}
@@ -168,7 +190,7 @@ func fineContestHandler(db *gorm.DB) http.HandlerFunc {
 		}
 
 		success := success("Added Contest")
-		success.Render(r.Context(), w)
+		success.Render(GetContext(r), w)
 	}
 }
 

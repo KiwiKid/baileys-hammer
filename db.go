@@ -528,6 +528,8 @@ type Match struct {
     Subtitle   string
     Events     []MatchEvent `gorm:"foreignKey:MatchId"`
     SeasonId    uint64
+    PlayerOfTheDay    uint64
+    DudOfTheDay uint64
 }
 
 type MatchEvent struct {
