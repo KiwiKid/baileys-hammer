@@ -15,13 +15,15 @@ type Config struct {
 }
 
 var config = &Config{
-	Title: "🔨 Baileys Hammer 🔨",
+	Title: "🔨 Baileys WOAH Hammer 🔨",
 	UseRoles: true,
 	UseMatchEventTracker: false,
-	UsePlayerOfTheDayName: "",
-	UseDudOfTheDayName: "",
-	//UsePlayerOfTheDayName: "Player of the Day",
-	//UseDudOfTheDayName: "Dick of the Day",
+	//UsePlayerOfTheDayName: "",
+	//UseDudOfTheDayName: "",
+	// UsePlayerOfTheDayName defines the label for recognizing the best player of the day (empty for off).
+	UsePlayerOfTheDayName: "Player of the Day",
+	// UseDudOfTheDayName defines the label for pointing out the least effective player of the day (empty for off).
+	UseDudOfTheDayName: "Dick of the Day",
 }
 
 // Use a custom type for keys to avoid conflicts in context values.

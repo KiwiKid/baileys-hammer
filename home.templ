@@ -103,6 +103,8 @@ templ header() {
 		<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet"/>
 		<script src="https://unpkg.com/hyperscript.org@0.9.12"></script>
 		<script src="https://js.sentry-cdn.com/92ea17e9008bb6e6c7e88a3da4ee4aab.min.js" crossorigin="anonymous"></script>
+		<script src="https://unpkg.com/htmx.org"></script>
+		<script src="https://kiwikid.github.io/hx-tomselect/hx-tom-select.js"></script>
 	</head>
 }
 
@@ -247,7 +249,6 @@ templ home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines
 				</div>
 			</div>
 			@fineList(fineWithPlayers, 0, 0,false)
-			<script src="https://unpkg.com/htmx.org"></script>
 			@pageFooter()
 		</body>
 	</html>

@@ -128,10 +128,15 @@ templ createMatch(closeLink templ.SafeURL, players []PlayerWithFines) {
 	</div>
 }
 
-templ editMatch(closeLink templ.SafeURL, match Match) {
+templ editMatch(closeLink templ.SafeURL, match Match, successMsg string) {
 	<div class="container mx-auto bg-gray-200 shadow-xl m-10">
 		<form hx-post={ fmt.Sprintf("/match/%v", match.ID) } class="max-w-xl mx-auto my-8 p-4 border border-gray-200 rounded-lg shadow">
 			<h2 class="text-lg font-semibold mb-4">Edit Match - vs { match.Opponent }</h2>
+			<input
+ 				type="hidden"
+ 				name="matchId"
+ 				value={ fmt.Sprintf("%d", match.ID) }
+			/>
 			<div class="mb-4">
 				<label for="location" class="block text-sm font-medium text-gray-700">Location</label>
 				<input type="text" name="location" id="location" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" value={ match.Location }/>
@@ -150,9 +155,11 @@ templ editMatch(closeLink templ.SafeURL, match Match) {
 			</div>
 			<div id="player-select-potd"></div>
 			<div id="player-select-dud-of-day"></div>
+			<div id="player-select-config"></div>
 			if UseMatchEventTracker(ctx) {
 				<div id={ fmt.Sprintf("match-event-list-%d", match.ID) } hx-get={ fmt.Sprintf("/match/%v/events", match.ID) } hx-trigger="load"></div>
 			}
+			@success(successMsg)
 			<div class="flex items-center justify-between mt-4">
 				<button type="submit" class={ bigAdd }>Update Match</button>
 			</div>

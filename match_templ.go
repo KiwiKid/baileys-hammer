@@ -567,7 +567,7 @@ func createMatch(closeLink templ.SafeURL, players []PlayerWithFines) templ.Compo
 	})
 }
 
-func editMatch(closeLink templ.SafeURL, match Match) templ.Component {
+func editMatch(closeLink templ.SafeURL, match Match, successMsg string) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		templBuffer, templIsBuffer := w.(*bytes.Buffer)
 		if !templIsBuffer {
@@ -602,7 +602,15 @@ func editMatch(closeLink templ.SafeURL, match Match) templ.Component {
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("</h2><div class=\"mb-4\"><label for=\"location\" class=\"block text-sm font-medium text-gray-700\">")
+		_, err = templBuffer.WriteString("</h2><input type=\"hidden\" name=\"matchId\" value=\"")
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString(templ.EscapeString(fmt.Sprintf("%d", match.ID)))
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("\"><div class=\"mb-4\"><label for=\"location\" class=\"block text-sm font-medium text-gray-700\">")
 		if err != nil {
 			return err
 		}
@@ -670,7 +678,7 @@ func editMatch(closeLink templ.SafeURL, match Match) templ.Component {
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("\"></div><div id=\"player-select-potd\"></div><div id=\"player-select-dud-of-day\"></div>")
+		_, err = templBuffer.WriteString("\"></div><div id=\"player-select-potd\"></div><div id=\"player-select-dud-of-day\"></div><div id=\"player-select-config\"></div>")
 		if err != nil {
 			return err
 		}
@@ -695,6 +703,10 @@ func editMatch(closeLink templ.SafeURL, match Match) templ.Component {
 			if err != nil {
 				return err
 			}
+		}
+		err = success(successMsg).Render(ctx, templBuffer)
+		if err != nil {
+			return err
 		}
 		_, err = templBuffer.WriteString("<div class=\"flex items-center justify-between mt-4\">")
 		if err != nil {

@@ -19,6 +19,7 @@ type MatchPageData struct {
 }
 
 type NewMatchForm struct {
+	MatchId uint64
     Location  string
     StartTime string // Using string here for simplicity; parsing is needed
     Opponent  string
@@ -107,6 +108,8 @@ func matchHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 	var matchId uint
 	var err error
 	return func(w http.ResponseWriter, r *http.Request) {
+		var successMsg = ""
+
 		switch r.Method {
 		case "GET":
 
@@ -148,7 +151,7 @@ func matchHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 			var url = templ.SafeURL(r.Header.Get("Referrer"))
 	
 			
-			matchComp := editMatch(url, *match)
+			matchComp := editMatch(url, *match, "")
 			matchComp.Render(r.Context(), w)
 			return
 		case "POST":
@@ -157,19 +160,46 @@ func matchHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, "Invalid form data", http.StatusBadRequest)
 				return
 			}
-	
-			form := NewMatchForm{
-				Location:  r.FormValue("location"),
-				StartTime: r.FormValue("startTime"),
-				Opponent:  r.FormValue("opponent"),
-				Subtitle:  r.FormValue("subtitle"),
+			matchIdStr := r.FormValue("matchId")
+			var matchId64 uint64 = 0
+			var form NewMatchForm
+			if len(matchIdStr) > 0 {
+				matchId64, err = strconv.ParseUint(matchIdStr, 10, 64)
+				if err != nil {
+					var msg = fmt.Sprintf("Error parsing match ID: %v", err)
+					errComp := errMsg(msg)
+					errComp.Render(r.Context(), w)
+				}
+
+				form = NewMatchForm{
+					MatchId: matchId64,
+					Location:  r.FormValue("location"),
+					StartTime: r.FormValue("startTime"),
+					Opponent:  r.FormValue("opponent"),
+					Subtitle:  r.FormValue("subtitle"),
+				}
+				successMsg = "match updated"
+			} else {
+				form = NewMatchForm{
+					MatchId: 0,
+					Location:  r.FormValue("location"),
+					StartTime: r.FormValue("startTime"),
+					Opponent:  r.FormValue("opponent"),
+					Subtitle:  r.FormValue("subtitle"),
+				}
+				successMsg = "New match created"
+
 			}
+	
+			
 	
 			// Parse start time
 			startTime, err := time.Parse("2006-01-02T15:04", form.StartTime)
 			if err != nil {
-				http.Error(w, fmt.Sprintf("Invalid start time format %s", form.StartTime), http.StatusBadRequest)
-				return
+				var msg = fmt.Sprintf("Invalid start time format %s", form.StartTime)
+				log.Print(msg)
+				errComp := errMsg(msg)
+				errComp.Render(r.Context(), w)
 			}
 	
 			// Create a new match based on the form data
@@ -183,14 +213,15 @@ func matchHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 
 			matchId, err = SaveMatch(db, &match)
 			if err != nil {
-				http.Error(w, "Invalid start time format", http.StatusBadRequest)
-				return
+				var msg = fmt.Sprintf("SaveMatch failed %v", err)
+				log.Print(msg)
+				errComp := errMsg(msg)
+				errComp.Render(r.Context(), w)
 			}
-
 
 			var url = templ.SafeURL(r.Header.Get("Referrer"))
 
-			matchComp := editMatch(url, match)
+			matchComp := editMatch(url, match, successMsg)
 			matchComp.Render(r.Context(), w)
 		default:
 			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)

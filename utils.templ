@@ -9,6 +9,36 @@ import (
 templ tomSelectLinks() {
 	<link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.css" rel="stylesheet"/>
 	<script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+	<script src="https://kiwikid.github.io/hx-tomselect/hx-tom-select.js"></script>
+}
+
+templ tomSelectConfig() {
+	/*<script hx-swap-oob="true" id="player-select-config">
+		new TomSelect("#player-select-potd", {
+			maxOptions: 20,
+			plugins: {
+				remove_button:{
+					title:'Remove this player'
+				}
+			},
+			onItemAdd:function(){
+				this.setTextboxValue('');
+				this.refreshOptions();
+			}
+		});
+		new TomSelect("#player-select-dud-of-day", {
+				maxOptions: 20,
+				plugins: {
+					remove_button:{
+						title:'Remove this player'
+					}
+				},
+				onItemAdd:function(){
+					this.setTextboxValue('');
+					this.refreshOptions();
+				}
+		});
+	</script>*/
 }
 
 func getIdStr(id string) string {
@@ -37,9 +67,11 @@ templ successComp() {
 }
 
 templ success(msg string) {
-	<div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-lg">
-		<p class="text-lg font-semibold">{ msg }</p>
-	</div>
+	if len(msg) > 0 {
+		<div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-lg">
+			<p class="text-lg font-semibold">{ msg }</p>
+		</div>
+	}
 }
 
 templ errMsg(msg string) {
