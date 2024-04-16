@@ -46,14 +46,17 @@ func playerHandler(db *gorm.DB) http.HandlerFunc {
 				displayType := r.URL.Query().Get("type")
 
 				if displayType == "role-selector" {
-					playersWithFines, err := GetPlayersWithFines(db)
-					if err != nil {
+					playerIds := []uint64{
+						playerId,
+					}
+					playersWithFines, err := GetPlayersWithFines(db, playerIds)
+					if err != nil || len(playersWithFines) == 0 {
 						log.Printf("Error fetching players with fines: %v", err)
 						http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 						return
 					}
 
-					playerList := playerRoleSelector(playersWithFines, player)
+					playerList := playerRoleSelector(playersWithFines[0], "")
 					playerList.Render(r.Context(), w)
 					return
 				}
@@ -87,10 +90,21 @@ func playerHandler(db *gorm.DB) http.HandlerFunc {
 					return
 				}
 
-				w.Header().Set("HX-Redirect", r.Header.Get("Referrer"))
+		//		w.Header().Set("HX-Redirect", r.Header.Get("Referrer"))
 
 				// Optionally, you can set the status code to 200 OK or any appropriate status
-				w.WriteHeader(http.StatusOK)
+				playerIds := []uint64{
+					uint64(player.ID),
+				}
+				playersWithFines, err := GetPlayersWithFines(db, playerIds)
+				if err != nil || len(playersWithFines) == 0 {
+					log.Printf("Error fetching players with fines: %v", err)
+					http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+					return
+				}
+
+				playerList := playerRoleSelector(playersWithFines[0], fmt.Sprintf("Updated player"))
+				playerList.Render(r.Context(), w)
 				return
 	
 			}
@@ -635,7 +649,7 @@ func fineAddHandler(db *gorm.DB) http.HandlerFunc {
 		}
 	case "GET": {
 
-		playersWithFines, err := GetPlayersWithFines(db)
+		playersWithFines, err := GetPlayersWithFines(db, []uint64{})
 		if err != nil {
 			log.Printf("Error fetching players with fines: %v", err)
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
@@ -720,7 +734,7 @@ func fineMultiHandler(db *gorm.DB) http.HandlerFunc {
             	}
         }
 
-		playersWithFines, err := GetPlayersWithFines(db)
+		playersWithFines, err := GetPlayersWithFines(db, []uint64{})
 		if err != nil {
 			log.Printf("Error fetching players with fines: %v", err)
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
@@ -1000,12 +1014,12 @@ func presetFineMasterHandler(db *gorm.DB) http.HandlerFunc {
 		decoder := schema.NewDecoder()
 		queryParams := new(FineMasterQueryParams)
 		if err := decoder.Decode(queryParams, r.URL.Query()); err != nil {
-			log.Printf("Error decoding query params: %v", err)
+			log.Printf("presetFineMasterHandler - Error decoding query params: %v", err)
 			http.Error(w, "Bad Request presetFineMasterHandler", http.StatusBadRequest)
 			return
 		}
 
-		playersWithFines, err := GetPlayersWithFines(db)
+		playersWithFines, err := GetPlayersWithFines(db, []uint64{})
 		if err != nil {
 			log.Printf("Error fetching players with fines: %v", err)
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
@@ -1068,12 +1082,12 @@ func main() {
 		decoder := schema.NewDecoder()
 		queryParams := new(HomeQueryParams)
 		if err := decoder.Decode(queryParams, r.URL.Query()); err != nil {
-			log.Printf("Error decoding query params: %v", err)
+			log.Printf("presetFineMasterHandler - Error decoding query params: %v", err)
 			http.Error(w, "Bad Request - home Decode", http.StatusBadRequest)
 			return
 		}
 
-		playersWithFines, err := GetPlayersWithFines(db)
+		playersWithFines, err := GetPlayersWithFines(db, []uint64{})
 		if err != nil {
 			log.Printf("Error fetching players with fines: %v", err)
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)

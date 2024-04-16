@@ -13,7 +13,7 @@ type Config struct {
 }
 
 var config = &Config{
-	Title: "🔨 Baileys Hammer 🔨🔨",
+	Title: "🔨 Baileys Hammer 🔨",
 	UseRoles: false,
 	UseMatchEventTracker: false,
 }

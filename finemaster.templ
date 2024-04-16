@@ -265,18 +265,17 @@ templ playersManage(baseUrl string, players []PlayerWithFines, isOpen bool) {
 					</div>
 				</form>
 				<div class="p-6 max-w-36">
-					<!-- Section for Deleting Existing Player -->
-					<h3 class="text-2xl font-bold text-center mt-8">Delete Player</h3>
+					<div class="flex justify-center w-full p-3">
+						<a href={ makeSafeUrl(baseUrl, false, false, false, false, false) } hx-transition="true" class={ bigSec }>Close</a>
+					</div>
+					<h3 class="text-2xl font-bold text-center mt-8">Manage Players</h3>
 					for _, p := range players {
-						<button type="submit" hx-delete={ fmt.Sprintf("/players?playerId=%d", p.ID) } hx-confirm={ fmt.Sprintf("Are you sure you want to delete %s?", p.Name) } class={ bigDel }>Delete { p.Name }</button>
+						@playerRoleSelector(p, "")
 					}
 				</div>
 				<div class="flex justify-center w-full p-3">
 					<a href={ makeSafeUrl(baseUrl, false, false, false, false, false) } hx-transition="true" class={ bigSec }>Close</a>
 				</div>
-				if UseRoles(ctx) {
-					@playerRoleSelector(players, nil)
-				}
 			</div>
 		</div>
 	} else {

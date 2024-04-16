@@ -7,67 +7,62 @@ import (
 templ playerName(player Player) {
 	<div>{ player.Name }</div>
 }
-
-templ playerRoleSelector(players []PlayerWithFines, selectedPlayer *Player) {
-	<div class="" id="players-ss" hx-get="/players?type=role-selector" method="GET" hx-trigger="customEvent" hx-target="#players-ss">
-		<form class="todo">
-			<div class="container">
-				<h1>Set Player Role:</h1>
-				<div class="flex flex-row">
-					<label for="select-player-role" class="mt-2 pr-2 font-semibold text-gray-700">Players</label>
-					<select id="select-player-role" name="ID" placeholder="Select player:" class="border border-gray-300 rounded-md text-gray-700 flex-grow mb-2">
-						<option value="">Select a player...</option>
-						for _, p := range players {
-							<option value={ fmt.Sprintf("%d", p.ID) }>{ p.Name }</option>
-						}
-					</select>
-				</div>
+ 
+templ playerRoleSelector(player PlayerWithFines, msg string) {
+	<div class="" id="players-ss">
+		<form class="todo" hx-post={ fmt.Sprintf("/players?playerId=%d", player.ID) } hx-swap="outerHTML" >
+			<div class="container p-2">
+				<input
+					type="hidden"
+					name="ID"
+					value={ fmt.Sprintf("%d", player.ID) }
+				/>
 				<label for="role" class="block mt-2">
-					Role      
+					Name      
 					<input
  						type="text"
- 						name="role"
- 						if selectedPlayer != nil {
-							value={ selectedPlayer.Role }
-						}
- 						id="role"
- 						placeholder="Role"
+ 						name="Name"
+						value={ player.Name }
+ 						id="name"
+ 						placeholder="Player name"
  						class="w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600"
 					/>
 				</label>
-				<label for="role" class="block mt-2">
-					Role Description      
-					<input
- 						type="text"
- 						name="roleDescription"
- 						id="roleDescription"
- 						if selectedPlayer != nil {
-							value={ selectedPlayer.RoleDescription }
-						}
- 						placeholder="Role Description"
- 						class="w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600"
-					/>
-				</label>
+				if UseRoles(ctx) {
+					<label for="role" class="block mt-2">
+						Role      
+						<input
+							type="text"
+							name="role"
+							value={ player.Role }
+							id="role"
+							placeholder="Role"
+							class="w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600"
+						/>
+					</label>
+					<label for="role" class="block mt-2">
+						Role Description      
+						<input
+							type="text"
+							name="roleDescription"
+							id="roleDescription"
+							value={ player.RoleDescription }
+							placeholder="Role Description"
+							class="w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600"
+						/>
+					</label>
+				}
+				if len(msg) > 0 {
+					@success(msg)
+				}
 				<div class="flex flex-row mt-2">
-					<button type="submit" class={ bigPri }>Set Role </button>
+					<button type="submit" class={ bigPri }>Update Player</button>
+				</div>
+				<div class="flex flex-row mt-2">
+					<button type="submit" hx-delete={ fmt.Sprintf("/players?playerId=%d", player.ID) } hx-confirm={ fmt.Sprintf("Are you sure you want to delete %s?", player.Name) } class={ bigDel }>Delete { player.Name }</button>
 				</div>
 			</div>
 		</form>
 	</div>
-	<script>
-	new TomSelect("#select-player-role", {
-		maxOptions: 999,
-		onItemAdd: function(value){
-			const element = document.querySelector('#players-ss');
-			if (element) {
-				const url = '/players?type=role-selector&playerId=' + value
-				element.setAttribute('hx-get', url);
-				htmx.trigger(element, 'customEvent', {detail: {url: url}});
-			} else {
-                console.error('Element #players-ss not found');
-            }
-		}
-	});
-	</script>
 }
 

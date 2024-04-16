@@ -133,14 +133,21 @@ type PlayerWithFines struct {
     PendingTotalCount int
 }
 
-func GetPlayersWithFines(db *gorm.DB) ([]PlayerWithFines, error) {
+func GetPlayersWithFines(db *gorm.DB, playerIds []uint64) ([]PlayerWithFines, error) {
     var playersWithFines []PlayerWithFines
 
-    // Query all players
     var players []Player
-    db.Preload("Fines", func(db *gorm.DB) *gorm.DB {
-        return db.Order("fines.created_at DESC")
-    }).Find(&players).Order("players.name")
+
+    if len(playerIds) > 0 {
+        db.Preload("Fines", func(db *gorm.DB) *gorm.DB {
+            return db.Order("fines.created_at DESC")
+        }).Where("id IN ?", playerIds).Find(&players)
+
+    }else{
+        db.Preload("Fines", func(db *gorm.DB) *gorm.DB {
+            return db.Order("fines.created_at DESC")
+        }).Find(&players).Order("players.name")
+    }
     //.Where("active = true")
     
 
