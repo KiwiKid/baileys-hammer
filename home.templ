@@ -104,7 +104,142 @@ templ header() {
 		<script src="https://unpkg.com/hyperscript.org@0.9.12"></script>
 		<script src="https://js.sentry-cdn.com/92ea17e9008bb6e6c7e88a3da4ee4aab.min.js" crossorigin="anonymous"></script>
 		<script src="https://unpkg.com/htmx.org"></script>
-		<script src="https://kiwikid.github.io/hx-tomselect/hx-tom-select.js"></script>
+		<!--<script src="https://kiwikid.github.io/hx-tomselect/hx-tom-select.js"></script>-->
+		<script src="https://unpkg.com/htmx.org@1.9.12/dist/ext/class-tools.js"></script>
+		<script>
+		htmx.defineExtension('select-hide', {
+
+			onEvent: function(name, evt) {
+				
+				console.log(`select-hide-${name}`)
+				if (name === "change") {
+					console.log('select-hide-change-EVENT')
+					var targetSelector = evt.target.getAttribute('hx-select-hide-target');
+					var targetValue = evt.target.getAttribute('hx-select-hide-target-value');
+					var targets = document.querySelectorAll(targetSelector);
+					console.log(`Hiding ${targets?.length} targets: ${targetSelector}`)
+					if(targets.length == 0){ 
+						throw new Error(`select-hide target not found for ${targetSelector}`)
+					}
+	
+					targets.forEach(function(target) {
+						if (!targetValue || evt.target.value === targetValue) {
+							console.log(`Hiding ${targets?.length} targets`)
+							target.style.display = 'none';
+						} else {
+							target.style.display = '';  // Reset display property
+						}
+					});
+				}
+			}
+		});
+		</script>
+		/*
+		<script>
+		htmx.defineExtension('tomselect', {
+			 isInlineSwap: function(swapStyle) {
+				return swapStyle === 'tomselect';
+			},
+			isInlineSwap: function(swapStyle) {
+				document.querySelectorAll('select[hx-ext="tomselect"]:not([tom-select-success]):not([tom-select-error])').forEach(element => {
+					try {
+						console.log(`htmx-tomselect - setting up new tomselect for (${swapStyle})` + element);
+
+						let config = {
+							maxOptions: element.getAttribute('max-options') || 100,
+							plugins: {}
+						};
+
+						// Additional configuration based on attributes
+						if (element.hasAttribute('remove-button-title')) {
+							config.plugins.remove_button = {
+								title: element.getAttribute('remove-button-title'),
+								plugins: {
+									remove_button: {
+										title: 'Remove this'
+									}
+								}
+							};
+						}
+
+						if (element.hasAttribute('clear-after-item-add')) {
+							const clearAfterItemAddConfig = {
+								onItemAdd: function() {
+									this.setTextboxValue('');
+									this.refreshOptions();
+								}
+							}
+							config = {...config, ...clearAfterItemAddConfig};
+						}
+
+						if (element.hasAttribute('raw-config')) {
+							let rawConfig = JSON.parse(element.getAttribute('raw-config'));
+							config = {...config, ...rawConfig};
+						}
+
+						console.info('htmx-tomselect - v1 -  New TomSelect() config', config);
+
+						new TomSelect(element, config);
+						element.setAttribute('tom-select-success', "true");
+
+					} catch (err) {
+						element.setAttribute('tom-select-error', JSON.stringify(err));
+						console.error(`htmx-tomselect - Failed to load hx-tomsselect ${err}`);
+					}
+				});
+				return false;
+			}
+		});
+
+		
+		</script>
+		*/
+		<script>
+
+			htmx.defineExtension('tomselect', {
+
+				onEvent: function(name, evt) {
+										console.log(`onEvent:${name}`)
+
+					var target = evt.target || evt.detail.elt;
+
+					switch(name) {
+						case 'htmx:beforeCleanupElement':
+							// Cleanup TomSelect instance
+							if (target.matches('select[hx-ext="tomselect"]') && target.tomselect) {
+								target.tomselect.destroy();
+								console.log('TomSelect instance destroyed');
+							}
+							break;
+
+						case 'htmx:afterProcessNode':
+							// Initialize TomSelect instance
+							this.initializeTomSelect(target);
+							break;
+						default: 
+						console.log(`onevent: ${name}`)
+					}
+				},
+
+				initializeTomSelect: function(parent) {
+					console.log('initializeTomSelect')
+					parent.querySelectorAll('select[hx-ext="tomselect"]:not([tom-select-initialized])').forEach(function(select) {
+						var config = {}; // Build your config based on select attributes if needed
+						try {
+							new TomSelect(select, config);
+							select.setAttribute('tom-select-initialized', 'true');
+							console.log('TomSelect instance initialized');
+						}catch(err){
+							select.setAttribute('tom-select-initialized', 'false');
+							console.error('TomSelect instance initialized');
+						}
+						// Initialize TomSelect
+						
+					});
+				}
+			});
+
+		</script>
 	</head>
 }
 

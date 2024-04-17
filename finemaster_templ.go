@@ -1084,7 +1084,15 @@ func matchesManage(baseUrl string, isOpen bool, matches []Match, pwfs []PlayerWi
 			if err != nil {
 				return err
 			}
-			_, err = templBuffer.WriteString("</h3><div class=\"w-full flex justify-center items-center py-2\"><p>")
+			_, err = templBuffer.WriteString("</h3><div hx-get=\"")
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString(templ.EscapeString(fmt.Sprintf("/players?type=super-input")))
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("\" hx-trigger=\"load once\"></div><div class=\"w-full flex justify-center items-center py-2\"><p>")
 			if err != nil {
 				return err
 			}

@@ -239,6 +239,7 @@ templ matchesManage(baseUrl string, isOpen bool, matches []Match, pwfs []PlayerW
 	if isOpen {
 		<div class="px-8 py-6 text-left bg-white shadow-xl m-10" id="preset-fine">
 			<h3 class="text-2xl font-bold text-center">Add/Edit Matches</h3>
+			<div hx-get={ fmt.Sprintf("/players?type=super-input") } hx-trigger="load once"></div>
 			<div class="w-full flex justify-center items-center py-2">
 				<p>Edit existing matches, or add new ones</p>
 			</div>
