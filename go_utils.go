@@ -16,7 +16,7 @@ type Config struct {
 
 var config = &Config{
 	Title: "🔨 Baileys WOAH Hammer 🔨",
-	UseRoles: true,
+	UseRoles: false,
 	UseMatchEventTracker: false,
 	UsePlayerOfTheDayName: "",
 	UseDudOfTheDayName: "",
