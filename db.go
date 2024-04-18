@@ -554,6 +554,7 @@ type MatchState struct {
     PlayersOn     []PlayerState
     MatchID uint64
     ScoreAgainst int
+    TrainingTotalNumbers int
     ScoreFor int
     MatchDuration int            // Duration of the match in minutes so far
 }

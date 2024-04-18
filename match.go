@@ -24,6 +24,8 @@ type NewMatchForm struct {
     StartTime string // Using string here for simplicity; parsing is needed
     Opponent  string
     Subtitle  string
+	PlayerOfTheDay uint64
+	DudOfTheDay uint64
 }
 
 
@@ -178,6 +180,31 @@ func matchHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 					Opponent:  r.FormValue("opponent"),
 					Subtitle:  r.FormValue("subtitle"),
 				}
+
+				playerOfDayStr := r.FormValue("playerOfTheDay")
+				if len(playerOfDayStr) > 0 {
+					playerOfDayId, err := strconv.ParseUint(playerOfDayStr, 10, 64)
+					if err != nil {
+						var msg = fmt.Sprintf("Error parsing match ID: %v", err)
+						errComp := errMsg(msg)
+						errComp.Render(r.Context(), w)
+					}
+
+					form.PlayerOfTheDay = playerOfDayId
+				}
+
+				dudOfDayStr := r.FormValue("dudOfTheDay")
+				if len(dudOfDayStr) > 0 {
+					dudOfDayId, err := strconv.ParseUint(dudOfDayStr, 10, 64)
+					if err != nil {
+						var msg = fmt.Sprintf("Error parsing match ID: %v", err)
+						errComp := errMsg(msg)
+						errComp.Render(r.Context(), w)
+					}
+
+					form.DudOfTheDay = dudOfDayId
+				}
+
 				successMsg = "match updated"
 			} else {
 				form = NewMatchForm{
@@ -209,6 +236,8 @@ func matchHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 				Opponent:  form.Opponent,
 				Subtitle:  form.Subtitle,
 				SeasonId:  seasonId,
+				PlayerOfTheDay: form.PlayerOfTheDay,
+				DudOfTheDay: form.DudOfTheDay,
 			}
 
 			matchId, err = SaveMatch(db, &match)
@@ -294,6 +323,8 @@ func UpdateStateBasedOnEvent(currentState MatchState, event MatchEvent, currentT
         currentState.ScoreAgainst += 1
     case "conceded-goal":
         currentState.ScoreAgainst += 1
+	case "attended-training":
+        currentState.TrainingTotalNumbers += 1
     }
 
     // Update players' time played if they are on the field

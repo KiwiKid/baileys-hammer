@@ -11,7 +11,7 @@ import (
 	"gorm.io/gorm"
 )
 
-var EVENT_TYPES = []string{"subbed-off", "subbed-on", "goal", "assist", "own-goal", "opponent-goal"}
+var EVENT_TYPES = []string{"subbed-off", "subbed-on", "goal", "assist", "own-goal", "opponent-goal", "attended-training"}
 
 type TimeOpt struct {
 	Name string

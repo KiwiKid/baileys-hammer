@@ -145,10 +145,6 @@ func finemaster(pass string, players []PlayerWithFines, fineWithPlayers []FineWi
 		if err != nil {
 			return err
 		}
-		err = tomSelectLinks().Render(ctx, templBuffer)
-		if err != nil {
-			return err
-		}
 		_, err = templBuffer.WriteString("<body class=\"p-1\"><div class=\"bg-gray-900 text-center p-5\"><h1 class=\"text-xl md:text-3xl lg:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-teal-400\">")
 		if err != nil {
 			return err

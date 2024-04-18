@@ -216,7 +216,17 @@ func fineRow(isFineMaster bool, f FineWithPlayer) templ.Component {
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString(" <div>")
+		_, err = templBuffer.WriteString(" <div")
+		if err != nil {
+			return err
+		}
+		if len(f.Fine.Context) > 0 {
+			_, err = templBuffer.WriteString(" class=\"w-3/5\"")
+			if err != nil {
+				return err
+			}
+		}
+		_, err = templBuffer.WriteString(">")
 		if err != nil {
 			return err
 		}

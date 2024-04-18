@@ -92,7 +92,7 @@ func playerInputSelector(players []PlayerWithFines, playerId uint64) templ.Compo
 			if err != nil {
 				return err
 			}
-			_, err = templBuffer.WriteString("</label> <select hx-ext=\"tomselect\" max-options=\"20\" remove-button-title=\"\" name=\"playerOfTheDay\" class=\"mt-1 w-full border-gray-300  bg-white rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50\"><option value=\"\">")
+			_, err = templBuffer.WriteString("</label> <select hx-ext=\"tomselect\" max-options=\"1\" name=\"playerOfTheDay\" class=\"mt-1 w-full border-gray-300  bg-white rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50\"><option value=\"\">")
 			if err != nil {
 				return err
 			}
@@ -176,7 +176,7 @@ func playerInputSelector(players []PlayerWithFines, playerId uint64) templ.Compo
 			if err != nil {
 				return err
 			}
-			_, err = templBuffer.WriteString("</label> <select id=\"player-select-dud-of-day\" hx-ext=\"tomselect\" max-options=\"20\" remove-button-title=\"Remove Player\" multiple><option value=\"\">")
+			_, err = templBuffer.WriteString("</label> <select id=\"player-select-dud-of-day\" hx-ext=\"tomselect\" max-options=\"1\" remove-button-title=\"Remove Player\" multiple><option value=\"\">")
 			if err != nil {
 				return err
 			}
@@ -284,7 +284,7 @@ func playerInputSelectorOLD(players []PlayerWithFines, playerId uint64) templ.Co
 			if err != nil {
 				return err
 			}
-			_, err = templBuffer.WriteString("</label> <select hx-ext=\"debug\" hx-ext=\"tomselect\" max-options=\"20\" remove-button-title=\"\" name=\"playerOfTheDay\n\n\n\" class=\"mt-1 w-full border-gray-300  bg-white rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50\n			\"><option value=\"\">")
+			_, err = templBuffer.WriteString("</label> <select hx-ext=\"tomselect\" max-options=\"20\" remove-button-title=\"\" name=\"playerOfTheDay\n\n\n\" class=\"mt-1 w-full border-gray-300  bg-white rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50\n			\"><option value=\"\">")
 			if err != nil {
 				return err
 			}
