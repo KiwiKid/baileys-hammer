@@ -5,3 +5,1442 @@ package main
 //lint:file-ignore SA4006 This context is only used if a nested component is present.
 
 import "github.com/a-h/templ"
+import "context"
+import "io"
+import "bytes"
+
+import (
+	"fmt"
+	"github.com/dustin/go-humanize"
+	"log"
+	"time"
+)
+
+var baseUrl = "/"
+var containerClass = "container flex mx-auto bg-gray-200 shadow-xl p-2"
+var con = "bg-sepia-200 shadow-xl m-10 rounded-lg"
+
+func makeSafeUrlWithAnchor(baseUrl string, fineListOpen bool, finesOpen bool, playersOpen bool, presetFinesOpen bool, manageOpen bool, anchorTag string) templ.SafeURL {
+	url := makeUrl(baseUrl, fineListOpen, finesOpen, playersOpen, presetFinesOpen, manageOpen) + "#" + anchorTag
+	return templ.SafeURL(url)
+}
+
+func makeSafeUrlWithAnchorV2(baseUrl string, anchorTag string, useAnchor bool) templ.SafeURL {
+	anchor := ""
+	if useAnchor {
+		anchor = "#" + anchorTag
+	}
+	switch anchorTag {
+	case "fine-add":
+		{
+			url := makeUrl(baseUrl, false, true, false, false, false) + anchor
+			return templ.SafeURL(url)
+		}
+	case "preset-fine":
+		{
+			url := makeUrl(baseUrl, false, false, false, true, false) + anchor
+			return templ.SafeURL(url)
+		}
+	case "players-manage":
+		{
+			url := makeUrl(baseUrl, false, false, true, false, false) + anchor
+			return templ.SafeURL(url)
+		}
+	case "fine-list-container":
+		{
+			url := makeUrl(baseUrl, true, false, false, false, false) + anchor
+			return templ.SafeURL(url)
+		}
+	case "standard-matches":
+		{
+			url := makeUrl(baseUrl, false, false, false, false, true) + anchor
+			return templ.SafeURL(url)
+		}
+	default:
+		{
+			panic(fmt.Sprintf("Failed to match anchor [%s] tag ", anchorTag))
+		}
+	}
+
+}
+
+func makeSafeUrl(baseUrl string, fineListOpen bool, finesOpen bool, playersOpen bool, presetFinesOpen bool, matchesManage bool) templ.SafeURL {
+	url := makeUrl(baseUrl, fineListOpen, finesOpen, playersOpen, presetFinesOpen, matchesManage)
+	return templ.SafeURL(url)
+}
+
+func makeUrl(fbaseUrl string, fineListOpen bool, finesOpen bool, playersOpen bool, presetFinesOpen bool, matchesOpen bool) string {
+
+	hp := HomeQueryParams{
+		FinesOpen:       finesOpen,
+		PlayerOpen:      playersOpen,
+		PresetFinesOpen: presetFinesOpen,
+		FineListOpen:    fineListOpen,
+		MatchesOpen:     matchesOpen,
+	}
+
+	url, err := GenerateUrl(fbaseUrl, &hp)
+	if err != nil {
+		log.Fatalf("Generate url error: %+v", err)
+	}
+	return *url
+}
+
+func downArrow() templ.Component {
+	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+		templBuffer, templIsBuffer := w.(*bytes.Buffer)
+		if !templIsBuffer {
+			templBuffer = templ.GetBuffer()
+			defer templ.ReleaseBuffer(templBuffer)
+		}
+		ctx = templ.InitializeContext(ctx)
+		var_1 := templ.GetChildren(ctx)
+		if var_1 == nil {
+			var_1 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		_, err = templBuffer.WriteString("<svg xmlns=\"http://www.w3.org/2000/svg\" class=\"h-5 w-5\" viewBox=\"0 0 20 20\" fill=\"currentColor\"><path fill-rule=\"evenodd\" d=\"M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z\" clip-rule=\"evenodd\"></path></svg>")
+		if err != nil {
+			return err
+		}
+		if !templIsBuffer {
+			_, err = templBuffer.WriteTo(w)
+		}
+		return err
+	})
+}
+
+var pri = " bg-blue-500 p-1 hover:bg-blue-600 text-white font-bold md:p-4 py-1 px-1 rounded-lg hover:scale-105 transition transform ease-out duration-200"
+
+var sec = " text-3xl bg-gray-500 p-1 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg hover:scale-105 transition transform ease-out duration-200"
+
+var add = " text-3xl bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:scale-105 transition transform ease-out duration-200"
+var del = " text-3xl bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg hover:scale-105 transition transform ease-out duration-200"
+
+var bigBtnTxt = "text-3xl mx-auto items-center justify-center w-4/5 text-center py-2 px-4  rounded-md border hover:bg-opacity-75 focus:outline-none"
+var sm = " text-lg mx-auto items-center justify-center w-4/5 py-1 px-2"
+var bigPri = fmt.Sprintf("%s %s", bigBtnTxt, pri)
+var bigSec = fmt.Sprintf("%s %s", bigBtnTxt, sec)
+var bigAdd = fmt.Sprintf("%s %s", bigBtnTxt, add)
+var bigDel = fmt.Sprintf("%s %s", bigBtnTxt, del)
+
+var smPri = fmt.Sprintf("%s %s", pri, sm)
+
+var S = fmt.Sprint
+var F = fmt.Sprintf
+
+func header() templ.Component {
+	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+		templBuffer, templIsBuffer := w.(*bytes.Buffer)
+		if !templIsBuffer {
+			templBuffer = templ.GetBuffer()
+			defer templ.ReleaseBuffer(templBuffer)
+		}
+		ctx = templ.InitializeContext(ctx)
+		var_2 := templ.GetChildren(ctx)
+		if var_2 == nil {
+			var_2 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		_, err = templBuffer.WriteString("<head><title>")
+		if err != nil {
+			return err
+		}
+		var var_3 string = GetTitle(ctx)
+		_, err = templBuffer.WriteString(templ.EscapeString(var_3))
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("</title><link href=\"https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css\" rel=\"stylesheet\"><script src=\"https://unpkg.com/hyperscript.org@0.9.12\">")
+		if err != nil {
+			return err
+		}
+		var_4 := ``
+		_, err = templBuffer.WriteString(var_4)
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("</script><script src=\"https://js.sentry-cdn.com/92ea17e9008bb6e6c7e88a3da4ee4aab.min.js\" crossorigin=\"anonymous\">")
+		if err != nil {
+			return err
+		}
+		var_5 := ``
+		_, err = templBuffer.WriteString(var_5)
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("</script><script src=\"https://unpkg.com/htmx.org\">")
+		if err != nil {
+			return err
+		}
+		var_6 := ``
+		_, err = templBuffer.WriteString(var_6)
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("</script><script src=\"https://unpkg.com/htmx.org@1.9.12/dist/ext/class-tools.js\">")
+		if err != nil {
+			return err
+		}
+		var_7 := ``
+		_, err = templBuffer.WriteString(var_7)
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("</script><script>")
+		if err != nil {
+			return err
+		}
+		var_8 := `
+		htmx.defineExtension('select-hide', {
+
+			onEvent: function(name, evt) {
+				
+				console.log(` + "`" + `select-hide-${name}` + "`" + `)
+				if (name === "change") {
+					console.log('select-hide-change-EVENT')
+					var targetSelector = evt.target.getAttribute('hx-select-hide-target');
+					var targetValue = evt.target.getAttribute('hx-select-hide-target-value');
+					var targets = document.querySelectorAll(targetSelector);
+					console.log(` + "`" + `Hiding ${targets?.length} targets: ${targetSelector}` + "`" + `)
+					if(targets.length == 0){ 
+						throw new Error(` + "`" + `select-hide target not found for ${targetSelector}` + "`" + `)
+					}
+	
+					targets.forEach(function(target) {
+						if (!targetValue || evt.target.value === targetValue) {
+							console.log(` + "`" + `Hiding ${targets?.length} targets` + "`" + `)
+							target.style.display = 'none';
+						} else {
+							target.style.display = '';  // Reset display property
+						}
+					});
+				}
+			}
+		});
+		`
+		_, err = templBuffer.WriteString(var_8)
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("</script></head>")
+		if err != nil {
+			return err
+		}
+		if !templIsBuffer {
+			_, err = templBuffer.WriteTo(w)
+		}
+		return err
+	})
+}
+
+func pageFooter() templ.Component {
+	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+		templBuffer, templIsBuffer := w.(*bytes.Buffer)
+		if !templIsBuffer {
+			templBuffer = templ.GetBuffer()
+			defer templ.ReleaseBuffer(templBuffer)
+		}
+		ctx = templ.InitializeContext(ctx)
+		var_9 := templ.GetChildren(ctx)
+		if var_9 == nil {
+			var_9 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		_, err = templBuffer.WriteString("<nav class=\"fixed inset-x-0 bottom-0 bg-gray-800 text-white pb-18\"><div class=\"flex justify-between\"><a href=\"")
+		if err != nil {
+			return err
+		}
+		var var_10 templ.SafeURL = makeSafeUrlWithAnchor(baseUrl, true, false, false, false, false, "fines")
+		_, err = templBuffer.WriteString(templ.EscapeString(string(var_10)))
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("\" class=\"flex-1 text-center py-3 hover:bg-gray-700 text-3xl\">")
+		if err != nil {
+			return err
+		}
+		var_11 := `List`
+		_, err = templBuffer.WriteString(var_11)
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("</a><a href=\"")
+		if err != nil {
+			return err
+		}
+		var var_12 templ.SafeURL = makeSafeUrlWithAnchor(baseUrl, false, true, false, false, false, "fine-add")
+		_, err = templBuffer.WriteString(templ.EscapeString(string(var_12)))
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("\" class=\"flex-1 text-center py-3 hover:bg-gray-700 text-3xl\">")
+		if err != nil {
+			return err
+		}
+		var_13 := `Add`
+		_, err = templBuffer.WriteString(var_13)
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("</a><a href=\"")
+		if err != nil {
+			return err
+		}
+		var var_14 templ.SafeURL = makeSafeUrlWithAnchor(baseUrl, false, false, false, false, false, "leaderboard")
+		_, err = templBuffer.WriteString(templ.EscapeString(string(var_14)))
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("\" class=\"flex-1 text-center py-3 hover:bg-gray-700 text-3xl\">")
+		if err != nil {
+			return err
+		}
+		var_15 := `Leaderboard`
+		_, err = templBuffer.WriteString(var_15)
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("</a><a href=\"")
+		if err != nil {
+			return err
+		}
+		var var_16 templ.SafeURL = makeSafeUrlWithAnchor(baseUrl, false, false, false, true, false, "fine-list-container")
+		_, err = templBuffer.WriteString(templ.EscapeString(string(var_16)))
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("\" class=\"flex-1 text-center py-3 hover:bg-gray-700 text-3xl\">")
+		if err != nil {
+			return err
+		}
+		var_17 := `Recent`
+		_, err = templBuffer.WriteString(var_17)
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("</a></div></nav>")
+		if err != nil {
+			return err
+		}
+		if !templIsBuffer {
+			_, err = templBuffer.WriteTo(w)
+		}
+		return err
+	})
+}
+
+var twoWeeksAgo = time.Now().AddDate(0, 0, -14)
+
+func home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines []PresetFine, fineWithPlayers []FineWithPlayer, qp HomeQueryParams) templ.Component {
+	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+		templBuffer, templIsBuffer := w.(*bytes.Buffer)
+		if !templIsBuffer {
+			templBuffer = templ.GetBuffer()
+			defer templ.ReleaseBuffer(templBuffer)
+		}
+		ctx = templ.InitializeContext(ctx)
+		var_18 := templ.GetChildren(ctx)
+		if var_18 == nil {
+			var_18 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		_, err = templBuffer.WriteString("<html hx-boost=\"true\">")
+		if err != nil {
+			return err
+		}
+		err = header().Render(ctx, templBuffer)
+		if err != nil {
+			return err
+		}
+		err = tomSelectLinks().Render(ctx, templBuffer)
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("<body class=\"text-2xl p-1\"><div><h1 class=\"font-bold mb-4 text-center\">")
+		if err != nil {
+			return err
+		}
+		var var_19 string = GetTitle(ctx)
+		_, err = templBuffer.WriteString(templ.EscapeString(var_19))
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("</h1>")
+		if err != nil {
+			return err
+		}
+		if len(approvedPFines) > 0 {
+			_, err = templBuffer.WriteString("<div class=\"container mx-auto bg-gray-200 shadow-xl p-2\"><div id=\"fines\" class=\"flex justify-center w-full p-3\">")
+			if err != nil {
+				return err
+			}
+			var var_20 = []any{bigPri}
+			err = templ.RenderCSSItems(ctx, templBuffer, var_20...)
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("<a href=\"")
+			if err != nil {
+				return err
+			}
+			var var_21 templ.SafeURL = makeSafeUrlWithAnchor(baseUrl, !qp.FineListOpen, false, false, false, false, "fines")
+			_, err = templBuffer.WriteString(templ.EscapeString(string(var_21)))
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("\" hx-transition=\"true\" class=\"")
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_20).String()))
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("\">")
+			if err != nil {
+				return err
+			}
+			if qp.FineListOpen {
+				var_22 := `Close Fine List`
+				_, err = templBuffer.WriteString(var_22)
+				if err != nil {
+					return err
+				}
+			} else {
+				var_23 := `Fine List`
+				_, err = templBuffer.WriteString(var_23)
+				if err != nil {
+					return err
+				}
+			}
+			_, err = templBuffer.WriteString("</a></div>")
+			if err != nil {
+				return err
+			}
+			if qp.FineListOpen {
+				_, err = templBuffer.WriteString("<ul class=\"list-inside space-y-3 text-lg font-handwriting text-brown-900\">")
+				if err != nil {
+					return err
+				}
+				for _, pf := range approvedPFines {
+					_, err = templBuffer.WriteString("<li class=\"pl-6 border-l-4 border-gold-700 hover:bg-sepia-300 transition duration-300 ease-in-out\">")
+					if err != nil {
+						return err
+					}
+					var var_24 string = fmt.Sprintf("$%v - %s", pf.Amount, pf.Reason)
+					_, err = templBuffer.WriteString(templ.EscapeString(var_24))
+					if err != nil {
+						return err
+					}
+					_, err = templBuffer.WriteString("</li>")
+					if err != nil {
+						return err
+					}
+				}
+				_, err = templBuffer.WriteString("</ul> <div id=\"fines\" class=\"flex justify-center w-full p-3\">")
+				if err != nil {
+					return err
+				}
+				var var_25 = []any{bigPri}
+				err = templ.RenderCSSItems(ctx, templBuffer, var_25...)
+				if err != nil {
+					return err
+				}
+				_, err = templBuffer.WriteString("<a href=\"")
+				if err != nil {
+					return err
+				}
+				var var_26 templ.SafeURL = makeSafeUrlWithAnchor(baseUrl, !qp.FineListOpen, false, false, false, false, "fines")
+				_, err = templBuffer.WriteString(templ.EscapeString(string(var_26)))
+				if err != nil {
+					return err
+				}
+				_, err = templBuffer.WriteString("\" hx-transition=\"true\" class=\"")
+				if err != nil {
+					return err
+				}
+				_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_25).String()))
+				if err != nil {
+					return err
+				}
+				_, err = templBuffer.WriteString("\">")
+				if err != nil {
+					return err
+				}
+				if qp.FineListOpen {
+					var_27 := `Close Fine List`
+					_, err = templBuffer.WriteString(var_27)
+					if err != nil {
+						return err
+					}
+				} else {
+					var_28 := `Fine List`
+					_, err = templBuffer.WriteString(var_28)
+					if err != nil {
+						return err
+					}
+				}
+				_, err = templBuffer.WriteString("</a></div> <div class=\"w-full flex justify-center items-center\"><div _=\"on click toggle .hidden on next &lt;section/&gt;\" class=\"flex justify-center items-center cursor-pointer\">")
+				if err != nil {
+					return err
+				}
+				var var_29 = []any{bigPri}
+				err = templ.RenderCSSItems(ctx, templBuffer, var_29...)
+				if err != nil {
+					return err
+				}
+				_, err = templBuffer.WriteString("<h3 class=\"")
+				if err != nil {
+					return err
+				}
+				_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_29).String()))
+				if err != nil {
+					return err
+				}
+				_, err = templBuffer.WriteString("\">")
+				if err != nil {
+					return err
+				}
+				var_30 := `Pending Fines `
+				_, err = templBuffer.WriteString(var_30)
+				if err != nil {
+					return err
+				}
+				var var_31 string = fmt.Sprintf("(%d)", len(pendingPFines))
+				_, err = templBuffer.WriteString(templ.EscapeString(var_31))
+				if err != nil {
+					return err
+				}
+				_, err = templBuffer.WriteString("</h3></div></div> ")
+				if err != nil {
+					return err
+				}
+				if len(pendingPFines) > 0 {
+					_, err = templBuffer.WriteString("<section class=\"bg-sepia-200 shadow-xl m-10 rounded-lg hidden\"><ul class=\"list-inside space-y-3 text-lg font-handwriting text-brown-900\">")
+					if err != nil {
+						return err
+					}
+					for _, pf := range pendingPFines {
+						_, err = templBuffer.WriteString("<li class=\"pl-6 border-l-4 border-gold-700 hover:bg-sepia-300 transition duration-300 ease-in-out\">")
+						if err != nil {
+							return err
+						}
+						var var_32 string = fmt.Sprintf("$%v - %s", pf.Amount, pf.Reason)
+						_, err = templBuffer.WriteString(templ.EscapeString(var_32))
+						if err != nil {
+							return err
+						}
+						_, err = templBuffer.WriteString(" <span class=\"ml-2 inline-block bg-red-100 text-red-800 font-bold px-2 py-1 rounded-full text-sm shadow-sm\">")
+						if err != nil {
+							return err
+						}
+						var_33 := `(pending approval)`
+						_, err = templBuffer.WriteString(var_33)
+						if err != nil {
+							return err
+						}
+						_, err = templBuffer.WriteString("</span></li>")
+						if err != nil {
+							return err
+						}
+					}
+					_, err = templBuffer.WriteString("</ul></section>")
+					if err != nil {
+						return err
+					}
+				}
+			}
+			_, err = templBuffer.WriteString("</div>")
+			if err != nil {
+				return err
+			}
+		}
+		err = fineAddV2(baseUrl, qp.FinesOpen, players, approvedPFines, false).Render(ctx, templBuffer)
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("</div>")
+		if err != nil {
+			return err
+		}
+		var var_34 = []any{containerClass}
+		err = templ.RenderCSSItems(ctx, templBuffer, var_34...)
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("<div class=\"")
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_34).String()))
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("\" id=\"leaderboard\"><div class=\"w-full\"><h3 class=\"text-2xl font-bold text-center\">")
+		if err != nil {
+			return err
+		}
+		var_35 := `Leaderboard`
+		_, err = templBuffer.WriteString(var_35)
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("</h3><ul>")
+		if err != nil {
+			return err
+		}
+		for _, p := range players {
+			_, err = templBuffer.WriteString("<li class=\"m-4\">")
+			if err != nil {
+				return err
+			}
+			var var_36 = []any{bigPri}
+			err = templ.RenderCSSItems(ctx, templBuffer, var_36...)
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("<div _=\"on click toggle .hidden on next &lt;section/&gt;\" class=\"")
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_36).String()))
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("\">")
+			if err != nil {
+				return err
+			}
+			var var_37 string = p.Name
+			_, err = templBuffer.WriteString(templ.EscapeString(var_37))
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString(" ")
+			if err != nil {
+				return err
+			}
+			var_38 := `- `
+			_, err = templBuffer.WriteString(var_38)
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString(" ")
+			if err != nil {
+				return err
+			}
+			var var_39 string = fmt.Sprintf("$%d (%d)", p.TotalFines, p.TotalFineCount)
+			_, err = templBuffer.WriteString(templ.EscapeString(var_39))
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString(" ")
+			if err != nil {
+				return err
+			}
+			if UseRoles(ctx) {
+				if len(p.Role) > 0 {
+					var_40 := `- `
+					_, err = templBuffer.WriteString(var_40)
+					if err != nil {
+						return err
+					}
+					_, err = templBuffer.WriteString(" ")
+					if err != nil {
+						return err
+					}
+					var var_41 string = p.Role
+					_, err = templBuffer.WriteString(templ.EscapeString(var_41))
+					if err != nil {
+						return err
+					}
+				}
+			}
+			_, err = templBuffer.WriteString("</div><section class=\"fines-info hidden\"><div class=\"p-2\">")
+			if err != nil {
+				return err
+			}
+			if UseRoles(ctx) {
+				if len(p.Role) > 0 {
+					_, err = templBuffer.WriteString("<div><div>")
+					if err != nil {
+						return err
+					}
+					var var_42 string = p.Role
+					_, err = templBuffer.WriteString(templ.EscapeString(var_42))
+					if err != nil {
+						return err
+					}
+					_, err = templBuffer.WriteString(" ")
+					if err != nil {
+						return err
+					}
+					if len(p.RoleDescription) > 0 {
+						var_43 := `- ( `
+						_, err = templBuffer.WriteString(var_43)
+						if err != nil {
+							return err
+						}
+						_, err = templBuffer.WriteString(" ")
+						if err != nil {
+							return err
+						}
+						var var_44 string = p.RoleDescription
+						_, err = templBuffer.WriteString(templ.EscapeString(var_44))
+						if err != nil {
+							return err
+						}
+						_, err = templBuffer.WriteString(" ")
+						if err != nil {
+							return err
+						}
+						var_45 := `)`
+						_, err = templBuffer.WriteString(var_45)
+						if err != nil {
+							return err
+						}
+					}
+					_, err = templBuffer.WriteString("</div></div>")
+					if err != nil {
+						return err
+					}
+				}
+			}
+			for _, f := range p.Fines {
+				_, err = templBuffer.WriteString("<div class=\"mt-4 bg-gray-100 p-4 rounded-lg flex flex-row flex-wrap justify-between\"><div class=\"w-full sm:w-1/2 p-1\">")
+				if err != nil {
+					return err
+				}
+				var var_46 string = f.Reason
+				_, err = templBuffer.WriteString(templ.EscapeString(var_46))
+				if err != nil {
+					return err
+				}
+				_, err = templBuffer.WriteString("</div><div class=\"w-full sm:w-1/2 p-1\">")
+				if err != nil {
+					return err
+				}
+				var var_47 string = fmt.Sprintf("$%.0f", f.Amount)
+				_, err = templBuffer.WriteString(templ.EscapeString(var_47))
+				if err != nil {
+					return err
+				}
+				_, err = templBuffer.WriteString("</div><div class=\"w-full sm:w-1/2 p-1\">")
+				if err != nil {
+					return err
+				}
+				if f.FineAt.After(twoWeeksAgo) {
+					var var_48 string = humanize.Time(f.FineAt)
+					_, err = templBuffer.WriteString(templ.EscapeString(var_48))
+					if err != nil {
+						return err
+					}
+				} else {
+					var var_49 string = f.FineAt.Format("2006-01-02")
+					_, err = templBuffer.WriteString(templ.EscapeString(var_49))
+					if err != nil {
+						return err
+					}
+				}
+				_, err = templBuffer.WriteString("</div><div class=\"w-full sm:w-1/2 p-1\">")
+				if err != nil {
+					return err
+				}
+				var var_50 string = f.Context
+				_, err = templBuffer.WriteString(templ.EscapeString(var_50))
+				if err != nil {
+					return err
+				}
+				_, err = templBuffer.WriteString("</div>")
+				if err != nil {
+					return err
+				}
+				if len(f.Contest) > 0 {
+					_, err = templBuffer.WriteString("<div class=\"w-full sm:w-1/2 p-1\">")
+					if err != nil {
+						return err
+					}
+					var var_51 string = f.Contest
+					_, err = templBuffer.WriteString(templ.EscapeString(var_51))
+					if err != nil {
+						return err
+					}
+					_, err = templBuffer.WriteString("</div>")
+					if err != nil {
+						return err
+					}
+				}
+				_, err = templBuffer.WriteString("</div>")
+				if err != nil {
+					return err
+				}
+			}
+			_, err = templBuffer.WriteString("</div></section></li>")
+			if err != nil {
+				return err
+			}
+		}
+		_, err = templBuffer.WriteString("</ul></div></div>")
+		if err != nil {
+			return err
+		}
+		err = fineList(fineWithPlayers, 0, 0, false).Render(ctx, templBuffer)
+		if err != nil {
+			return err
+		}
+		err = pageFooter().Render(ctx, templBuffer)
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("</body></html>")
+		if err != nil {
+			return err
+		}
+		if !templIsBuffer {
+			_, err = templBuffer.WriteTo(w)
+		}
+		return err
+	})
+}
+
+func fineAddRes(createdFines []Fine, createdPFines []PresetFine) templ.Component {
+	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+		templBuffer, templIsBuffer := w.(*bytes.Buffer)
+		if !templIsBuffer {
+			templBuffer = templ.GetBuffer()
+			defer templ.ReleaseBuffer(templBuffer)
+		}
+		ctx = templ.InitializeContext(ctx)
+		var_52 := templ.GetChildren(ctx)
+		if var_52 == nil {
+			var_52 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		_, err = templBuffer.WriteString("<div class=\"bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-lg\" hx-swap-oob=\"true\" id=\"created-fines\">")
+		if err != nil {
+			return err
+		}
+		if len(createdFines) > 0 {
+			if len(createdFines) == 1 {
+				_, err = templBuffer.WriteString("<div>")
+				if err != nil {
+					return err
+				}
+				var_53 := `Created Fine:`
+				_, err = templBuffer.WriteString(var_53)
+				if err != nil {
+					return err
+				}
+				_, err = templBuffer.WriteString("</div>")
+				if err != nil {
+					return err
+				}
+			} else {
+				_, err = templBuffer.WriteString("<div>")
+				if err != nil {
+					return err
+				}
+				var var_54 string = fmt.Sprintf("Created %d Fines:", len(createdFines))
+				_, err = templBuffer.WriteString(templ.EscapeString(var_54))
+				if err != nil {
+					return err
+				}
+				_, err = templBuffer.WriteString("</div>")
+				if err != nil {
+					return err
+				}
+			}
+			_, err = templBuffer.WriteString(" ")
+			if err != nil {
+				return err
+			}
+			for _, cf := range createdFines {
+				_, err = templBuffer.WriteString("<li>")
+				if err != nil {
+					return err
+				}
+				var var_55 string = fmt.Sprintf("%+v", cf.PlayerID)
+				_, err = templBuffer.WriteString(templ.EscapeString(var_55))
+				if err != nil {
+					return err
+				}
+				_, err = templBuffer.WriteString(" ")
+				if err != nil {
+					return err
+				}
+				var_56 := `- `
+				_, err = templBuffer.WriteString(var_56)
+				if err != nil {
+					return err
+				}
+				_, err = templBuffer.WriteString(" ")
+				if err != nil {
+					return err
+				}
+				var var_57 string = cf.Reason
+				_, err = templBuffer.WriteString(templ.EscapeString(var_57))
+				if err != nil {
+					return err
+				}
+				_, err = templBuffer.WriteString("</li>")
+				if err != nil {
+					return err
+				}
+			}
+		}
+		if len(createdPFines) > 0 {
+			_, err = templBuffer.WriteString("<div>")
+			if err != nil {
+				return err
+			}
+			var_58 := `Sudgested Fine:`
+			_, err = templBuffer.WriteString(var_58)
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("</div> ")
+			if err != nil {
+				return err
+			}
+			for _, cf := range createdPFines {
+				_, err = templBuffer.WriteString("<li>")
+				if err != nil {
+					return err
+				}
+				var var_59 string = cf.Reason
+				_, err = templBuffer.WriteString(templ.EscapeString(var_59))
+				if err != nil {
+					return err
+				}
+				_, err = templBuffer.WriteString("</li>")
+				if err != nil {
+					return err
+				}
+			}
+		}
+		_, err = templBuffer.WriteString("</div>")
+		if err != nil {
+			return err
+		}
+		if !templIsBuffer {
+			_, err = templBuffer.WriteTo(w)
+		}
+		return err
+	})
+}
+
+func fineAddV2(baseUrl string, isOpen bool, players []PlayerWithFines, presetFines []PresetFine, isFineMaster bool) templ.Component {
+	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+		templBuffer, templIsBuffer := w.(*bytes.Buffer)
+		if !templIsBuffer {
+			templBuffer = templ.GetBuffer()
+			defer templ.ReleaseBuffer(templBuffer)
+		}
+		ctx = templ.InitializeContext(ctx)
+		var_60 := templ.GetChildren(ctx)
+		if var_60 == nil {
+			var_60 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		_, err = templBuffer.WriteString("<div class=\"container mx-auto bg-gray-200 shadow-xl m-10\">")
+		if err != nil {
+			return err
+		}
+		if isOpen {
+			_, err = templBuffer.WriteString("<div class=\"flex justify-center w-full p-3\" id=\"fine-add\"><div class=\"flex flex-col justify-center w-full p-4\">")
+			if err != nil {
+				return err
+			}
+			err = fineSuperSelect(players, presetFines).Render(ctx, templBuffer)
+			if err != nil {
+				return err
+			}
+			var var_61 = []any{bigPri}
+			err = templ.RenderCSSItems(ctx, templBuffer, var_61...)
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("<a class=\"")
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_61).String()))
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("\" href=\"")
+			if err != nil {
+				return err
+			}
+			var var_62 templ.SafeURL = makeSafeUrlWithAnchor(baseUrl, false, false, false, false, false, "fine-add")
+			_, err = templBuffer.WriteString(templ.EscapeString(string(var_62)))
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("\">")
+			if err != nil {
+				return err
+			}
+			if isFineMaster {
+				var_63 := `Close Fine a Player`
+				_, err = templBuffer.WriteString(var_63)
+				if err != nil {
+					return err
+				}
+			} else {
+				var_64 := `Close Suggest a Fine`
+				_, err = templBuffer.WriteString(var_64)
+				if err != nil {
+					return err
+				}
+			}
+			_, err = templBuffer.WriteString("</a></div></div>")
+			if err != nil {
+				return err
+			}
+		} else {
+			_, err = templBuffer.WriteString("<div class=\"flex justify-center w-full p-4\" id=\"fine-add\">")
+			if err != nil {
+				return err
+			}
+			var var_65 = []any{bigPri}
+			err = templ.RenderCSSItems(ctx, templBuffer, var_65...)
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("<a class=\"")
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_65).String()))
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("\" href=\"")
+			if err != nil {
+				return err
+			}
+			var var_66 templ.SafeURL = makeSafeUrlWithAnchor(baseUrl, false, true, false, false, false, "fine-add")
+			_, err = templBuffer.WriteString(templ.EscapeString(string(var_66)))
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("\">")
+			if err != nil {
+				return err
+			}
+			if isFineMaster {
+				var_67 := `Fine a Player`
+				_, err = templBuffer.WriteString(var_67)
+				if err != nil {
+					return err
+				}
+			} else {
+				var_68 := `Suggest a Fine`
+				_, err = templBuffer.WriteString(var_68)
+				if err != nil {
+					return err
+				}
+			}
+			_, err = templBuffer.WriteString("</a></div>")
+			if err != nil {
+				return err
+			}
+		}
+		_, err = templBuffer.WriteString("</div>")
+		if err != nil {
+			return err
+		}
+		if !templIsBuffer {
+			_, err = templBuffer.WriteTo(w)
+		}
+		return err
+	})
+}
+
+func fineAdd(baseUrl string, isOpen bool, players []PlayerWithFines, presetFines []PresetFine, isFineMaster bool) templ.Component {
+	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+		templBuffer, templIsBuffer := w.(*bytes.Buffer)
+		if !templIsBuffer {
+			templBuffer = templ.GetBuffer()
+			defer templ.ReleaseBuffer(templBuffer)
+		}
+		ctx = templ.InitializeContext(ctx)
+		var_69 := templ.GetChildren(ctx)
+		if var_69 == nil {
+			var_69 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		_, err = templBuffer.WriteString("<div class=\"container mx-auto bg-gray-200 shadow-xl m-10\">")
+		if err != nil {
+			return err
+		}
+		if isOpen {
+			_, err = templBuffer.WriteString("<div class=\"px-8 py-6 text-left bg-gray-200 m-10\" id=\"fine-add\"><h3 class=\"text-2xl font-bold text-center\">")
+			if err != nil {
+				return err
+			}
+			if isFineMaster {
+				var_70 := `Fine a Player:`
+				_, err = templBuffer.WriteString(var_70)
+				if err != nil {
+					return err
+				}
+			} else {
+				var_71 := `Submit a Fine`
+				_, err = templBuffer.WriteString(var_71)
+				if err != nil {
+					return err
+				}
+			}
+			_, err = templBuffer.WriteString("</h3><form hx-post=\"/fines\" hx-target=\"#created-fines\" class=\"mt-4\"><div class=\"mt-4\"><div class=\"border-t pt-4\"><div class=\"mt-2\"><label for=\"presetFineId\" class=\"text-lg font-semibold\">")
+			if err != nil {
+				return err
+			}
+			var_72 := `Fines`
+			_, err = templBuffer.WriteString(var_72)
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString(" <select id=\"presetFineId\" name=\"presetFineId\" class=\"bg-white w-full border border-gray-300 rounded-md text-gray-700 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50\" placeholder=\"-- Select Fine --\"><option selected value=\"\">")
+			if err != nil {
+				return err
+			}
+			var_73 := `--!!!! Select Fine --`
+			_, err = templBuffer.WriteString(var_73)
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("</option><option value=\"-1\">")
+			if err != nil {
+				return err
+			}
+			var_74 := `-- !!! Fine is not listed here --`
+			_, err = templBuffer.WriteString(var_74)
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("</option><!--")
+			if err != nil {
+				return err
+			}
+			var_75 := ` Dynamic options will be inserted here `
+			_, err = templBuffer.WriteString(var_75)
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("-->")
+			if err != nil {
+				return err
+			}
+			for _, fp := range presetFines {
+				if fp.Approved {
+					_, err = templBuffer.WriteString("<option value=\"")
+					if err != nil {
+						return err
+					}
+					_, err = templBuffer.WriteString(templ.EscapeString(fmt.Sprintf("%v", fp.ID)))
+					if err != nil {
+						return err
+					}
+					_, err = templBuffer.WriteString("\">")
+					if err != nil {
+						return err
+					}
+					var var_76 string = fmt.Sprintf("%s ($%v)", fp.Reason, fp.Amount)
+					_, err = templBuffer.WriteString(templ.EscapeString(var_76))
+					if err != nil {
+						return err
+					}
+					_, err = templBuffer.WriteString("</option>")
+					if err != nil {
+						return err
+					}
+				}
+			}
+			_, err = templBuffer.WriteString("</select><script>")
+			if err != nil {
+				return err
+			}
+			var_77 := `
+											new TomSelect("#presetFineId", {
+												maxItems: 999,
+												plugins: {
+													remove_button: {
+														title: 'Remove this fine',
+													}
+												},
+												create: false, // Assuming no need for user to create new items (fines) dynamically
+												persist: false, // No need to persistently add newly created items to the list
+												render: {
+													option: function(data, escape) {
+														return '<div>' + escape(data.text) + '</div>';
+													}
+												},
+												onItemAdd:function(){
+													this.setTextboxValue('');
+													this.refreshOptions();
+												}
+											});
+										`
+			_, err = templBuffer.WriteString(var_77)
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("</script></label></div><section class=\"hidden\" id=\"newFine\"><div class=\"pt-4 border border-2 rounded\"><label class=\"text-2xl font-bold text-center\">")
+			if err != nil {
+				return err
+			}
+			var_78 := `New Fine`
+			_, err = templBuffer.WriteString(var_78)
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("</label><div class=\"mt-4\"><label for=\"reason\" class=\"block\">")
+			if err != nil {
+				return err
+			}
+			var_79 := `Title`
+			_, err = templBuffer.WriteString(var_79)
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("</label><input type=\"text\" name=\"reason\" id=\"reason\" placeholder=\"Reason for the fine\" class=\"w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500\"></div><div class=\"mt-4\"><label for=\"context\" class=\"block\">")
+			if err != nil {
+				return err
+			}
+			var_80 := `Details:`
+			_, err = templBuffer.WriteString(var_80)
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("</label><input type=\"text\" name=\"context\" id=\"context\" placeholder=\"More Context for the fine\" class=\"w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500\"></div>")
+			if err != nil {
+				return err
+			}
+			if isFineMaster {
+				_, err = templBuffer.WriteString("<div class=\"mt-4\"><label for=\"amount\" class=\"block\">")
+				if err != nil {
+					return err
+				}
+				var_81 := `Amount ($)`
+				_, err = templBuffer.WriteString(var_81)
+				if err != nil {
+					return err
+				}
+				_, err = templBuffer.WriteString("</label><input type=\"text\" name=\"amount\" id=\"amount\" placeholder=\"Amount\" class=\"w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500\"></div> <label><input type=\"hidden\" name=\"approved\" value=\"on\"></label>")
+				if err != nil {
+					return err
+				}
+			}
+			_, err = templBuffer.WriteString("<div class=\"grid grid-cols-2 gap-4\"><div class=\"flex items-center justify-center p-4 border border-gray-200 rounded-lg\"><input type=\"radio\" id=\"oneOffFine\" name=\"fineOption\" value=\"oneOffFine\" class=\"form-radio text-blue-600 transform scale-15\"><label for=\"oneOffFine\" class=\"ml-2 text-gray-800\">")
+			if err != nil {
+				return err
+			}
+			var_82 := `One Off Fine`
+			_, err = templBuffer.WriteString(var_82)
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("</label></div><div class=\"flex items-center justify-center p-4 border border-gray-200 rounded-lg\"><input type=\"radio\" id=\"applyAgain\" name=\"fineOption\" value=\"applyAgain\" class=\"form-radio text-blue-600 transform scale-15\"><label for=\"applyAgain\" class=\"ml-2 text-gray-800\">")
+			if err != nil {
+				return err
+			}
+			var_83 := `Could Apply Again`
+			_, err = templBuffer.WriteString(var_83)
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("</label></div></div></div></section><div class=\"mt-4\"><label>")
+			if err != nil {
+				return err
+			}
+			var_84 := `Who:`
+			_, err = templBuffer.WriteString(var_84)
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("</label><select name=\"playerId\" class=\"mt-1 w-full border-gray-300  bg-white rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50\"><option selected value=\"\">")
+			if err != nil {
+				return err
+			}
+			var_85 := `-- no player - just suggest fineable offence --`
+			_, err = templBuffer.WriteString(var_85)
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("</option>")
+			if err != nil {
+				return err
+			}
+			for _, p := range players {
+				_, err = templBuffer.WriteString("<option value=\"")
+				if err != nil {
+					return err
+				}
+				_, err = templBuffer.WriteString(templ.EscapeString(fmt.Sprintf("%v", p.ID)))
+				if err != nil {
+					return err
+				}
+				_, err = templBuffer.WriteString("\">")
+				if err != nil {
+					return err
+				}
+				var var_86 string = fmt.Sprintf("%s", p.Name)
+				_, err = templBuffer.WriteString(templ.EscapeString(var_86))
+				if err != nil {
+					return err
+				}
+				_, err = templBuffer.WriteString("</option>")
+				if err != nil {
+					return err
+				}
+			}
+			_, err = templBuffer.WriteString("</select></div></div></div><div class=\"grid grid-cols-1 p-4 gap-4 mt-10\">")
+			if err != nil {
+				return err
+			}
+			var var_87 = []any{bigAdd}
+			err = templ.RenderCSSItems(ctx, templBuffer, var_87...)
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("<button type=\"submit\" class=\"")
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_87).String()))
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("\">")
+			if err != nil {
+				return err
+			}
+			var_88 := `Add Fine`
+			_, err = templBuffer.WriteString(var_88)
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("</button>")
+			if err != nil {
+				return err
+			}
+			var var_89 = []any{bigSec}
+			err = templ.RenderCSSItems(ctx, templBuffer, var_89...)
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("<a href=\"")
+			if err != nil {
+				return err
+			}
+			var var_90 templ.SafeURL = makeSafeUrlWithAnchor(baseUrl, false, false, false, false, false, "fine-add")
+			_, err = templBuffer.WriteString(templ.EscapeString(string(var_90)))
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("\" class=\"")
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_89).String()))
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("\">")
+			if err != nil {
+				return err
+			}
+			var_91 := `Close`
+			_, err = templBuffer.WriteString(var_91)
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("</a></div></form></div> <div id=\"created-fines\"></div>")
+			if err != nil {
+				return err
+			}
+		} else {
+			_, err = templBuffer.WriteString("<div class=\"flex justify-center w-full p-4\" id=\"fine-add\">")
+			if err != nil {
+				return err
+			}
+			var var_92 = []any{bigPri}
+			err = templ.RenderCSSItems(ctx, templBuffer, var_92...)
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("<a class=\"")
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_92).String()))
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("\" href=\"")
+			if err != nil {
+				return err
+			}
+			var var_93 templ.SafeURL = makeSafeUrlWithAnchor(baseUrl, false, true, false, false, false, "fine-add")
+			_, err = templBuffer.WriteString(templ.EscapeString(string(var_93)))
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("\">")
+			if err != nil {
+				return err
+			}
+			if isFineMaster {
+				var_94 := `Fine a Player`
+				_, err = templBuffer.WriteString(var_94)
+				if err != nil {
+					return err
+				}
+			} else {
+				var_95 := `Suggest a Fine`
+				_, err = templBuffer.WriteString(var_95)
+				if err != nil {
+					return err
+				}
+			}
+			_, err = templBuffer.WriteString("</a></div>")
+			if err != nil {
+				return err
+			}
+		}
+		_, err = templBuffer.WriteString("<script>")
+		if err != nil {
+			return err
+		}
+		var_96 := `
+		window.fpSelect = document.getElementById('presetFineId')
+		if(window.fpSelect != null){
+			fpSelect.addEventListener('change', function() {
+				const section = document.getElementById('newFine');
+				if (this.value == '-1') { // Change '2' to the value of the option that should show the section
+					section.classList.remove('hidden');
+				} else {
+					section.classList.add('hidden');
+				}
+			});
+		}else{
+			console.warn('no fpSelect')
+		}
+	`
+		_, err = templBuffer.WriteString(var_96)
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("</script></div>")
+		if err != nil {
+			return err
+		}
+		if !templIsBuffer {
+			_, err = templBuffer.WriteTo(w)
+		}
+		return err
+	})
+}
