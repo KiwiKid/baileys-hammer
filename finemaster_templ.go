@@ -485,7 +485,7 @@ func editPresetFine(baseUrl string, passCode string, pFine PresetFine) templ.Com
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("\" type=\"number\" step=\"1\" name=\"amount\" id=\"amount\" placeholder=\"Amount\" class=\"p-2 w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600\"></label></div><div class=\"mt-4\"><label for=\"displayOrder\" class=\"block\">")
+		_, err = templBuffer.WriteString("\" type=\"number\" step=\"0.5\" name=\"amount\" id=\"amount\" placeholder=\"Amount\" class=\"p-2 w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600\"></label></div><div class=\"mt-4\"><label for=\"displayOrder\" class=\"block\">")
 		if err != nil {
 			return err
 		}
@@ -512,7 +512,7 @@ func editPresetFine(baseUrl string, passCode string, pFine PresetFine) templ.Com
 				return err
 			}
 		}
-		_, err = templBuffer.WriteString(" type=\"number\" step=\"10\" name=\"displayOrder\" id=\"displayOrder\" placeholder=\"1-9999\" class=\"p-2 w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600\"></label></div><div class=\"mt-4\"><label class=\"block\"><input type=\"checkbox\" name=\"approved\" class=\"text-2xl m-2 py-2 mt-2 p-2 \"")
+		_, err = templBuffer.WriteString(" type=\"number\" step=\"1\" name=\"displayOrder\" id=\"displayOrder\" placeholder=\"1-9999\" class=\"p-2 w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600\"></label></div><div class=\"mt-4\"><label class=\"block\"><input type=\"checkbox\" name=\"approved\" class=\"text-2xl m-2 py-2 mt-2 p-2 \"")
 		if err != nil {
 			return err
 		}
@@ -757,7 +757,7 @@ func newPresetFine(baseUrl string) templ.Component {
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("</label><input required type=\"number\" step=\"1\" name=\"amount\" id=\"amount\" placeholder=\"Amount\" class=\"p-2 w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600\"></div><div class=\"mt-4\"><label class=\"block\"><input type=\"checkbox\" checked=\"checked\" name=\"approved\" class=\"text-2xl m-2 py-2 mt-2 p-2 \">")
+		_, err = templBuffer.WriteString("</label><input required type=\"number\" step=\"0.5\" name=\"amount\" id=\"amount\" placeholder=\"Amount\" class=\"p-2 w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600\"></div><div class=\"mt-4\"><label class=\"block\"><input type=\"checkbox\" checked=\"checked\" name=\"approved\" class=\"text-2xl m-2 py-2 mt-2 p-2 \">")
 		if err != nil {
 			return err
 		}

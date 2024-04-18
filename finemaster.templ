@@ -111,7 +111,7 @@ templ editPresetFine(baseUrl string, passCode string, pFine PresetFine) {
 			<div class="mt-4">
 				<label for="amount" class="block">
 					Amount ($) 
-					<input required value={ fmt.Sprintf("%.2f", pFine.Amount) } type="number" step="1" name="amount" id="amount" placeholder="Amount" class="p-2 w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600"/>
+					<input required value={ fmt.Sprintf("%.2f", pFine.Amount) } type="number" step="0.5" name="amount" id="amount" placeholder="Amount" class="p-2 w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600"/>
 				</label>
 			</div>
 			<div class="mt-4">
@@ -122,7 +122,7 @@ templ editPresetFine(baseUrl string, passCode string, pFine PresetFine) {
 							value={ fmt.Sprintf("%d", pFine.DisplayOrder) }
 						}
  						type="number"
- 						step="10"
+ 						step="1"
  						name="displayOrder"
  						id="displayOrder"
  						placeholder="1-9999"
@@ -183,7 +183,7 @@ templ newPresetFine(baseUrl string) {
 		</div>
 		<div class="mt-4">
 			<label for="amount" class="block">Amount ($)</label>
-			<input required type="number" step="1" name="amount" id="amount" placeholder="Amount" class="p-2 w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600"/>
+			<input required type="number" step="0.5" name="amount" id="amount" placeholder="Amount" class="p-2 w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600"/>
 		</div>
 		<div class="mt-4">
 			<label class="block"><input type="checkbox" checked="checked" name="approved" class="text-2xl m-2 py-2 mt-2 p-2 "/>Approved</label>
