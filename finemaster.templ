@@ -26,7 +26,6 @@ templ finemasterNav(finemasterBaseUrl string) {
 templ finemaster(pass string, players []PlayerWithFines, fineWithPlayers []FineWithPlayer, pFines []PresetFine, matches []Match, qp FineMasterQueryParams) {
 	<html hx-boost="true">
 		@header()
-		@tomSelectLinks()
 		<body class="p-1">
 			<div class="bg-gray-900 text-center p-5">
 				<h1 class="text-xl md:text-3xl lg:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-teal-400">
@@ -94,6 +93,7 @@ templ finemaster(pass string, players []PlayerWithFines, fineWithPlayers []FineW
 			@fineList(fineWithPlayers, 0, qp.PresetFineUpdated, false)
 			<div class="mt-96"></div>
 			@finemasterNav(fmt.Sprintf("%s/%s", finemasterBaseUrl, pass))
+			
 		</body>
 		@tomSelectLinks()
 	</html>
@@ -239,6 +239,7 @@ templ matchesManage(baseUrl string, isOpen bool, matches []Match, pwfs []PlayerW
 	if isOpen {
 		<div class="px-8 py-6 text-left bg-white shadow-xl m-10" id="preset-fine">
 			<h3 class="text-2xl font-bold text-center">Add/Edit Matches</h3>
+			<div hx-get={ fmt.Sprintf("/players?type=super-input") } hx-trigger="load once"></div>
 			<div class="w-full flex justify-center items-center py-2">
 				<p>Edit existing matches, or add new ones</p>
 			</div>

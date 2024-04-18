@@ -29,11 +29,6 @@ func playerHandler(db *gorm.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		switch(r.Method){
 			case "GET":
-
-
-
-
-
 				displayType := r.URL.Query().Get("type")
 
 				if displayType == "role-selector" {

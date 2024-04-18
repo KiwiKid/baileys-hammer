@@ -104,7 +104,36 @@ templ header() {
 		<script src="https://unpkg.com/hyperscript.org@0.9.12"></script>
 		<script src="https://js.sentry-cdn.com/92ea17e9008bb6e6c7e88a3da4ee4aab.min.js" crossorigin="anonymous"></script>
 		<script src="https://unpkg.com/htmx.org"></script>
-		<script src="https://kiwikid.github.io/hx-tomselect/hx-tom-select.js"></script>
+		<script src="https://unpkg.com/htmx.org@1.9.12/dist/ext/class-tools.js"></script>
+		<script>
+		htmx.defineExtension('select-hide', {
+
+			onEvent: function(name, evt) {
+				
+				console.log(`select-hide-${name}`)
+				if (name === "change") {
+					console.log('select-hide-change-EVENT')
+					var targetSelector = evt.target.getAttribute('hx-select-hide-target');
+					var targetValue = evt.target.getAttribute('hx-select-hide-target-value');
+					var targets = document.querySelectorAll(targetSelector);
+					console.log(`Hiding ${targets?.length} targets: ${targetSelector}`)
+					if(targets.length == 0){ 
+						throw new Error(`select-hide target not found for ${targetSelector}`)
+					}
+	
+					targets.forEach(function(target) {
+						if (!targetValue || evt.target.value === targetValue) {
+							console.log(`Hiding ${targets?.length} targets`)
+							target.style.display = 'none';
+						} else {
+							target.style.display = '';  // Reset display property
+						}
+					});
+				}
+			}
+		});
+		</script>
+		
 	</head>
 }
 

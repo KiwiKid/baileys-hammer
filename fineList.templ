@@ -34,9 +34,8 @@ templ fineList(fines []FineWithPlayer, page int, presetFineUpdated uint, isFineM
 					for _, f := range fines {
 						@fineRow(isFineMaster, f)
 						if presetFineUpdated == f.Fine.ID {
-								@success("updated!")
+							@success("updated!")
 						}
-						
 					}
 				</tbody>
 			</table>
@@ -65,17 +64,24 @@ templ fineRow(isFineMaster bool, f FineWithPlayer) {
 						{ niceDate(f.Match.StartTime) }
 					}
 				} else {
-					({ humanize.Time(f.Fine.FineAt) })
+					(
+					{ humanize.Time(f.Fine.FineAt) }
+					)
 				}
 			</div>
 		</td>
 		<td>
 			<div class="text-lg text-gray-900 text-wrap">
 				{ f.Fine.Context }
-				<div>
+				<div
+ 					if len(f.Fine.Context) > 0 {
+						class="w-3/5"
+					}
+				>
 					<button
  						hx-get={ fmt.Sprintf("/fines/edit/%d?isContext=true", f.Fine.ID) }
- 						hx-swap="outerHTML"
+ 						hx-swap="innerHTML"
+ 						hx-target={ fmt.Sprintf("#fr-%d", f.Fine.ID) }
  						class={ smPri }
 					>
 						if len(f.Fine.Context) == 0 {
@@ -149,61 +155,63 @@ templ fineRow(isFineMaster bool, f FineWithPlayer) {
 }
 
 templ fineContextRow(f FineWithPlayer, matches []Match) {
-	<div class="border rounded-lg flex flex-col items-center p-4 space-y-4">
-		<p class="text-sm w-full text-gray-700">Add (optional) context for this fine:</p>
-		<div class="w-full">
-			<label>
-				Context:
-				<input
- 					type="text"
- 					name="context"
- 					value={ f.Fine.Context }
- 					class="px-4 py-2 border border-gray-300 rounded-lg w-full focus:ring-blue-500 focus:border-blue-500"
- 					placeholder="Reason"
-				/>
-			</label>
-		</div>
-		<div class="mt-2">
-			<div hx-get={ fmt.Sprintf("/match-list?type=select&matchId=%d", f.Fine.MatchId) } hx-trigger="load once"></div>
-		</div>
-		<div>OR</div>
-		<div class="w-full">
-			<label>
-				Date/Time:
-				<input
- 					type="datetime-local"
- 					id="fineAt"
- 					name="fineAt"
- 					value={ f.Fine.FineAt.Format("2006-01-02T15:04") }
- 					class="px-2 py-1 border rounded w-full"
-				/>
-				<p class="italic text-md">(defaults to create time)</p>
-			</label>
-		</div>
-		<input
- 			type="hidden"
- 			name="fid"
- 			value={ fmt.Sprintf("%d", f.Fine.ID) }
-		/>
-		
-		<button
- 			class={ add }
- 			hx-post={ "/fines/context" }
- 			hx-swap="outerHTML"
- 			hx-include="closest tr"
- 			type="submit"
-		>
-			Save
-		</button>
-		<div class="w-full text-center">
-			<a
- 				href={ templ.SafeURL("/#fine-list-container") }
- 				class={ sec }
+	<td colspan="7">
+		<div class="border rounded-lg flex flex-col items-center p-4 space-y-4 w-full max-w-4xl mx-auto">
+			<div class="text-center w-full">{ f.Player.Name } - { fmt.Sprintf("$%v - ", f.Fine.Amount) } -  { f.Fine.Reason }</div>
+			<p class="text-sm w-full text-gray-700">Add (optional) context for this fine:</p>
+			<div class="w-full">
+				<label class="block w-full">
+					Context:
+					<input
+ 						type="text"
+ 						name="context"
+ 						value={ f.Fine.Context }
+ 						class="px-4 py-2 border border-gray-300 rounded-lg w-full focus:ring-blue-500 focus:border-blue-500"
+ 						placeholder="Reason"
+					/>
+				</label>
+			</div>
+			<div class="mt-2">
+				<div hx-get={ fmt.Sprintf("/match-list?type=select&matchId=%d", f.Fine.MatchId) } hx-trigger="load once"></div>
+			</div>
+			<div>OR</div>
+			<div class="w-full" id="dateInputDiv">
+				<label class="block">
+					Date/Time:
+					<input
+ 						type="datetime-local"
+ 						id="fineAt"
+ 						name="fineAt"
+ 						value={ f.Fine.FineAt.Format("2006-01-02T15:04") }
+ 						class="px-2 py-1 border rounded"
+					/>
+					<p class="italic text-md">(defaults to create time)</p>
+				</label>
+			</div>
+			<input
+ 				type="hidden"
+ 				name="fid"
+ 				value={ fmt.Sprintf("%d", f.Fine.ID) }
+			/>
+			<button
+ 				class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+ 				hx-post={ "/fines/context" }
+ 				hx-swap="outerHTML"
+ 				hx-include="closest tr"
+ 				type="submit"
 			>
-				Close
-			</a>
+				Save
+			</button>
+			<div class="w-full text-center mt-4">
+				<a
+ 					href={ templ.SafeURL("/#fine-list-container") }
+ 					class={ sec }
+				>
+					Close
+				</a>
+			</div>
 		</div>
-	</div>
+	</td>
 }
 
 templ fineContestRow(f FineWithPlayer) {

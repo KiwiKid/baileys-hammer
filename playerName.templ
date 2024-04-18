@@ -9,32 +9,71 @@ templ playerName(player Player) {
 }
 
 templ playerInputSelector(players []PlayerWithFines, playerId uint64) {
-	<select
- 		id="player-select-dud-of-day"
- 		hx-ext="tomselect"
- 		max-options="20"
- 		remove-button-title=""
- 		multiple
-	>
-		<option value="">N/A</option>
-		for _, p := range players {
-			<option
- 				if p.ID == uint(playerId) {
-					selected
-				}
- 				value={ S("%v", p.ID) }
+
+	<div hx-swap-oob="true" id="player-select-potd" class="mt-4"> 
+		if len(UsePlayerOfTheDayName(ctx)) > 0 {
+			<label class="text-lg font-semibold">{ UsePlayerOfTheDayName(ctx) } ({ fmt.Sprintf("%d", len(players))  }):</label>
+			<select
+ 				hx-ext="tomselect"
+ 				max-options="1"
+ 				name="playerOfTheDay"
+ 				class="mt-1 w-full border-gray-300  bg-white rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
 			>
-				{ S("%s", p.Name) }
-			</option>
+				<option value="">N/A</option>
+				for _, p := range players {
+					<option
+ 						if p.ID == uint(playerId) {
+							selected
+						}
+ 						value={ S("%v", p.ID) }
+					>
+						{ S("%s", p.Name) }
+					</option>
+				}
+			</select>
 		}
-	</select>
+	</div>
+	<div hx-swap-oob="true" id="player-select-dud-of-day" class="mt-4">
+		if len(UseDudOfTheDayName(ctx)) > 0 {
+			<label class="text-lg font-semibold">{ UseDudOfTheDayName(ctx) } ({ fmt.Sprintf("%d", len(players))  }):</label>
+			<select
+ 				id="player-select-dud-of-day"
+ 				hx-ext="tomselect"
+ 				max-options="1"
+ 				remove-button-title="Remove Player"
+ 				multiple
+			>
+				<option value="">N/A</option>
+				for _, p := range players {
+					<option
+ 						if p.ID == uint(playerId) {
+							selected
+						}
+ 						value={ S("%v", p.ID) }
+					>
+						{ S("%s", p.Name) }
+					</option>
+				}
+			</select>
+		}
+	</div>
 }
 
 templ playerInputSelectorOLD(players []PlayerWithFines, playerId uint64) {
 	<div hx-swap-oob="true" id="player-select-potd" class="mt-4">
 		if len(UsePlayerOfTheDayName(ctx)) > 0 {
 			<label class="text-lg font-semibold">{ UsePlayerOfTheDayName(ctx) } ({ fmt.Sprintf("%d", len(players))  }):</label>
-			<select name="playerOfTheDay" class="mt-1 w-full border-gray-300  bg-white rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+			<select
+ 				hx-ext="tomselect"
+ 				max-options="20"
+ 				remove-button-title=""
+ 				name="playerOfTheDay
+
+
+"
+ 				class="mt-1 w-full border-gray-300  bg-white rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50
+			"
+			>
 				<option value="">N/A</option>
 				for _, p := range players {
 					<option

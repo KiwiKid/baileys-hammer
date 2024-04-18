@@ -145,10 +145,6 @@ func finemaster(pass string, players []PlayerWithFines, fineWithPlayers []FineWi
 		if err != nil {
 			return err
 		}
-		err = tomSelectLinks().Render(ctx, templBuffer)
-		if err != nil {
-			return err
-		}
 		_, err = templBuffer.WriteString("<body class=\"p-1\"><div class=\"bg-gray-900 text-center p-5\"><h1 class=\"text-xl md:text-3xl lg:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-teal-400\">")
 		if err != nil {
 			return err
@@ -1084,7 +1080,15 @@ func matchesManage(baseUrl string, isOpen bool, matches []Match, pwfs []PlayerWi
 			if err != nil {
 				return err
 			}
-			_, err = templBuffer.WriteString("</h3><div class=\"w-full flex justify-center items-center py-2\"><p>")
+			_, err = templBuffer.WriteString("</h3><div hx-get=\"")
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString(templ.EscapeString(fmt.Sprintf("/players?type=super-input")))
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("\" hx-trigger=\"load once\"></div><div class=\"w-full flex justify-center items-center py-2\"><p>")
 			if err != nil {
 				return err
 			}
