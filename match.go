@@ -122,7 +122,7 @@ func matchHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 				matches, err := GetMatches(db, 1, 0, 9999)
 				if err != nil {
 					errComp := errMsg("Could not get matches")
-					errComp.Render(r.Context(), w)
+					errComp.Render(GetContext(r), w)
 				}
 
 				pwfs, err := GetPlayersWithFines(db, []uint64{})
@@ -131,7 +131,7 @@ func matchHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 					return
 				}
 				matchComp := matchesManage(r.Header.Get("Referrer"), true, matches, pwfs)
-				matchComp.Render(r.Context(), w)
+				matchComp.Render(GetContext(r), w)
 				return
 			}
 			var matchId64 uint64
@@ -154,7 +154,7 @@ func matchHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 	
 			
 			matchComp := editMatch(url, *match, "")
-			matchComp.Render(r.Context(), w)
+			matchComp.Render(GetContext(r), w)
 			return
 		case "POST":
 			// Simplified example: Assume the response after a POST is a success message or error
@@ -170,7 +170,7 @@ func matchHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 				if err != nil {
 					var msg = fmt.Sprintf("Error parsing match ID: %v", err)
 					errComp := errMsg(msg)
-					errComp.Render(r.Context(), w)
+					errComp.Render(GetContext(r), w)
 				}
 
 				form = NewMatchForm{
@@ -185,9 +185,9 @@ func matchHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 				if len(playerOfDayStr) > 0 {
 					playerOfDayId, err := strconv.ParseUint(playerOfDayStr, 10, 64)
 					if err != nil {
-						var msg = fmt.Sprintf("Error parsing match ID: %v", err)
+						var msg = fmt.Sprintf("Error parsing playerOfTheDay ID: \"%s\" %v", playerOfDayStr, err)
 						errComp := errMsg(msg)
-						errComp.Render(r.Context(), w)
+						errComp.Render(GetContext(r), w)
 					}
 
 					form.PlayerOfTheDay = playerOfDayId
@@ -197,15 +197,15 @@ func matchHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 				if len(dudOfDayStr) > 0 {
 					dudOfDayId, err := strconv.ParseUint(dudOfDayStr, 10, 64)
 					if err != nil {
-						var msg = fmt.Sprintf("Error parsing match ID: %v", err)
+						var msg = fmt.Sprintf("Error parsing dudOfTheDay ID: %v", err)
 						errComp := errMsg(msg)
-						errComp.Render(r.Context(), w)
+						errComp.Render(GetContext(r), w)
 					}
 
 					form.DudOfTheDay = dudOfDayId
 				}
 
-				successMsg = "match updated"
+				successMsg = fmt.Sprintf("match %s updated (%d) %s %s", form.Location, matchId64, dudOfDayStr, playerOfDayStr)
 			} else {
 				form = NewMatchForm{
 					MatchId: 0,
@@ -226,7 +226,7 @@ func matchHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 				var msg = fmt.Sprintf("Invalid start time format %s", form.StartTime)
 				log.Print(msg)
 				errComp := errMsg(msg)
-				errComp.Render(r.Context(), w)
+				errComp.Render(GetContext(r), w)
 			}
 	
 			// Create a new match based on the form data
@@ -240,18 +240,22 @@ func matchHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 				DudOfTheDay: form.DudOfTheDay,
 			}
 
+			if(matchId64 > 0){
+				match.ID = uint(matchId64)
+			}
+			log.Printf("SaveMatch %+v", match)
 			matchId, err = SaveMatch(db, &match)
 			if err != nil {
 				var msg = fmt.Sprintf("SaveMatch failed %v", err)
 				log.Print(msg)
 				errComp := errMsg(msg)
-				errComp.Render(r.Context(), w)
+				errComp.Render(GetContext(r), w)
 			}
 
 			var url = templ.SafeURL(r.Header.Get("Referrer"))
 
 			matchComp := editMatch(url, match, successMsg)
-			matchComp.Render(r.Context(), w)
+			matchComp.Render(GetContext(r), w)
 		default:
 			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 			return

@@ -134,8 +134,8 @@ templ createMatch(closeLink templ.SafeURL, players []PlayerWithFines) {
 }
 
 templ editMatch(closeLink templ.SafeURL, match Match, successMsg string) {
-	<div class="container mx-auto bg-gray-200 shadow-xl m-10">
-		<form hx-post={ fmt.Sprintf("/match/%v", match.ID) } class="max-w-xl mx-auto my-8 p-4 border border-gray-200 rounded-lg shadow">
+	<div class="container mx-auto bg-gray-200 shadow-xl m-10" id={ fmt.Sprintf("edit-match-%d", match.ID) }>
+		<form hx-post={ fmt.Sprintf("/match/%v", match.ID) } hx-target={ fmt.Sprintf("#edit-match-%d", match.ID) } class="max-w-xl mx-auto my-8 p-4 border border-gray-200 rounded-lg shadow">
 			<h2 class="text-lg font-semibold mb-4">Edit Match - vs { match.Opponent }</h2>
 			<input
  				type="hidden"
@@ -158,13 +158,19 @@ templ editMatch(closeLink templ.SafeURL, match Match, successMsg string) {
 				<label for="subtitle" class="block text-sm font-medium text-gray-700">Subtitle (optional)</label>
 				<input type="text" name="subtitle" id="subtitle" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" value={ match.Subtitle }/>
 			</div>
-			<div id="player-select-potd"></div>
-			<div id="player-select-dud-of-day"></div>
+			if len(UsePlayerOfTheDayName(ctx)) > 0 {
+				{  fmt.Sprintf("%d", match.PlayerOfTheDay) }
+				<div id="player-select-potd"></div>
+			}
+			if len(UseDudOfTheDayName(ctx)) > 0 {
+				{  fmt.Sprintf("%d", match.DudOfTheDay) }
+				<div id="player-select-dud-of-day"></div>
+			}
 			if UseMatchEventTracker(ctx) {
 				<div id={ fmt.Sprintf("match-event-list-%d", match.ID) } hx-get={ fmt.Sprintf("/match/%v/events", match.ID) } hx-trigger="load"></div>
 			}
 			@success(successMsg)
-			<div class="flex items-center justify-between mt-4 hidden">
+			<div class="flex items-center justify-between mt-4">
 				<button type="submit" class={ bigAdd }>Update Match</button>
 			</div>
 			<div class="flex items-center justify-between mt-4">

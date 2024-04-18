@@ -62,6 +62,14 @@ func DBInit() (*gorm.DB, error) {
         db.Migrator().AddColumn(&Match{}, "SeasonId")
     }
 
+    if(!db.Migrator().HasColumn(&Match{}, "PlayerOfTheDay")){
+        db.Migrator().AddColumn(&Match{}, "PlayerOfTheDay")
+    }
+
+    if(!db.Migrator().HasColumn(&Match{}, "DudOfTheDay")){
+        db.Migrator().AddColumn(&Match{}, "DudOfTheDay")
+    }
+
     if(!db.Migrator().HasColumn(&Fine{}, "Context")){
         db.Migrator().AddColumn(&Fine{}, "Context")
     }
@@ -107,6 +115,8 @@ func DBInit() (*gorm.DB, error) {
     if(!db.Migrator().HasColumn(&PresetFine{}, "IsKudos")){
         db.Migrator().AddColumn(&PresetFine{}, "IsKudos")
     }
+
+    
 
     result := db.Model(&Fine{}).Where("fine_at IS NULL").Updates(map[string]interface{}{
         "fine_at": gorm.Expr("created_at"),

@@ -9,10 +9,10 @@ templ playerName(player Player) {
 }
 
 templ playerInputSelector(players []PlayerWithFines, playerId uint64) {
-
-	<div hx-swap-oob="true" id="player-select-potd" class="mt-4"> 
+	<div hx-swap-oob="true" id="player-select-potd" class="mt-4">
 		if len(UsePlayerOfTheDayName(ctx)) > 0 {
 			<label class="text-lg font-semibold">{ UsePlayerOfTheDayName(ctx) } ({ fmt.Sprintf("%d", len(players))  }):</label>
+			{ fmt.Sprintf("%+v", playerId) }
 			<select
  				hx-ext="tomselect"
  				max-options="1"
@@ -25,9 +25,9 @@ templ playerInputSelector(players []PlayerWithFines, playerId uint64) {
  						if p.ID == uint(playerId) {
 							selected
 						}
- 						value={ S("%v", p.ID) }
+ 						value={ F("%d", p.ID) }
 					>
-						{ S("%s", p.Name) }
+						{ p.Name }
 					</option>
 				}
 			</select>
@@ -40,8 +40,6 @@ templ playerInputSelector(players []PlayerWithFines, playerId uint64) {
  				id="player-select-dud-of-day"
  				hx-ext="tomselect"
  				max-options="1"
- 				remove-button-title="Remove Player"
- 				multiple
 			>
 				<option value="">N/A</option>
 				for _, p := range players {
@@ -67,12 +65,8 @@ templ playerInputSelectorOLD(players []PlayerWithFines, playerId uint64) {
  				hx-ext="tomselect"
  				max-options="20"
  				remove-button-title=""
- 				name="playerOfTheDay
-
-
-"
- 				class="mt-1 w-full border-gray-300  bg-white rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50
-			"
+ 				name="playerOfTheDay"
+ 				class="mt-1 w-full border-gray-300  bg-white rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
 			>
 				<option value="">N/A</option>
 				for _, p := range players {
