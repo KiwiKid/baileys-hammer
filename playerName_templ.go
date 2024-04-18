@@ -101,7 +101,7 @@ func playerInputSelector(players []PlayerWithFines, playerId uint64) templ.Compo
 			if err != nil {
 				return err
 			}
-			_, err = templBuffer.WriteString(" <select hx-ext=\"tomselect\" max-options=\"1\" name=\"playerOfTheDay\" class=\"mt-1 w-full border-gray-300  bg-white rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50\"><option value=\"\">")
+			_, err = templBuffer.WriteString(" <select hx-ext=\"tomselect\" ts-max-options=\"1\" name=\"playerOfTheDay\" class=\"mt-1 w-full border-gray-300  bg-white rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50\"><option value=\"\">")
 			if err != nil {
 				return err
 			}
@@ -185,7 +185,7 @@ func playerInputSelector(players []PlayerWithFines, playerId uint64) templ.Compo
 			if err != nil {
 				return err
 			}
-			_, err = templBuffer.WriteString("</label> <select id=\"player-select-dud-of-day\" hx-ext=\"tomselect\" max-options=\"1\"><option value=\"\">")
+			_, err = templBuffer.WriteString("</label> <select id=\"player-select-dud-of-day\" hx-ext=\"tomselect\" ts-max-options=\"1\"><option value=\"\">")
 			if err != nil {
 				return err
 			}
@@ -293,7 +293,7 @@ func playerInputSelectorOLD(players []PlayerWithFines, playerId uint64) templ.Co
 			if err != nil {
 				return err
 			}
-			_, err = templBuffer.WriteString("</label> <select hx-ext=\"tomselect\" max-options=\"20\" remove-button-title=\"\" name=\"playerOfTheDay\" class=\"mt-1 w-full border-gray-300  bg-white rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50\"><option value=\"\">")
+			_, err = templBuffer.WriteString("</label> <select hx-ext=\"tomselect\" ts-max-options=\"20\" ts-remove-button-title=\"\" name=\"playerOfTheDay\" class=\"mt-1 w-full border-gray-300  bg-white rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50\"><option value=\"\">")
 			if err != nil {
 				return err
 			}

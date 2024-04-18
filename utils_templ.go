@@ -464,7 +464,7 @@ func fineSuperSelect(players []PlayerWithFines, approvedPFines []PresetFine) tem
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("</label><select id=\"select-player\" hx-ext=\"tomselect\" max-opt i remove- b name=\"players[]\" multiple placeholder=\"Select player(s)...\" class=\"border border-gray-300 rounded-md text-gray-700 flex-grow mb-2\"><option value=\"\">")
+		_, err = templBuffer.WriteString("</label><select id=\"select-player\" hx-ext=\"tomselect\" ts-max-options=\"20\" name=\"players[]\" multiple placeholder=\"Select player(s)...\" class=\"border border-gray-300 rounded-md text-gray-700 flex-grow mb-2\"><option value=\"\">")
 		if err != nil {
 			return err
 		}
