@@ -171,7 +171,7 @@ templ home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines
 							<ul class="list-inside space-y-3 text-lg font-handwriting text-brown-900">
 								for _, pf := range approvedPFines {
 									<li class="pl-6 border-l-4 border-gold-700 hover:bg-sepia-300 transition duration-300 ease-in-out">
-										{ fmt.Sprintf("$%v - %s", pf.Amount, pf.Reason) }
+										{ fmt.Sprintf("$%v - %s - %s", pf.Amount, pf.Reason, pf.Context) }
 									</li>
 								}
 							</ul>

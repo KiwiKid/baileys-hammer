@@ -11,7 +11,7 @@ import (
 	"gorm.io/gorm"
 )
 
-var EVENT_TYPES = []string{"subbed-off", "subbed-on", "goal", "assist", "own-goal", "opponent-goal", "attended-training"}
+var EVENT_TYPES = []string{"subbed-off", "subbed-on", "goal", "assist", "own-goal", "opponent-goal", "attended-training", "injury", "pregame-injury"}
 
 type TimeOpt struct {
 	Name string
@@ -43,6 +43,12 @@ type MatchMeta struct {
     Players []Player
 }
 
+type MatchMetaGeneral struct {
+    Match Match
+    Players []Player
+    PlayerOfTheDay *Player
+    DudOfTheDay *Player
+}
 
 
 func matchEventHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request){
@@ -63,16 +69,17 @@ func matchEventHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("matchEventHandler - Error FetchActivePlayers: %v", err), http.StatusBadRequest)
 			return
-		}else{
+		} else{
             log.Printf("GOT %d active players", len(players))
         }
         
         match, err := GetMatch(db, matchId)
         if err != nil {
-            http.Error(w, err.Error(), http.StatusBadRequest)
-            return
-        }
+			http.Error(w, fmt.Sprintf("matchEventHandler - Error GetMatch: %v", err), http.StatusBadRequest)
+			return
+		} 
 
+        
         startTime := time.Date(2024, 3, 28, 9, 0, 0, 0, time.UTC)
         now := time.Now()
         duration := now.Sub(startTime)
@@ -88,8 +95,9 @@ func matchEventHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request)
 			isOpen = r.URL.Query().Get("isOpen") == "true"
 
 			if eventIdStr == "" {
+
 				matchComp := createNewEvent(matchId)
-				matchComp.Render(r.Context(), w)
+				matchComp.Render(GetContext(r), w)
 				return
 			} else {
                 match, err := GetMatchEvent(db, matchId)
@@ -99,7 +107,7 @@ func matchEventHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request)
                 }
 
 				editEventComp := editMatchEvent(*meta, *match,  isOpen, matchId)
-				editEventComp.Render(r.Context(), w)
+				editEventComp.Render(GetContext(r), w)
 				return
 			}
 		case "POST":
@@ -111,7 +119,7 @@ func matchEventHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request)
             if err != nil {
                 var errMessage = fmt.Sprintf("matchEventHandler - POST parseForm failed - %v \n\n%+v", match, err)
                 errComp := errMsg(errMessage)
-				errComp.Render(r.Context(), w)
+				errComp.Render(GetContext(r), w)
                 return
             }
 
@@ -126,7 +134,7 @@ func matchEventHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request)
             matchState, matchEvents, getMatchErr := GetMatchAndEvents(db, matchId)
 			if getMatchErr != nil {
 				errComp := errMsg(fmt.Sprintf("Invalid amount %v", getMatchErr))
-				errComp.Render(r.Context(), w)
+				errComp.Render(GetContext(r), w)
 			}
 
 			fineList := listMatchEvents(*matchState, matchEvents)
@@ -148,6 +156,7 @@ type NewMatchEventForm struct {
     EventType string // 'subbed-off' / 'subbed-on' / 'goal' / 'assist' / 'own-goal'
     EventMinute int
     EventTime *time.Time `json:"timestamp" gorm:"type:datetime"`
+    PlayerId uint64
     EventTimeOffset  int
 }
 
@@ -204,7 +213,7 @@ func parseForm(r *http.Request, match Match) (NewMatchEventForm, error) {
     }*/
 
     return NewMatchEventForm{
-        EventName:  r.FormValue("location"),
+        EventName:  r.FormValue("eventName"),
         EventType: r.FormValue("eventType"),
         MatchId: matchId,
         EventTime: &eventTime,
@@ -220,7 +229,7 @@ func handleCreateMatchEvent(db *gorm.DB, form NewMatchEventForm, w http.Response
         EventType: form.EventType,
         MatchId: form.MatchId,
         EventTime: form.EventTime,
-
+        PlayerId: uint(form.PlayerId),
     }
 
     // Save the match
@@ -289,7 +298,7 @@ func matchEventListHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Requ
 			matchState, matchEvents, getMatchErr := GetMatchAndEvents(db, matchId)
 			if getMatchErr != nil {
 				errComp := errMsg(fmt.Sprintf("Invalid amount %v", getMatchErr))
-				errComp.Render(r.Context(), w)
+				errComp.Render(GetContext(r), w)
 			}
 
 			fineList := listMatchEvents(*matchState, matchEvents)

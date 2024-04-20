@@ -53,12 +53,13 @@ func playerHandler(db *gorm.DB) http.HandlerFunc {
 						return
 					}
 
-					playerList := playerRoleSelector(playersWithFines[0], "")
+					playerList := playerRoleSelector(playersWithFines[0], config, "")
 					playerList.Render(GetContext(r), w)
 					return
 				} else if displayType == "super-input" {
 
 					playerIdStr := r.URL.Query().Get("playerId")
+					inputType := r.URL.Query().Get("inputType")
 					
 					var playerId uint64
 					var err error
@@ -69,14 +70,14 @@ func playerHandler(db *gorm.DB) http.HandlerFunc {
 							return
 						}
 					}
-						playersWithFines, err := GetPlayersWithFines(db, []uint64{})
-						if err != nil || len(playersWithFines) == 0 {
+						players, err := GetPlayers(db, 0, 999)
+						if err != nil || len(players) == 0 {
 							log.Printf("Error fetching players with fines: %v", err)
 							http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 							return
 						}
 
-						playerList := playerInputSelector(playersWithFines, playerId)
+						playerList := playerInputSelector(players, playerId, inputType)
 						playerList.Render(GetContext(r), w)
 				}
 
@@ -120,7 +121,7 @@ func playerHandler(db *gorm.DB) http.HandlerFunc {
 					return
 				}
 
-				playerList := playerRoleSelector(playersWithFines[0], fmt.Sprintf("Updated player"))
+				playerList := playerRoleSelector(playersWithFines[0], config, fmt.Sprintf("Updated player"))
 				playerList.Render(GetContext(r), w)
 				return
 	
@@ -236,7 +237,7 @@ func fineContextHandler(db *gorm.DB) http.HandlerFunc {
 		}
 		
 		success := contextSuccess(matchId, context,  fineAt)
-		success.Render(r.Context(), w)
+		success.Render(GetContext(r), w)
 	}
 }
 
@@ -293,10 +294,10 @@ func fineEditHandler(db *gorm.DB) http.HandlerFunc {
 
 			if (isEdit == "true") {
 				fineEditRow := fineEditRow(fineWithPlayer)
-				fineEditRow.Render(r.Context(), w)
+				fineEditRow.Render(GetContext(r), w)
 			} else if(isContest == "true") {
 				fineContestRow := fineContestRow(fineWithPlayer)
-				fineContestRow.Render(r.Context(), w)
+				fineContestRow.Render(GetContext(r), w)
 			} else if(isContext == "true") {
 				matches, err := GetMatches(db, 1, 0, 9999)
 				if err != nil {
@@ -304,10 +305,10 @@ func fineEditHandler(db *gorm.DB) http.HandlerFunc {
 					return
 				}
 				fineContestRow := fineContextRow(fineWithPlayer, matches)
-				fineContestRow.Render(r.Context(), w)
+				fineContestRow.Render(GetContext(r), w)
 			} else {
 				fineRowComp := fineRow(true, fineWithPlayer)
-				fineRowComp.Render(r.Context(), w)
+				fineRowComp.Render(GetContext(r), w)
 			}
 			return
         case "POST":
@@ -384,7 +385,7 @@ func fineEditHandler(db *gorm.DB) http.HandlerFunc {
 			}
 				
 			fineRowComp := fineRow(true, fineWithPlayer)
-			fineRowComp.Render(r.Context(), w)
+			fineRowComp.Render(GetContext(r), w)
 
         default:
             http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
@@ -443,7 +444,7 @@ func fineHandler(db *gorm.DB) http.HandlerFunc {
 			}
 
 			fineList := fineList(fineWithPlayers, pageId, 0, finemasterPage)
-			fineList.Render(r.Context(), w)
+			fineList.Render(GetContext(r), w)
 		}
 			case "POST": {
 
@@ -537,11 +538,11 @@ func fineHandler(db *gorm.DB) http.HandlerFunc {
 						if err != nil {
 							// Handle the error if the conversion fails
 							errComp := errMsg("Invalid amount")
-							errComp.Render(r.Context(), w)
+							errComp.Render(GetContext(r), w)
 						}
 						if pfIdStr == "-1" && len(presetFineIds) > 1 {
 							errComp := errMsg("Cannot select \"Fine is not listed here\" with others")
-							errComp.Render(r.Context(), w)
+							errComp.Render(GetContext(r), w)
 						}
 	
 						if pfIdStr == "-1" {
@@ -579,7 +580,9 @@ func fineHandler(db *gorm.DB) http.HandlerFunc {
 							}
 						
 							
-
+							if(len(context) == 0) {
+								context = presetFine.Context
+							}
 							
 							fine := Fine{
 								Amount: presetFine.Amount,
@@ -609,7 +612,7 @@ func fineHandler(db *gorm.DB) http.HandlerFunc {
 				
 
 				success := fineAddRes(createdFines, createdPFines)
-				success.Render(r.Context(), w)
+				success.Render(GetContext(r), w)
 				return
 			}
 		case "DELETE":
@@ -662,7 +665,7 @@ func fineAddHandler(db *gorm.DB) http.HandlerFunc {
 			}
 
 			success := success(fmt.Sprintf("Added Fine - %s", input.Reason))
-			success.Render(r.Context(), w)
+			success.Render(GetContext(r), w)
 		}
 	case "GET": {
 
@@ -692,7 +695,7 @@ func fineAddHandler(db *gorm.DB) http.HandlerFunc {
 		}
 
 		fsComp := fineSuperSelect(playersWithFines, pFines)
-		fsComp.Render(r.Context(), w)
+		fsComp.Render(GetContext(r), w)
 
 	}
 	default:
@@ -766,7 +769,7 @@ func fineMultiHandler(db *gorm.DB) http.HandlerFunc {
 		}
 
 		res := fineSuperSelectResults(playersWithFines, pFines, savedFines)
-		res.Render(r.Context(), w)
+		res.Render(GetContext(r), w)
     }
 }
 
@@ -811,7 +814,7 @@ func fineApproveHandler(db *gorm.DB) http.HandlerFunc {
 			//w.WriteHeader(http.StatusOK)
 
 			success := success("Approved")
-			success.Render(r.Context(), w)
+			success.Render(GetContext(r), w)
 			return
 		default:
 			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
@@ -884,7 +887,7 @@ func presetFineApproveHandler(db *gorm.DB) http.HandlerFunc {
 				return
 			}
 			success := success("Approved (will appear in fine list)")
-			success.Render(r.Context(), w)
+			success.Render(GetContext(r), w)
 			return
 			}
 			default: 
@@ -932,6 +935,7 @@ func presetFineHandler(db *gorm.DB) http.HandlerFunc {
 			// Manual assignment of form values to struct
 			presetFine := PresetFine{
 				Reason: r.FormValue("reason"),
+				Context: r.FormValue("context"),
 				Icon: r.FormValue("icon"),
 				IsKudos: r.FormValue("isKudos") == "on",
 				Approved: true,
@@ -974,15 +978,10 @@ func presetFineHandler(db *gorm.DB) http.HandlerFunc {
 				return
 			}
 
-			var url = fmt.Sprintf("/finemaster/%s?pf=true&upf=%d#pf-%d", pass, presetFine.ID, presetFine.ID)
-			log.Printf("REdirecting to %s", url)
-			w.Header().Set("HX-Redirect", url)
+			// var url = fmt.Sprintf("/finemaster/%s?pf=true&upf=%d#pf-%d", pass, presetFine.ID, presetFine.ID)
 
-			w.Header().Set("HX-Reload", "true")
-
-
-			// Optionally, you can set the status code to 200 OK or any appropriate status
-			w.WriteHeader(http.StatusOK)
+			editComp := editPresetFine(fmt.Sprintf("%s/%s", finemasterBaseUrl, pass), pass, presetFine, fmt.Sprintf("Updated standard fine - %v", time.Now().Format(time.TimeOnly)))
+			editComp.Render(GetContext(r), w)
 			return
 		case "DELETE":
 			pfIDStr := r.URL.Query().Get("pfid")

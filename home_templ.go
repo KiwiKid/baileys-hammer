@@ -428,7 +428,7 @@ func home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines 
 					if err != nil {
 						return err
 					}
-					var var_24 string = fmt.Sprintf("$%v - %s", pf.Amount, pf.Reason)
+					var var_24 string = fmt.Sprintf("$%v - %s - %s", pf.Amount, pf.Reason, pf.Context)
 					_, err = templBuffer.WriteString(templ.EscapeString(var_24))
 					if err != nil {
 						return err

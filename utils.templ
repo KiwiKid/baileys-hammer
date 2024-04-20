@@ -156,7 +156,20 @@ templ fineSuperSelect(players []PlayerWithFines, approvedPFines []PresetFine) {
 			<p class="font-bold">Select players and fines:</p>
 			<div class="flex flex-row">
 				<label for="select-fine" class="mt-2 pr-2 font-semibold text-gray-700">Fines</label>
-				<select id="select-fine" name="pfines[]" multiple placeholder="Select fine(s)..." class="border border-gray-300 rounded-md text-gray-700 flex-grow mb-2">
+				<select
+ 					id="select-fine"
+ 					hx-ext="tomselect"
+ 					ts-create-filter="true"
+ 					ts-clear-after-add="true"
+ 					ts-no-active="true"
+ 					ts-add-post-url="/fines/add"
+					ts-add-post-url-body-value="reason"
+ 					ts-persist="true"
+ 					name="pfines[]"
+ 					multiple
+ 					placeholder="Select fine(s)..."
+ 					class="border border-gray-300 rounded-md text-gray-700 flex-grow mb-2"
+				>
 					<option value="">Select a fine...</option>
 					for _, apf := range approvedPFines {
 						<option value={ fmt.Sprintf("%d", apf.ID) }>{ apf.Reason }</option>
@@ -182,72 +195,6 @@ templ fineSuperSelect(players []PlayerWithFines, approvedPFines []PresetFine) {
 			</div>
 			<button type="submit" class={ bigAdd }>Create Fine(s)</button>
 			<div id="results-container"></div>
-			<script>
-			var settings = {};
-			new TomSelect("#select-fine",{
-				maxOptions: 20,
-				create: true,
-				persist: false,
-				plugins: {
-					no_active_items: 'true',
-					remove_button: {
-						title:'Remove this fine',
-					}
-				},
-				createFilter: function(input) {
-					var match = input.match(/^[^,]*$/); // Example filter: disallow commas in input
-					if(match) return !this.options.hasOwnProperty(input);
-					return false;
-				},
-				onItemAdd:function(){
-					this.setTextboxValue('');
-					this.refreshOptions();
-				},
-				onOptionAdd: function(value, item) {
-					this.lock();
-					fetch('/fines/add', { // Replace with your actual endpoint URL
-						method: 'POST',
-						headers: {
-							'Content-Type': 'application/json',
-						},
-						body: JSON.stringify({ reason: value }),
-					})
-					.then(response => {
-						if (response.ok) {
-							htmx.trigger("#ss-form", "pageLoaded")
-							htmx.process(response.body)
-							return response.json();
-							
-						} else {
-							throw new Error('Server responded with an error');
-						}
-					})
-					.then(data => {
-						console.log(data.message); // Log the success message
-						// The item is already added to the select; you might want to do something else here
-					})
-					.catch(error => {
-						console.error('Error adding fine:', error);
-						this.removeItem(value); // Remove the item if the server request failed
-					})
-					.finally(() => {
-						this.unlock(); // Re-enable the select
-					});
-				},
-			});
-			/*new TomSelect("#select-player", {
-				maxOptions: 20,
-				plugins: {
-					remove_button:{
-						title:'Remove this player'
-					}
-				},
-				onItemAdd:function(){
-					this.setTextboxValue('');
-					this.refreshOptions();
-				}
-			});*/
-			</script>
 		</form>
 	</div>
 }

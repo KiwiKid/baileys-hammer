@@ -263,25 +263,16 @@ func addMatchEvent(meta MatchMeta, matchId uint64, isOpen bool) templ.Component 
 			if err != nil {
 				return err
 			}
-			_, err = templBuffer.WriteString("\"><!--")
+			_, err = templBuffer.WriteString("\"><div><label for=\"eventName\" class=\"block text-sm font-medium text-gray-700\">")
 			if err != nil {
 				return err
 			}
-			var_24 := `<div>
-				<label for="eventName" class="block text-sm font-medium text-gray-700">Event Name</label>
-				<input
- 					type="text"
- 					name="eventName"
- 					id="eventName"
- 					required
- 					class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-				/>
-			</div>`
+			var_24 := `Event Name`
 			_, err = templBuffer.WriteString(var_24)
 			if err != nil {
 				return err
 			}
-			_, err = templBuffer.WriteString("--><div><label for=\"eventType\" class=\"block text-sm font-medium text-gray-700\">")
+			_, err = templBuffer.WriteString("</label><input type=\"text\" name=\"eventName\" id=\"eventName\" required class=\"mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm\"></div><div><label for=\"eventType\" class=\"block text-sm font-medium text-gray-700\">")
 			if err != nil {
 				return err
 			}
@@ -555,50 +546,74 @@ func editMatchEvent(meta MatchMeta, event MatchEvent, isOpen bool, matchId uint6
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("\"><!--")
+		_, err = templBuffer.WriteString("\"><div><label for=\"eventName\" class=\"block text-sm font-medium text-gray-700\">")
 		if err != nil {
 			return err
 		}
-		var_42 := `<div>
-			<label for="eventName" class="block text-sm font-medium text-gray-700">Event Name</label>
-			<input
- 				type="text"
- 				name="eventName"
- 				id="eventName"
- 				value="{.eventName}"
- 				required
- 				class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-			/>
-		</div>
-		<div>
-			<label for="eventType" class="block text-sm font-medium text-gray-700">Event Type</label>
-			<select
- 				id="eventType"
- 				name="eventType"
- 				required
- 				class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-			>
-				for _, eventType := range eventTypes {
-					<option
- 						value={eventType}
- 						if eventType == event. {
-							selected
-						}
-					>
-						{ eventType }
-					</option>
-				}
-			</select>
-		</div>`
+		var_42 := `Event Name`
 		_, err = templBuffer.WriteString(var_42)
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("--><!--")
+		_, err = templBuffer.WriteString("</label><input type=\"text\" name=\"eventName\" id=\"eventName\" value=\"")
 		if err != nil {
 			return err
 		}
-		var_43 := `<div>
+		_, err = templBuffer.WriteString(templ.EscapeString(event.EventName))
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("\" required class=\"mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm\"></div><div><label for=\"eventType\" class=\"block text-sm font-medium text-gray-700\">")
+		if err != nil {
+			return err
+		}
+		var_43 := `Event Type`
+		_, err = templBuffer.WriteString(var_43)
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("</label><select id=\"eventType\" name=\"eventType\" required class=\"mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm\">")
+		if err != nil {
+			return err
+		}
+		for _, eventType := range meta.EventTypes {
+			_, err = templBuffer.WriteString("<option value=\"")
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString(templ.EscapeString(eventType))
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("\"")
+			if err != nil {
+				return err
+			}
+			if eventType == event.EventType {
+				_, err = templBuffer.WriteString(" selected")
+				if err != nil {
+					return err
+				}
+			}
+			_, err = templBuffer.WriteString(">")
+			if err != nil {
+				return err
+			}
+			var var_44 string = eventType
+			_, err = templBuffer.WriteString(templ.EscapeString(var_44))
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("</option>")
+			if err != nil {
+				return err
+			}
+		}
+		_, err = templBuffer.WriteString("</select></div><!--")
+		if err != nil {
+			return err
+		}
+		var_45 := `<div>
 			<label for="eventTime" class="block text-sm font-medium text-gray-700">Event Time</label>
 			<select
  				id="eventTime"
@@ -618,7 +633,7 @@ func editMatchEvent(meta MatchMeta, event MatchEvent, isOpen bool, matchId uint6
 				}
 			</select> 
 		</div>`
-		_, err = templBuffer.WriteString(var_43)
+		_, err = templBuffer.WriteString(var_45)
 		if err != nil {
 			return err
 		}
@@ -626,8 +641,8 @@ func editMatchEvent(meta MatchMeta, event MatchEvent, isOpen bool, matchId uint6
 		if err != nil {
 			return err
 		}
-		var_44 := `Save Changes`
-		_, err = templBuffer.WriteString(var_44)
+		var_46 := `Save Changes`
+		_, err = templBuffer.WriteString(var_46)
 		if err != nil {
 			return err
 		}

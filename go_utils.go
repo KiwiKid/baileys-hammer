@@ -12,18 +12,25 @@ type Config struct {
 	UseMatchEventTracker  bool
 	UsePlayerOfTheDayName string
 	UseDudOfTheDayName string
+	InjuryCounterTrackerName string
+}
+
+var devConfig = &Config{
+	Title: "🔨 Baileys Hammer 🔨",
+	UseRoles: false,
+	UseMatchEventTracker: false,
+	InjuryCounterTrackerName: "Injuries (Mr Glass)",
+	UsePlayerOfTheDayName: "Player of the Day",
+	UseDudOfTheDayName: "Dick of the Day",
 }
 
 var config = &Config{
-	Title: "🔨 Baileys WOAH Hammer 🔨",
-	UseRoles: false,
+	Title: "🔨 Baileys Hammer 🔨",
+	UseRoles: true,
 	UseMatchEventTracker: false,
-	UsePlayerOfTheDayName: "",
-	UseDudOfTheDayName: "",
-	// UsePlayerOfTheDayName defines the label for recognizing the best player of the day (empty for off).
-	//UsePlayerOfTheDayName: "Player of the Day",
-	// UseDudOfTheDayName defines the label for pointing out the least effective player of the day (empty for off).
-	//UseDudOfTheDayName: "Dick of the Day",
+	InjuryCounterTrackerName: "",
+	UsePlayerOfTheDayName: "Player of the Day",
+	UseDudOfTheDayName: "🍆 Dick of the Day 🍆",
 }
 
 // Use a custom type for keys to avoid conflicts in context values.
@@ -35,6 +42,7 @@ const (
 	useMatchEventTrackerKey  contextKey = "UseMatchEventTracker"
 	UsePlayerOfTheDayNameKey contextKey = "UsePlayerOfTheDayName"
 	UseDudOfTheDayNameKey contextKey = "UseDudOfTheDayName"
+	InjuryCounterTrackerNameKey contextKey = "InjuryCounterTrackerName"
 )
 
 func GetTitle(ctx context.Context) string {
@@ -73,13 +81,22 @@ func UseDudOfTheDayName(ctx context.Context) string {
 	return ""
 }
 
+func UseInjuryCounterTrackerName(ctx context.Context) string {
+	if useInjuryCounterTrackerName, ok := ctx.Value(InjuryCounterTrackerNameKey).(string); ok {
+		return useInjuryCounterTrackerName
+	}
+	return ""
+}
+
 
 
 func GetContext(r *http.Request) context.Context {
+	
 	ctx := context.WithValue(r.Context(), titleKey, config.Title)
 	ctx = context.WithValue(ctx, useRolesKey, config.UseRoles)
 	ctx = context.WithValue(ctx, useMatchEventTrackerKey, config.UseMatchEventTracker)
 	ctx = context.WithValue(ctx, UsePlayerOfTheDayNameKey, config.UsePlayerOfTheDayName)
 	ctx = context.WithValue(ctx, UseDudOfTheDayNameKey, config.UseDudOfTheDayName)
+	ctx = context.WithValue(ctx, InjuryCounterTrackerNameKey, config.InjuryCounterTrackerName)
 	return ctx
 }
