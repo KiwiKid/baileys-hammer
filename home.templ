@@ -313,7 +313,7 @@ templ fineAddV2(baseUrl string, isOpen bool, players []PlayerWithFines, presetFi
 			<div class="flex justify-center w-full p-3" id="fine-add">
 				<div class="flex flex-col justify-center w-full p-4">
 					@fineSuperSelect(players, presetFines)
-					<a class={ bigPri } href={ makeSafeUrlWithAnchor(baseUrl, false, false, false, false, false, "fine-add") }>
+					<a class={ bigSec } href={ makeSafeUrlWithAnchor(baseUrl, false, false, false, false, false, "fine-add") }>
 						if isFineMaster {
 							Close Fine a Player
 						} else {

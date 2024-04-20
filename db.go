@@ -236,7 +236,7 @@ func GetPlayerByID(db *gorm.DB, playerID uint) (*Player, error) {
 }
 
 func GetMatchMetaGeneral(db *gorm.DB, matchId uint) (*MatchMetaGeneral, error){
-    match, err := GetMatch(db, uint64(matchId))
+    match, err := GetMatchWithEvents(db, matchId)
     if err != nil {
         return nil, err
     }
@@ -667,6 +667,18 @@ func GetMatchEvent(db *gorm.DB, id uint64) (*MatchEvent, error) {
     }
     return &event, nil
 }
+
+func DeleteMatchEvent(db *gorm.DB, eventId uint) error {
+    result := db.Delete(&MatchEvent{}, eventId)
+    if result.Error != nil {
+        return result.Error
+    }
+    if result.RowsAffected == 0 {
+        return gorm.ErrRecordNotFound
+    }
+    return nil
+}
+
 
 func SaveMatchEvent(db *gorm.DB, fine *MatchEvent) error {
     if err := db.Save(fine).Error; err != nil {

@@ -5,7 +5,7 @@ import "github.com/dustin/go-humanize"
 
 templ listMatchEvents(matchState MatchState, matchEvents []MatchEvent) {
 	if UseMatchEventTracker(ctx) {
-		<div hx-swap-oob="true" id={ fmt.Sprintf("match-event-list-%d", matchState.MatchID) } class="container mx-auto text-center">
+		<div id={ fmt.Sprintf("match-event-list-%d", matchState.MatchID) } class="container mx-auto text-center">
 			<div>
 				<h1>matchState</h1>
 				{ fmt.Sprintf("%+v", matchState) }
@@ -32,24 +32,34 @@ templ listMatchEvents(matchState MatchState, matchEvents []MatchEvent) {
 						>
 							<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{ e.EventName }</td>
 							<td>{ e.EventType }</td>
+							<td>{ fmt.Sprintf("%v", e.PlayerId) }</td>
 							<td>
 								{ fmt.Sprintf("%d", e.EventMinute) }
 								- 
-								{ humanize.Time(*e.EventTime) }
+								if e.EventTime != nil {
+									{ humanize.Time(*e.EventTime) }
+								}
+							</td>
+							<td>
+								<button
+ 									hx-delete={ fmt.Sprintf("/match/%d/event/%d", matchState.MatchID, e.ID) }
+ 									class={ bigDel }
+								>delete</button>
 							</td>
 						</tr>
 					}
 				</tbody>
 			</table>
-			<div hx-get={ fmt.Sprintf("/match/%d/event?isOpen=true", matchState.MatchID) } hx-trigger="load"></div>
+			<div class="flex items-center justify-between mt-4">
+				<a href="" class={ bigSec }>Close</a>
+			</div>
+			<div hx-get={ fmt.Sprintf("/match/%d/event?isOpen=true", matchState.MatchID) } hx-trigger="click">new?</div>
 			<!--<div class="py-3">
 			<button hx-get={ fmt.Sprintf("/load-more?page=%d", page +1) } hx-target="this" hx-swap="outerHTML" class="px-4 py-2 bg-blue-500 text-white font-semibold rounded hover:bg-blue-700">
 				Load More
 			</button>
 		</div>-->
 		</div>
-	} else {
-		HMM
 	}
 }
 

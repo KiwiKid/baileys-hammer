@@ -17,8 +17,8 @@ type Config struct {
 
 var devConfig = &Config{
 	Title: "🔨 Baileys Hammer 🔨",
-	UseRoles: false,
-	UseMatchEventTracker: false,
+	UseRoles: true,
+	UseMatchEventTracker: true,
 	InjuryCounterTrackerName: "Injuries (Mr Glass)",
 	UsePlayerOfTheDayName: "Player of the Day",
 	UseDudOfTheDayName: "Dick of the Day",
@@ -27,8 +27,8 @@ var devConfig = &Config{
 var config = &Config{
 	Title: "🔨 Baileys Hammer 🔨",
 	UseRoles: true,
-	UseMatchEventTracker: false,
-	InjuryCounterTrackerName: "",
+	UseMatchEventTracker: true,
+	InjuryCounterTrackerName: "🚑 Mr Glass 🚑",
 	UsePlayerOfTheDayName: "Player of the Day",
 	UseDudOfTheDayName: "🍆 Dick of the Day 🍆",
 }

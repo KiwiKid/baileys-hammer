@@ -109,7 +109,6 @@ func matchListHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) 
 
 
 func matchHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
-	fmt.Printf("matchHandler")
 	var matchId uint
 	var err error
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -278,7 +277,7 @@ func matchHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 					if err != nil {
 						log.Printf("\n\n\nINJURYINJURYINJURY ERROR %v", err)
 					}else {
-						log.Printf("\n\n\nINJURYINJURYINJURY saved %d %s %d", matchId, "injury", injPlayerId)
+						log.Printf("\n\n\nINJURYINJURYINJURY saved matchId:%d %s for player:%d", matchId, "injury", injPlayerId)
 					}
 					
 				}

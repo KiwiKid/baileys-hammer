@@ -1143,6 +1143,7 @@ func main() {
 	r.HandleFunc("/match", matchHandler(db))
 
 	r.HandleFunc("/match/{matchId}/event", matchEventHandler(db))
+	r.HandleFunc("/match/{matchId}/event/{eventId}", matchEventHandler(db))
 	r.HandleFunc("/match/{matchId}/events", matchEventListHandler(db))
 
 	if err := http.ListenAndServe(":8080", r); err != nil {

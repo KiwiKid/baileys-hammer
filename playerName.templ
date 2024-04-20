@@ -63,31 +63,6 @@ templ playerInputSelector(players []Player, playerId uint64, inputType string) {
 					</label>
 				}
 			</div>
-		case "injuries":
-			<div id="player-select-injuries" class="mt-4">
-				if len(UseInjuryCounterTrackerName(ctx)) > 0 {
-					<label>
-						{ UseInjuryCounterTrackerName(ctx) }
-						<select
- 							id="player-select-injuries"
- 							name="injuries"
- 							hx-ext="tomselect"
-						>
-							<option value="">N/A</option>
-							for _, p := range players {
-								<option
- 									if p.ID == uint(playerId) {
-										selected
-									}
- 									value={ F("%d", p.ID) }
-								>
-									{ p.Name }
-								</option>
-							}
-						</select>
-					</label>
-				}
-			</div>
 		default:
 			@errMsg(fmt.Sprintf("No type for %d", inputType))
 	}
@@ -102,6 +77,7 @@ func playerHasEvent(playerId uint, Events []MatchEvent, eventType string) bool {
     return false
 }
 
+
 templ playerEventInputSelector(players []Player, events []MatchEvent, eventType string) {
 	switch eventType {
 		case "injury":
@@ -111,7 +87,9 @@ templ playerEventInputSelector(players []Player, events []MatchEvent, eventType 
 					{ UseInjuryCounterTrackerName(ctx) }
 					<select
 						hx-ext="tomselect"
+						ts-no-delete="true"
 						name={ fmt.Sprintf("eventType%s", strings.Title(eventType)) }
+						multiple
 						class="mt-1 w-full border-gray-300  bg-white rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
 					>
 					<option value="">N/A</option>

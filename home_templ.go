@@ -956,7 +956,7 @@ func fineAddV2(baseUrl string, isOpen bool, players []PlayerWithFines, presetFin
 			if err != nil {
 				return err
 			}
-			var var_61 = []any{bigPri}
+			var var_61 = []any{bigSec}
 			err = templ.RenderCSSItems(ctx, templBuffer, var_61...)
 			if err != nil {
 				return err

@@ -252,6 +252,7 @@ templ presetFines(baseUrl string, passCode string, isOpen bool, presetFines []Pr
 }
 
 templ matchesManage(baseUrl string, isOpen bool, matches []Match, pwfs []PlayerWithFines) {
+	<div class="container mx-auto bg-gray-200 shadow-xl m-10">
 	if isOpen {
 		<div class="px-8 py-6 text-left bg-white shadow-xl m-10" id="preset-fine">
 			<h3 class="text-2xl font-bold text-center">Add/Edit Matches</h3>
@@ -259,15 +260,18 @@ templ matchesManage(baseUrl string, isOpen bool, matches []Match, pwfs []PlayerW
 				<p>Edit existing matches, or add new ones</p>
 			</div>
 			@createMatch(makeSafeUrl(baseUrl, false, false, false, false, false), pwfs)
-			for _, m := range matches {
-				<button hx-trigger="click" hx-get={ fmt.Sprintf("/match/%d", m.ID) } hx-swap="outerHTML" class={ bigPri }>Edit "vs { m.Opponent } at { m.Location  }"</button>
-			}
+			<div class="container mx-auto bg-gray-200 shadow-xl m-10 flex flex-col justify-center items-center">
+				for _, m := range matches {
+					<button hx-trigger="click" hx-get={ fmt.Sprintf("/match/%d", m.ID) } hx-swap="outerHTML" class={ bigPri }>Edit "vs { m.Opponent } at { m.Location  }"</button>
+				}
+			</div>
 		</div>
 	} else {
 		<div class="flex justify-center w-full">
 			<a href={ makeSafeUrlWithAnchorV2(baseUrl, "standard-matches", true) } class={ bigPri }>Manage Matches</a>
 		</div>
 	}
+	</div>
 }
 
 templ playersManage(baseUrl string, players []PlayerWithFines, config *Config, isOpen bool) {

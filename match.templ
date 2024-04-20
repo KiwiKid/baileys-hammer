@@ -58,7 +58,7 @@ templ matchPage(data MatchPageData) {
 		@header()
 		<body class="text-2xl p-1">
 			<div class="container mx-auto bg-gray-200 shadow-xl m-10">
-				<h1 class=" font-bold mb-4  text-center">🔨 Baileys Hammer 🔨</h1>
+				<h1 class=" font-bold mb-4  text-center">{ GetTitle(ctx) }</h1>
 				<div id="live-match" class="max-w-4xl mx-auto my-8 p-4 border border-gray-200 rounded-lg shadow">
 					<h2 class="text-lg font-semibold mb-4">Live Match - { data.Match.Location } - { data.Match.Opponent }</h2>
 					<div class="mb-4">
@@ -74,7 +74,7 @@ templ matchPage(data MatchPageData) {
 								}
  								hx-trigger="load once"
 							></div>
-							<div id={ fmt.Sprintf("event-list-%d", data.Match.ID) } hx-get={ fmt.Sprintf("/match/%d/events", data.Match.ID) } hx-trigger="load once">loading events...</div>
+							<div id={ fmt.Sprintf("event-list-%d", data.Match.ID) } hx-get={ fmt.Sprintf("/match/%d/events", data.Match.ID) } hx-trigger="click" hx-swap="innerHTML">(1)loading events...</div>
 						}
 					</div>
 				</div>
@@ -135,7 +135,6 @@ templ createMatch(closeLink templ.SafeURL, players []PlayerWithFines) {
 
 templ editMatch(closeLink templ.SafeURL, genMeta MatchMetaGeneral, successMsg string) {
 	<div class="container mx-auto bg-gray-200 shadow-xl m-10" id={ fmt.Sprintf("edit-match-%d", genMeta.Match.ID) }>
-		<div hx-get={ fmt.Sprintf("/players?type=super-inputNOTON") } hx-trigger="load once"></div>
 		<form hx-post={ fmt.Sprintf("/match/%v", genMeta.Match.ID) } hx-target={ fmt.Sprintf("#edit-match-%d", genMeta.Match.ID) } class="max-w-xl mx-auto my-8 p-4 border border-gray-200 rounded-lg shadow">
 			<h2 class="text-lg font-semibold mb-4" title={ fmt.Sprintf("%+v", genMeta) }>Edit Match - vs { genMeta.Match.Opponent }</h2>
 			<input
@@ -177,8 +176,11 @@ templ editMatch(closeLink templ.SafeURL, genMeta MatchMetaGeneral, successMsg st
 				@playerEventInputSelector(genMeta.Players, genMeta.Match.Events, "injury")
 			}
 			if UseMatchEventTracker(ctx) {
-				<div id={ fmt.Sprintf("match-event-list-%d", genMeta.Match.ID) } hx-get={ fmt.Sprintf("/match/%v/events", genMeta.Match.ID) } hx-trigger="load"></div>
+				[MATCH TRACKER]
+				<div hx-get={ fmt.Sprintf("/match/%v/events", genMeta.Match.ID) } hx-trigger="click" hx-swap="innerHTML">(Load events (2))</div>
 			}
+			
+			<details><summary>debug</summary> { fmt.Sprintf("%+v", genMeta)} </details>
 			@success(successMsg)
 			<div class="flex items-center justify-between mt-4">
 				<button type="submit" class={ bigAdd }>Update Match</button>

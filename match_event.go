@@ -58,7 +58,6 @@ func matchEventHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request)
 		eventIdStr := chi.URLParam(r, "eventId")
 		var isOpen bool = false
 
-		fmt.Printf("matchHandler %s", matchIdStr)
 		matchId, err := strconv.ParseUint(matchIdStr, 10, 64)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("matchEventHandler - Error parsing match ID: %v", err), http.StatusBadRequest)
@@ -111,9 +110,6 @@ func matchEventHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request)
 				return
 			}
 		case "POST":
-
-
-
             log.Printf("matchEventHandler %+v", r)
 			form, err := parseForm(r, *match)
             if err != nil {
@@ -139,10 +135,31 @@ func matchEventHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request)
 
 			fineList := listMatchEvents(*matchState, matchEvents)
 			fineList.Render(GetContext(r), w)
+        case "DELETE":
+            if eventIdStr == "" {
+                errComp := errMsg("Invalid eventId param")
+				errComp.Render(GetContext(r), w)
+            }
+            eventId, err := strconv.ParseUint(eventIdStr, 10, 64)
+            if err != nil {
+                errComp := errMsg(fmt.Sprintf("matchEventHandler - Error parsing match ID: %v", err))
+				errComp.Render(GetContext(r), w)
+                return
+            }
+            delErr := DeleteMatchEvent(db, uint(eventId))
+            if delErr != nil {
+                errComp := errMsg(fmt.Sprintf("matchEventHandler - Error DeleteMatchEvent: %v", delErr))
+				errComp.Render(GetContext(r), w)
+                return
+            }
 
+            successComp := success(F("deleted event %d", eventId))
+            successComp.Render(GetContext(r), w)
+            return
 		default:
 			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 		}
+        
 
         http.Error(w, "(fell out)", http.StatusMethodNotAllowed)
 
@@ -282,13 +299,15 @@ func matchEventListHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Requ
 			var matchId uint64
             var err error
 			if len(matchIdStr) == 0{
-				http.Error(w, "Error parsing matchId", http.StatusBadRequest)
-					return 
+                errComp := errMsg(fmt.Sprintf("Error parsing matchIdStr %v", matchIdStr))
+                errComp.Render(GetContext(r), w)
+				return 
 			} else {
 				matchId, err = strconv.ParseUint(matchIdStr, 10, 64)
 				if err != nil || matchId == 0 {
-					http.Error(w, fmt.Sprintf("Error parsing limitStr %v", err), http.StatusBadRequest)
-					return 
+                    errComp := errMsg(fmt.Sprintf("Error parsing matchIdStr %v", matchIdStr))
+				    errComp.Render(GetContext(r), w)
+                    return 
 				}
 			}
 
