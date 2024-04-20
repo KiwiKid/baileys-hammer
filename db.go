@@ -589,7 +589,7 @@ func GetMatches(db *gorm.DB, season uint64, page int, pageSize int) ([]Match, er
     var matches []Match
     offset := (page - 1) * pageSize
 //.Where("season_id = ?", season)
-    result := db.Order("created_at DESC").Offset(offset).Limit(pageSize).Find(&matches)
+    result := db.Order("start_time DESC").Offset(offset).Limit(pageSize).Find(&matches)
     if result.Error != nil {
         return nil, result.Error
     }

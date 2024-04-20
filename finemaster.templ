@@ -260,7 +260,7 @@ templ matchesManage(baseUrl string, isOpen bool, matches []Match, pwfs []PlayerW
 			</div>
 			@createMatch(makeSafeUrl(baseUrl, false, false, false, false, false), pwfs)
 			for _, m := range matches {
-				<button hx-trigger="click" hx-get={ fmt.Sprintf("/match/%d", m.ID) } hx-swap="outerHTML" class={ bigPri }>Edit { m.Location }</button>
+				<button hx-trigger="click" hx-get={ fmt.Sprintf("/match/%d", m.ID) } hx-swap="outerHTML" class={ bigPri }>Edit "vs { m.Opponent } at { m.Location  }"</button>
 			}
 		</div>
 	} else {
