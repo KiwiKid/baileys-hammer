@@ -99,7 +99,7 @@ templ finemaster(pass string, players []PlayerWithFines, fineWithPlayers []FineW
 }
 
 templ editPresetFine(baseUrl string, passCode string, pFine PresetFine, msg string) {
-	<div id={ fmt.Sprintf("pf-%d", pFine.ID) } class="px-8 py-6 text-left bg-white shadow-xl m-10">
+	<div id={ fmt.Sprintf("pf-%d", pFine.ID) } class="w-full px-8 py-6 text-left bg-white shadow-xl m-10">
 		<form hx-post="/preset-fines" hx-swap="outerHTML" hx-target={ fmt.Sprintf("#pf-%d", pFine.ID) } class="mt-4">
 			<input type="hidden" name="pass" value={ passCode }/>
 			<input type="hidden" name="pfid" value={ fmt.Sprintf("%d", pFine.ID) }/>
@@ -216,7 +216,7 @@ templ newPresetFine(baseUrl string, passCode string) {
 
 templ presetFines(baseUrl string, passCode string, isOpen bool, presetFines []PresetFine) {
 	if isOpen {
-		<div class="px-8 py-6 text-left bg-white shadow-xl m-10" id="preset-fine">
+		<div class="w-full px-8 py-6 text-left bg-white shadow-xl m-10" id="preset-fine">
 			<h3 class="text-2xl font-bold text-center">Add or Approve Fines</h3>
 			<div class="w-full flex justify-center items-center py-2">
 				<p>Make fines submitted appear in the drop-down list, or add new fines to the drop down</p>
@@ -254,7 +254,7 @@ templ presetFines(baseUrl string, passCode string, isOpen bool, presetFines []Pr
 templ matchesManage(baseUrl string, isOpen bool, matches []Match, pwfs []PlayerWithFines) {
 	<div class="mx-auto bg-gray-200 shadow-xl m-10">
 		if isOpen {
-			<div class="px-8 py-6 text-left bg-white shadow-xl m-10" id="preset-fine">
+			<div class="w-full px-8 py-6 text-left bg-white shadow-xl m-10" id="preset-fine">
 				<h3 class="text-2xl font-bold text-center">Add/Edit Matches</h3>
 				<div class="w-full flex justify-center items-center py-2">
 					<p>Edit existing matches, or add new ones</p>
@@ -277,7 +277,7 @@ templ matchesManage(baseUrl string, isOpen bool, matches []Match, pwfs []PlayerW
 templ playersManage(baseUrl string, players []PlayerWithFines, config *Config, isOpen bool) {
 	if isOpen {
 		<div class="flex items-center justify-center bg-gray-100  p-3" id="players-manage">
-			<div class="px-8 py-6 text-left bg-white shadow-xl m-10">
+			<div class="w-full px-8 py-6 text-left bg-white shadow-xl m-10">
 				<!-- Section for Adding New Player -->
 				<h3 class="text-2xl font-bold text-center" title={ fmt.Sprintf("%+v", config) }>Add New Player ({ fmt.Sprintf("%d", len(players)) })</h3>
 				<form hx-post="/players" method="POST" class="mt-4">
@@ -289,7 +289,7 @@ templ playersManage(baseUrl string, players []PlayerWithFines, config *Config, i
 						<button type="submit" class={ bigAdd }>Add Player</button>
 					</div>
 				</form>
-				<div class="p-6 max-w-36">
+				<div class="p-6">
 					<div class="flex justify-center w-full p-3">
 						<a href={ makeSafeUrl(baseUrl, false, false, false, false, false) } hx-transition="true" class={ bigSec }>Close</a>
 					</div>

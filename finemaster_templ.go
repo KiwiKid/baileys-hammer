@@ -444,7 +444,7 @@ func editPresetFine(baseUrl string, passCode string, pFine PresetFine, msg strin
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("\" class=\"px-8 py-6 text-left bg-white shadow-xl m-10\"><form hx-post=\"/preset-fines\" hx-swap=\"outerHTML\" hx-target=\"")
+		_, err = templBuffer.WriteString("\" class=\"w-full px-8 py-6 text-left bg-white shadow-xl m-10\"><form hx-post=\"/preset-fines\" hx-swap=\"outerHTML\" hx-target=\"")
 		if err != nil {
 			return err
 		}
@@ -886,7 +886,7 @@ func presetFines(baseUrl string, passCode string, isOpen bool, presetFines []Pre
 		}
 		ctx = templ.ClearChildren(ctx)
 		if isOpen {
-			_, err = templBuffer.WriteString("<div class=\"px-8 py-6 text-left bg-white shadow-xl m-10\" id=\"preset-fine\"><h3 class=\"text-2xl font-bold text-center\">")
+			_, err = templBuffer.WriteString("<div class=\"w-full px-8 py-6 text-left bg-white shadow-xl m-10\" id=\"preset-fine\"><h3 class=\"text-2xl font-bold text-center\">")
 			if err != nil {
 				return err
 			}
@@ -1109,7 +1109,7 @@ func matchesManage(baseUrl string, isOpen bool, matches []Match, pwfs []PlayerWi
 			return err
 		}
 		if isOpen {
-			_, err = templBuffer.WriteString("<div class=\"px-8 py-6 text-left bg-white shadow-xl m-10\" id=\"preset-fine\"><h3 class=\"text-2xl font-bold text-center\">")
+			_, err = templBuffer.WriteString("<div class=\"w-full px-8 py-6 text-left bg-white shadow-xl m-10\" id=\"preset-fine\"><h3 class=\"text-2xl font-bold text-center\">")
 			if err != nil {
 				return err
 			}
@@ -1269,7 +1269,7 @@ func playersManage(baseUrl string, players []PlayerWithFines, config *Config, is
 		}
 		ctx = templ.ClearChildren(ctx)
 		if isOpen {
-			_, err = templBuffer.WriteString("<div class=\"flex items-center justify-center bg-gray-100  p-3\" id=\"players-manage\"><div class=\"px-8 py-6 text-left bg-white shadow-xl m-10\"><!--")
+			_, err = templBuffer.WriteString("<div class=\"flex items-center justify-center bg-gray-100  p-3\" id=\"players-manage\"><div class=\"w-full px-8 py-6 text-left bg-white shadow-xl m-10\"><!--")
 			if err != nil {
 				return err
 			}
@@ -1340,7 +1340,7 @@ func playersManage(baseUrl string, players []PlayerWithFines, config *Config, is
 			if err != nil {
 				return err
 			}
-			_, err = templBuffer.WriteString("</button></div></form><div class=\"p-6 max-w-36\"><div class=\"flex justify-center w-full p-3\">")
+			_, err = templBuffer.WriteString("</button></div></form><div class=\"p-6\"><div class=\"flex justify-center w-full p-3\">")
 			if err != nil {
 				return err
 			}

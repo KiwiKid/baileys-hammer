@@ -156,7 +156,7 @@ templ fineRow(isFineMaster bool, f FineWithPlayer) {
 
 templ fineContextRow(f FineWithPlayer, matches []Match) {
 	<td colspan="7">
-		<div class="border rounded-lg flex flex-col items-center p-4 space-y-4 w-full max-w-4xl mx-auto text-3xl">
+		<div class="border rounded-lg flex flex-col items-center p-4 space-y-4 w-full mx-auto text-3xl">
 			<div class="text-center w-full">{ f.Player.Name } - { fmt.Sprintf("$%v - ", f.Fine.Amount) } -  { f.Fine.Reason }</div>
 			<p class=" w-full text-gray-700">Add (optional) context for this fine:</p>
 			<div class="w-full">

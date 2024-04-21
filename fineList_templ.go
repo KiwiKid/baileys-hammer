@@ -484,7 +484,7 @@ func fineContextRow(f FineWithPlayer, matches []Match) templ.Component {
 			var_27 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, err = templBuffer.WriteString("<td colspan=\"7\"><div class=\"border rounded-lg flex flex-col items-center p-4 space-y-4 w-full max-w-4xl mx-auto text-3xl\"><div class=\"text-center w-full\">")
+		_, err = templBuffer.WriteString("<td colspan=\"7\"><div class=\"border rounded-lg flex flex-col items-center p-4 space-y-4 w-full mx-auto text-3xl\"><div class=\"text-center w-full\">")
 		if err != nil {
 			return err
 		}
