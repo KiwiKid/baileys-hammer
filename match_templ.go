@@ -125,7 +125,7 @@ func matchListPage(matches []Match, isOpen bool) templ.Component {
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("<body class=\"text-2xl p-1\"><div class=\"mx-auto bg-gray-200 shadow-xl m-10\">")
+		_, err = templBuffer.WriteString("<body class=\"text-2xl p-1\"><div class=\"w-full mx-auto bg-gray-200 shadow-xl m-10\">")
 		if err != nil {
 			return err
 		}
@@ -414,7 +414,7 @@ func createMatch(closeLink templ.SafeURL, players []PlayerWithFines) templ.Compo
 			var_25 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, err = templBuffer.WriteString("<div class=\"mx-auto bg-gray-200 shadow-xl m-10\"><form hx-post=\"/match\" hx-swap=\"afterend\" class=\"max-w-xl mx-auto my-8 p-4 border border-gray-200 rounded-lg shadow\"><h2 class=\"text-lg font-semibold mb-4\">")
+		_, err = templBuffer.WriteString("<div class=\"mx-auto bg-gray-200 shadow-xl m-10\"><form hx-post=\"/match\" hx-swap=\"afterend\" class=\"mx-auto my-8 p-4 border border-gray-200 rounded-lg shadow\"><h2 class=\"text-lg font-semibold mb-4\">")
 		if err != nil {
 			return err
 		}
@@ -589,7 +589,7 @@ func editMatch(closeLink templ.SafeURL, genMeta MatchMetaGeneral, successMsg str
 			var_39 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, err = templBuffer.WriteString("<div class=\"mx-auto bg-gray-200 shadow-xl m-10\" id=\"")
+		_, err = templBuffer.WriteString("<div class=\"w-full mx-auto bg-gray-200 shadow-xl m-10\" id=\"")
 		if err != nil {
 			return err
 		}
@@ -613,7 +613,7 @@ func editMatch(closeLink templ.SafeURL, genMeta MatchMetaGeneral, successMsg str
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("\" class=\"max-w-xl mx-auto my-8 p-4 border border-gray-200 rounded-lg shadow\"><h2 class=\"text-lg font-semibold mb-4\" title=\"")
+		_, err = templBuffer.WriteString("\" class=\"mx-auto my-8 p-4 border border-gray-200 rounded-lg shadow\"><h2 class=\"text-lg font-semibold mb-4\" title=\"")
 		if err != nil {
 			return err
 		}
@@ -933,7 +933,7 @@ func createNewEvent(matchId uint64) templ.Component {
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("\" class=\"max-w-xl mx-auto my-8 p-4 border border-gray-200 rounded-lg shadow\">")
+		_, err = templBuffer.WriteString("\" class=\"mx-auto my-8 p-4 border border-gray-200 rounded-lg shadow\">")
 		if err != nil {
 			return err
 		}

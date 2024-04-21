@@ -30,7 +30,7 @@ templ matchListPage(matches []Match, isOpen bool) {
 	<html hx-boost="true">
 		@header()
 		<body class="text-2xl p-1">
-			<div class="mx-auto bg-gray-200 shadow-xl m-10">
+			<div class="w-full mx-auto bg-gray-200 shadow-xl m-10">
 				if len(matches) > 0 {
 					for _, match := range matches {
 						<div>{ match.Location }</div>
@@ -94,7 +94,7 @@ templ listEvents(events []MatchEvent) {
 
 templ createMatch(closeLink templ.SafeURL, players []PlayerWithFines) {
 	<div class="mx-auto bg-gray-200 shadow-xl m-10">
-		<form hx-post="/match" hx-swap="afterend" class="max-w-xl mx-auto my-8 p-4 border border-gray-200 rounded-lg shadow">
+		<form hx-post="/match" hx-swap="afterend" class="mx-auto my-8 p-4 border border-gray-200 rounded-lg shadow">
 			<h2 class="text-lg font-semibold mb-4">Create New Match</h2>
 			<div class="mb-4">
 				<label for="location" class="block text-sm font-medium text-gray-700">Location</label>
@@ -134,8 +134,8 @@ templ createMatch(closeLink templ.SafeURL, players []PlayerWithFines) {
 }
 
 templ editMatch(closeLink templ.SafeURL, genMeta MatchMetaGeneral, successMsg string) {
-	<div class="mx-auto bg-gray-200 shadow-xl m-10" id={ fmt.Sprintf("edit-match-%d", genMeta.Match.ID) }>
-		<form hx-post={ fmt.Sprintf("/match/%v", genMeta.Match.ID) } hx-target={ fmt.Sprintf("#edit-match-%d", genMeta.Match.ID) } class="max-w-xl mx-auto my-8 p-4 border border-gray-200 rounded-lg shadow">
+	<div class="w-full mx-auto bg-gray-200 shadow-xl m-10" id={ fmt.Sprintf("edit-match-%d", genMeta.Match.ID) }>
+		<form hx-post={ fmt.Sprintf("/match/%v", genMeta.Match.ID) } hx-target={ fmt.Sprintf("#edit-match-%d", genMeta.Match.ID) } class="mx-auto my-8 p-4 border border-gray-200 rounded-lg shadow">
 			<h2 class="text-lg font-semibold mb-4" title={ fmt.Sprintf("%+v", genMeta) }>Edit Match - vs { genMeta.Match.Opponent }</h2>
 			<input
  				type="hidden"
@@ -198,7 +198,7 @@ templ editMatch(closeLink templ.SafeURL, genMeta MatchMetaGeneral, successMsg st
 }
 
 templ createNewEvent(matchId uint64) {
-	<form hx-post={ fmt.Sprintf("/match/%d/event", matchId) } class="max-w-xl mx-auto my-8 p-4 border border-gray-200 rounded-lg shadow">
+	<form hx-post={ fmt.Sprintf("/match/%d/event", matchId) } class="mx-auto my-8 p-4 border border-gray-200 rounded-lg shadow">
 		[createNewEvent
 		: 
 		{ fmt.Sprintf("%v", matchId) }
