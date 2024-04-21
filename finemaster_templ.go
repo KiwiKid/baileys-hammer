@@ -484,7 +484,7 @@ func editPresetFine(baseUrl string, passCode string, pFine PresetFine, msg strin
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("\" type=\"text\" name=\"context\" id=\"context\" placeholder=\"Details\" class=\"w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600\"></label></div><div class=\"mt-4\"><label for=\"amount\" class=\"block\">")
+		_, err = templBuffer.WriteString("\" type=\"text\" name=\"context\" id=\"context\" placeholder=\"Context for the fine\" class=\"w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600\"></label></div><div class=\"mt-4\"><label for=\"amount\" class=\"block\">")
 		if err != nil {
 			return err
 		}
@@ -791,7 +791,7 @@ func newPresetFine(baseUrl string, passCode string) templ.Component {
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("</label><input required type=\"text\" name=\"reason\" id=\"reason\" placeholder=\"Reason for the fine\" class=\"w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600\"></div><div class=\"mt-4\"><label for=\"context\" class=\"block\"><input type=\"text\" name=\"context\" id=\"context\" placeholder=\"Details\" class=\"w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600\"></label></div><div class=\"mt-4\"><label class=\"block\"><input type=\"checkbox\" checked=\"checked\" name=\"approved\" class=\"text-2xl m-2 py-2 mt-2 p-2 \">")
+		_, err = templBuffer.WriteString("</label><input required type=\"text\" name=\"reason\" id=\"reason\" placeholder=\"Amount\" class=\"w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600\"></div><div class=\"mt-4\"><label for=\"context\" class=\"block\"><input type=\"text\" name=\"context\" id=\"context\" placeholder=\"Details\" class=\"w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600\"></label></div><div class=\"mt-4\"><label class=\"block\"><input type=\"checkbox\" checked=\"checked\" name=\"approved\" class=\"text-2xl m-2 py-2 mt-2 p-2 \">")
 		if err != nil {
 			return err
 		}

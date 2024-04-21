@@ -110,7 +110,7 @@ templ editPresetFine(baseUrl string, passCode string, pFine PresetFine, msg stri
 			</div>
 			<div class="mt-4">
 				<label for="context" class="block">
-					<input value={ pFine.Context } type="text" name="context" id="context" placeholder="Details" class="w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600"/>
+					<input value={ pFine.Context } type="text" name="context" id="context" placeholder="Context for the fine" class="w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600"/>
 				</label>
 			</div>
 			<div class="mt-4">
@@ -193,7 +193,7 @@ templ newPresetFine(baseUrl string, passCode string) {
 			</div>
 			<div class="mt-4">
 				<label for="amount" class="block">Amount ($)</label>
-				<input required type="text" name="reason" id="reason" placeholder="Reason for the fine" class="w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600"/>
+				<input required type="text" name="reason" id="reason" placeholder="Amount" class="w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600"/>
 			</div>
 			<div class="mt-4">
 				<label for="context" class="block">

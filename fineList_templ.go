@@ -825,7 +825,7 @@ func fineEditRow(f FineWithPlayer) templ.Component {
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("\" class=\"px-2 py-1 border rounded w-full\" placeholder=\"Context\"><input type=\"playerId\" name=\"playerId\" value=\"")
+		_, err = templBuffer.WriteString("\" class=\"px-2 py-1 border rounded w-full\" placeholder=\"Context for the fine\"><input type=\"playerId\" name=\"playerId\" value=\"")
 		if err != nil {
 			return err
 		}

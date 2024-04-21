@@ -336,8 +336,8 @@ func fineEditHandler(db *gorm.DB) http.HandlerFunc {
             approved := r.FormValue("approved") == "true"
             playerId, err := strconv.ParseUint(r.FormValue("playerId"), 10, 64)
             if err != nil {
-                http.Error(w, "Invalid playerId ID", http.StatusBadRequest)
-                return
+				errComp := errMsg(F("Invalid playerId", r.FormValue("playerId")))
+				errComp.Render(GetContext(r), w)
             }
 
 			fineAtStr := r.FormValue("fineAt")
@@ -720,6 +720,7 @@ func fineMultiHandler(db *gorm.DB) http.HandlerFunc {
 
         pfineIDs := r.Form["pfines[]"]
         playerIDs := r.Form["players[]"]
+		context := r.FormValue("context")
 		savedFines := []Fine{}
 
 		log.Printf("pfineIDs: %+v %d", len(pfineIDs), len(playerIDs))
@@ -732,20 +733,24 @@ func fineMultiHandler(db *gorm.DB) http.HandlerFunc {
                 for _, playerIDStr := range playerIDs {
 					playerID, err := strconv.ParseUint(playerIDStr, 10, 64)
 					if err != nil {
-						http.Error(w, fmt.Sprintf("Invalid player ID: [%s]", playerIDStr), http.StatusBadRequest)
+						errComp := errMsg(F("Invalid player ID: [%s]", playerIDStr))
+						errComp.Render(GetContext(r), w)
 						return
 					}
 					fine, err :=  GetFineFromPreset(db, pfineIDStr)
 					if err != nil {
-						http.Error(w, "Invalid player ID", http.StatusBadRequest)
+						errComp := errMsg(F("Could not GetFineFromPreset: [%s]", pfineIDStr))
+						errComp.Render(GetContext(r), w)
 						return
 					}
 					fine.PlayerID = uint(playerID)
-
+					fine.Context = context
 
 					err = SaveFine(db, fine)
 					if err != nil {
 						http.Error(w, "Invalid player ID", http.StatusBadRequest)
+						errComp := errMsg(F("Could not Save Fine %+v", fine))
+						errComp.Render(GetContext(r), w)
 						return
 					} else {
 						savedFines = append(savedFines, *fine)
