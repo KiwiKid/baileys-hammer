@@ -173,7 +173,7 @@ templ editPresetFine(baseUrl string, passCode string, pFine PresetFine, msg stri
 				} else {
 					<button class={ bigPri } hx-post={ fmt.Sprintf("/preset-fines/hide?pfid=%d", pFine.ID) }>Hide from Quick Fines</button>
 				}
-				<button class={ bigDel } hx-delete={ fmt.Sprintf("/preset-fines?pfid=%d", pFine.ID) } hx-confirm={ fmt.Sprintf("Remove %s from standard fines?", pFine.Reason) }>Remove from default fine list</button>
+				<button class={ bigDel } hx-delete={ fmt.Sprintf("/preset-fines?pfid=%d", pFine.ID) } hx-confirm={ fmt.Sprintf("Remove %s from standard fines?", pFine.Reason) }>Remove</button>
 			</div>
 		</form>
 		<div class="flex justify-center w-full">
@@ -221,12 +221,11 @@ templ presetFines(baseUrl string, passCode string, isOpen bool, presetFines []Pr
 			<div class="w-full flex justify-center items-center py-2">
 				<p>Make fines submitted appear in the drop-down list, or add new fines to the drop down</p>
 			</div>
-			<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-				<div class="text-2xl">
-					<h1 class="font-bold text-center">Manage Listed Fines { fmt.Sprintf("(%d)", len(presetFines)) }</h1>
+			<h1 class="font-bold text-center">Manage Listed Fines { fmt.Sprintf("(%d)", len(presetFines)) }</h1>
 					<p>
 						Deleting these fines will NOT delete any player specific fines, just the selection options.
 					</p>
+				<div class="grid md:grid-cols-2 grid-cols-1 gap-4">
 					for _, pfine := range presetFines {
 						if !pfine.Approved && false {
 							<div class="mt-2 text-center">
@@ -242,7 +241,6 @@ templ presetFines(baseUrl string, passCode string, isOpen bool, presetFines []Pr
 						@editPresetFine(baseUrl, passCode, pfine, "")
 					}
 				</div>
-			</div>
 		</div>
 	} else {
 		<div class="flex justify-center w-full p-3">

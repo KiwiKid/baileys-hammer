@@ -710,7 +710,7 @@ func editPresetFine(baseUrl string, passCode string, pFine PresetFine, msg strin
 		if err != nil {
 			return err
 		}
-		var_39 := `Remove from default fine list`
+		var_39 := `Remove`
 		_, err = templBuffer.WriteString(var_39)
 		if err != nil {
 			return err
@@ -904,7 +904,7 @@ func presetFines(baseUrl string, passCode string, isOpen bool, presetFines []Pre
 			if err != nil {
 				return err
 			}
-			_, err = templBuffer.WriteString("</p></div><div class=\"grid grid-cols-1 md:grid-cols-2 gap-4\"><div class=\"text-2xl\"><h1 class=\"font-bold text-center\">")
+			_, err = templBuffer.WriteString("</p></div><h1 class=\"font-bold text-center\">")
 			if err != nil {
 				return err
 			}
@@ -927,7 +927,7 @@ func presetFines(baseUrl string, passCode string, isOpen bool, presetFines []Pre
 			if err != nil {
 				return err
 			}
-			_, err = templBuffer.WriteString("</p>")
+			_, err = templBuffer.WriteString("</p><div class=\"grid md:grid-cols-2 grid-cols-1 gap-4\">")
 			if err != nil {
 				return err
 			}
@@ -1039,7 +1039,7 @@ func presetFines(baseUrl string, passCode string, isOpen bool, presetFines []Pre
 					return err
 				}
 			}
-			_, err = templBuffer.WriteString("</div></div></div>")
+			_, err = templBuffer.WriteString("</div></div>")
 			if err != nil {
 				return err
 			}
