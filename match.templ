@@ -3,13 +3,13 @@ package main
 import "fmt"
 
 templ matchSelector(matches []Match, selectedMatchId uint) {
-	<div class="flex flex-col sm:flex-row">
-		<label class="block text-sm font-medium text-gray-700">
+	<div class="flex flex-col text-3xl sm:flex-row">
+		<label class="block text-gray-700">
 			Match:
 			<select
  				id="matchId"
  				name="matchId"
- 				class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+ 				class="mt-1 block w-full pl-3 pr-10 py-2 border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 rounded-md"
 			>
 				>
 				<option>NA</option>
@@ -30,7 +30,7 @@ templ matchListPage(matches []Match, isOpen bool) {
 	<html hx-boost="true">
 		@header()
 		<body class="text-2xl p-1">
-			<div class="container mx-auto bg-gray-200 shadow-xl m-10">
+			<div class="mx-auto bg-gray-200 shadow-xl m-10">
 				if len(matches) > 0 {
 					for _, match := range matches {
 						<div>{ match.Location }</div>
@@ -57,7 +57,7 @@ templ matchPage(data MatchPageData) {
 	<html hx-boost="true">
 		@header()
 		<body class="text-2xl p-1">
-			<div class="container mx-auto bg-gray-200 shadow-xl m-10">
+			<div class="mx-auto bg-gray-200 shadow-xl m-10">
 				<h1 class=" font-bold mb-4  text-center">{ GetTitle(ctx) }</h1>
 				<div id="live-match" class="max-w-4xl mx-auto my-8 p-4 border border-gray-200 rounded-lg shadow">
 					<h2 class="text-lg font-semibold mb-4">Live Match - { data.Match.Location } - { data.Match.Opponent }</h2>
@@ -93,7 +93,7 @@ templ listEvents(events []MatchEvent) {
 }
 
 templ createMatch(closeLink templ.SafeURL, players []PlayerWithFines) {
-	<div class="container mx-auto bg-gray-200 shadow-xl m-10">
+	<div class="mx-auto bg-gray-200 shadow-xl m-10">
 		<form hx-post="/match" hx-swap="afterend" class="max-w-xl mx-auto my-8 p-4 border border-gray-200 rounded-lg shadow">
 			<h2 class="text-lg font-semibold mb-4">Create New Match</h2>
 			<div class="mb-4">
@@ -134,7 +134,7 @@ templ createMatch(closeLink templ.SafeURL, players []PlayerWithFines) {
 }
 
 templ editMatch(closeLink templ.SafeURL, genMeta MatchMetaGeneral, successMsg string) {
-	<div class="container mx-auto bg-gray-200 shadow-xl m-10" id={ fmt.Sprintf("edit-match-%d", genMeta.Match.ID) }>
+	<div class="mx-auto bg-gray-200 shadow-xl m-10" id={ fmt.Sprintf("edit-match-%d", genMeta.Match.ID) }>
 		<form hx-post={ fmt.Sprintf("/match/%v", genMeta.Match.ID) } hx-target={ fmt.Sprintf("#edit-match-%d", genMeta.Match.ID) } class="max-w-xl mx-auto my-8 p-4 border border-gray-200 rounded-lg shadow">
 			<h2 class="text-lg font-semibold mb-4" title={ fmt.Sprintf("%+v", genMeta) }>Edit Match - vs { genMeta.Match.Opponent }</h2>
 			<input
@@ -179,8 +179,7 @@ templ editMatch(closeLink templ.SafeURL, genMeta MatchMetaGeneral, successMsg st
 				[MATCH TRACKER]
 				<div hx-get={ fmt.Sprintf("/match/%v/events", genMeta.Match.ID) } hx-trigger="click" hx-swap="innerHTML">(Load events (2))</div>
 			}
-			
-			<details><summary>debug</summary> { fmt.Sprintf("%+v", genMeta)} </details>
+			<details><summary>debug</summary>{ fmt.Sprintf("%+v", genMeta) }</details>
 			@success(successMsg)
 			<div class="flex items-center justify-between mt-4">
 				<button type="submit" class={ bigAdd }>Update Match</button>
@@ -188,12 +187,14 @@ templ editMatch(closeLink templ.SafeURL, genMeta MatchMetaGeneral, successMsg st
 			<div class="flex items-center justify-between mt-4">
 				<a href={ closeLink } class={ bigSec }>Close</a>
 			</div>
-			<details><summary>advance</summary><div class="flex items-center justify-between mt-20">
-				<a hx-delete={ fmt.Sprintf("/match/%d", genMeta.Match.ID) } hx-confirm="Are you sure you want to delete this match?" class={ bigDel }>Delete</a>
-			</div></details>
+			<details>
+				<summary>advance</summary>
+				<div class="flex items-center justify-between mt-20">
+					<a hx-delete={ fmt.Sprintf("/match/%d", genMeta.Match.ID) } hx-confirm="Are you sure you want to delete this match?" class={ bigDel }>Delete</a>
+				</div>
+			</details>
 		</form>
 	</div>
-	
 }
 
 templ createNewEvent(matchId uint64) {

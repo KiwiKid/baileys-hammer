@@ -401,7 +401,7 @@ func fineSuperSelect(players []PlayerWithFines, approvedPFines []PresetFine) tem
 			var_21 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, err = templBuffer.WriteString("<div class=\"container mx-auto bg-gray-200 shadow-xl m-10\" id=\"fine-ss\" hx-get=\"/fines/add\" hx-trigger=\"pageLoaded\" hx-target=\"#fine-ss\"><form id=\"ss-form\" hx-post=\"/fines-multi\" method=\"POST\" class=\"flex flex-col space-y-4 bg-white shadow-md p-6 rounded-lg\"><p class=\"font-bold\">")
+		_, err = templBuffer.WriteString("<div class=\"w-full mx-auto bg-gray-200 shadow-xl m-10\" id=\"fine-ss\" hx-get=\"/fines/add\" hx-trigger=\"pageLoaded\" hx-target=\"#fine-ss\"><form id=\"ss-form\" hx-post=\"/fines-multi\" method=\"POST\" class=\"flex flex-col space-y-4 bg-white shadow-md p-6 rounded-lg\"><p class=\"font-bold\">")
 		if err != nil {
 			return err
 		}
@@ -419,7 +419,7 @@ func fineSuperSelect(players []PlayerWithFines, approvedPFines []PresetFine) tem
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("</label><select id=\"select-fine\" hx-ext=\"tomselect\" ts-create-filter=\"true\" ts-clear-after-add=\"true\" ts-no-active=\"true\" ts-add-post-url=\"/fines/add\" ts-add-post-url-body-value=\"reason\" ts-persist=\"true\" name=\"pfines[]\" multiple placeholder=\"Select fine(s)...\" class=\"border border-gray-300 rounded-md text-gray-700 flex-grow mb-2\"><option value=\"\">")
+		_, err = templBuffer.WriteString("</label><select id=\"select-fine\" hx-ext=\"tomselect\" ts-persist=\"true\" ts-create=\"true\" ts-create-filter=\"true\" ts-create-on-blue=\"true\" ts-no-active=\"true\" ts-add-post-url=\"/fines/add\" ts-add-post-url-body-value=\"reason\" ts-item-class=\"text-3xl py-3\" ts-option-class=\"text-3xl w-full py-3 bg-green-100\" tx-max-items=\"99\" name=\"pfines[]\" multiple placeholder=\"Select fine(s)...\" class=\"text-3xl border border-gray-300 rounded-md text-gray-700 flex-grow mb-2\"><option value=\"\">")
 		if err != nil {
 			return err
 		}
@@ -455,7 +455,7 @@ func fineSuperSelect(players []PlayerWithFines, approvedPFines []PresetFine) tem
 				return err
 			}
 		}
-		_, err = templBuffer.WriteString("</select></div><div clas=\"flex flex-row\"><label for=\"select-player\" class=\"mt-2 pr-2 font-semibold text-gray-700\">")
+		_, err = templBuffer.WriteString("</select></div><div class=\"flex flex-row\"><label for=\"select-player\" class=\"mt-2 pr-2 font-semibold text-gray-700\">")
 		if err != nil {
 			return err
 		}
@@ -464,7 +464,7 @@ func fineSuperSelect(players []PlayerWithFines, approvedPFines []PresetFine) tem
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("</label><select id=\"select-player\" hx-ext=\"tomselect\" ts-max-options=\"20\" name=\"players[]\" multiple placeholder=\"Select player(s)...\" class=\"border border-gray-300 rounded-md text-gray-700 flex-grow mb-2\"><option value=\"\">")
+		_, err = templBuffer.WriteString("</label><select id=\"select-player\" hx-ext=\"tomselect\" tx-max-items=\"99\" name=\"players[]\" ts-item-class=\"text-3xl py-3\" ts-option-class=\"text-3xl w-full py-3 bg-green-100\" multiple placeholder=\"Select player(s)...\" class=\"text-3xl  border border-gray-300 rounded-md text-gray-700 flex-grow mb-2\"><option value=\"\">")
 		if err != nil {
 			return err
 		}
@@ -555,7 +555,7 @@ func fineSuperSelectResults(players []PlayerWithFines, approvedPFines []PresetFi
 			return err
 		}
 		if len(newFines) > 0 {
-			_, err = templBuffer.WriteString("<details class=\"list-none\"><summary class=\"bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-lg\">")
+			_, err = templBuffer.WriteString("<div class=\"list-none bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-lg\">")
 			if err != nil {
 				return err
 			}
@@ -564,24 +564,37 @@ func fineSuperSelectResults(players []PlayerWithFines, approvedPFines []PresetFi
 			if err != nil {
 				return err
 			}
-			_, err = templBuffer.WriteString("</summary>")
+			_, err = templBuffer.WriteString(" ")
 			if err != nil {
 				return err
 			}
 			if len(newFines) > 0 {
-				for _, nf := range newFines {
-					_, err = templBuffer.WriteString("<div>")
-					if err != nil {
-						return err
-					}
-					var var_33 string = fmt.Sprintf("%d %s", nf.PlayerID, nf.Reason)
-					_, err = templBuffer.WriteString(templ.EscapeString(var_33))
-					if err != nil {
-						return err
-					}
-					_, err = templBuffer.WriteString("</div>")
-					if err != nil {
-						return err
+				for _, p := range players {
+					for _, nf := range newFines {
+						if p.ID == nf.PlayerID {
+							_, err = templBuffer.WriteString("<details><summary>")
+							if err != nil {
+								return err
+							}
+							var var_33 string = fmt.Sprintf("%s - %s", nf.Reason, p.Name)
+							_, err = templBuffer.WriteString(templ.EscapeString(var_33))
+							if err != nil {
+								return err
+							}
+							_, err = templBuffer.WriteString("</summary> ")
+							if err != nil {
+								return err
+							}
+							var var_34 string = fmt.Sprintf("%+v", nf)
+							_, err = templBuffer.WriteString(templ.EscapeString(var_34))
+							if err != nil {
+								return err
+							}
+							_, err = templBuffer.WriteString("</details>")
+							if err != nil {
+								return err
+							}
+						}
 					}
 				}
 			} else {
@@ -589,13 +602,13 @@ func fineSuperSelectResults(players []PlayerWithFines, approvedPFines []PresetFi
 				if err != nil {
 					return err
 				}
-				var_34 := `No fines created? `
-				_, err = templBuffer.WriteString(var_34)
+				var_35 := `No fines created? `
+				_, err = templBuffer.WriteString(var_35)
 				if err != nil {
 					return err
 				}
-				var var_35 string = fmt.Sprintf("%d %d", len(approvedPFines))
-				_, err = templBuffer.WriteString(templ.EscapeString(var_35))
+				var var_36 string = fmt.Sprintf("%d %d", len(approvedPFines))
+				_, err = templBuffer.WriteString(templ.EscapeString(var_36))
 				if err != nil {
 					return err
 				}
@@ -604,7 +617,7 @@ func fineSuperSelectResults(players []PlayerWithFines, approvedPFines []PresetFi
 					return err
 				}
 			}
-			_, err = templBuffer.WriteString("</details>")
+			_, err = templBuffer.WriteString("</div>")
 			if err != nil {
 				return err
 			}
@@ -613,8 +626,8 @@ func fineSuperSelectResults(players []PlayerWithFines, approvedPFines []PresetFi
 			if err != nil {
 				return err
 			}
-			var_36 := `o fines added? Make sure to select fines/players above`
-			_, err = templBuffer.WriteString(var_36)
+			var_37 := `no fines added? Make sure to select fines/players above`
+			_, err = templBuffer.WriteString(var_37)
 			if err != nil {
 				return err
 			}

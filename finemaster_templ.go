@@ -162,7 +162,7 @@ func finemaster(pass string, players []PlayerWithFines, fineWithPlayers []FineWi
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("</div><div class=\"container mx-auto p-4 hidden\" id=\"quick-finer\"><div class=\"flex items-center justify-center bg-gray-100 mx-auto\"><ul>")
+		_, err = templBuffer.WriteString("</div><div class=\"mx-auto p-4 hidden\" id=\"quick-finer\"><div class=\"flex items-center justify-center bg-gray-100 mx-auto\"><ul>")
 		if err != nil {
 			return err
 		}
@@ -1104,7 +1104,7 @@ func matchesManage(baseUrl string, isOpen bool, matches []Match, pwfs []PlayerWi
 			var_66 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, err = templBuffer.WriteString("<div class=\"container mx-auto bg-gray-200 shadow-xl m-10\">")
+		_, err = templBuffer.WriteString("<div class=\"mx-auto bg-gray-200 shadow-xl m-10\">")
 		if err != nil {
 			return err
 		}
@@ -1135,7 +1135,7 @@ func matchesManage(baseUrl string, isOpen bool, matches []Match, pwfs []PlayerWi
 			if err != nil {
 				return err
 			}
-			_, err = templBuffer.WriteString("<div class=\"container mx-auto bg-gray-200 shadow-xl m-10 flex flex-col justify-center items-center\">")
+			_, err = templBuffer.WriteString("<div class=\"mx-auto bg-gray-200 shadow-xl m-10 flex flex-col justify-center items-center\">")
 			if err != nil {
 				return err
 			}

@@ -24,7 +24,7 @@ func matchSelector(matches []Match, selectedMatchId uint) templ.Component {
 			var_1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, err = templBuffer.WriteString("<div class=\"flex flex-col sm:flex-row\"><label class=\"block text-sm font-medium text-gray-700\">")
+		_, err = templBuffer.WriteString("<div class=\"flex flex-col text-3xl sm:flex-row\"><label class=\"block text-gray-700\">")
 		if err != nil {
 			return err
 		}
@@ -33,7 +33,7 @@ func matchSelector(matches []Match, selectedMatchId uint) templ.Component {
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString(" <select id=\"matchId\" name=\"matchId\" class=\"mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md\">")
+		_, err = templBuffer.WriteString(" <select id=\"matchId\" name=\"matchId\" class=\"mt-1 block w-full pl-3 pr-10 py-2 border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 rounded-md\">")
 		if err != nil {
 			return err
 		}
@@ -125,7 +125,7 @@ func matchListPage(matches []Match, isOpen bool) templ.Component {
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("<body class=\"text-2xl p-1\"><div class=\"container mx-auto bg-gray-200 shadow-xl m-10\">")
+		_, err = templBuffer.WriteString("<body class=\"text-2xl p-1\"><div class=\"mx-auto bg-gray-200 shadow-xl m-10\">")
 		if err != nil {
 			return err
 		}
@@ -219,7 +219,7 @@ func matchPage(data MatchPageData) templ.Component {
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("<body class=\"text-2xl p-1\"><div class=\"container mx-auto bg-gray-200 shadow-xl m-10\"><h1 class=\" font-bold mb-4  text-center\">")
+		_, err = templBuffer.WriteString("<body class=\"text-2xl p-1\"><div class=\"mx-auto bg-gray-200 shadow-xl m-10\"><h1 class=\" font-bold mb-4  text-center\">")
 		if err != nil {
 			return err
 		}
@@ -414,7 +414,7 @@ func createMatch(closeLink templ.SafeURL, players []PlayerWithFines) templ.Compo
 			var_25 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, err = templBuffer.WriteString("<div class=\"container mx-auto bg-gray-200 shadow-xl m-10\"><form hx-post=\"/match\" hx-swap=\"afterend\" class=\"max-w-xl mx-auto my-8 p-4 border border-gray-200 rounded-lg shadow\"><h2 class=\"text-lg font-semibold mb-4\">")
+		_, err = templBuffer.WriteString("<div class=\"mx-auto bg-gray-200 shadow-xl m-10\"><form hx-post=\"/match\" hx-swap=\"afterend\" class=\"max-w-xl mx-auto my-8 p-4 border border-gray-200 rounded-lg shadow\"><h2 class=\"text-lg font-semibold mb-4\">")
 		if err != nil {
 			return err
 		}
@@ -589,7 +589,7 @@ func editMatch(closeLink templ.SafeURL, genMeta MatchMetaGeneral, successMsg str
 			var_39 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, err = templBuffer.WriteString("<div class=\"container mx-auto bg-gray-200 shadow-xl m-10\" id=\"")
+		_, err = templBuffer.WriteString("<div class=\"mx-auto bg-gray-200 shadow-xl m-10\" id=\"")
 		if err != nil {
 			return err
 		}
@@ -780,7 +780,7 @@ func editMatch(closeLink templ.SafeURL, genMeta MatchMetaGeneral, successMsg str
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("</summary> ")
+		_, err = templBuffer.WriteString("</summary>")
 		if err != nil {
 			return err
 		}

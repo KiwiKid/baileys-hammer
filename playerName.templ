@@ -77,46 +77,44 @@ func playerHasEvent(playerId uint, Events []MatchEvent, eventType string) bool {
     return false
 }
 
-
 templ playerEventInputSelector(players []Player, events []MatchEvent, eventType string) {
 	switch eventType {
 		case "injury":
-		<div id="player-select-injuries" class="mt-4">
-			if len(UseInjuryCounterTrackerName(ctx)) > 0 {
-				<label>
-					{ UseInjuryCounterTrackerName(ctx) }
-					<select
-						hx-ext="tomselect"
-						ts-no-delete="true"
-						name={ fmt.Sprintf("eventType%s", strings.Title(eventType)) }
-						multiple
-						class="mt-1 w-full border-gray-300  bg-white rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-					>
-					<option value="">N/A</option>
-						for _, p := range players {
-							<option
-								if playerHasEvent(p.ID, events,eventType) {
-									selected
-								}
-								value={ F("%d", p.ID) }
-							>
-								{ p.Name }
-							</option>
-						}
-					</select>
-				</label>
-			}
-	</div>
+			<div id="player-select-injuries" class="mt-4">
+				if len(UseInjuryCounterTrackerName(ctx)) > 0 {
+					<label>
+						{ UseInjuryCounterTrackerName(ctx) }
+						<select
+ 							hx-ext="tomselect"
+ 							ts-no-delete="true"
+ 							name={ fmt.Sprintf("eventType%s", strings.Title(eventType)) }
+ 							multiple
+ 							class="mt-1 w-full border-gray-300  bg-white rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+						>
+							<option value="">N/A</option>
+							for _, p := range players {
+								<option
+ 									if playerHasEvent(p.ID, events,eventType) {
+										selected
+									}
+ 									value={ F("%d", p.ID) }
+								>
+									{ p.Name }
+								</option>
+							}
+						</select>
+					</label>
+				}
+			</div>
 		default:
 			@errMsg(fmt.Sprintf("No eventType for %d", eventType))
 	}
-
 }
 
 templ playerRoleSelector(player PlayerWithFines, config *Config, msg string) {
-	<div class="" id="players-ss">
+	<div class="w-full" id="players-ss">
 		<form class="todo" hx-post={ fmt.Sprintf("/players?playerId=%d", player.ID) } hx-swap="outerHTML">
-			<div class="container p-2">
+			<div class="p-2">
 				<input
  					type="hidden"
  					name="ID"

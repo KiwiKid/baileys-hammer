@@ -326,7 +326,6 @@ func matchHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 				errComp.Render(GetContext(r), w)
 			}
 
-			log.Printf("\n\neditMatch: RESULT: [%d] %v", matchId, genMeta)
 			matchComp := editMatch(url, *genMeta, successMsg)
 			matchComp.Render(GetContext(r), w)
 		case "DELETE":

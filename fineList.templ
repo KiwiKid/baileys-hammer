@@ -46,7 +46,7 @@ templ fineList(fines []FineWithPlayer, page int, presetFineUpdated uint, isFineM
 templ fineRow(isFineMaster bool, f FineWithPlayer) {
 	<tr
  		id={ fmt.Sprintf("fr-%d", f.Fine.ID) }
- 		class="bg-gray-200 p-2"
+ 		class="bg-gray-200 p-2 "
 	>
 		<td class="p-2 text-gray-900 flex flex-col text-wrap">
 			<div class="text-bold text-3xl">{ f.Player.Name }</div>
@@ -71,7 +71,7 @@ templ fineRow(isFineMaster bool, f FineWithPlayer) {
 			</div>
 		</td>
 		<td>
-			<div class="text-lg text-gray-900 text-wrap">
+			<div class="text-gray-900 text-wrap">
 				{ f.Fine.Context }
 				<div
  					if len(f.Fine.Context) > 0 {
@@ -156,9 +156,9 @@ templ fineRow(isFineMaster bool, f FineWithPlayer) {
 
 templ fineContextRow(f FineWithPlayer, matches []Match) {
 	<td colspan="7">
-		<div class="border rounded-lg flex flex-col items-center p-4 space-y-4 w-full max-w-4xl mx-auto">
+		<div class="border rounded-lg flex flex-col items-center p-4 space-y-4 w-full max-w-4xl mx-auto text-3xl">
 			<div class="text-center w-full">{ f.Player.Name } - { fmt.Sprintf("$%v - ", f.Fine.Amount) } -  { f.Fine.Reason }</div>
-			<p class="text-sm w-full text-gray-700">Add (optional) context for this fine:</p>
+			<p class=" w-full text-gray-700">Add (optional) context for this fine:</p>
 			<div class="w-full">
 				<label class="block w-full">
 					Context:

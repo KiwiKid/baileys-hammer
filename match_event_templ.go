@@ -34,7 +34,7 @@ func listMatchEvents(matchState MatchState, matchEvents []MatchEvent) templ.Comp
 			if err != nil {
 				return err
 			}
-			_, err = templBuffer.WriteString("\" class=\"container mx-auto text-center\"><div><h1>")
+			_, err = templBuffer.WriteString("\" class=\"mx-auto text-center\"><div><h1>")
 			if err != nil {
 				return err
 			}

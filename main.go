@@ -732,7 +732,7 @@ func fineMultiHandler(db *gorm.DB) http.HandlerFunc {
                 for _, playerIDStr := range playerIDs {
 					playerID, err := strconv.ParseUint(playerIDStr, 10, 64)
 					if err != nil {
-						http.Error(w, "Invalid player ID", http.StatusBadRequest)
+						http.Error(w, fmt.Sprintf("Invalid player ID: [%s]", playerIDStr), http.StatusBadRequest)
 						return
 					}
 					fine, err :=  GetFineFromPreset(db, pfineIDStr)
@@ -749,7 +749,6 @@ func fineMultiHandler(db *gorm.DB) http.HandlerFunc {
 						return
 					} else {
 						savedFines = append(savedFines, *fine)
-						log.Printf("FINE\n\n%+v", fine)
 					}
             	}
         }

@@ -8,7 +8,7 @@ import (
 )
 
 var baseUrl = "/"
-var containerClass = "container flex mx-auto bg-gray-200 shadow-xl p-2"
+var containerClass = "flex mx-auto bg-gray-200 shadow-xl p-2"
 var con = "bg-sepia-200 shadow-xl m-10 rounded-lg"
 
 
@@ -85,7 +85,7 @@ var sec = " text-3xl bg-gray-500 p-1 hover:bg-gray-600 text-white font-bold py-2
 var add = " text-3xl bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:scale-105 transition transform ease-out duration-200"
 var del = " text-3xl bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg hover:scale-105 transition transform ease-out duration-200"
 
-var bigBtnTxt = "text-3xl mx-auto items-center justify-center w-4/5 text-center py-2 px-4  rounded-md border hover:bg-opacity-75 focus:outline-none"
+var bigBtnTxt = "text-3xl py-4 mx-auto items-center justify-center w-full text-center py-2 px-4  rounded-md border hover:bg-opacity-75 focus:outline-none"
 var sm = " text-lg mx-auto items-center justify-center w-4/5 py-1 px-2"
 var bigPri = fmt.Sprintf("%s %s", bigBtnTxt, pri)
 var bigSec = fmt.Sprintf("%s %s", bigBtnTxt, sec)
@@ -133,6 +133,13 @@ templ header() {
 			}
 		});
 		</script>
+		<style>
+		.ts-control input {
+			font-size: 2rem !important;
+			display: block;
+			color: #a0a0a0;
+		}
+		</style>
 	</head>
 }
 
@@ -157,7 +164,7 @@ templ home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines
 			<div>
 				<h1 class="font-bold mb-4 text-center">{ GetTitle(ctx) }</h1>
 				if len(approvedPFines) > 0 {
-					<div class="container mx-auto bg-gray-200 shadow-xl p-2">
+					<div class="mx-auto bg-gray-200 shadow-xl p-2">
 						<div id="fines" class="flex justify-center w-full p-3">
 							<a href={ makeSafeUrlWithAnchor(baseUrl, !qp.FineListOpen, false, false, false, false, "fines") } hx-transition="true" class={ bigPri }>
 								if qp.FineListOpen {
@@ -308,7 +315,7 @@ templ fineAddRes(createdFines []Fine, createdPFines []PresetFine) {
 }
 
 templ fineAddV2(baseUrl string, isOpen bool, players []PlayerWithFines, presetFines []PresetFine, isFineMaster bool) {
-	<div class="container mx-auto bg-gray-200 shadow-xl m-10">
+	<div class="w-full mx-auto bg-gray-200 shadow-xl m-10">
 		if isOpen {
 			<div class="flex justify-center w-full p-3" id="fine-add">
 				<div class="flex flex-col justify-center w-full p-4">
@@ -337,7 +344,7 @@ templ fineAddV2(baseUrl string, isOpen bool, players []PlayerWithFines, presetFi
 }
 
 templ fineAdd(baseUrl string, isOpen bool, players []PlayerWithFines, presetFines []PresetFine, isFineMaster bool) {
-	<div class="container mx-auto bg-gray-200 shadow-xl m-10">
+	<div class="mx-auto bg-gray-200 shadow-xl m-10">
 		if isOpen {
 			<div class="px-8 py-6 text-left bg-gray-200 m-10" id="fine-add">
 				<h3 class="text-2xl font-bold text-center">

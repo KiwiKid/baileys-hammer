@@ -5,7 +5,7 @@ import "github.com/dustin/go-humanize"
 
 templ listMatchEvents(matchState MatchState, matchEvents []MatchEvent) {
 	if UseMatchEventTracker(ctx) {
-		<div id={ fmt.Sprintf("match-event-list-%d", matchState.MatchID) } class="container mx-auto text-center">
+		<div id={ fmt.Sprintf("match-event-list-%d", matchState.MatchID) } class="mx-auto text-center">
 			<div>
 				<h1>matchState</h1>
 				{ fmt.Sprintf("%+v", matchState) }

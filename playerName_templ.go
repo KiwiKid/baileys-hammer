@@ -341,7 +341,7 @@ func playerRoleSelector(player PlayerWithFines, config *Config, msg string) temp
 			var_14 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, err = templBuffer.WriteString("<div class=\"\" id=\"players-ss\"><form class=\"todo\" hx-post=\"")
+		_, err = templBuffer.WriteString("<div class=\"w-full\" id=\"players-ss\"><form class=\"todo\" hx-post=\"")
 		if err != nil {
 			return err
 		}
@@ -349,7 +349,7 @@ func playerRoleSelector(player PlayerWithFines, config *Config, msg string) temp
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("\" hx-swap=\"outerHTML\"><div class=\"container p-2\"><input type=\"hidden\" name=\"ID\" value=\"")
+		_, err = templBuffer.WriteString("\" hx-swap=\"outerHTML\"><div class=\"p-2\"><input type=\"hidden\" name=\"ID\" value=\"")
 		if err != nil {
 			return err
 		}
