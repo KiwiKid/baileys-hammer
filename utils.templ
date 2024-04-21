@@ -151,31 +151,49 @@ func niceDate(date *time.Time) string {
 }
 
 templ fineSuperSelect(players []PlayerWithFines, approvedPFines []PresetFine) {
-	<div class="container mx-auto bg-gray-200 shadow-xl m-10" id="fine-ss" hx-get="/fines/add" hx-trigger="pageLoaded" hx-target="#fine-ss">
+	<div class="w-full mx-auto bg-gray-200 shadow-xl m-10" id="fine-ss" hx-get="/fines/add" hx-trigger="pageLoaded" hx-target="#fine-ss">
 		<form id="ss-form" hx-post="/fines-multi" method="POST" class="flex flex-col space-y-4 bg-white shadow-md p-6 rounded-lg">
 			<p class="font-bold">Select players and fines:</p>
 			<div class="flex flex-row">
 				<label for="select-fine" class="mt-2 pr-2 font-semibold text-gray-700">Fines</label>
-				<select id="select-fine" name="pfines[]" multiple placeholder="Select fine(s)..." class="border border-gray-300 rounded-md text-gray-700 flex-grow mb-2">
+				<select
+ 					id="select-fine"
+ 					hx-ext="tomselect"
+ 					ts-persist="true"
+ 					ts-create="true"
+ 					ts-create-filter="true"
+ 					ts-create-on-blue="true"
+ 					ts-no-active="true"
+ 					ts-add-post-url="/fines/add"
+ 					ts-add-post-url-body-value="reason"
+ 					ts-item-class="text-3xl py-3"
+ 					ts-option-class="text-3xl w-full py-3 bg-green-100"
+ 					tx-max-items="99"
+ 					name="pfines[]"
+ 					multiple
+ 					required
+ 					placeholder="Select fine(s)..."
+ 					class="text-3xl border border-gray-300 rounded-md text-gray-700 flex-grow mb-2"
+				>
 					<option value="">Select a fine...</option>
 					for _, apf := range approvedPFines {
 						<option value={ fmt.Sprintf("%d", apf.ID) }>{ apf.Reason }</option>
 					}
 				</select>
 			</div>
-			<div clas="flex flex-row">
+			<div class="flex flex-row">
 				<label for="select-player" class="mt-2 pr-2 font-semibold text-gray-700">Players</label>
 				<select
  					id="select-player"
+ 					required
  					hx-ext="tomselect"
- 					max-opt
- 					i
- 					remove-
- 					b
+ 					tx-max-items="99"
  					name="players[]"
+ 					ts-item-class="text-3xl py-3"
+ 					ts-option-class="text-3xl w-full py-3 bg-green-100"
  					multiple
  					placeholder="Select player(s)..."
- 					class="border border-gray-300 rounded-md text-gray-700 flex-grow mb-2"
+ 					class="text-3xl  border border-gray-300 rounded-md text-gray-700 flex-grow mb-2"
 				>
 					<option value="">Select a player...</option>
 					for _, p := range players {
@@ -183,74 +201,20 @@ templ fineSuperSelect(players []PlayerWithFines, approvedPFines []PresetFine) {
 					}
 				</select>
 			</div>
+			<div class="flex flex-row">
+				<label class="w-full">
+					Context:
+					<input
+ 						type="text"
+ 						name="context"
+ 						value=""
+ 						class="px-4 py-2 border border-gray-300 rounded-lg w-full focus:ring-blue-500 focus:border-blue-500"
+ 						placeholder="Context for the fine"
+					/>
+				</label>
+			</div>
 			<button type="submit" class={ bigAdd }>Create Fine(s)</button>
 			<div id="results-container"></div>
-			<script>
-			var settings = {};
-			new TomSelect("#select-fine",{
-				maxOptions: 20,
-				create: true,
-				persist: false,
-				plugins: {
-					no_active_items: 'true',
-					remove_button: {
-						title:'Remove this fine',
-					}
-				},
-				createFilter: function(input) {
-					var match = input.match(/^[^,]*$/); // Example filter: disallow commas in input
-					if(match) return !this.options.hasOwnProperty(input);
-					return false;
-				},
-				onItemAdd:function(){
-					this.setTextboxValue('');
-					this.refreshOptions();
-				},
-				onOptionAdd: function(value, item) {
-					this.lock();
-					fetch('/fines/add', { // Replace with your actual endpoint URL
-						method: 'POST',
-						headers: {
-							'Content-Type': 'application/json',
-						},
-						body: JSON.stringify({ reason: value }),
-					})
-					.then(response => {
-						if (response.ok) {
-							htmx.trigger("#ss-form", "pageLoaded")
-							htmx.process(response.body)
-							return response.json();
-							
-						} else {
-							throw new Error('Server responded with an error');
-						}
-					})
-					.then(data => {
-						console.log(data.message); // Log the success message
-						// The item is already added to the select; you might want to do something else here
-					})
-					.catch(error => {
-						console.error('Error adding fine:', error);
-						this.removeItem(value); // Remove the item if the server request failed
-					})
-					.finally(() => {
-						this.unlock(); // Re-enable the select
-					});
-				},
-			});
-			/*new TomSelect("#select-player", {
-				maxOptions: 20,
-				plugins: {
-					remove_button:{
-						title:'Remove this player'
-					}
-				},
-				onItemAdd:function(){
-					this.setTextboxValue('');
-					this.refreshOptions();
-				}
-			});*/
-			</script>
 		</form>
 	</div>
 }
@@ -258,21 +222,33 @@ templ fineSuperSelect(players []PlayerWithFines, approvedPFines []PresetFine) {
 templ fineSuperSelectResults(players []PlayerWithFines, approvedPFines[]PresetFine, newFines []Fine) {
 	@fineSuperSelect(players, approvedPFines)
 	if len(newFines) > 0 {
-		<details class="list-none">
-			<summary class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-lg">
-				{ fmt.Sprintf("Added %d Fines", len(newFines)) }
-			</summary>
+		<div class="text-2xl list-none bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-lg">
+			<h1 class="text-3xl">{ fmt.Sprintf("Added %d Fines:", len(newFines)) }</h1>
 			if len(newFines) > 0 {
-				for _, nf := range newFines {
-					<div>{ fmt.Sprintf("%d %s",nf.PlayerID,  nf.Reason  ) }</div>
+				for _, p := range players {
+					for _, nf := range newFines {
+						if p.ID == nf.PlayerID {
+							<details>
+								<summary>
+									{ fmt.Sprintf("%s - %s - %s",nf.Reason, p.Name, nf.Context) }
+								</summary>
+								{ fmt.Sprintf("%+v",nf) }
+								<button
+ 									class={ bigDel }
+ 									hx-confirm="Are you sure you want to delete the fine by this player?"
+ 									hx-delete={ fmt.Sprintf("/fines?fid=%d", nf.ID) }
+								>Delete</button>
+							</details>
+						}
+					}
 				}
 			} else {
 				<div>No fines created? { fmt.Sprintf("%d %d", len(approvedPFines)) }</div>
 			}
-		</details>
+		</div>
 	} else {
 		<div class="bg-orange-100 border-l-4 border-orange-500 text-orange-700 p-4" role="alert">
-			<p>o fines added? Make sure to select fines/players above</p>
+			<p>no fines added? Make sure to select fines/players above</p>
 		</div>
 	}
 }

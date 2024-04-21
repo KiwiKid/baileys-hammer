@@ -18,14 +18,15 @@ type MatchPageData struct {
 	Msg string
 }
 
-type NewMatchForm struct {
-	MatchId uint64
-    Location  string
-    StartTime string // Using string here for simplicity; parsing is needed
-    Opponent  string
-    Subtitle  string
-	PlayerOfTheDay uint64
-	DudOfTheDay uint64
+type MatchForm struct {
+	MatchId uint64 `schema:"matchId" validate:"required"`
+    Location  string `schema:"location"`
+    StartTime string `schema:"startTime"`
+    Opponent  string `schema:"opponent"`
+    Subtitle  string `schema:"subtitle"`
+	PlayerOfTheDay uint64 `schema:"playerOfTheDay"`
+	DudOfTheDay uint64 `schema:"dudOfTheDay"`
+	EventTypeInjury []uint64 `schema:"eventTypeInjury"`
 }
 
 
@@ -92,10 +93,10 @@ func matchListHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) 
 			}
 			if resType == "select" {
 				matchComp := matchSelector(match, uint(matchId))
-				matchComp.Render(r.Context(), w)
+				matchComp.Render(GetContext(r), w)
 			} else {
 				matchComp := matchListPage(match, isOpen)
-				matchComp.Render(r.Context(), w)
+				matchComp.Render(GetContext(r), w)
 			}
 			
 		
@@ -105,8 +106,9 @@ func matchListHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) 
 	}
 }
 
+
+
 func matchHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
-	fmt.Printf("matchHandler")
 	var matchId uint
 	var err error
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -122,7 +124,7 @@ func matchHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 				matches, err := GetMatches(db, 1, 0, 9999)
 				if err != nil {
 					errComp := errMsg("Could not get matches")
-					errComp.Render(r.Context(), w)
+					errComp.Render(GetContext(r), w)
 				}
 
 				pwfs, err := GetPlayersWithFines(db, []uint64{})
@@ -131,7 +133,7 @@ func matchHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 					return
 				}
 				matchComp := matchesManage(r.Header.Get("Referrer"), true, matches, pwfs)
-				matchComp.Render(r.Context(), w)
+				matchComp.Render(GetContext(r), w)
 				return
 			}
 			var matchId64 uint64
@@ -143,7 +145,7 @@ func matchHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 
 			matchId = uint(matchId64)
 
-			match, err := GetMatchWithEvents(db, matchId)
+			match, err := GetMatchMetaGeneral(db, matchId)
 			if err != nil {
 				http.Error(w, fmt.Sprintf("Error retrieving match: %v", err), http.StatusInternalServerError)
 				return
@@ -154,7 +156,7 @@ func matchHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 	
 			
 			matchComp := editMatch(url, *match, "")
-			matchComp.Render(r.Context(), w)
+			matchComp.Render(GetContext(r), w)
 			return
 		case "POST":
 			// Simplified example: Assume the response after a POST is a success message or error
@@ -164,30 +166,44 @@ func matchHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 			}
 			matchIdStr := r.FormValue("matchId")
 			var matchId64 uint64 = 0
-			var form NewMatchForm
 			if len(matchIdStr) > 0 {
 				matchId64, err = strconv.ParseUint(matchIdStr, 10, 64)
 				if err != nil {
-					var msg = fmt.Sprintf("Error parsing match ID: %v", err)
+					var msg = fmt.Sprintf("Error parsing match ID: (%s) %v", matchIdStr, err)
 					errComp := errMsg(msg)
-					errComp.Render(r.Context(), w)
+					errComp.Render(GetContext(r), w)
 				}
 
-				form = NewMatchForm{
+				if err := r.ParseForm(); err != nil {
+					http.Error(w, "Invalid form data", http.StatusBadRequest)
+					return
+				}
+
+				var form MatchForm
+				if err := decoder.Decode(&form, r.PostForm); err != nil {
+					var msg = fmt.Sprintf("Error parsing MatchForm: %v", err.Error())
+					errComp := errMsg(msg)
+					errComp.Render(GetContext(r), w)
+				}
+
+				log.Printf("GOT FORM %+v", form)
+
+			/*	form = NewMatchForm{
 					MatchId: matchId64,
 					Location:  r.FormValue("location"),
 					StartTime: r.FormValue("startTime"),
 					Opponent:  r.FormValue("opponent"),
 					Subtitle:  r.FormValue("subtitle"),
-				}
+					EventTypeInjury: r.FormValue("eventTypeInjury"),
+				}*/
 
 				playerOfDayStr := r.FormValue("playerOfTheDay")
 				if len(playerOfDayStr) > 0 {
 					playerOfDayId, err := strconv.ParseUint(playerOfDayStr, 10, 64)
 					if err != nil {
-						var msg = fmt.Sprintf("Error parsing match ID: %v", err)
+						var msg = fmt.Sprintf("Error parsing playerOfTheDay ID: \"%s\" %v", playerOfDayStr, err)
 						errComp := errMsg(msg)
-						errComp.Render(r.Context(), w)
+						errComp.Render(GetContext(r), w)
 					}
 
 					form.PlayerOfTheDay = playerOfDayId
@@ -197,42 +213,19 @@ func matchHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 				if len(dudOfDayStr) > 0 {
 					dudOfDayId, err := strconv.ParseUint(dudOfDayStr, 10, 64)
 					if err != nil {
-						var msg = fmt.Sprintf("Error parsing match ID: %v", err)
+						var msg = fmt.Sprintf("Error parsing dudOfTheDay ID: %v", err)
 						errComp := errMsg(msg)
-						errComp.Render(r.Context(), w)
+						errComp.Render(GetContext(r), w)
 					}
 
 					form.DudOfTheDay = dudOfDayId
 				}
+				log.Printf("\nUPDATE UPDATE UPDATE  %+v\n", form)
 
-				successMsg = "match updated"
-			} else {
-				form = NewMatchForm{
-					MatchId: 0,
-					Location:  r.FormValue("location"),
-					StartTime: r.FormValue("startTime"),
-					Opponent:  r.FormValue("opponent"),
-					Subtitle:  r.FormValue("subtitle"),
-				}
-				successMsg = "New match created"
-
-			}
-	
 			
-	
-			// Parse start time
-			startTime, err := time.Parse("2006-01-02T15:04", form.StartTime)
-			if err != nil {
-				var msg = fmt.Sprintf("Invalid start time format %s", form.StartTime)
-				log.Print(msg)
-				errComp := errMsg(msg)
-				errComp.Render(r.Context(), w)
-			}
-	
 			// Create a new match based on the form data
 			match := Match{
 				Location:  form.Location,
-				StartTime: &startTime,
 				Opponent:  form.Opponent,
 				Subtitle:  form.Subtitle,
 				SeasonId:  seasonId,
@@ -240,18 +233,120 @@ func matchHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 				DudOfTheDay: form.DudOfTheDay,
 			}
 
+			
+
+			if len(form.StartTime) > 0 {
+				// Parse start time
+				startTime, err := time.Parse("2006-01-02T15:04", form.StartTime)
+				if err != nil {
+					var msg = fmt.Sprintf("Invalid start time format (%s) %v", form.StartTime, err)
+					log.Print(msg)
+					errComp := errMsg(msg)
+					errComp.Render(GetContext(r), w)
+				}else {
+					match.StartTime = &startTime
+				}
+				
+			}
+	
+
+
+			if(form.MatchId > 0){
+				match.ID = uint(form.MatchId)
+			}
+			log.Printf("SaveMatch %+v", match)
 			matchId, err = SaveMatch(db, &match)
 			if err != nil {
-				var msg = fmt.Sprintf("SaveMatch failed %v", err)
+				var msg = fmt.Sprintf("SaveMatch 1 failed %v", err)
 				log.Print(msg)
 				errComp := errMsg(msg)
-				errComp.Render(r.Context(), w)
+				errComp.Render(GetContext(r), w)
+				return
 			}
 
-			var url = templ.SafeURL(r.Header.Get("Referrer"))
+			log.Printf("\n\nFORM: %+v", form)
 
-			matchComp := editMatch(url, match, successMsg)
-			matchComp.Render(r.Context(), w)
+			if len(form.EventTypeInjury) > 0 {
+				for _, injPlayerId := range form.EventTypeInjury {
+					err = SaveMatchEvent(db, &MatchEvent{
+						MatchId: uint64(matchId),
+						EventName: "",
+						EventType: "injury",
+						PlayerId: uint(injPlayerId),
+					})
+					if err != nil {
+						log.Printf("\n\n\nINJURYINJURYINJURY ERROR %v", err)
+					}else {
+						log.Printf("\n\n\nINJURYINJURYINJURY saved matchId:%d %s for player:%d", matchId, "injury", injPlayerId)
+					}
+					
+				}
+			}
+
+			log.Printf("\n\nMATCH: %+v", match)
+				successMsg = fmt.Sprintf("match %s updated (%d) [potd:%s dud:%s]", form.Location, matchId64, playerOfDayStr, dudOfDayStr)
+				
+			} else {
+				log.Printf("\nCREATE CREATE CREATE \n")
+				createForm := MatchForm{
+					MatchId: 0,
+					Location:  r.FormValue("location"),
+					StartTime: r.FormValue("startTime"),
+					Opponent:  r.FormValue("opponent"),
+					Subtitle:  r.FormValue("subtitle"),
+				}
+				log.Printf("SaveMatch CREATE %+v", createForm)
+				matchId, err = SaveMatch(db, &Match{
+					Location:  createForm.Location,
+					Opponent:  createForm.Opponent,
+					Subtitle:  createForm.Subtitle,
+					SeasonId:  seasonId,
+				})
+				if err != nil {
+					var msg = fmt.Sprintf("SaveMatch 2 failed %v", err)
+					log.Print(msg)
+					errComp := errMsg(msg)
+					errComp.Render(GetContext(r), w)
+					return
+				}
+				successMsg = fmt.Sprintf("New match created (%d)", matchId)
+
+			}
+	
+			
+			
+			
+
+			var url = templ.SafeURL(r.Header.Get("Referrer"))
+			genMeta, err := GetMatchMetaGeneral(db, uint(matchId))
+			if err != nil || genMeta == nil {
+				var msg = fmt.Sprintf("GetMatchMetaGeneral failed %v", err)
+				log.Print(msg)
+				errComp := errMsg(msg)
+				errComp.Render(GetContext(r), w)
+			}
+
+			matchComp := editMatch(url, *genMeta, successMsg)
+			matchComp.Render(GetContext(r), w)
+		case "DELETE":
+			matchIdStr := chi.URLParam(r, "matchId")
+			fmt.Printf("matchHandler %s", matchIdStr)
+			matchId64, err := strconv.ParseUint(matchIdStr, 10, 64)
+			if err != nil {
+				http.Error(w, fmt.Sprintf("Error parsing match ID: %v", err), http.StatusBadRequest)
+				return
+			}
+
+			if matchIdStr != "" {
+				err := DeleteMatch(db, uint(matchId64))
+				if err != nil {
+					errComp := errMsg("Could not DeleteMatch")
+					errComp.Render(GetContext(r), w)
+				}
+
+			}
+			matchComp := success(F("deleted match: %d", matchId64))
+			matchComp.Render(GetContext(r), w)
 		default:
 			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 			return
@@ -329,7 +424,7 @@ func UpdateStateBasedOnEvent(currentState MatchState, event MatchEvent, currentT
 
     // Update players' time played if they are on the field
     for i, player := range currentState.PlayersOn {
-        if uint64(player.PlayerId) == event.PlayerId {
+        if player.PlayerId == event.PlayerId {
             if event.EventType == "subbed-off" {
                 // Remove player or update time
             } else if event.EventType == "goal" {

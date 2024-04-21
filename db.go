@@ -62,6 +62,14 @@ func DBInit() (*gorm.DB, error) {
         db.Migrator().AddColumn(&Match{}, "SeasonId")
     }
 
+    if(!db.Migrator().HasColumn(&Match{}, "PlayerOfTheDay")){
+        db.Migrator().AddColumn(&Match{}, "PlayerOfTheDay")
+    }
+
+    if(!db.Migrator().HasColumn(&Match{}, "DudOfTheDay")){
+        db.Migrator().AddColumn(&Match{}, "DudOfTheDay")
+    }
+
     if(!db.Migrator().HasColumn(&Fine{}, "Context")){
         db.Migrator().AddColumn(&Fine{}, "Context")
     }
@@ -108,6 +116,8 @@ func DBInit() (*gorm.DB, error) {
         db.Migrator().AddColumn(&PresetFine{}, "IsKudos")
     }
 
+    
+
     result := db.Model(&Fine{}).Where("fine_at IS NULL").Updates(map[string]interface{}{
         "fine_at": gorm.Expr("created_at"),
     })
@@ -121,7 +131,7 @@ func DBInit() (*gorm.DB, error) {
 
 // PlayerWithFines represents a player along with their fines
 type PlayerWithFines struct {
-    ID    uint 
+    ID    uint
     Name        string
     TotalFineCount int
     TotalFines  int
@@ -223,6 +233,20 @@ func GetPlayerByID(db *gorm.DB, playerID uint) (*Player, error) {
         return nil, result.Error
     }
     return &player, nil
+}
+
+func GetMatchMetaGeneral(db *gorm.DB, matchId uint) (*MatchMetaGeneral, error){
+    match, err := GetMatchWithEvents(db, matchId)
+    if err != nil {
+        return nil, err
+    }
+
+    genMeta, err := WrapMatchWithMeta(db, *match)
+    if err != nil {
+        return nil, err
+    }
+
+    return genMeta, nil
 }
 
 
@@ -539,7 +563,7 @@ type MatchEvent struct {
     EventType string // 'subbed-off' / 'subbed-on' / 'goal' / 'assist' / 'own-goal' / 'concded-goal'
     EventTime *time.Time `json:"timestamp" gorm:"type:datetime"`
     EventMinute int
-    PlayerId uint64
+    PlayerId uint
 }
 
 type PlayerState struct {
@@ -565,7 +589,7 @@ func GetMatches(db *gorm.DB, season uint64, page int, pageSize int) ([]Match, er
     var matches []Match
     offset := (page - 1) * pageSize
 //.Where("season_id = ?", season)
-    result := db.Order("created_at DESC").Offset(offset).Limit(pageSize).Find(&matches)
+    result := db.Order("start_time DESC").Offset(offset).Limit(pageSize).Find(&matches)
     if result.Error != nil {
         return nil, result.Error
     }
@@ -582,12 +606,39 @@ func GetMatch(db *gorm.DB, id uint64) (*Match, error){
     return &match, nil
 }
 
+func WrapMatchWithMeta(db *gorm.DB, match Match) (*MatchMetaGeneral, error){
+    players, err := GetPlayers(db, 0, 999)
+    if err != nil {
+        return nil, err
+    }
+
+    var playerOfTheDay *Player
+    var dudOfTheDay *Player
+    for _, p := range players {
+        if(p.ID == uint(match.PlayerOfTheDay)){
+            playerOfTheDay = &p
+        }
+        if(p.ID == uint(match.DudOfTheDay)){
+            dudOfTheDay = &p
+        }
+    }
+
+    // log.Printf("WrapMatchWithMeta - %d:%s %d:%s", match.PlayerOfTheDay, playerOfTheDay.Name, match.DudOfTheDay, dudOfTheDay.Name)
+    return &MatchMetaGeneral{
+        Match: match,
+        Players: players,
+        PlayerOfTheDay: playerOfTheDay,
+        DudOfTheDay: dudOfTheDay,
+    }, nil
+}
 
 func GetMatchWithEvents(db *gorm.DB, id uint) (*Match, error) {
     var match Match
     if err := db.Preload("Events").Where("id = ?", id).First(&match).Error; err != nil {
         return nil, err
     }
+    
+
     return &match, nil 
 }
 
@@ -617,6 +668,18 @@ func GetMatchEvent(db *gorm.DB, id uint64) (*MatchEvent, error) {
     return &event, nil
 }
 
+func DeleteMatchEvent(db *gorm.DB, eventId uint) error {
+    result := db.Delete(&MatchEvent{}, eventId)
+    if result.Error != nil {
+        return result.Error
+    }
+    if result.RowsAffected == 0 {
+        return gorm.ErrRecordNotFound
+    }
+    return nil
+}
+
+
 func SaveMatchEvent(db *gorm.DB, fine *MatchEvent) error {
     if err := db.Save(fine).Error; err != nil {
         return err
@@ -624,9 +687,13 @@ func SaveMatchEvent(db *gorm.DB, fine *MatchEvent) error {
     return nil
 }
 
-func DeleteMatchEvent(db *gorm.DB, fine *Match) error {
-    if err := db.Delete(fine).Error; err != nil {
-        return err
+func DeleteMatch(db *gorm.DB, matchId uint) error {
+    result := db.Delete(&Match{}, matchId)
+    if result.Error != nil {
+        return result.Error
+    }
+    if result.RowsAffected == 0 {
+        return gorm.ErrRecordNotFound
     }
     return nil
 }

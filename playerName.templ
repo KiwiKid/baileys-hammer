@@ -2,116 +2,119 @@ package main
 
 import (
 	"fmt"
+	"strings"
 )
 
 templ playerName(player Player) {
 	<div>{ player.Name }</div>
 }
 
-templ playerInputSelector(players []PlayerWithFines, playerId uint64) {
-
-	<div hx-swap-oob="true" id="player-select-potd" class="mt-4"> 
-		if len(UsePlayerOfTheDayName(ctx)) > 0 {
-			<label class="text-lg font-semibold">{ UsePlayerOfTheDayName(ctx) } ({ fmt.Sprintf("%d", len(players))  }):</label>
-			<select
- 				hx-ext="tomselect"
- 				max-options="1"
- 				name="playerOfTheDay"
- 				class="mt-1 w-full border-gray-300  bg-white rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-			>
-				<option value="">N/A</option>
-				for _, p := range players {
-					<option
- 						if p.ID == uint(playerId) {
-							selected
-						}
- 						value={ S("%v", p.ID) }
-					>
-						{ S("%s", p.Name) }
-					</option>
+templ playerInputSelector(players []Player, playerId uint64, inputType string) {
+	switch inputType {
+		case "potd":
+			<div id="player-select-potd" class="mt-4">
+				if len(UsePlayerOfTheDayName(ctx)) > 0 {
+					<label class="text-lg font-semibold">
+						{ UsePlayerOfTheDayName(ctx) }
+						<select
+ 							hx-ext="tomselect"
+ 							name="playerOfTheDay"
+ 							ts-max-items="1"
+ 							class="mt-1 w-full border-gray-300  bg-white rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+						>
+							<option value="">N/A</option>
+							for _, p := range players {
+								<option
+ 									if p.ID == uint(playerId) {
+										selected
+									}
+ 									value={ F("%d", p.ID) }
+								>
+									{ p.Name }
+								</option>
+							}
+						</select>
+					</label>
 				}
-			</select>
-		}
-	</div>
-	<div hx-swap-oob="true" id="player-select-dud-of-day" class="mt-4">
-		if len(UseDudOfTheDayName(ctx)) > 0 {
-			<label class="text-lg font-semibold">{ UseDudOfTheDayName(ctx) } ({ fmt.Sprintf("%d", len(players))  }):</label>
-			<select
- 				id="player-select-dud-of-day"
- 				hx-ext="tomselect"
- 				max-options="1"
- 				remove-button-title="Remove Player"
- 				multiple
-			>
-				<option value="">N/A</option>
-				for _, p := range players {
-					<option
- 						if p.ID == uint(playerId) {
-							selected
-						}
- 						value={ S("%v", p.ID) }
-					>
-						{ S("%s", p.Name) }
-					</option>
+			</div>
+		case "dotd":
+			<div id="player-select-dud-of-day" class="mt-4">
+				if len(UseDudOfTheDayName(ctx)) > 0 {
+					<label class="text-lg font-semibold">
+						{ UseDudOfTheDayName(ctx) }
+						<select
+ 							id="player-select-dud-of-day"
+ 							name="dudOfTheDay"
+ 							hx-ext="tomselect"
+ 							ts-max-items="1"
+						>
+							<option value="">N/A</option>
+							for _, p := range players {
+								<option
+ 									if p.ID == uint(playerId) {
+										selected
+									}
+ 									value={ F("%d", p.ID) }
+								>
+									{ p.Name }
+								</option>
+							}
+						</select>
+					</label>
 				}
-			</select>
-		}
-	</div>
+			</div>
+		default:
+			@errMsg(fmt.Sprintf("No type for %d", inputType))
+	}
 }
 
-templ playerInputSelectorOLD(players []PlayerWithFines, playerId uint64) {
-	<div hx-swap-oob="true" id="player-select-potd" class="mt-4">
-		if len(UsePlayerOfTheDayName(ctx)) > 0 {
-			<label class="text-lg font-semibold">{ UsePlayerOfTheDayName(ctx) } ({ fmt.Sprintf("%d", len(players))  }):</label>
-			<select
- 				hx-ext="tomselect"
- 				max-options="20"
- 				remove-button-title=""
- 				name="playerOfTheDay
-
-
-"
- 				class="mt-1 w-full border-gray-300  bg-white rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50
-			"
-			>
-				<option value="">N/A</option>
-				for _, p := range players {
-					<option
- 						if p.ID == uint(playerId) {
-							selected
-						}
- 						value={ S("%v", p.ID) }
-					>
-						{ S("%s", p.Name) }
-					</option>
-				}
-			</select>
-		}
-	</div>
-	<div hx-swap-oob="true" id="player-select-dud-of-day" class="mt-4">
-		if len(UseDudOfTheDayName(ctx)) > 0 {
-			<label class="text-lg font-semibold">{ UseDudOfTheDayName(ctx) } ({ fmt.Sprintf("%d", len(players))  }):</label>
-			<select name="dudOfTheDay" class="mt-1 w-full border-gray-300  bg-white rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
-				<option value="">N/A</option>
-				for _, p := range players {
-					<option
- 						if p.ID == uint(playerId) {
-							selected
-						}
- 						value={ S("%v", p.ID) }
-					>
-						{ S("%s", p.Name) }
-					</option>
-				}
-			</select>
-		}
-	</div>
+func playerHasEvent(playerId uint, Events []MatchEvent, eventType string) bool {
+    for _, event := range Events {
+        if event.PlayerId == playerId && event.EventType == eventType {
+            return true
+        }
+    }
+    return false
 }
 
-templ playerRoleSelector(player PlayerWithFines, msg string) {
-	<div class="" id="players-ss">
+templ playerEventInputSelector(players []Player, events []MatchEvent, eventType string) {
+	switch eventType {
+		case "injury":
+			<div id="player-select-injuries" class="mt-4">
+				if len(UseInjuryCounterTrackerName(ctx)) > 0 {
+					<label>
+						{ UseInjuryCounterTrackerName(ctx) }
+						<select
+ 							hx-ext="tomselect"
+ 							ts-no-delete="true"
+ 							name={ fmt.Sprintf("eventType%s", strings.Title(eventType)) }
+ 							multiple
+ 							class="mt-1 w-full border-gray-300  bg-white rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+						>
+							<option value="">N/A</option>
+							for _, p := range players {
+								<option
+ 									if playerHasEvent(p.ID, events,eventType) {
+										selected
+									}
+ 									value={ F("%d", p.ID) }
+								>
+									{ p.Name }
+								</option>
+							}
+						</select>
+					</label>
+				}
+			</div>
+		default:
+			@errMsg(fmt.Sprintf("No eventType for %d", eventType))
+	}
+}
+
+templ playerRoleSelector(player PlayerWithFines, config *Config, msg string) {
+	<div class="w-full" id="players-ss">
 		<form class="todo" hx-post={ fmt.Sprintf("/players?playerId=%d", player.ID) } hx-swap="outerHTML">
-			<div class="container p-2">
+			<div class="p-2">
 				<input
  					type="hidden"
  					name="ID"
@@ -150,6 +153,11 @@ templ playerRoleSelector(player PlayerWithFines, msg string) {
  							placeholder="Role Description"
  							class="w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600"
 						/>
+						if len(UseInjuryCounterTrackerName(ctx)) > 0 {
+							<div class="flex flex-row mt-2">
+								<button type="submit" hx-get={ fmt.Sprintf("/match/%d/event", ) } class={ bigPri }>Add Injury</button>
+							</div>
+						}
 					</label>
 				}
 				if len(msg) > 0 {

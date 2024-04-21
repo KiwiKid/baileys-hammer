@@ -35,7 +35,7 @@ templ finemaster(pass string, players []PlayerWithFines, fineWithPlayers []FineW
 			<div class="grid grid-cols-1 gap-2">
 				@fineAddV2(secureFineMasterbaseUrl(finemasterBaseUrl, pass), qp.FinesOpen, players, pFines, true)
 			</div>
-			<div class="container mx-auto p-4" id="quick-finer">
+			<div class="mx-auto p-4 hidden" id="quick-finer">
 				<div class="flex items-center justify-center bg-gray-100 mx-auto">
 					<ul>
 						for _, p := range players {
@@ -87,32 +87,36 @@ templ finemaster(pass string, players []PlayerWithFines, fineWithPlayers []FineW
 					Toggle Quick Fines
 				</div>
 			</div>
-			@playersManage(secureFineMasterbaseUrl(finemasterBaseUrl, pass), players, qp.PlayerOpen)
+			@playersManage(secureFineMasterbaseUrl(finemasterBaseUrl, pass), players, config, qp.PlayerOpen)
 			@presetFines(fmt.Sprintf("%s/%s", finemasterBaseUrl, pass), pass, qp.PresetFinesOpen, pFines)
 			@matchesManage(secureFineMasterbaseUrl(finemasterBaseUrl, pass), qp.MatchesOpen, matches, players)
 			@fineList(fineWithPlayers, 0, qp.PresetFineUpdated, false)
 			<div class="mt-96"></div>
 			@finemasterNav(fmt.Sprintf("%s/%s", finemasterBaseUrl, pass))
-			
 		</body>
 		@tomSelectLinks()
 	</html>
 }
 
-templ editPresetFine(baseUrl string, passCode string, pFine PresetFine) {
-	<div id={ fmt.Sprintf("pf-%d", pFine.ID) } class="px-8 py-6 text-left bg-white shadow-xl m-10">
-		<form hx-post="/preset-fines" class="mt-4">
+templ editPresetFine(baseUrl string, passCode string, pFine PresetFine, msg string) {
+	<div id={ fmt.Sprintf("pf-%d", pFine.ID) } class="w-full px-8 py-6 text-left bg-white shadow-xl m-10">
+		<form hx-post="/preset-fines" hx-swap="outerHTML" hx-target={ fmt.Sprintf("#pf-%d", pFine.ID) } class="mt-4">
 			<input type="hidden" name="pass" value={ passCode }/>
 			<input type="hidden" name="pfid" value={ fmt.Sprintf("%d", pFine.ID) }/>
-			<div>
+			<div class="mt-4">
 				<label for="reason" class="block">
 					<input required value={ pFine.Reason } type="text" name="reason" id="reason" placeholder="Reason for the fine" class="w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600"/>
 				</label>
 			</div>
 			<div class="mt-4">
+				<label for="context" class="block">
+					<input value={ pFine.Context } type="text" name="context" id="context" placeholder="Context for the fine" class="w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600"/>
+				</label>
+			</div>
+			<div class="mt-4">
 				<label for="amount" class="block">
 					Amount ($) 
-					<input required value={ fmt.Sprintf("%.2f", pFine.Amount) } type="number" step="0.01" name="amount" id="amount" placeholder="Amount" class="p-2 w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600"/>
+					<input required value={ fmt.Sprintf("%.2f", pFine.Amount) } type="number" step="0.5" name="amount" id="amount" placeholder="Amount" class="p-2 w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600"/>
 				</label>
 			</div>
 			<div class="mt-4">
@@ -123,7 +127,7 @@ templ editPresetFine(baseUrl string, passCode string, pFine PresetFine) {
 							value={ fmt.Sprintf("%d", pFine.DisplayOrder) }
 						}
  						type="number"
- 						step="0.01"
+ 						step="1"
  						name="displayOrder"
  						id="displayOrder"
  						placeholder="1-9999"
@@ -160,6 +164,9 @@ templ editPresetFine(baseUrl string, passCode string, pFine PresetFine) {
 			<div class="flex items-center justify-between mt-4">
 				<button type="submit" class={ bigAdd }>Save Edits</button>
 			</div>
+			if len(msg) > 0 {
+				@success(msg)
+			}
 			<div class="flex items-center justify-between mt-4">
 				if pFine.NotQuickFine {
 					<button class={ bigPri } hx-post={ fmt.Sprintf("/preset-fines/show?pfid=%d", pFine.ID) }>Show in Quick Fines</button>
@@ -175,32 +182,41 @@ templ editPresetFine(baseUrl string, passCode string, pFine PresetFine) {
 	</div>
 }
 
-templ newPresetFine(baseUrl string) {
-	<form hx-post="/preset-fines" class="mt-4">
-		<div>
-			<label for="reason" class="block">
-				<input required type="text" name="reason" id="reason" placeholder="Reason for the fine" class="w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600"/>
-			</label>
+templ newPresetFine(baseUrl string, passCode string) {
+	<div>
+		<form hx-post="/preset-fines" hx-swap="outerHTML" hx-target="#pf-create" class="mt-4">
+			<input type="hidden" name="pass" value={ passCode }/>
+			<div class="mt-4">
+				<label for="reason" class="block">
+					<input required type="text" name="reason" id="reason" placeholder="Reason for the fine" class="w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600"/>
+				</label>
+			</div>
+			<div class="mt-4">
+				<label for="amount" class="block">Amount ($)</label>
+				<input required type="text" name="reason" id="reason" placeholder="Amount" class="w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600"/>
+			</div>
+			<div class="mt-4">
+				<label for="context" class="block">
+					<input type="text" name="context" id="context" placeholder="Details" class="w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600"/>
+				</label>
+			</div>
+			<div class="mt-4">
+				<label class="block"><input type="checkbox" checked="checked" name="approved" class="text-2xl m-2 py-2 mt-2 p-2 "/>Approved</label>
+			</div>
+			<div class="flex items-center justify-between mt-4">
+				<button type="submit" class={ bigAdd }>Add New Fine</button>
+			</div>
+		</form>
+		<div class="flex justify-center w-full">
+			<a href={ makeSafeUrl(baseUrl, false, false, false, false, false) } class={ bigSec }>Close</a>
 		</div>
-		<div class="mt-4">
-			<label for="amount" class="block">Amount ($)</label>
-			<input required type="number" step="0.01" name="amount" id="amount" placeholder="Amount" class="p-2 w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600"/>
-		</div>
-		<div class="mt-4">
-			<label class="block"><input type="checkbox" checked="checked" name="approved" class="text-2xl m-2 py-2 mt-2 p-2 "/>Approved</label>
-		</div>
-		<div class="flex items-center justify-between mt-4">
-			<button type="submit" class={ bigAdd }>Add New Fine</button>
-		</div>
-	</form>
-	<div class="flex justify-center w-full">
-		<a href={ makeSafeUrl(baseUrl, false, false, false, false, false) } class={ bigSec }>Close</a>
 	</div>
+	<div id="pf-create"></div>
 }
 
 templ presetFines(baseUrl string, passCode string, isOpen bool, presetFines []PresetFine) {
 	if isOpen {
-		<div class="px-8 py-6 text-left bg-white shadow-xl m-10" id="preset-fine">
+		<div class="w-full px-8 py-6 text-left bg-white shadow-xl m-10" id="preset-fine">
 			<h3 class="text-2xl font-bold text-center">Add or Approve Fines</h3>
 			<div class="w-full flex justify-center items-center py-2">
 				<p>Make fines submitted appear in the drop-down list, or add new fines to the drop down</p>
@@ -221,9 +237,9 @@ templ presetFines(baseUrl string, passCode string, isOpen bool, presetFines []Pr
 							</div>
 						}
 					}
-					@newPresetFine(baseUrl)
+					@newPresetFine(baseUrl, passCode)
 					for _, pfine := range presetFines {
-						@editPresetFine(baseUrl, passCode, pfine)
+						@editPresetFine(baseUrl, passCode, pfine, "")
 					}
 				</div>
 			</div>
@@ -236,31 +252,34 @@ templ presetFines(baseUrl string, passCode string, isOpen bool, presetFines []Pr
 }
 
 templ matchesManage(baseUrl string, isOpen bool, matches []Match, pwfs []PlayerWithFines) {
-	if isOpen {
-		<div class="px-8 py-6 text-left bg-white shadow-xl m-10" id="preset-fine">
-			<h3 class="text-2xl font-bold text-center">Add/Edit Matches</h3>
-			<div hx-get={ fmt.Sprintf("/players?type=super-input") } hx-trigger="load once"></div>
-			<div class="w-full flex justify-center items-center py-2">
-				<p>Edit existing matches, or add new ones</p>
+	<div class="mx-auto bg-gray-200 shadow-xl m-10">
+		if isOpen {
+			<div class="w-full px-8 py-6 text-left bg-white shadow-xl m-10" id="preset-fine">
+				<h3 class="text-2xl font-bold text-center">Add/Edit Matches</h3>
+				<div class="w-full flex justify-center items-center py-2">
+					<p>Edit existing matches, or add new ones</p>
+				</div>
+				@createMatch(makeSafeUrl(baseUrl, false, false, false, false, false), pwfs)
+				<div class="mx-auto bg-gray-200 shadow-xl m-10 flex flex-col justify-center items-center">
+					for _, m := range matches {
+						<button hx-trigger="click" hx-get={ fmt.Sprintf("/match/%d", m.ID) } hx-swap="outerHTML" class={ bigPri }>Edit "vs { m.Opponent } at { m.Location  }"</button>
+					}
+				</div>
 			</div>
-			@createMatch(makeSafeUrl(baseUrl, false, false, false, false, false), pwfs)
-			for _, m := range matches {
-				@editMatch(makeSafeUrl(baseUrl, false, false, false, false, false), m, "")
-			}
-		</div>
-	} else {
-		<div class="flex justify-center w-full">
-			<a href={ makeSafeUrlWithAnchorV2(baseUrl, "standard-matches", true) } class={ bigPri }>Manage Matches</a>
-		</div>
-	}
+		} else {
+			<div class="flex justify-center w-full">
+				<a href={ makeSafeUrlWithAnchorV2(baseUrl, "standard-matches", true) } class={ bigPri }>Manage Matches</a>
+			</div>
+		}
+	</div>
 }
 
-templ playersManage(baseUrl string, players []PlayerWithFines, isOpen bool) {
+templ playersManage(baseUrl string, players []PlayerWithFines, config *Config, isOpen bool) {
 	if isOpen {
 		<div class="flex items-center justify-center bg-gray-100  p-3" id="players-manage">
-			<div class="px-8 py-6 text-left bg-white shadow-xl m-10">
+			<div class="w-full px-8 py-6 text-left bg-white shadow-xl m-10">
 				<!-- Section for Adding New Player -->
-				<h3 class="text-2xl font-bold text-center">Add New Player ({ fmt.Sprintf("%d", len(players)) })</h3>
+				<h3 class="text-2xl font-bold text-center" title={ fmt.Sprintf("%+v", config) }>Add New Player ({ fmt.Sprintf("%d", len(players)) })</h3>
 				<form hx-post="/players" method="POST" class="mt-4">
 					<div>
 						<label for="name" class="block">Name</label>
@@ -270,13 +289,13 @@ templ playersManage(baseUrl string, players []PlayerWithFines, isOpen bool) {
 						<button type="submit" class={ bigAdd }>Add Player</button>
 					</div>
 				</form>
-				<div class="p-6 max-w-36">
+				<div class="p-6">
 					<div class="flex justify-center w-full p-3">
 						<a href={ makeSafeUrl(baseUrl, false, false, false, false, false) } hx-transition="true" class={ bigSec }>Close</a>
 					</div>
 					<h3 class="text-2xl font-bold text-center mt-8">Manage Players</h3>
 					for _, p := range players {
-						@playerRoleSelector(p, "")
+						@playerRoleSelector(p, config, "")
 					}
 				</div>
 				<div class="flex justify-center w-full p-3">
