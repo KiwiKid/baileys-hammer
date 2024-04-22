@@ -156,13 +156,22 @@ templ pageFooter() {
 
 var twoWeeksAgo = time.Now().AddDate(0, 0, -14)
 
-templ home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines []PresetFine, fineWithPlayers []FineWithPlayer, qp HomeQueryParams) {
+templ activeMatchBanner(activeMatch *Match) {
+	if activeMatch != nil {
+		<div class="top-0 left-0 w-full bg-green-400 text-white text-center py-2 shadow-md">
+			{ F("vs %s @ %s", activeMatch.Opponent, activeMatch.Location) }
+		</div>
+	}
+}
+
+templ home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines []PresetFine, fineWithPlayers []FineWithPlayer, qp HomeQueryParams, activeMatch *Match) {
 	<html hx-boost="true">
 		@header()
 		@tomSelectLinks()
 		<body class="text-2xl p-1">
 			<div>
-				<h1 class="font-bold mb-4 text-center">{ GetTitle(ctx) }</h1>
+				@activeMatchBanner(activeMatch)
+				<h1 class="font-bold mt-4 pb-4 text-center">{ GetTitle(ctx) }</h1>
 				if len(approvedPFines) > 0 {
 					<div class="mx-auto bg-gray-200 shadow-xl p-2">
 						<div id="fines" class="flex justify-center w-full p-3">

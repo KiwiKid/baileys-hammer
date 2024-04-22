@@ -541,6 +541,25 @@ func GetFineFromPreset(db *gorm.DB, pfID string) (*Fine, error) {
 }
 
 
+func GetActiveMatch(db *gorm.DB) (*Match, error) {
+    var match Match
+    now := time.Now()
+
+    // Find the nearest upcoming match where the start time is in the future
+    result := db.Where("start_time > ?", now).Order("start_time ASC").First(&match)
+
+    if result.Error != nil {
+        if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+            // No upcoming match found is not considered an error; return nil
+            return nil, nil
+        }
+        // Some other error occurred; return the error
+        return nil, result.Error
+    }
+
+    return &match, nil
+}
+
 
 
 

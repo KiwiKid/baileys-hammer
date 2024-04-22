@@ -1149,7 +1149,13 @@ func main() {
 			return 
 		}
 
-		home := home(playersWithFines, approvedPFines, pendingPFines, fineWithPlayers, *queryParams)
+		activeMatch, err := GetActiveMatch(db)
+		if err != nil {
+			errComp := errMsg(F("Could not get active match %v", err))
+			errComp.Render(GetContext(r), w)
+		}
+
+		home := home(playersWithFines, approvedPFines, pendingPFines, fineWithPlayers, *queryParams, activeMatch)
 		home.Render(GetContext(r), w)
 	})
 
