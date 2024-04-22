@@ -289,12 +289,22 @@ func fineEditHandler(db *gorm.DB) http.HandlerFunc {
 			isContest := r.URL.Query().Get("isContest")
 			isContext := r.URL.Query().Get("isContext")
 
-			
+			isFineMasterStr := r.URL.Query().Get("isFineMaster")
+
+			var isFineMaster bool = isFineMasterStr == "true"
+			if(isFineMaster) {
+				log.Printf("permision Error fetching fineEditHandler")
+				http.Error(w, "Not this time mate.", http.StatusInternalServerError)
+				return
+			}
 
 
 			if (isEdit == "true") {
-				fineEditRow := fineEditRow(fineWithPlayer)
+				fineEditRow := fineEditRow(fineWithPlayer, isFineMaster)
 				fineEditRow.Render(GetContext(r), w)
+			} else if(isEdit == "form") {
+				fineFormRow := fineEditForm(fineWithPlayer, isFineMaster)
+				fineFormRow.Render(GetContext(r), w)
 			} else if(isContest == "true") {
 				fineContestRow := fineContestRow(fineWithPlayer)
 				fineContestRow.Render(GetContext(r), w)
@@ -307,7 +317,7 @@ func fineEditHandler(db *gorm.DB) http.HandlerFunc {
 				fineContestRow := fineContextRow(fineWithPlayer, matches)
 				fineContestRow.Render(GetContext(r), w)
 			} else {
-				fineRowComp := fineRow(true, fineWithPlayer)
+				fineRowComp := fineRow(isFineMaster, fineWithPlayer)
 				fineRowComp.Render(GetContext(r), w)
 			}
 			return
@@ -333,7 +343,14 @@ func fineEditHandler(db *gorm.DB) http.HandlerFunc {
             }
 
             reason := r.FormValue("reason")
-            approved := r.FormValue("approved") == "true"
+			approvedStr := r.FormValue("approved")
+			var approved bool
+			if(len(approvedStr) == 0){
+				approved = config.DefaultToApproved
+			} else {
+				approved = approvedStr == "true" //todo: on?
+			}
+
             playerId, err := strconv.ParseUint(r.FormValue("playerId"), 10, 64)
             if err != nil {
 				errComp := errMsg(F("Invalid playerId", r.FormValue("playerId")))
@@ -778,43 +795,41 @@ func fineApproveHandler(db *gorm.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case "POST":
-			// Parse form data
 			if err := r.ParseForm(); err != nil {
 				http.Error(w, "Error parsing form data", http.StatusBadRequest)
 				return
 			}
 
-			// Access form values
-			fIDStr := r.FormValue("fid") // Now getting 'fid' from the form data
+			
+			fIDStr := r.FormValue("fid") 
 			amountStr := r.FormValue("amount")
+			approved := r.FormValue("approved") == "on"
 
-			// Convert 'fid' to uint64
 			fID, err := strconv.ParseUint(fIDStr, 10, 64)
 			if err != nil || fID == 0 {
 				http.Error(w, fmt.Sprintf("Error parsing fine ID: %v", err), http.StatusBadRequest)
 				return
 			}
 
-			// Convert 'amount' to float64
 			amount, err := strconv.ParseFloat(amountStr, 64)
 			if err != nil {
 				http.Error(w, fmt.Sprintf("Error parsing amount: %v", err), http.StatusBadRequest)
 				return
 			}
-			log.Printf("Approve fine %d %f", fID, amount)
-			// Call ApproveFine with parsed 'fid' and 'amount'
-			if err := ApproveFine(db, uint(fID), amount); err != nil {
+			if err := ApproveFine(db, uint(fID), amount, approved); err != nil {
 				log.Printf("Error approving fine with specified amount: %v", err)
 				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 				return
 			}
 
-			// Redirect or handle response as needed
-			//w.Header().Set("HX-Redirect", r.Header.Get("Referrer"))
-			//w.WriteHeader(http.StatusOK)
-
-			success := success("Approved")
-			success.Render(GetContext(r), w)
+			if approved {
+				success := success("Approved")
+				success.Render(GetContext(r), w)	
+			} else {
+				success := warning("Declined")
+				success.Render(GetContext(r), w)	
+			}
+			
 			return
 		default:
 			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)

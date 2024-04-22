@@ -79,8 +79,8 @@ templ fineRow(isFineMaster bool, f FineWithPlayer) {
 					}
 				>
 					<button
- 						hx-get={ fmt.Sprintf("/fines/edit/%d?isContext=true", f.Fine.ID) }
- 						hx-swap="innerHTML"
+ 						hx-get={ fmt.Sprintf("/fines/edit/%d?isEdit=true", f.Fine.ID) }
+ 						hx-swap="outerHTML"
  						hx-target={ fmt.Sprintf("#fr-%d", f.Fine.ID) }
  						class={ smPri }
 					>
@@ -94,42 +94,10 @@ templ fineRow(isFineMaster bool, f FineWithPlayer) {
 			</div>
 		</td>
 		<td>
-			if isFineMaster {
-				if !f.Fine.Approved {
-					<div>
-						<form hx-post="/fines/approve" hx-swap="outerHTML" ethod="POST">
-							<input
- 								type="hidden"
- 								name="fid"
- 								value={ fmt.Sprintf("%d", f.Fine.ID) }
-							/>
-							$
-							<input
- 								type="number"
- 								name="amount"
- 								id="amount-input-3"
- 								class="px-2 py-1 border rounded"
- 								placeholder="Set amount"
- 								if f.Fine.Amount > 0 {
-									value={ fmt.Sprintf("%v", f.Fine.Amount) }
-								} else {
-									value="2"
-								}
-							/>
-							<button
- 								type="submit"
- 								class={ bigAdd }
-							>
-								Approve
-							</button>
-						</form>
-					</div>
-				}
-			}
 			if len(f.Fine.Contest) == 0 {
 				<div class="max-w-96">
 					<button
- 						hx-get={ fmt.Sprintf("/fines/edit/%d?isContest=true", f.Fine.ID) }
+ 						hx-get={ fmt.Sprintf("/fines/edit/%d?isContest=true&isFineMaster=%d", f.Fine.ID, isFineMaster) }
  						hx-swap="outerHTML"
  						class={ smPri }
 					>Contest</button>
@@ -138,6 +106,87 @@ templ fineRow(isFineMaster bool, f FineWithPlayer) {
 				<div>
 					{ f.Fine.Contest }
 				</div>
+			}
+		</td>
+		<td>
+			if isFineMaster {
+				if !f.Fine.Approved {
+					<form hx-post="/fines/approve" hx-swap="outerHTML" class="w-full" method="POST">
+						<div class="grid grid-cols-2 gap-4">
+							<!-- Corrected class name and added gap for spacing -->
+							<div class="flex items-center">
+								<!-- Added flex layout to vertically center align items -->
+								<input
+ 									type="hidden"
+ 									name="fid"
+ 									value={ fmt.Sprintf("%d", f.Fine.ID) }
+								/>
+								<input
+ 									type="hidden"
+ 									name="approved"
+ 									value="on"
+								/>
+								<div class="mt-2">
+									<label for="amount-input-3" class="block text-sm font-medium text-gray-700">Amount:</label>
+									<div class="mt-1 flex rounded-md shadow-sm">
+										<span class="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm">$</span>
+										<input
+ 											type="number"
+ 											name="amount"
+ 											id="amount-input-3"
+ 											class="flex-1 min-w-0 block w-full px-3 py-2 rounded-none rounded-r-md border border-gray-300"
+ 											placeholder="Set amount"
+ 											if f.Fine.Amount > 0 {
+												value={ fmt.Sprintf("%v", f.Fine.Amount) }
+											} else {
+												value="2"
+											}
+										/>
+									</div>
+								</div>
+							</div>
+							<div class="flex justify-end items-center">
+								<!-- Added flex layout to align button to the right and center it vertically -->
+								<button
+ 									type="submit"
+ 									class={ bigAdd }
+								>
+									Approve
+								</button>
+							</div>
+						</div>
+					</form>
+				} else {
+					<div>
+						<form hx-post="/fines/approve" hx-swap="outerHTML" ethod="POST">
+							<input
+ 								type="hidden"
+ 								name="fid"
+ 								value={ fmt.Sprintf("%d", f.Fine.ID) }
+							/>
+							<input
+ 								type="hidden"
+ 								name="approved"
+ 								value="off"
+							/>
+							<input
+ 								type="hidden"
+ 								name="amount"
+ 								if f.Fine.Amount > 0 {
+									value={ fmt.Sprintf("%v", f.Fine.Amount) }
+								} else {
+									value="2"
+								}
+							/>
+							<button
+ 								type="submit"
+ 								class={ sec }
+							>
+								Decline
+							</button>
+						</form>
+					</div>
+				}
 			}
 		</td>
 		if isFineMaster {
@@ -251,100 +300,116 @@ templ fineContestRow(f FineWithPlayer) {
 	</div>
 }
 
-templ fineEditRow(f FineWithPlayer) {
+templ fineEditForm(f FineWithPlayer, isFineMaster bool) {
+	<form
+ 		hx-post={ fmt.Sprintf("/fines/edit/%d", f.Fine.ID) }
+ 		hx-target={ fmt.Sprintf("#fr-%d", f.Fine.ID) }
+ 		hx-swap="outerHTML"
+	>
+		<div class="p-4">
+			<label for="reason" class="block text-sm font-medium text-gray-700">Reason</label>
+			<input
+				type="text"
+				name="reason"
+				value={ f.Fine.Reason }
+				class="mt-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 w-full"
+				placeholder="Reason"
+			/>
+			<label for="context" class="block mt-4 text-sm font-medium text-gray-700">Context for the fine</label>
+			<input
+				type="text"
+				name="context"
+				value={ f.Fine.Context }
+				class="mt-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 w-full"
+				placeholder="Context for the fine"
+			/>
+			<!-- Hidden Inputs -->
+			<input
+				type="playerId"
+				name="playerId"
+				value={ fmt.Sprintf("%v", f.Player.ID) }
+				class="hidden"
+			/>
+			<input
+				type="fid"
+				name="fid"
+				value={ fmt.Sprintf("%v", f.Fine.ID) }
+				class="hidden"
+			/>
+		</div>
+
+		<div>{ f.Player.Name }</div>
+		if isFineMaster {
+			<div class="px-6 py-4">
+				<input
+ 					type="number"
+ 					name="amount"
+ 					value={ fmt.Sprintf("%v", f.Fine.Amount) }
+ 					class="px-2 py-1 border rounded w-full"
+ 					placeholder="Amount"
+				/>
+			</div>
+			<div>
+				<select name="approved" class="px-2 py-1 border rounded">
+					<option
+ 						value="true"
+ 						if f.Fine.Approved {
+							selected
+						}
+					>Approved</option>
+					<option
+ 						value="false"
+ 						if !f.Fine.Approved {
+							selected
+						}
+					>Not Approved</option>
+				</select>
+			</div>
+		}
+			<div>
+				<input
+					type="date"
+					id="fineAt"
+					name="fineAt"
+					value={ f.Fine.FineAt.Format("2006-01-02") }
+					class="px-2 py-1 border rounded w-full"
+				/>
+			</div>
+			<div class="mt-10">
+				
+				<button
+					class={ bigPri }
+					type="submit"
+				>
+					Save
+				</button>
+			</div>
+			<div class="mt-10 flex justify-between">
+				<button
+					hx-get={ fmt.Sprintf("/fines/edit/%d", f.Fine.ID) }
+					hx-target={ fmt.Sprintf("#fr-%d", f.Fine.ID) }
+					hx-swap="outerHTML"
+					type="button"
+					class={ fmt.Sprintf("%s w-3/5", sec)}
+				>
+					Cancel
+				</button>
+				<button
+					class={ del }
+					hx-confirm="Are you sure you want to delete the fine by this player?"
+					hx-delete={ fmt.Sprintf("/fines?fid=%d", f.Fine.ID) }
+				>Delete</button>
+			</div>
+	</form>
+}
+
+templ fineEditRow(f FineWithPlayer, isFineMaster bool) {
 	<tr
  		id={ fmt.Sprintf("fr-%d", f.Fine.ID) }
  		class="bg-white divide-y divide-gray-200"
 	>
-		<td class="px-6 py-4">
-			<label for="reason">Reason</label>
-			<input
- 				type="text"
- 				name="reason"
- 				value={ f.Fine.Reason }
- 				class="px-2 py-1 border rounded w-full"
- 				placeholder="Reason"
-			/>
-			<input
- 				type="text"
- 				name="context"
- 				value={ f.Fine.Context }
- 				class="px-2 py-1 border rounded w-full"
- 				placeholder="Context for the fine"
-			/>
-			<input
- 				type="playerId"
- 				name="playerId"
- 				value={ fmt.Sprintf("%v", f.Player.ID) }
- 				class="invisible"
-			/>
-			<input
- 				type="fid"
- 				name="fid"
- 				value={ fmt.Sprintf("%v", f.Fine.ID) }
- 				class="invisible"
-			/>
-		</td>
-		<td class="px-6 py-4">
-			<input
- 				type="number"
- 				name="amount"
- 				value={ fmt.Sprintf("%v", f.Fine.Amount) }
- 				class="px-2 py-1 border rounded w-full"
- 				placeholder="Amount"
-			/>
-		</td>
-		<td>{ f.Player.Name }</td>
-		<td>
-			<select name="approved" class="px-2 py-1 border rounded">
-				<option
- 					value="true"
- 					if f.Fine.Approved {
-						selected
-					}
-				>Approved</option>
-				<option
- 					value="false"
- 					if !f.Fine.Approved {
-						selected
-					}
-				>Not Approved</option>
-			</select>
-		</td>
-		<td>
-			<input
- 				type="date"
- 				id="fineAt"
- 				name="fineAt"
- 				value={ f.Fine.FineAt.Format("2006-01-02") }
- 				class="px-2 py-1 border rounded w-full"
-			/>
-		</td>
-		<td>
-			<button
- 				class={ bigDel }
- 				hx-confirm="Are you sure you want to delete the fine by this player?"
- 				hx-delete={ fmt.Sprintf("/fines?fid=%d", f.Fine.ID) }
-			>Delete</button>
-			<button
- 				class={ pri }
- 				hx-post={ fmt.Sprintf("/fines/edit/%d", f.Fine.ID) }
- 				hx-target={ fmt.Sprintf("#fr-%d", f.Fine.ID) }
- 				hx-swap="outerHTML"
- 				hx-include="closest tr"
- 				type="submit"
-			>
-				Save
-			</button>
-			<button
- 				hx-get={ fmt.Sprintf("/fines/edit/%d", f.Fine.ID) }
- 				hx-target={ fmt.Sprintf("#fr-%d", f.Fine.ID) }
- 				hx-swap="outerHTML"
- 				type="button"
- 				class={ sec }
-			>
-				Cancel
-			</button>
+		<td class="px-6 py-4" colspan="10">
+			@fineEditForm(f, isFineMaster)
 		</td>
 	</tr>
 }

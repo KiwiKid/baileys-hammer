@@ -392,7 +392,7 @@ func finemaster(pass string, players []PlayerWithFines, fineWithPlayers []FineWi
 		if err != nil {
 			return err
 		}
-		err = fineList(fineWithPlayers, 0, qp.PresetFineUpdated, false).Render(ctx, templBuffer)
+		err = fineList(fineWithPlayers, 0, qp.PresetFineUpdated, true).Render(ctx, templBuffer)
 		if err != nil {
 			return err
 		}

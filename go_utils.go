@@ -10,6 +10,7 @@ type Config struct {
 	Title                 string
 	UseRoles              bool
 	UseMatchEventTracker  bool
+	DefaultToApproved bool
 	UsePlayerOfTheDayName string
 	UseDudOfTheDayName string
 	InjuryCounterTrackerName string
@@ -28,6 +29,12 @@ var config = &Config{
 	Title: "🔨 Baileys Hammer 🔨",
 	UseRoles: true,
 	UseMatchEventTracker: true,
+	/**
+
+	If true, new fines will be approved by default (can be later decline by the finemaster)
+
+	*/
+	DefaultToApproved: true,
 	InjuryCounterTrackerName: "🚑 Mr Glass 🚑",
 	UsePlayerOfTheDayName: "Player of the Day",
 	UseDudOfTheDayName: "🍆 Dick of the Day 🍆",

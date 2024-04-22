@@ -351,10 +351,10 @@ func UpdateFineContextByID(db *gorm.DB, fineID uint, matchId uint, context strin
     return nil
 }
 
-func ApproveFine(db *gorm.DB, id uint, amount float64) error {
+func ApproveFine(db *gorm.DB, id uint, amount float64, approved bool) error {
     // Find and update the fine's Approved field to true
     updates := map[string]interface{}{
-        "approved": true,
+        "approved": approved,
         "amount":   amount,
     }
 
