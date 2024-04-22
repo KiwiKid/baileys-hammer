@@ -967,7 +967,7 @@ func fineAddV2(baseUrl string, isOpen bool, players []PlayerWithFines, presetFin
 			if err != nil {
 				return err
 			}
-			err = fineSuperSelect(players, presetFines).Render(ctx, templBuffer)
+			err = fineSuperSelect(players, presetFines, []uint{}).Render(ctx, templBuffer)
 			if err != nil {
 				return err
 			}

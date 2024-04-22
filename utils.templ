@@ -150,22 +150,31 @@ func niceDate(date *time.Time) string {
     return date.Format("January 2, 2006")
 }
 
-templ fineSuperSelect(players []PlayerWithFines, approvedPFines []PresetFine) {
+func isSelected(selectedIds []uint, id uint) bool {
+	for _, sid := range selectedIds {
+		if sid == id {
+			return true
+		}
+	}
+	return false
+}
+
+templ fineSuperSelect(players []PlayerWithFines, approvedPFines []PresetFine, selectedFineIds []uint) {
 	<div class="w-full mx-auto bg-gray-200 shadow-xl m-10" id="fine-ss" hx-get="/fines/add" hx-trigger="pageLoaded" hx-target="#fine-ss">
 		<form id="ss-form" hx-post="/fines-multi" method="POST" class="flex flex-col space-y-4 bg-white shadow-md p-6 rounded-lg">
-			<p class="font-bold">Select players and fines:</p>
+			<p class="font-bold text-3xl">Select players and fines:</p>
 			<div class="flex flex-row">
-				<label for="select-fine" class="mt-2 pr-2 font-semibold text-gray-700">Fines</label>
 				<select
  					id="select-fine"
  					hx-ext="tomselect"
  					ts-persist="true"
  					ts-create="true"
  					ts-create-filter="true"
- 					ts-create-on-blue="true"
- 					ts-no-active="true"
+ 					ts-create-on-blur="true"
  					ts-add-post-url="/fines/add"
+ 					ts-open-on-focus="true"
  					ts-add-post-url-body-value="reason"
+ 					tx-close-after-select="false"
  					ts-item-class="text-3xl py-3"
  					ts-option-class="text-3xl w-full py-3 bg-green-100"
  					tx-max-items="99"
@@ -177,12 +186,15 @@ templ fineSuperSelect(players []PlayerWithFines, approvedPFines []PresetFine) {
 				>
 					<option value="">Select a fine...</option>
 					for _, apf := range approvedPFines {
-						<option value={ fmt.Sprintf("%d", apf.ID) }>{ apf.Reason }</option>
+						if isSelected(selectedFineIds, apf.ID) {
+							<option selected value={ fmt.Sprintf("%d", apf.ID) }>{ apf.Reason }</option>
+						} else {
+							<option value={ fmt.Sprintf("%d", apf.ID) }>{ apf.Reason }</option>
+						}
 					}
 				</select>
 			</div>
 			<div class="flex flex-row">
-				<label for="select-player" class="mt-2 pr-2 font-semibold text-gray-700">Players</label>
 				<select
  					id="select-player"
  					required
@@ -190,6 +202,7 @@ templ fineSuperSelect(players []PlayerWithFines, approvedPFines []PresetFine) {
  					tx-max-items="99"
  					name="players[]"
  					ts-item-class="text-3xl py-3"
+ 					tx-close-after-select="true"
  					ts-option-class="text-3xl w-full py-3 bg-green-100"
  					multiple
  					placeholder="Select player(s)..."
@@ -202,16 +215,13 @@ templ fineSuperSelect(players []PlayerWithFines, approvedPFines []PresetFine) {
 				</select>
 			</div>
 			<div class="flex flex-row">
-				<label class="w-full">
-					Context:
-					<input
- 						type="text"
- 						name="context"
- 						value=""
- 						class="px-4 py-2 border border-gray-300 rounded-lg w-full focus:ring-blue-500 focus:border-blue-500"
- 						placeholder="Context for the fine"
-					/>
-				</label>
+				<input
+ 					type="text"
+ 					name="context"
+ 					value=""
+ 					class="px-4 py-2 border border-gray-300 rounded-lg w-full focus:ring-blue-500 focus:border-blue-500"
+ 					placeholder="Context for the fine"
+				/>
 			</div>
 			<button type="submit" class={ bigAdd }>Create Fine(s)</button>
 			<div id="results-container"></div>
@@ -220,7 +230,7 @@ templ fineSuperSelect(players []PlayerWithFines, approvedPFines []PresetFine) {
 }
 
 templ fineSuperSelectResults(players []PlayerWithFines, approvedPFines[]PresetFine, newFines []Fine) {
-	@fineSuperSelect(players, approvedPFines)
+	@fineSuperSelect(players, approvedPFines, []uint{})
 	if len(newFines) > 0 {
 		<div class="text-2xl list-none bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-lg">
 			<h1 class="text-3xl">{ fmt.Sprintf("Added %d Fines:", len(newFines)) }</h1>

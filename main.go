@@ -643,8 +643,9 @@ func fineHandler(db *gorm.DB) http.HandlerFunc {
 
 func fineAddHandler(db *gorm.DB) http.HandlerFunc {
     return func(w http.ResponseWriter, r *http.Request) {
-        switch(r.Method) {
-		case "POST": {
+		var newFines []uint
+        if(r.Method == "POST"){
+		
 			var input struct {
 				Reason string `json:"reason"`
 			}
@@ -663,11 +664,13 @@ func fineAddHandler(db *gorm.DB) http.HandlerFunc {
 				http.Error(w, "SavePresetFine failed", http.StatusBadRequest)
 				return
 			}
+			newFines = append(newFines, suggestedPFine.ID)
 
-			success := success(fmt.Sprintf("Added Fine - %s", input.Reason))
-			success.Render(GetContext(r), w)
+			//success := success(fmt.Sprintf("Added Fine - %s", input.Reason))
+			//success.Render(GetContext(r), w)
 		}
-	case "GET": {
+
+
 
 		playersWithFines, err := GetPlayersWithFines(db, []uint64{})
 		if err != nil {
@@ -682,8 +685,8 @@ func fineAddHandler(db *gorm.DB) http.HandlerFunc {
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 			return
 		}
-
-		var approvedPFines = []PresetFine{}
+		
+	/*	var approvedPFines = []PresetFine{}
 		var pendingPFines = []PresetFine{}
 
 		for _, f := range pFines {
@@ -692,16 +695,9 @@ func fineAddHandler(db *gorm.DB) http.HandlerFunc {
 			}else{
 				pendingPFines = append(pendingPFines, f)
 			}
-		}
-
-		fsComp := fineSuperSelect(playersWithFines, pFines)
+		}*/
+		fsComp := fineSuperSelect(playersWithFines, pFines, newFines)
 		fsComp.Render(GetContext(r), w)
-
-	}
-	default:
-		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
-		return
-	}
 	}
 }
 
