@@ -216,13 +216,13 @@ func fineContextHandler(db *gorm.DB) http.HandlerFunc {
 				return
 			}
 		}else {
-			fineAtStr := r.FormValue("fineAt")
+		/*	fineAtStr := r.FormValue("fineAt")
 			fineAt, err = time.Parse("2006-01-02T15:04", fineAtStr)
 			if err != nil {
 				
 				log.Printf("Failed to parse fineAt time - \"%s\" %v", fineAtStr, err)
 				fineAt = time.Now()
-			}
+			}*/
 		}
 
 		context := r.FormValue("context")
@@ -351,19 +351,25 @@ func fineEditHandler(db *gorm.DB) http.HandlerFunc {
 				approved = approvedStr == "true" //todo: on?
 			}
 
+			matchIdStr := r.FormValue("matchId")
+			matchId, err := strconv.ParseUint(matchIdStr, 10, 64)
+            if err != nil {
+                log.Printf("fineEditHandler - Invalid matchID ID")
+            }
+
             playerId, err := strconv.ParseUint(r.FormValue("playerId"), 10, 64)
             if err != nil {
 				errComp := errMsg(F("Invalid playerId", r.FormValue("playerId")))
 				errComp.Render(GetContext(r), w)
             }
 
-			fineAtStr := r.FormValue("fineAt")
+			/*fineAtStr := r.FormValue("fineAt")
 			fineAt, err := time.Parse("2006-01-02T15:04", fineAtStr)
 			if err != nil {
 				// Handle parsing error, perhaps set a default value or return an error response
 				log.Printf("Failed to parse fineAt time - \"%s\" %v", fineAtStr, err)
 				fineAt = time.Now()
-			}
+			}*/
 			context := r.FormValue("context")
 
 
@@ -375,7 +381,8 @@ func fineEditHandler(db *gorm.DB) http.HandlerFunc {
                 Reason:   reason,
 				Context: context,
                 Approved: approved,
-				FineAt: fineAt,
+				FineAt: time.Now(),
+				MatchId: uint(matchId),
             }
 
             if err := SaveFine(db, &fine); err != nil {
@@ -758,6 +765,16 @@ func fineMultiHandler(db *gorm.DB) http.HandlerFunc {
 					}
 					fine.PlayerID = uint(playerID)
 					fine.Context = context
+
+					activeMatch, err := GetActiveMatch(db)
+					if err != nil {
+						errComp := errMsg(F("Could not get active match %v", err))
+						errComp.Render(GetContext(r), w)
+					}
+
+					if(activeMatch != nil){
+						fine.MatchId = activeMatch.ID
+					}
 
 					err = SaveFine(db, fine)
 					if err != nil {

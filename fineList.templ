@@ -62,7 +62,7 @@ templ fineRow(isFineMaster bool, f FineWithPlayer) {
 				>
 					<button
  						hx-get={ fmt.Sprintf("/fines/edit/%d?isEdit=true", f.Fine.ID) }
- 						hx-swap="innerHTML"
+ 						hx-swap="outerHTML"
  						class={ pri }
 					>
 						if len(f.Fine.Context) == 0 {
@@ -79,15 +79,11 @@ templ fineRow(isFineMaster bool, f FineWithPlayer) {
 				}
 				if len(f.Match.Opponent) > 0 {
 					{ f.Match.Opponent }
-					- 
-					if f.Match.StartTime != nil {
-						{ niceDate(f.Match.StartTime) }
-					}
-				} else {
-					(
-					{ humanize.Time(f.Fine.FineAt) }
-					)
 				}
+				if f.Match.StartTime != nil {
+					{ niceDate(f.Match.StartTime) }
+				}
+				{ /* humanize.Time(f.Fine.FineAt) */ }
 			</div>
 		</td>
 		<td>
@@ -322,6 +318,9 @@ templ fineEditForm(f FineWithPlayer, isFineMaster bool) {
  				class="mt-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 w-full"
  				placeholder="Context for the fine"
 			/>
+			<div class="mt-2">
+				<div hx-get={ fmt.Sprintf("/match-list?type=select&matchId=%d", f.Fine.MatchId) } hx-trigger="load once" hx-target="this"></div>
+			</div>
 			<!-- Hidden Inputs -->
 			<input
  				type="playerId"
@@ -342,7 +341,6 @@ templ fineEditForm(f FineWithPlayer, isFineMaster bool) {
  				class="hidden"
 			/>
 		</div>
-		<div>{ f.Player.Name }</div>
 		if isFineMaster {
 			<div class="px-6 py-4">
 				<input
@@ -370,15 +368,6 @@ templ fineEditForm(f FineWithPlayer, isFineMaster bool) {
 				</select>
 			</div>
 		}
-		<div>
-			<input
- 				type="date"
- 				id="fineAt"
- 				name="fineAt"
- 				value={ f.Fine.FineAt.Format("2006-01-02") }
- 				class="px-2 py-1 border rounded w-full"
-			/>
-		</div>
 		<div class="mt-10">
 			<button
  				class={ bigPri }
