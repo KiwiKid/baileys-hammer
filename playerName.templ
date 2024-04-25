@@ -4,6 +4,15 @@ import (
 	"fmt"
 )
 
+templ playerNames(players []Player) {
+	<div>✅</div>
+	for _, p := range players {
+		<div id={ F("pname-%d", p.ID) } hx-swap-oob="true">
+			{ p.Name }
+		</div>
+	}
+}
+
 templ playerName(player Player) {
 	<div>{ player.Name }</div>
 }
@@ -108,11 +117,10 @@ templ playerEventInputSelector(players []Player, events []MatchEvent, eventType 
 					<label class="text-lg font-semibold">
 						{ UseInjuryCounterTrackerName(ctx) }
 						(
-							for _, p := range players {
-								{ presentPlayerEvent(playerHasEventCount(p.ID, events, eventType), p) }
-							}
+						for _, p := range players {
+							{ presentPlayerEvent(playerHasEventCount(p.ID, events, eventType), p) }
+						}
 						)
-
 						<select
  							hx-ext="tomselect"
  							ts-no-delete="true"
@@ -130,7 +138,6 @@ templ playerEventInputSelector(players []Player, events []MatchEvent, eventType 
 							}
 						</select>
 					</label>
-					
 				}
 			</div>
 		case "goal":
@@ -216,7 +223,6 @@ templ playerEventInputSelector(players []Player, events []MatchEvent, eventType 
 							<option value="yes8">New Goal</option>
 						</select>
 					</label>
-					[EXISTING]
 				}
 			</div>
 		default:

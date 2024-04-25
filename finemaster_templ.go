@@ -1149,7 +1149,7 @@ func matchesManage(baseUrl string, isOpen bool, matches []Match, pwfs []PlayerWi
 				if err != nil {
 					return err
 				}
-				_, err = templBuffer.WriteString(templ.EscapeString(fmt.Sprintf("/match/%d", m.ID)))
+				_, err = templBuffer.WriteString(templ.EscapeString(fmt.Sprintf("/match/%d?type=form", m.ID)))
 				if err != nil {
 					return err
 				}

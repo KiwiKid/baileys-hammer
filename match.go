@@ -156,11 +156,21 @@ func matchHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 	
 
 			var url = templ.SafeURL(r.Header.Get("Referrer"))
+
+			var renderType = r.URL.Query().Get("type")
 	
+			switch(renderType){
+			case "form":
+				matchComp := editMatch(url, *match, "")
+				matchComp.Render(GetContext(r), w)
+				return
+			default:
+				matchComp := editMatchContainer(url, *match, "")
+				matchComp.Render(GetContext(r), w)
+				return
+				
+			}
 			
-			matchComp := editMatch(url, *match, "")
-			matchComp.Render(GetContext(r), w)
-			return
 		case "POST":
 			// Simplified example: Assume the response after a POST is a success message or error
 			if err := r.ParseForm(); err != nil {

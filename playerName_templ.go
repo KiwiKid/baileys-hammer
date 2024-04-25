@@ -13,7 +13,7 @@ import (
 	"fmt"
 )
 
-func playerName(player Player) templ.Component {
+func playerNames(players []Player) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		templBuffer, templIsBuffer := w.(*bytes.Buffer)
 		if !templIsBuffer {
@@ -30,8 +30,64 @@ func playerName(player Player) templ.Component {
 		if err != nil {
 			return err
 		}
-		var var_2 string = player.Name
-		_, err = templBuffer.WriteString(templ.EscapeString(var_2))
+		var_2 := `✅`
+		_, err = templBuffer.WriteString(var_2)
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("</div>")
+		if err != nil {
+			return err
+		}
+		for _, p := range players {
+			_, err = templBuffer.WriteString("<div id=\"")
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString(templ.EscapeString(F("pname-%d", p.ID)))
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("\" hx-swap-oob=\"true\">")
+			if err != nil {
+				return err
+			}
+			var var_3 string = p.Name
+			_, err = templBuffer.WriteString(templ.EscapeString(var_3))
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("</div>")
+			if err != nil {
+				return err
+			}
+		}
+		if !templIsBuffer {
+			_, err = templBuffer.WriteTo(w)
+		}
+		return err
+	})
+}
+
+func playerName(player Player) templ.Component {
+	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+		templBuffer, templIsBuffer := w.(*bytes.Buffer)
+		if !templIsBuffer {
+			templBuffer = templ.GetBuffer()
+			defer templ.ReleaseBuffer(templBuffer)
+		}
+		ctx = templ.InitializeContext(ctx)
+		var_4 := templ.GetChildren(ctx)
+		if var_4 == nil {
+			var_4 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		_, err = templBuffer.WriteString("<div>")
+		if err != nil {
+			return err
+		}
+		var var_5 string = player.Name
+		_, err = templBuffer.WriteString(templ.EscapeString(var_5))
 		if err != nil {
 			return err
 		}
@@ -54,9 +110,9 @@ func playerInputSelector(players []Player, playerId uint64, inputType string) te
 			defer templ.ReleaseBuffer(templBuffer)
 		}
 		ctx = templ.InitializeContext(ctx)
-		var_3 := templ.GetChildren(ctx)
-		if var_3 == nil {
-			var_3 = templ.NopComponent
+		var_6 := templ.GetChildren(ctx)
+		if var_6 == nil {
+			var_6 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
 		switch inputType {
@@ -70,82 +126,12 @@ func playerInputSelector(players []Player, playerId uint64, inputType string) te
 				if err != nil {
 					return err
 				}
-				var var_4 string = UsePlayerOfTheDayName(ctx)
-				_, err = templBuffer.WriteString(templ.EscapeString(var_4))
-				if err != nil {
-					return err
-				}
-				_, err = templBuffer.WriteString(" <select hx-ext=\"tomselect\" name=\"playerOfTheDay\" ts-max-items=\"1\" class=\"mt-1 w-full border-gray-300  bg-white rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50\"><option value=\"\">")
-				if err != nil {
-					return err
-				}
-				var_5 := `N/A`
-				_, err = templBuffer.WriteString(var_5)
-				if err != nil {
-					return err
-				}
-				_, err = templBuffer.WriteString("</option>")
-				if err != nil {
-					return err
-				}
-				for _, p := range players {
-					_, err = templBuffer.WriteString("<option")
-					if err != nil {
-						return err
-					}
-					if p.ID == uint(playerId) {
-						_, err = templBuffer.WriteString(" selected")
-						if err != nil {
-							return err
-						}
-					}
-					_, err = templBuffer.WriteString(" value=\"")
-					if err != nil {
-						return err
-					}
-					_, err = templBuffer.WriteString(templ.EscapeString(F("%d", p.ID)))
-					if err != nil {
-						return err
-					}
-					_, err = templBuffer.WriteString("\">")
-					if err != nil {
-						return err
-					}
-					var var_6 string = p.Name
-					_, err = templBuffer.WriteString(templ.EscapeString(var_6))
-					if err != nil {
-						return err
-					}
-					_, err = templBuffer.WriteString("</option>")
-					if err != nil {
-						return err
-					}
-				}
-				_, err = templBuffer.WriteString("</select></label>")
-				if err != nil {
-					return err
-				}
-			}
-			_, err = templBuffer.WriteString("</div>")
-			if err != nil {
-				return err
-			}
-		case "dotd":
-			_, err = templBuffer.WriteString("<div id=\"player-select-dud-of-day\" class=\"mt-4\">")
-			if err != nil {
-				return err
-			}
-			if len(UseDudOfTheDayName(ctx)) > 0 {
-				_, err = templBuffer.WriteString("<label class=\"text-lg font-semibold\">")
-				if err != nil {
-					return err
-				}
-				var var_7 string = UseDudOfTheDayName(ctx)
+				var var_7 string = UsePlayerOfTheDayName(ctx)
 				_, err = templBuffer.WriteString(templ.EscapeString(var_7))
 				if err != nil {
 					return err
 				}
-				_, err = templBuffer.WriteString(" <select id=\"player-select-dud-of-day\" name=\"dudOfTheDay\" hx-ext=\"tomselect\" ts-max-items=\"1\"><option value=\"\">")
+				_, err = templBuffer.WriteString(" <select hx-ext=\"tomselect\" name=\"playerOfTheDay\" ts-max-items=\"1\" class=\"mt-1 w-full border-gray-300  bg-white rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50\"><option value=\"\">")
 				if err != nil {
 					return err
 				}
@@ -183,6 +169,76 @@ func playerInputSelector(players []Player, playerId uint64, inputType string) te
 					}
 					var var_9 string = p.Name
 					_, err = templBuffer.WriteString(templ.EscapeString(var_9))
+					if err != nil {
+						return err
+					}
+					_, err = templBuffer.WriteString("</option>")
+					if err != nil {
+						return err
+					}
+				}
+				_, err = templBuffer.WriteString("</select></label>")
+				if err != nil {
+					return err
+				}
+			}
+			_, err = templBuffer.WriteString("</div>")
+			if err != nil {
+				return err
+			}
+		case "dotd":
+			_, err = templBuffer.WriteString("<div id=\"player-select-dud-of-day\" class=\"mt-4\">")
+			if err != nil {
+				return err
+			}
+			if len(UseDudOfTheDayName(ctx)) > 0 {
+				_, err = templBuffer.WriteString("<label class=\"text-lg font-semibold\">")
+				if err != nil {
+					return err
+				}
+				var var_10 string = UseDudOfTheDayName(ctx)
+				_, err = templBuffer.WriteString(templ.EscapeString(var_10))
+				if err != nil {
+					return err
+				}
+				_, err = templBuffer.WriteString(" <select id=\"player-select-dud-of-day\" name=\"dudOfTheDay\" hx-ext=\"tomselect\" ts-max-items=\"1\"><option value=\"\">")
+				if err != nil {
+					return err
+				}
+				var_11 := `N/A`
+				_, err = templBuffer.WriteString(var_11)
+				if err != nil {
+					return err
+				}
+				_, err = templBuffer.WriteString("</option>")
+				if err != nil {
+					return err
+				}
+				for _, p := range players {
+					_, err = templBuffer.WriteString("<option")
+					if err != nil {
+						return err
+					}
+					if p.ID == uint(playerId) {
+						_, err = templBuffer.WriteString(" selected")
+						if err != nil {
+							return err
+						}
+					}
+					_, err = templBuffer.WriteString(" value=\"")
+					if err != nil {
+						return err
+					}
+					_, err = templBuffer.WriteString(templ.EscapeString(F("%d", p.ID)))
+					if err != nil {
+						return err
+					}
+					_, err = templBuffer.WriteString("\">")
+					if err != nil {
+						return err
+					}
+					var var_12 string = p.Name
+					_, err = templBuffer.WriteString(templ.EscapeString(var_12))
 					if err != nil {
 						return err
 					}
@@ -253,9 +309,9 @@ func playerEventInputSelector(players []Player, events []MatchEvent, eventType s
 			defer templ.ReleaseBuffer(templBuffer)
 		}
 		ctx = templ.InitializeContext(ctx)
-		var_10 := templ.GetChildren(ctx)
-		if var_10 == nil {
-			var_10 = templ.NopComponent
+		var_13 := templ.GetChildren(ctx)
+		if var_13 == nil {
+			var_13 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
 		switch eventType {
@@ -269,8 +325,8 @@ func playerEventInputSelector(players []Player, events []MatchEvent, eventType s
 				if err != nil {
 					return err
 				}
-				var var_11 string = UseInjuryCounterTrackerName(ctx)
-				_, err = templBuffer.WriteString(templ.EscapeString(var_11))
+				var var_14 string = UseInjuryCounterTrackerName(ctx)
+				_, err = templBuffer.WriteString(templ.EscapeString(var_14))
 				if err != nil {
 					return err
 				}
@@ -278,8 +334,8 @@ func playerEventInputSelector(players []Player, events []MatchEvent, eventType s
 				if err != nil {
 					return err
 				}
-				var_12 := `(`
-				_, err = templBuffer.WriteString(var_12)
+				var_15 := `(`
+				_, err = templBuffer.WriteString(var_15)
 				if err != nil {
 					return err
 				}
@@ -288,8 +344,8 @@ func playerEventInputSelector(players []Player, events []MatchEvent, eventType s
 					return err
 				}
 				for _, p := range players {
-					var var_13 string = presentPlayerEvent(playerHasEventCount(p.ID, events, eventType), p)
-					_, err = templBuffer.WriteString(templ.EscapeString(var_13))
+					var var_16 string = presentPlayerEvent(playerHasEventCount(p.ID, events, eventType), p)
+					_, err = templBuffer.WriteString(templ.EscapeString(var_16))
 					if err != nil {
 						return err
 					}
@@ -298,8 +354,8 @@ func playerEventInputSelector(players []Player, events []MatchEvent, eventType s
 				if err != nil {
 					return err
 				}
-				var_14 := `)`
-				_, err = templBuffer.WriteString(var_14)
+				var_17 := `)`
+				_, err = templBuffer.WriteString(var_17)
 				if err != nil {
 					return err
 				}
@@ -315,8 +371,8 @@ func playerEventInputSelector(players []Player, events []MatchEvent, eventType s
 				if err != nil {
 					return err
 				}
-				var_15 := `N/A`
-				_, err = templBuffer.WriteString(var_15)
+				var_18 := `N/A`
+				_, err = templBuffer.WriteString(var_18)
 				if err != nil {
 					return err
 				}
@@ -337,8 +393,8 @@ func playerEventInputSelector(players []Player, events []MatchEvent, eventType s
 					if err != nil {
 						return err
 					}
-					var var_16 string = p.Name
-					_, err = templBuffer.WriteString(templ.EscapeString(var_16))
+					var var_19 string = p.Name
+					_, err = templBuffer.WriteString(templ.EscapeString(var_19))
 					if err != nil {
 						return err
 					}
@@ -366,8 +422,8 @@ func playerEventInputSelector(players []Player, events []MatchEvent, eventType s
 				if err != nil {
 					return err
 				}
-				var_17 := `New Goal Scorer: (`
-				_, err = templBuffer.WriteString(var_17)
+				var_20 := `New Goal Scorer: (`
+				_, err = templBuffer.WriteString(var_20)
 				if err != nil {
 					return err
 				}
@@ -376,8 +432,8 @@ func playerEventInputSelector(players []Player, events []MatchEvent, eventType s
 					return err
 				}
 				for _, p := range players {
-					var var_18 string = presentPlayerEvent(playerHasEventCount(p.ID, events, eventType), p)
-					_, err = templBuffer.WriteString(templ.EscapeString(var_18))
+					var var_21 string = presentPlayerEvent(playerHasEventCount(p.ID, events, eventType), p)
+					_, err = templBuffer.WriteString(templ.EscapeString(var_21))
 					if err != nil {
 						return err
 					}
@@ -386,8 +442,8 @@ func playerEventInputSelector(players []Player, events []MatchEvent, eventType s
 				if err != nil {
 					return err
 				}
-				var_19 := `)`
-				_, err = templBuffer.WriteString(var_19)
+				var_22 := `)`
+				_, err = templBuffer.WriteString(var_22)
 				if err != nil {
 					return err
 				}
@@ -416,8 +472,8 @@ func playerEventInputSelector(players []Player, events []MatchEvent, eventType s
 					if err != nil {
 						return err
 					}
-					var var_20 string = p.Name
-					_, err = templBuffer.WriteString(templ.EscapeString(var_20))
+					var var_23 string = p.Name
+					_, err = templBuffer.WriteString(templ.EscapeString(var_23))
 					if err != nil {
 						return err
 					}
@@ -430,8 +486,8 @@ func playerEventInputSelector(players []Player, events []MatchEvent, eventType s
 				if err != nil {
 					return err
 				}
-				var_21 := `N/A`
-				_, err = templBuffer.WriteString(var_21)
+				var_24 := `N/A`
+				_, err = templBuffer.WriteString(var_24)
 				if err != nil {
 					return err
 				}
@@ -454,8 +510,8 @@ func playerEventInputSelector(players []Player, events []MatchEvent, eventType s
 				if err != nil {
 					return err
 				}
-				var_22 := `New Assists:`
-				_, err = templBuffer.WriteString(var_22)
+				var_25 := `New Assists:`
+				_, err = templBuffer.WriteString(var_25)
 				if err != nil {
 					return err
 				}
@@ -471,8 +527,8 @@ func playerEventInputSelector(players []Player, events []MatchEvent, eventType s
 				if err != nil {
 					return err
 				}
-				var_23 := `N/A`
-				_, err = templBuffer.WriteString(var_23)
+				var_26 := `N/A`
+				_, err = templBuffer.WriteString(var_26)
 				if err != nil {
 					return err
 				}
@@ -493,8 +549,8 @@ func playerEventInputSelector(players []Player, events []MatchEvent, eventType s
 					if err != nil {
 						return err
 					}
-					var var_24 string = p.Name
-					_, err = templBuffer.WriteString(templ.EscapeString(var_24))
+					var var_27 string = p.Name
+					_, err = templBuffer.WriteString(templ.EscapeString(var_27))
 					if err != nil {
 						return err
 					}
@@ -508,8 +564,8 @@ func playerEventInputSelector(players []Player, events []MatchEvent, eventType s
 					return err
 				}
 				for _, p := range players {
-					var var_25 string = presentPlayerEvent(playerHasEventCount(p.ID, events, eventType), p)
-					_, err = templBuffer.WriteString(templ.EscapeString(var_25))
+					var var_28 string = presentPlayerEvent(playerHasEventCount(p.ID, events, eventType), p)
+					_, err = templBuffer.WriteString(templ.EscapeString(var_28))
 					if err != nil {
 						return err
 					}
@@ -529,8 +585,8 @@ func playerEventInputSelector(players []Player, events []MatchEvent, eventType s
 				if err != nil {
 					return err
 				}
-				var_26 := `Opponent Goals (`
-				_, err = templBuffer.WriteString(var_26)
+				var_29 := `Opponent Goals (`
+				_, err = templBuffer.WriteString(var_29)
 				if err != nil {
 					return err
 				}
@@ -538,8 +594,8 @@ func playerEventInputSelector(players []Player, events []MatchEvent, eventType s
 				if err != nil {
 					return err
 				}
-				var var_27 string = F("%d", getEventCount(events, eventType))
-				_, err = templBuffer.WriteString(templ.EscapeString(var_27))
+				var var_30 string = F("%d", getEventCount(events, eventType))
+				_, err = templBuffer.WriteString(templ.EscapeString(var_30))
 				if err != nil {
 					return err
 				}
@@ -547,8 +603,8 @@ func playerEventInputSelector(players []Player, events []MatchEvent, eventType s
 				if err != nil {
 					return err
 				}
-				var_28 := `):`
-				_, err = templBuffer.WriteString(var_28)
+				var_31 := `):`
+				_, err = templBuffer.WriteString(var_31)
 				if err != nil {
 					return err
 				}
@@ -564,39 +620,12 @@ func playerEventInputSelector(players []Player, events []MatchEvent, eventType s
 				if err != nil {
 					return err
 				}
-				var_29 := `New Goal`
-				_, err = templBuffer.WriteString(var_29)
-				if err != nil {
-					return err
-				}
-				_, err = templBuffer.WriteString("</option><option value=\"yes1\">")
-				if err != nil {
-					return err
-				}
-				var_30 := `New Goal`
-				_, err = templBuffer.WriteString(var_30)
-				if err != nil {
-					return err
-				}
-				_, err = templBuffer.WriteString("</option><option value=\"yes2\">")
-				if err != nil {
-					return err
-				}
-				var_31 := `New Goal`
-				_, err = templBuffer.WriteString(var_31)
-				if err != nil {
-					return err
-				}
-				_, err = templBuffer.WriteString("</option><option value=\"yes3\">")
-				if err != nil {
-					return err
-				}
 				var_32 := `New Goal`
 				_, err = templBuffer.WriteString(var_32)
 				if err != nil {
 					return err
 				}
-				_, err = templBuffer.WriteString("</option><option value=\"yes4\">")
+				_, err = templBuffer.WriteString("</option><option value=\"yes1\">")
 				if err != nil {
 					return err
 				}
@@ -605,7 +634,7 @@ func playerEventInputSelector(players []Player, events []MatchEvent, eventType s
 				if err != nil {
 					return err
 				}
-				_, err = templBuffer.WriteString("</option><option value=\"yes5\">")
+				_, err = templBuffer.WriteString("</option><option value=\"yes2\">")
 				if err != nil {
 					return err
 				}
@@ -614,7 +643,7 @@ func playerEventInputSelector(players []Player, events []MatchEvent, eventType s
 				if err != nil {
 					return err
 				}
-				_, err = templBuffer.WriteString("</option><option value=\"yes6\">")
+				_, err = templBuffer.WriteString("</option><option value=\"yes3\">")
 				if err != nil {
 					return err
 				}
@@ -623,7 +652,7 @@ func playerEventInputSelector(players []Player, events []MatchEvent, eventType s
 				if err != nil {
 					return err
 				}
-				_, err = templBuffer.WriteString("</option><option value=\"yes7\">")
+				_, err = templBuffer.WriteString("</option><option value=\"yes4\">")
 				if err != nil {
 					return err
 				}
@@ -632,7 +661,7 @@ func playerEventInputSelector(players []Player, events []MatchEvent, eventType s
 				if err != nil {
 					return err
 				}
-				_, err = templBuffer.WriteString("</option><option value=\"yes8\">")
+				_, err = templBuffer.WriteString("</option><option value=\"yes5\">")
 				if err != nil {
 					return err
 				}
@@ -641,12 +670,34 @@ func playerEventInputSelector(players []Player, events []MatchEvent, eventType s
 				if err != nil {
 					return err
 				}
-				_, err = templBuffer.WriteString("</option></select></label> ")
+				_, err = templBuffer.WriteString("</option><option value=\"yes6\">")
 				if err != nil {
 					return err
 				}
-				var_38 := `[EXISTING]`
+				var_38 := `New Goal`
 				_, err = templBuffer.WriteString(var_38)
+				if err != nil {
+					return err
+				}
+				_, err = templBuffer.WriteString("</option><option value=\"yes7\">")
+				if err != nil {
+					return err
+				}
+				var_39 := `New Goal`
+				_, err = templBuffer.WriteString(var_39)
+				if err != nil {
+					return err
+				}
+				_, err = templBuffer.WriteString("</option><option value=\"yes8\">")
+				if err != nil {
+					return err
+				}
+				var_40 := `New Goal`
+				_, err = templBuffer.WriteString(var_40)
+				if err != nil {
+					return err
+				}
+				_, err = templBuffer.WriteString("</option></select></label>")
 				if err != nil {
 					return err
 				}
@@ -676,9 +727,9 @@ func playerRoleSelector(player PlayerWithFines, config *Config, msg string) temp
 			defer templ.ReleaseBuffer(templBuffer)
 		}
 		ctx = templ.InitializeContext(ctx)
-		var_39 := templ.GetChildren(ctx)
-		if var_39 == nil {
-			var_39 = templ.NopComponent
+		var_41 := templ.GetChildren(ctx)
+		if var_41 == nil {
+			var_41 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
 		_, err = templBuffer.WriteString("<div class=\"w-full\" id=\"players-ss\"><form class=\"todo\" hx-post=\"")
@@ -701,8 +752,8 @@ func playerRoleSelector(player PlayerWithFines, config *Config, msg string) temp
 		if err != nil {
 			return err
 		}
-		var_40 := `Name      `
-		_, err = templBuffer.WriteString(var_40)
+		var_42 := `Name      `
+		_, err = templBuffer.WriteString(var_42)
 		if err != nil {
 			return err
 		}
@@ -723,8 +774,8 @@ func playerRoleSelector(player PlayerWithFines, config *Config, msg string) temp
 			if err != nil {
 				return err
 			}
-			var_41 := `Role      `
-			_, err = templBuffer.WriteString(var_41)
+			var_43 := `Role      `
+			_, err = templBuffer.WriteString(var_43)
 			if err != nil {
 				return err
 			}
@@ -740,8 +791,8 @@ func playerRoleSelector(player PlayerWithFines, config *Config, msg string) temp
 			if err != nil {
 				return err
 			}
-			var_42 := `Role Description      `
-			_, err = templBuffer.WriteString(var_42)
+			var_44 := `Role Description      `
+			_, err = templBuffer.WriteString(var_44)
 			if err != nil {
 				return err
 			}
@@ -762,8 +813,8 @@ func playerRoleSelector(player PlayerWithFines, config *Config, msg string) temp
 				if err != nil {
 					return err
 				}
-				var var_43 = []any{bigPri}
-				err = templ.RenderCSSItems(ctx, templBuffer, var_43...)
+				var var_45 = []any{bigPri}
+				err = templ.RenderCSSItems(ctx, templBuffer, var_45...)
 				if err != nil {
 					return err
 				}
@@ -779,7 +830,7 @@ func playerRoleSelector(player PlayerWithFines, config *Config, msg string) temp
 				if err != nil {
 					return err
 				}
-				_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_43).String()))
+				_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_45).String()))
 				if err != nil {
 					return err
 				}
@@ -787,8 +838,8 @@ func playerRoleSelector(player PlayerWithFines, config *Config, msg string) temp
 				if err != nil {
 					return err
 				}
-				var_44 := `Add Injury`
-				_, err = templBuffer.WriteString(var_44)
+				var_46 := `Add Injury`
+				_, err = templBuffer.WriteString(var_46)
 				if err != nil {
 					return err
 				}
@@ -812,8 +863,8 @@ func playerRoleSelector(player PlayerWithFines, config *Config, msg string) temp
 		if err != nil {
 			return err
 		}
-		var var_45 = []any{bigPri}
-		err = templ.RenderCSSItems(ctx, templBuffer, var_45...)
+		var var_47 = []any{bigPri}
+		err = templ.RenderCSSItems(ctx, templBuffer, var_47...)
 		if err != nil {
 			return err
 		}
@@ -821,7 +872,7 @@ func playerRoleSelector(player PlayerWithFines, config *Config, msg string) temp
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_45).String()))
+		_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_47).String()))
 		if err != nil {
 			return err
 		}
@@ -829,8 +880,8 @@ func playerRoleSelector(player PlayerWithFines, config *Config, msg string) temp
 		if err != nil {
 			return err
 		}
-		var_46 := `Update Player`
-		_, err = templBuffer.WriteString(var_46)
+		var_48 := `Update Player`
+		_, err = templBuffer.WriteString(var_48)
 		if err != nil {
 			return err
 		}
@@ -838,8 +889,8 @@ func playerRoleSelector(player PlayerWithFines, config *Config, msg string) temp
 		if err != nil {
 			return err
 		}
-		var var_47 = []any{bigDel}
-		err = templ.RenderCSSItems(ctx, templBuffer, var_47...)
+		var var_49 = []any{bigDel}
+		err = templ.RenderCSSItems(ctx, templBuffer, var_49...)
 		if err != nil {
 			return err
 		}
@@ -863,7 +914,7 @@ func playerRoleSelector(player PlayerWithFines, config *Config, msg string) temp
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_47).String()))
+		_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_49).String()))
 		if err != nil {
 			return err
 		}
@@ -871,13 +922,13 @@ func playerRoleSelector(player PlayerWithFines, config *Config, msg string) temp
 		if err != nil {
 			return err
 		}
-		var_48 := `Delete `
-		_, err = templBuffer.WriteString(var_48)
+		var_50 := `Delete `
+		_, err = templBuffer.WriteString(var_50)
 		if err != nil {
 			return err
 		}
-		var var_49 string = player.Name
-		_, err = templBuffer.WriteString(templ.EscapeString(var_49))
+		var var_51 string = player.Name
+		_, err = templBuffer.WriteString(templ.EscapeString(var_51))
 		if err != nil {
 			return err
 		}

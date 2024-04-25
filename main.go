@@ -1163,6 +1163,8 @@ func main() {
 	r.HandleFunc("/match/{matchId}", matchHandler(db))
 	r.HandleFunc("/match", matchHandler(db))
 
+	r.HandleFunc("/playersName", playerNamesHandler(db))
+
 	r.HandleFunc("/match/{matchId}/event", matchEventHandler(db))
 	r.HandleFunc("/match/{matchId}/event/{eventId}", matchEventHandler(db))
 	r.HandleFunc("/match/{matchId}/events", matchEventListHandler(db))

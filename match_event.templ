@@ -5,11 +5,8 @@ import "github.com/dustin/go-humanize"
 
 templ listMatchEvents(matchState MatchState, matchEvents []MatchEvent) {
 	if UseMatchEventTracker(ctx) {
+		<div hx-get="/playersName" hx-trigger="load once" hx-target="#response-div"><div id="response-div">Loading names</div></div>
 		<div id={ fmt.Sprintf("match-event-list-%d", matchState.MatchID) } class="mx-auto text-center">
-			<div>
-				<h1>matchState</h1>
-				{ fmt.Sprintf("%+v", matchState) }
-			</div>
 			<div class="text-3xl p-10">Match Events ({ S(len(matchEvents)) })</div>
 			<table class="min-w-full divide-y divide-gray-200">
 				<thead class="bg-gray-50">
@@ -32,7 +29,7 @@ templ listMatchEvents(matchState MatchState, matchEvents []MatchEvent) {
 						>
 							<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{ e.EventName }</td>
 							<td>{ e.EventType }</td>
-							<td>{ fmt.Sprintf("%v", e.PlayerId) }</td>
+							<td id={ F("pname-%d", e.PlayerId) }>{ fmt.Sprintf("%v", e.PlayerId) }</td>
 							<td>
 								{ fmt.Sprintf("%d", e.EventMinute) }
 								- 
@@ -43,6 +40,7 @@ templ listMatchEvents(matchState MatchState, matchEvents []MatchEvent) {
 							<td>
 								<button
  									hx-delete={ fmt.Sprintf("/match/%d/event/%d", matchState.MatchID, e.ID) }
+ 									hx-target="this"
  									class={ bigDel }
 								>delete</button>
 							</td>

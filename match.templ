@@ -29,16 +29,23 @@ templ matchSelector(matches []Match, selectedMatchId uint) {
 templ matchListPage(matches []Match, isOpen bool) {
 	<html hx-boost="true">
 		@header()
+		@tomSelectLinks()
 		<body class="text-2xl p-1">
-			<div class="w-full mx-auto bg-gray-200 shadow-xl m-10">
+		<div class="mx-auto bg-gray-200 shadow-xl m-10">
 				if len(matches) > 0 {
 					for _, match := range matches {
-						<div>{ match.Location }</div>
-						<div>{ match.Opponent }</div>
-						<div>{ fmt.Sprintf("%+v", match) }</div>
+						<div class="p-4 border-b last:border-b-0">
+							<div class="text-lg font-medium">{match.Location}</div>
+							<div class="text-sm text-gray-600">{match.Opponent}</div>
+							<div class="mt-2">
+								<a class="inline-block bg-blue-500 text-white font-semibold py-1 px-3 rounded hover:bg-blue-600" href={templ.SafeURL(F("/match/%d?type=form", match.ID))}>Edit</a>
+							</div>
+						</div>
 					}
 				} else {
-					No Matches? Add one to get started
+					<div class="text-center p-4">
+						No Matches? <a class="text-blue-500 hover:underline" href="/matches/new">Add one</a> to get started.
+					</div>
 				}
 				<div
  					id="add-match-container"
@@ -125,12 +132,23 @@ templ createMatch(closeLink templ.SafeURL, players []PlayerWithFines) {
 			</div>
 			<div class="flex items-center justify-between mt-4">
 				<button type="submit" class={ bigAdd }>Create Match</button>
-			</div> 
+			</div>
 			<div class="flex items-center justify-between mt-4">
 				<a href={ closeLink } class={ bigSec }>Close</a>
 			</div>
 		</form>
 	</div>
+}
+
+templ editMatchContainer(closeLink templ.SafeURL, genMeta MatchMetaGeneral, successMsg string) {
+	<html hx-boost="true">
+		@header()
+		@tomSelectLinks()
+		<body class="text-2xl p-1">
+			@editMatch(closeLink, genMeta, successMsg)
+			@pageFooter()
+		</body>
+	</html>
 }
 
 templ editMatch(closeLink templ.SafeURL, genMeta MatchMetaGeneral, successMsg string) {
@@ -184,7 +202,6 @@ templ editMatch(closeLink templ.SafeURL, genMeta MatchMetaGeneral, successMsg st
 			if len(UseInjuryCounterTrackerName(ctx)) > 0 {
 				@playerEventInputSelector(genMeta.Players, genMeta.Match.Events, "injury")
 			}
-			<details><summary>debug</summary>{ fmt.Sprintf("%+v", genMeta) }</details>
 			@success(successMsg)
 			<div class="flex items-center justify-between mt-4">
 				<button type="submit" class={ bigAdd }>Update Match</button>
@@ -206,6 +223,7 @@ templ editMatch(closeLink templ.SafeURL, genMeta MatchMetaGeneral, successMsg st
 					<a hx-delete={ fmt.Sprintf("/match/%d", genMeta.Match.ID) } hx-confirm="Are you sure you want to delete this match?" class={ bigDel }>Delete</a>
 				</div>
 			</details>
+			<details><summary>debug</summary>{ fmt.Sprintf("%+v", genMeta) }</details>
 		</form>
 	</div>
 }
