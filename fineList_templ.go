@@ -145,74 +145,12 @@ func fineRow(isFineMaster bool, f FineWithPlayer) templ.Component {
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("</div><div class=\"italic\">")
+		_, err = templBuffer.WriteString("</div><div class=\"text-gray-900 text-wrap\">")
 		if err != nil {
 			return err
 		}
-		if f.Fine.Approved {
-			var var_8 string = fmt.Sprintf("$%v - ", f.Fine.Amount)
-			_, err = templBuffer.WriteString(templ.EscapeString(var_8))
-			if err != nil {
-				return err
-			}
-		}
-		if len(f.Match.Opponent) > 0 {
-			var var_9 string = f.Match.Opponent
-			_, err = templBuffer.WriteString(templ.EscapeString(var_9))
-			if err != nil {
-				return err
-			}
-			_, err = templBuffer.WriteString(" ")
-			if err != nil {
-				return err
-			}
-			var_10 := `- `
-			_, err = templBuffer.WriteString(var_10)
-			if err != nil {
-				return err
-			}
-			_, err = templBuffer.WriteString(" ")
-			if err != nil {
-				return err
-			}
-			if f.Match.StartTime != nil {
-				var var_11 string = niceDate(f.Match.StartTime)
-				_, err = templBuffer.WriteString(templ.EscapeString(var_11))
-				if err != nil {
-					return err
-				}
-			}
-		} else {
-			var_12 := `(`
-			_, err = templBuffer.WriteString(var_12)
-			if err != nil {
-				return err
-			}
-			_, err = templBuffer.WriteString(" ")
-			if err != nil {
-				return err
-			}
-			var var_13 string = humanize.Time(f.Fine.FineAt)
-			_, err = templBuffer.WriteString(templ.EscapeString(var_13))
-			if err != nil {
-				return err
-			}
-			_, err = templBuffer.WriteString(" ")
-			if err != nil {
-				return err
-			}
-			var_14 := `)`
-			_, err = templBuffer.WriteString(var_14)
-			if err != nil {
-				return err
-			}
-		}
-		_, err = templBuffer.WriteString("</div></td><td><div class=\"text-gray-900 text-wrap\">")
-		if err != nil {
-			return err
-		}
-		var var_15 string = f.Fine.Context
-		_, err = templBuffer.WriteString(templ.EscapeString(var_15))
+		var var_8 string = f.Fine.Context
+		_, err = templBuffer.WriteString(templ.EscapeString(var_8))
 		if err != nil {
 			return err
 		}
@@ -230,8 +168,8 @@ func fineRow(isFineMaster bool, f FineWithPlayer) templ.Component {
 		if err != nil {
 			return err
 		}
-		var var_16 = []any{smPri}
-		err = templ.RenderCSSItems(ctx, templBuffer, var_16...)
+		var var_9 = []any{pri}
+		err = templ.RenderCSSItems(ctx, templBuffer, var_9...)
 		if err != nil {
 			return err
 		}
@@ -255,7 +193,7 @@ func fineRow(isFineMaster bool, f FineWithPlayer) templ.Component {
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_16).String()))
+		_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_9).String()))
 		if err != nil {
 			return err
 		}
@@ -264,19 +202,81 @@ func fineRow(isFineMaster bool, f FineWithPlayer) templ.Component {
 			return err
 		}
 		if len(f.Fine.Context) == 0 {
-			var_17 := `Add Context	`
-			_, err = templBuffer.WriteString(var_17)
+			var_10 := `Add Context	`
+			_, err = templBuffer.WriteString(var_10)
 			if err != nil {
 				return err
 			}
 		} else {
-			var_18 := `Edit Context`
+			var_11 := `Edit Context`
+			_, err = templBuffer.WriteString(var_11)
+			if err != nil {
+				return err
+			}
+		}
+		_, err = templBuffer.WriteString("</button></div></div><div class=\"italic\">")
+		if err != nil {
+			return err
+		}
+		if f.Fine.Approved {
+			var var_12 string = fmt.Sprintf("$%v - ", f.Fine.Amount)
+			_, err = templBuffer.WriteString(templ.EscapeString(var_12))
+			if err != nil {
+				return err
+			}
+		}
+		if len(f.Match.Opponent) > 0 {
+			var var_13 string = f.Match.Opponent
+			_, err = templBuffer.WriteString(templ.EscapeString(var_13))
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString(" ")
+			if err != nil {
+				return err
+			}
+			var_14 := `- `
+			_, err = templBuffer.WriteString(var_14)
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString(" ")
+			if err != nil {
+				return err
+			}
+			if f.Match.StartTime != nil {
+				var var_15 string = niceDate(f.Match.StartTime)
+				_, err = templBuffer.WriteString(templ.EscapeString(var_15))
+				if err != nil {
+					return err
+				}
+			}
+		} else {
+			var_16 := `(`
+			_, err = templBuffer.WriteString(var_16)
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString(" ")
+			if err != nil {
+				return err
+			}
+			var var_17 string = humanize.Time(f.Fine.FineAt)
+			_, err = templBuffer.WriteString(templ.EscapeString(var_17))
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString(" ")
+			if err != nil {
+				return err
+			}
+			var_18 := `)`
 			_, err = templBuffer.WriteString(var_18)
 			if err != nil {
 				return err
 			}
 		}
-		_, err = templBuffer.WriteString("</button></div></div></td><td>")
+		_, err = templBuffer.WriteString("</div></td><td>")
 		if err != nil {
 			return err
 		}
