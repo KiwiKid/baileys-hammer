@@ -125,9 +125,9 @@ templ fineRow(isFineMaster bool, f FineWithPlayer) {
  									value="on"
 								/>
 								<div class="mt-2">
-									<label for="amount-input-3" class="block text-sm font-medium text-gray-700">Amount:</label>
+									<label for="amount-input-3" class="block text-lg text-gray-700 text-lg font-semibold">Amount:</label>
 									<div class="mt-1 flex rounded-md shadow-sm">
-										<span class="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm">$</span>
+										<span class="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-lg">$</span>
 										<input
  											type="number"
  											name="amount"
@@ -178,7 +178,7 @@ templ fineRow(isFineMaster bool, f FineWithPlayer) {
 							/>
 							<button
  								type="submit"
- 								class={ sec }
+ 								class="text-3xl bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:scale-105 transition transform ease-out duration-200"
 							>
 								Decline
 							</button>
@@ -207,7 +207,7 @@ templ fineContextRow(f FineWithPlayer, matches []Match) {
 			<div class="text-center w-full">{ f.Player.Name } - { fmt.Sprintf("$%v - ", f.Fine.Amount) } -  { f.Fine.Reason }</div>
 			<p class=" w-full text-gray-700">Add (optional) context for this fine:</p>
 			<div class="w-full">
-				<label class="block w-full">
+				<label class="block w-full text-lg font-semibold">
 					Context:
 					<input
  						type="text"
@@ -223,7 +223,7 @@ templ fineContextRow(f FineWithPlayer, matches []Match) {
 			</div>
 			<div>OR</div>
 			<div class="w-full" id="dateInputDiv">
-				<label class="block">
+				<label class="block ">
 					Date/Time:
 					<input
  						type="datetime-local"
@@ -263,7 +263,7 @@ templ fineContextRow(f FineWithPlayer, matches []Match) {
 
 templ fineContestRow(f FineWithPlayer) {
 	<div class="border rounded-lg flex flex-col items-center p-4 space-y-4" id="contest-form">
-		<p class="text-sm w-full text-gray-700">Contest fine:</p>
+		<p class="text-lg font-semibold w-full text-gray-700">Contest fine:</p>
 		<div class="w-full">
 			<input
  				type="text"
@@ -304,8 +304,10 @@ templ fineEditForm(f FineWithPlayer, isFineMaster bool) {
  		hx-target={ fmt.Sprintf("#fr-%d", f.Fine.ID) }
  		hx-swap="outerHTML"
 	>
+		<h1 class="text-lg">Edit Fine</h1>
+		<h3>{ F("%s - %s (%s)", f.Player.Name, f.Fine.Reason, f.Fine.Context) }</h3>
 		<div class="p-4">
-			<label for="reason" class="block text-sm font-medium text-gray-700">Reason</label>
+			<label for="reason" class="block text-lg font-semibold text-gray-700">Reason</label>
 			<input
  				type="text"
  				name="reason"
@@ -313,7 +315,7 @@ templ fineEditForm(f FineWithPlayer, isFineMaster bool) {
  				class="mt-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 w-full"
  				placeholder="Reason"
 			/>
-			<label for="context" class="block mt-4 text-sm font-medium text-gray-700">Context for the fine</label>
+			<label for="context" class="block mt-4 text-lg font-semibold text-gray-700">Context for the fine</label>
 			<input
  				type="text"
  				name="context"

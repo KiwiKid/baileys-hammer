@@ -27,6 +27,9 @@ type MatchForm struct {
 	PlayerOfTheDay uint64 `schema:"playerOfTheDay"`
 	DudOfTheDay uint64 `schema:"dudOfTheDay"`
 	EventTypeInjury []uint64 `schema:"eventTypeInjury"`
+	EventTypeGoal []uint64 `schema:"eventTypeGoal"`
+	EventTypeAssist []uint64 `schema:"eventTypeAssist"`
+	EventTypeConcededGoal []string `schema:"eventTypeConceded-Goal"`
 }
 
 
@@ -276,8 +279,55 @@ func matchHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 					})
 					if err != nil {
 						log.Printf("\n\n\nINJURYINJURYINJURY ERROR %v", err)
+					}
+					
+				}
+			}
+
+			if len(form.EventTypeGoal) > 0 {
+				for _, injPlayerId := range form.EventTypeGoal {
+					err = SaveMatchEvent(db, &MatchEvent{
+						MatchId: uint64(matchId),
+						EventName: "",
+						EventType: "goal",
+						PlayerId: uint(injPlayerId),
+					})
+					if err != nil {
+						log.Printf("\n\n\nGOAL ERROR %v", err)
+					}
+					
+				}
+			}
+
+
+			if len(form.EventTypeAssist) > 0 {
+				for _, injPlayerId := range form.EventTypeAssist {
+					err = SaveMatchEvent(db, &MatchEvent{
+						MatchId: uint64(matchId),
+						EventName: "",
+						EventType: "assist",
+						PlayerId: uint(injPlayerId),
+					})
+					if err != nil {
+						log.Printf("\n\n\nGOAL ERROR %v", err)
+					}
+					
+				}
+			}
+
+			if len(form.EventTypeConcededGoal) > 0 {
+				log.Printf("\n\n\nIN HERE!!!!!!\n\n\n")
+				for range form.EventTypeConcededGoal {
+					err = SaveMatchEvent(db, &MatchEvent{
+						MatchId: uint64(matchId),
+						EventName: "",
+						EventType: "conceded-goal",
+						PlayerId: 0,
+					})
+					if err != nil {
+						log.Printf("\n\n\nGOAL ERROR %v", err)
 					}else {
-						log.Printf("\n\n\nINJURYINJURYINJURY saved matchId:%d %s for player:%d", matchId, "injury", injPlayerId)
+						log.Printf("\n\n\nconceded GOAL GOAL saved matchId:%d %s", matchId, "injury",)
 					}
 					
 				}

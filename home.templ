@@ -5,6 +5,8 @@ import (
 	"log"
 	"time"
 	"github.com/dustin/go-humanize"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 var baseUrl = "/"
@@ -96,6 +98,8 @@ var smPri = fmt.Sprintf("%s %s", pri, sm)
 
 var S = fmt.Sprint
 var F = fmt.Sprintf
+
+var Title = cases.Title(language.Und, cases.NoLower).String
 
 templ header() {
 	<head>
@@ -215,7 +219,7 @@ templ home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines
 										for _, pf := range pendingPFines {
 											<li class="pl-6 border-l-4 border-gold-700 hover:bg-sepia-300 transition duration-300 ease-in-out">
 												{ fmt.Sprintf("$%v - %s", pf.Amount, pf.Reason) }
-												<span class="ml-2 inline-block bg-red-100 text-red-800 font-bold px-2 py-1 rounded-full text-sm shadow-sm">(pending approval)</span>
+												<span class="ml-2 inline-block bg-red-100 text-red-800 font-bold px-2 py-1 rounded-full text-lg font-semibold shadow-sm">(pending approval)</span>
 											</li>
 										}
 									</ul>
@@ -417,16 +421,16 @@ templ fineAdd(baseUrl string, isOpen bool, players []PlayerWithFines, presetFine
 								<div class="pt-4 border border-2 rounded">
 									<label class="text-2xl font-bold text-center">New Fine</label>
 									<div class="mt-4">
-										<label for="reason" class="block">Title</label>
+										<label for="reason" class="text-lg font-semibold block">Title</label>
 										<input type="text" name="reason" id="reason" placeholder="Reason for the fine" class="w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"/>
 									</div>
 									<div class="mt-4">
-										<label for="context" class="block">Details:</label>
+										<label for="context" class="block text-lg font-semibold">Details:</label>
 										<input type="text" name="context" id="context" placeholder="More Context for the fine" class="w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"/>
 									</div>
 									if isFineMaster {
 										<div class="mt-4">
-											<label for="amount" class="block">Amount ($)</label>
+											<label for="amount" class="block text-lg font-semibold">Amount ($)</label>
 											<input type="text" name="amount" id="amount" placeholder="Amount" class="w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"/>
 										</div>
 										<label>
@@ -436,17 +440,17 @@ templ fineAdd(baseUrl string, isOpen bool, players []PlayerWithFines, presetFine
 									<div class="grid grid-cols-2 gap-4">
 										<div class="flex items-center justify-center p-4 border border-gray-200 rounded-lg">
 											<input type="radio" id="oneOffFine" name="fineOption" value="oneOffFine" class="form-radio text-blue-600 transform scale-15"/>
-											<label for="oneOffFine" class="ml-2 text-gray-800">One Off Fine</label>
+											<label for="oneOffFine" class="ml-2 text-gray-800 text-lg font-semibold">One Off Fine</label>
 										</div>
 										<div class="flex items-center justify-center p-4 border border-gray-200 rounded-lg">
 											<input type="radio" id="applyAgain" name="fineOption" value="applyAgain" class="form-radio text-blue-600 transform scale-15"/>
-											<label for="applyAgain" class="ml-2 text-gray-800">Could Apply Again</label>
+											<label for="applyAgain" class="ml-2 text-gray-800 text-lg font-semibold">Could Apply Again</label>
 										</div>
 									</div>
 								</div>
 							</section>
 							<div class="mt-4">
-								<label>Who:</label>
+								<label class="text-lg font-semibold">Who:</label>
 								<select name="playerId" class="mt-1 w-full border-gray-300  bg-white rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
 									<option selected value="">-- no player - just suggest fineable offence --</option>
 									for _, p := range players {

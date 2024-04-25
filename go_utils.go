@@ -12,8 +12,11 @@ type Config struct {
 	UseMatchEventTracker  bool
 	DefaultToApproved bool
 	UsePlayerOfTheDayName string
+	ShowGoalScorerMatchList bool
+	ShowGoalAssistMatchList bool
 	UseDudOfTheDayName string
 	InjuryCounterTrackerName string
+	ShowOpponentScore bool
 }
 
 var devConfig = &Config{
@@ -35,9 +38,13 @@ var config = &Config{
 
 	*/
 	DefaultToApproved: true,
+
+	ShowGoalScorerMatchList: true,
+	ShowGoalAssistMatchList: true,
 	InjuryCounterTrackerName: "🚑 Mr Glass 🚑",
 	UsePlayerOfTheDayName: "Player of the Day",
 	UseDudOfTheDayName: "🍆 Dick of the Day 🍆",
+	ShowOpponentScore: true,
 }
 
 // Use a custom type for keys to avoid conflicts in context values.
@@ -48,8 +55,11 @@ const (
 	useRolesKey              contextKey = "UseRoles"
 	useMatchEventTrackerKey  contextKey = "UseMatchEventTracker"
 	UsePlayerOfTheDayNameKey contextKey = "UsePlayerOfTheDayName"
+	ShowGoalScorerMatchListKey contextKey = "ShowGoalScorerMatchList"
+	ShowGoalAssistMatchListKey contextKey = "ShowGoalAssistMatchList"
 	UseDudOfTheDayNameKey contextKey = "UseDudOfTheDayName"
 	InjuryCounterTrackerNameKey contextKey = "InjuryCounterTrackerName"
+	ShowOpponentScoreKey contextKey = "ShowOpponentScoreKey"
 )
 
 func GetTitle(ctx context.Context) string {
@@ -95,6 +105,30 @@ func UseInjuryCounterTrackerName(ctx context.Context) string {
 	return ""
 }
 
+func UseShowGoalScorerMatchList(ctx context.Context) bool {
+	if ShowGoalScorerMatchList, ok := ctx.Value(ShowGoalScorerMatchListKey).(bool); ok {
+		return ShowGoalScorerMatchList
+	}
+	return false
+}
+
+
+func UseShowGoalAssister(ctx context.Context) bool {
+	if ShowGoalAssistMatchList, ok := ctx.Value(ShowGoalAssistMatchListKey).(bool); ok {
+		return ShowGoalAssistMatchList
+	}
+	return false
+}
+
+func UseShowOpponentScore(ctx context.Context) bool {
+	if ShowOpponentScore, ok := ctx.Value(ShowOpponentScoreKey).(bool); ok {
+		return ShowOpponentScore
+	}
+	return false
+}
+
+
+
 
 
 func GetContext(r *http.Request) context.Context {
@@ -105,5 +139,9 @@ func GetContext(r *http.Request) context.Context {
 	ctx = context.WithValue(ctx, UsePlayerOfTheDayNameKey, config.UsePlayerOfTheDayName)
 	ctx = context.WithValue(ctx, UseDudOfTheDayNameKey, config.UseDudOfTheDayName)
 	ctx = context.WithValue(ctx, InjuryCounterTrackerNameKey, config.InjuryCounterTrackerName)
+	ctx = context.WithValue(ctx, ShowGoalScorerMatchListKey, config.ShowGoalScorerMatchList)
+	ctx = context.WithValue(ctx, ShowGoalAssistMatchListKey, config.ShowGoalAssistMatchList)
+	ctx = context.WithValue(ctx, ShowOpponentScoreKey, config.ShowOpponentScore)
+
 	return ctx
 }

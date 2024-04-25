@@ -97,15 +97,15 @@ templ createMatch(closeLink templ.SafeURL, players []PlayerWithFines) {
 		<form hx-post="/match" hx-swap="afterend" class="mx-auto my-8 p-4 border border-gray-200 rounded-lg shadow">
 			<h2 class="text-lg font-semibold mb-4">Create New Match</h2>
 			<div class="mb-4">
-				<label for="location" class="block text-sm font-medium text-gray-700">Location</label>
+				<label for="location" class="block text-lg font-semibold text-gray-700">Location</label>
 				<input type="text" name="location" id="location" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"/>
 			</div>
 			<div class="mb-4">
-				<label for="start-time" class="block text-sm font-medium text-gray-700">Start Time</label>
+				<label for="start-time" class="block text-lg font-semibold text-gray-700">Start Time</label>
 				<input type="datetime-local" name="startTime" id="start-time" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"/>
 			</div>
 			<div class="mb-4">
-				<label for="opponent" class="block text-sm font-medium text-gray-700">Opponent</label>
+				<label for="opponent" class="block text-lg font-semibold text-gray-700">Opponent</label>
 				<input type="text" name="opponent" id="opponent" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"/>
 			</div>
 			<div id="player-select" class="hidden mt-4">
@@ -120,12 +120,12 @@ templ createMatch(closeLink templ.SafeURL, players []PlayerWithFines) {
 				</select>
 			</div>
 			<div class="mb-4">
-				<label for="subtitle" class="block text-sm font-medium text-gray-700">Subtitle (optional)</label>
+				<label for="subtitle" class="block text-lg font-semibold text-gray-700">Subtitle (optional)</label>
 				<input type="text" name="subtitle" id="subtitle" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"/>
 			</div>
 			<div class="flex items-center justify-between mt-4">
 				<button type="submit" class={ bigAdd }>Create Match</button>
-			</div>
+			</div> 
 			<div class="flex items-center justify-between mt-4">
 				<a href={ closeLink } class={ bigSec }>Close</a>
 			</div>
@@ -143,11 +143,11 @@ templ editMatch(closeLink templ.SafeURL, genMeta MatchMetaGeneral, successMsg st
  				value={ fmt.Sprintf("%d", genMeta.Match.ID) }
 			/>
 			<div class="mb-4">
-				<label for="location" class="block text-sm font-medium text-gray-700">Location</label>
+				<label for="location" class="block text-lg font-semibold text-gray-700">Location</label>
 				<input type="text" name="location" id="location" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" value={ genMeta.Match.Location }/>
 			</div>
 			<div class="mb-4">
-				<label for="start-time" class="block text-sm font-medium text-gray-700">Start Time</label>
+				<label for="start-time" class="block text-lg font-semibold text-gray-700">Start Time</label>
 				<input
  					type="datetime-local"
  					name="startTime"
@@ -159,11 +159,11 @@ templ editMatch(closeLink templ.SafeURL, genMeta MatchMetaGeneral, successMsg st
 				/>
 			</div>
 			<div class="mb-4">
-				<label for="opponent" class="block text-sm font-medium text-gray-700">Opponent</label>
+				<label for="opponent" class="block text-lg font-semibold text-gray-700">Opponent</label>
 				<input type="text" name="opponent" id="opponent" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" value={ genMeta.Match.Opponent }/>
 			</div>
 			<div class="mb-4">
-				<label for="subtitle" class="block text-sm font-medium text-gray-700">Subtitle (optional)</label>
+				<label for="subtitle" class="block text-lg font-semibold text-gray-700 ">Notes: (optional)</label>
 				<input type="text" name="subtitle" id="subtitle" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" value={ genMeta.Match.Subtitle }/>
 			</div>
 			if len(UsePlayerOfTheDayName(ctx)) > 0 {
@@ -172,12 +172,17 @@ templ editMatch(closeLink templ.SafeURL, genMeta MatchMetaGeneral, successMsg st
 			if len(UseDudOfTheDayName(ctx)) > 0 {
 				@playerInputSelector(genMeta.Players, genMeta.Match.DudOfTheDay, "dotd")
 			}
+			if UseShowGoalScorerMatchList(ctx) {
+				@playerEventInputSelector(genMeta.Players, genMeta.Match.Events, "goal")
+			}
+			if UseShowGoalAssister(ctx) {
+				@playerEventInputSelector(genMeta.Players, genMeta.Match.Events, "assist")
+			}
+			if UseShowGoalAssister(ctx) {
+				@playerEventInputSelector(genMeta.Players, genMeta.Match.Events, "conceded-goal")
+			}
 			if len(UseInjuryCounterTrackerName(ctx)) > 0 {
 				@playerEventInputSelector(genMeta.Players, genMeta.Match.Events, "injury")
-			}
-			if UseMatchEventTracker(ctx) {
-				[MATCH TRACKER]
-				<div hx-get={ fmt.Sprintf("/match/%v/events", genMeta.Match.ID) } hx-trigger="click" hx-swap="innerHTML">(Load events (2))</div>
 			}
 			<details><summary>debug</summary>{ fmt.Sprintf("%+v", genMeta) }</details>
 			@success(successMsg)
@@ -187,6 +192,14 @@ templ editMatch(closeLink templ.SafeURL, genMeta MatchMetaGeneral, successMsg st
 			<div class="flex items-center justify-between mt-4">
 				<a href={ closeLink } class={ bigSec }>Close</a>
 			</div>
+			if UseMatchEventTracker(ctx) {
+				<div class={ bigPri } hx-get={ fmt.Sprintf("/match/%v/events", genMeta.Match.ID) } hx-trigger="click" hx-target="#event-place" hx-swap="innerHTML">
+					(
+					{ F("Load %d events", len(genMeta.Match.Events)) }
+					)
+				</div>
+				<div id="event-place"></div>
+			}
 			<details>
 				<summary>advance</summary>
 				<div class="flex items-center justify-between mt-20">
