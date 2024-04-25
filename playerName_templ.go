@@ -131,7 +131,7 @@ func playerInputSelector(players []Player, playerId uint64, inputType string) te
 				if err != nil {
 					return err
 				}
-				_, err = templBuffer.WriteString(" <select hx-ext=\"tomselect\" name=\"playerOfTheDay\" ts-max-items=\"1\" class=\"mt-1 w-full border-gray-300  bg-white rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50\"><option value=\"\">")
+				_, err = templBuffer.WriteString(" <select hx-ext=\"tomselect\" name=\"playerOfTheDay\" ts-max-items=\"1\" ts-item-class=\"text-2xl py-3\" ts-option-class=\"text-2xl py-3\" class=\"mt-1 w-full border-gray-300  bg-white rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50\"><option value=\"\">")
 				if err != nil {
 					return err
 				}
@@ -201,7 +201,7 @@ func playerInputSelector(players []Player, playerId uint64, inputType string) te
 				if err != nil {
 					return err
 				}
-				_, err = templBuffer.WriteString(" <select id=\"player-select-dud-of-day\" name=\"dudOfTheDay\" hx-ext=\"tomselect\" ts-max-items=\"1\"><option value=\"\">")
+				_, err = templBuffer.WriteString(" <select id=\"player-select-dud-of-day\" name=\"dudOfTheDay\" hx-ext=\"tomselect\" ts-max-items=\"1\" ts-item-class=\"text-3xl py-3\" ts-option-class=\"text-3xl py-3\"><option value=\"\">")
 				if err != nil {
 					return err
 				}
@@ -359,7 +359,7 @@ func playerEventInputSelector(players []Player, events []MatchEvent, eventType s
 				if err != nil {
 					return err
 				}
-				_, err = templBuffer.WriteString(" <select hx-ext=\"tomselect\" ts-no-delete=\"true\" name=\"")
+				_, err = templBuffer.WriteString(" <select hx-ext=\"tomselect\" ts-no-delete=\"true\" ts-item-class=\"text-3xl py-3\" ts-option-class=\"text-3xl py-3\" name=\"")
 				if err != nil {
 					return err
 				}
@@ -447,7 +447,7 @@ func playerEventInputSelector(players []Player, events []MatchEvent, eventType s
 				if err != nil {
 					return err
 				}
-				_, err = templBuffer.WriteString(" <select hx-ext=\"tomselect\" ts-no-delete=\"true\" name=\"")
+				_, err = templBuffer.WriteString(" <select hx-ext=\"tomselect\" ts-no-delete=\"true\" ts-item-class=\"text-3xl py-3\" ts-option-class=\"text-3xl py-3\" name=\"")
 				if err != nil {
 					return err
 				}
@@ -515,7 +515,7 @@ func playerEventInputSelector(players []Player, events []MatchEvent, eventType s
 				if err != nil {
 					return err
 				}
-				_, err = templBuffer.WriteString(" <select hx-ext=\"tomselect\" ts-no-delete=\"true\" ts-duplicates=\"true\" name=\"")
+				_, err = templBuffer.WriteString(" <select hx-ext=\"tomselect\" ts-no-delete=\"true\" ts-duplicates=\"true\" ts-item-class=\"text-3xl py-3\" ts-option-class=\"text-3xl py-3\" name=\"")
 				if err != nil {
 					return err
 				}
@@ -608,7 +608,7 @@ func playerEventInputSelector(players []Player, events []MatchEvent, eventType s
 				if err != nil {
 					return err
 				}
-				_, err = templBuffer.WriteString(" <select hx-ext=\"tomselect\" ts-no-delete=\"true\" ts-max-options=\"99\" ts-duplicates=\"true\" name=\"")
+				_, err = templBuffer.WriteString(" <select hx-ext=\"tomselect\" ts-no-delete=\"true\" ts-max-options=\"99\" ts-duplicates=\"true\" ts-item-class=\"text-3xl py-3\" ts-option-class=\"text-3xl py-3\" name=\"")
 				if err != nil {
 					return err
 				}
@@ -765,7 +765,7 @@ func playerRoleSelector(player PlayerWithFines, config *Config, msg string) temp
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("\" id=\"name\" placeholder=\"Player name\" class=\"w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600\"></label>")
+		_, err = templBuffer.WriteString("\" id=\"name\" placeholder=\"Player name\" class=\"w-full  text-3xl px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600\"></label>")
 		if err != nil {
 			return err
 		}
@@ -787,7 +787,7 @@ func playerRoleSelector(player PlayerWithFines, config *Config, msg string) temp
 			if err != nil {
 				return err
 			}
-			_, err = templBuffer.WriteString("\" id=\"role\" placeholder=\"Role\" class=\"w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600\"></label> <label for=\"role\" class=\"block mt-2\">")
+			_, err = templBuffer.WriteString("\" id=\"role\" placeholder=\"Role\" class=\"w-full  text-3xl px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600\"></label> <label for=\"role\" class=\"block mt-2\">")
 			if err != nil {
 				return err
 			}
@@ -804,7 +804,7 @@ func playerRoleSelector(player PlayerWithFines, config *Config, msg string) temp
 			if err != nil {
 				return err
 			}
-			_, err = templBuffer.WriteString("\" placeholder=\"Role Description\" class=\"w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600\">")
+			_, err = templBuffer.WriteString("\" placeholder=\"Role Description\" class=\"w-full text-3xl px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600\">")
 			if err != nil {
 				return err
 			}

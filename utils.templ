@@ -90,7 +90,7 @@ templ fineSuperSelect(players []PlayerWithFines, approvedPFines []PresetFine, se
  					ts-add-post-url-body-value="reason"
  					tx-close-after-select="false"
  					ts-item-class="text-3xl py-3"
- 					ts-option-class="text-3xl w-full py-3 bg-green-100"
+ 					ts-option-class="text-3xl w-full py-3"
  					tx-max-items="99"
  					name="pfines[]"
  					multiple
@@ -117,7 +117,7 @@ templ fineSuperSelect(players []PlayerWithFines, approvedPFines []PresetFine, se
  					name="players[]"
  					ts-item-class="text-3xl py-3"
  					tx-close-after-select="true"
- 					ts-option-class="text-3xl w-full py-3 bg-green-100"
+ 					ts-option-class="text-3xl w-full py-3"
  					multiple
  					placeholder="Select player(s)..."
  					class="text-3xl  border border-gray-300 rounded-md text-gray-700 flex-grow mb-2"
@@ -152,27 +152,31 @@ templ fineSuperSelectResults(players []PlayerWithFines, approvedPFines[]PresetFi
 				for _, p := range players {
 					for _, nf := range newFines {
 						if p.ID == nf.PlayerID {
+							<button
+ 								hx-get={ fmt.Sprintf("/fines/edit/%d?isEdit=form", nf.ID) }
+ 								hx-swap="outerHTML"
+								hx-target="this"
+ 								class={ smPri }
+							>
+								if len(nf.Context) == 0 {
+									Add Context	
+								} else {
+									Edit Context
+								}
+							</button>
+							<button
+ 									class={ del }
+ 									hx-confirm="Are you sure you want to delete the fine by this player?"
+ 									hx-delete={ fmt.Sprintf("/fines?fid=%d", nf.ID) }
+									hx-swap="outerHTML"
+									hx-target="this"
+								>Delete</button>
 							<details>
 								<summary>
 									{ fmt.Sprintf("%s - %s - %s",nf.Reason, p.Name, nf.Context) }
 								</summary>
 								{ fmt.Sprintf("%+v",nf) }
-								<button
- 									hx-get={ fmt.Sprintf("/fines/edit/%d?isEdit=form", nf.ID) }
- 									hx-swap="outerHTML"
- 									class={ smPri }
-								>
-									if len(nf.Context) == 0 {
-										Add Context	
-									} else {
-										Edit Context
-									}
-								</button>
-								<button
- 									class={ del }
- 									hx-confirm="Are you sure you want to delete the fine by this player?"
- 									hx-delete={ fmt.Sprintf("/fines?fid=%d", nf.ID) }
-								>Delete</button>
+								
 							</details>
 						}
 					}

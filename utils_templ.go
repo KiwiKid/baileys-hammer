@@ -314,7 +314,7 @@ func fineSuperSelect(players []PlayerWithFines, approvedPFines []PresetFine, sel
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("</p><div class=\"flex flex-row\"><select id=\"select-fine\" hx-ext=\"tomselect\" ts-persist=\"false\" ts-create=\"true\" ts-create-filter=\"true\" ts-clear-after-add=\"true\" ts-create-on-blur=\"true\" ts-add-post-url=\"/fines/add\" ts-open-on-focus=\"true\" ts-add-post-url-body-value=\"reason\" tx-close-after-select=\"false\" ts-item-class=\"text-3xl py-3\" ts-option-class=\"text-3xl w-full py-3 bg-green-100\" tx-max-items=\"99\" name=\"pfines[]\" multiple required placeholder=\"Select fine(s)...\" class=\"text-3xl border border-gray-300 rounded-md text-gray-700 flex-grow mb-2\"><option value=\"\">")
+		_, err = templBuffer.WriteString("</p><div class=\"flex flex-row\"><select id=\"select-fine\" hx-ext=\"tomselect\" ts-persist=\"false\" ts-create=\"true\" ts-create-filter=\"true\" ts-clear-after-add=\"true\" ts-create-on-blur=\"true\" ts-add-post-url=\"/fines/add\" ts-open-on-focus=\"true\" ts-add-post-url-body-value=\"reason\" tx-close-after-select=\"false\" ts-item-class=\"text-3xl py-3\" ts-option-class=\"text-3xl w-full py-3\" tx-max-items=\"99\" name=\"pfines[]\" multiple required placeholder=\"Select fine(s)...\" class=\"text-3xl border border-gray-300 rounded-md text-gray-700 flex-grow mb-2\"><option value=\"\">")
 		if err != nil {
 			return err
 		}
@@ -374,7 +374,7 @@ func fineSuperSelect(players []PlayerWithFines, approvedPFines []PresetFine, sel
 				}
 			}
 		}
-		_, err = templBuffer.WriteString("</select></div><div class=\"flex flex-row\"><select id=\"select-player\" required hx-ext=\"tomselect\" tx-max-items=\"99\" name=\"players[]\" ts-item-class=\"text-3xl py-3\" tx-close-after-select=\"true\" ts-option-class=\"text-3xl w-full py-3 bg-green-100\" multiple placeholder=\"Select player(s)...\" class=\"text-3xl  border border-gray-300 rounded-md text-gray-700 flex-grow mb-2\"><option value=\"\">")
+		_, err = templBuffer.WriteString("</select></div><div class=\"flex flex-row\"><select id=\"select-player\" required hx-ext=\"tomselect\" tx-max-items=\"99\" name=\"players[]\" ts-item-class=\"text-3xl py-3\" tx-close-after-select=\"true\" ts-option-class=\"text-3xl w-full py-3\" multiple placeholder=\"Select player(s)...\" class=\"text-3xl  border border-gray-300 rounded-md text-gray-700 flex-grow mb-2\"><option value=\"\">")
 		if err != nil {
 			return err
 		}
@@ -482,30 +482,8 @@ func fineSuperSelectResults(players []PlayerWithFines, approvedPFines []PresetFi
 				for _, p := range players {
 					for _, nf := range newFines {
 						if p.ID == nf.PlayerID {
-							_, err = templBuffer.WriteString("<details><summary>")
-							if err != nil {
-								return err
-							}
-							var var_29 string = fmt.Sprintf("%s - %s - %s", nf.Reason, p.Name, nf.Context)
-							_, err = templBuffer.WriteString(templ.EscapeString(var_29))
-							if err != nil {
-								return err
-							}
-							_, err = templBuffer.WriteString("</summary> ")
-							if err != nil {
-								return err
-							}
-							var var_30 string = fmt.Sprintf("%+v", nf)
-							_, err = templBuffer.WriteString(templ.EscapeString(var_30))
-							if err != nil {
-								return err
-							}
-							_, err = templBuffer.WriteString(" ")
-							if err != nil {
-								return err
-							}
-							var var_31 = []any{smPri}
-							err = templ.RenderCSSItems(ctx, templBuffer, var_31...)
+							var var_29 = []any{smPri}
+							err = templ.RenderCSSItems(ctx, templBuffer, var_29...)
 							if err != nil {
 								return err
 							}
@@ -517,11 +495,11 @@ func fineSuperSelectResults(players []PlayerWithFines, approvedPFines []PresetFi
 							if err != nil {
 								return err
 							}
-							_, err = templBuffer.WriteString("\" hx-swap=\"outerHTML\" class=\"")
+							_, err = templBuffer.WriteString("\" hx-swap=\"outerHTML\" hx-target=\"this\" class=\"")
 							if err != nil {
 								return err
 							}
-							_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_31).String()))
+							_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_29).String()))
 							if err != nil {
 								return err
 							}
@@ -530,24 +508,24 @@ func fineSuperSelectResults(players []PlayerWithFines, approvedPFines []PresetFi
 								return err
 							}
 							if len(nf.Context) == 0 {
-								var_32 := `Add Context	`
-								_, err = templBuffer.WriteString(var_32)
+								var_30 := `Add Context	`
+								_, err = templBuffer.WriteString(var_30)
 								if err != nil {
 									return err
 								}
 							} else {
-								var_33 := `Edit Context`
-								_, err = templBuffer.WriteString(var_33)
+								var_31 := `Edit Context`
+								_, err = templBuffer.WriteString(var_31)
 								if err != nil {
 									return err
 								}
 							}
-							_, err = templBuffer.WriteString("</button>")
+							_, err = templBuffer.WriteString("</button> ")
 							if err != nil {
 								return err
 							}
-							var var_34 = []any{del}
-							err = templ.RenderCSSItems(ctx, templBuffer, var_34...)
+							var var_32 = []any{del}
+							err = templ.RenderCSSItems(ctx, templBuffer, var_32...)
 							if err != nil {
 								return err
 							}
@@ -555,7 +533,7 @@ func fineSuperSelectResults(players []PlayerWithFines, approvedPFines []PresetFi
 							if err != nil {
 								return err
 							}
-							_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_34).String()))
+							_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_32).String()))
 							if err != nil {
 								return err
 							}
@@ -567,16 +545,34 @@ func fineSuperSelectResults(players []PlayerWithFines, approvedPFines []PresetFi
 							if err != nil {
 								return err
 							}
-							_, err = templBuffer.WriteString("\">")
+							_, err = templBuffer.WriteString("\" hx-swap=\"outerHTML\" hx-target=\"this\">")
 							if err != nil {
 								return err
 							}
-							var_35 := `Delete`
-							_, err = templBuffer.WriteString(var_35)
+							var_33 := `Delete`
+							_, err = templBuffer.WriteString(var_33)
 							if err != nil {
 								return err
 							}
-							_, err = templBuffer.WriteString("</button></details>")
+							_, err = templBuffer.WriteString("</button> <details><summary>")
+							if err != nil {
+								return err
+							}
+							var var_34 string = fmt.Sprintf("%s - %s - %s", nf.Reason, p.Name, nf.Context)
+							_, err = templBuffer.WriteString(templ.EscapeString(var_34))
+							if err != nil {
+								return err
+							}
+							_, err = templBuffer.WriteString("</summary> ")
+							if err != nil {
+								return err
+							}
+							var var_35 string = fmt.Sprintf("%+v", nf)
+							_, err = templBuffer.WriteString(templ.EscapeString(var_35))
+							if err != nil {
+								return err
+							}
+							_, err = templBuffer.WriteString("</details>")
 							if err != nil {
 								return err
 							}

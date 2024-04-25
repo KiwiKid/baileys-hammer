@@ -219,9 +219,9 @@ func fineContextHandler(db *gorm.DB) http.HandlerFunc {
 			fineAtStr := r.FormValue("fineAt")
 			fineAt, err = time.Parse("2006-01-02T15:04", fineAtStr)
 			if err != nil {
-				// Handle parsing error, perhaps set a default value or return an error response
-				http.Error(w, fmt.Sprintf("Failed to parse fineAt time - \"%s\" %v", fineAtStr, err), http.StatusBadRequest)
-				return
+				
+				log.Printf("Failed to parse fineAt time - \"%s\" %v", fineAtStr, err)
+				fineAt = time.Now()
 			}
 		}
 
@@ -361,8 +361,8 @@ func fineEditHandler(db *gorm.DB) http.HandlerFunc {
 			fineAt, err := time.Parse("2006-01-02T15:04", fineAtStr)
 			if err != nil {
 				// Handle parsing error, perhaps set a default value or return an error response
-				http.Error(w, fmt.Sprintf("Failed to parse fineAt time - \"%s\" %v", fineAtStr, err), http.StatusBadRequest)
-				return
+				log.Printf("Failed to parse fineAt time - \"%s\" %v", fineAtStr, err)
+				fineAt = time.Now()
 			}
 			context := r.FormValue("context")
 

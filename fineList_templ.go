@@ -181,15 +181,7 @@ func fineRow(isFineMaster bool, f FineWithPlayer) templ.Component {
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("\" hx-swap=\"outerHTML\" hx-target=\"")
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString(templ.EscapeString(fmt.Sprintf("#fr-%d", f.Fine.ID)))
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString("\" class=\"")
+		_, err = templBuffer.WriteString("\" hx-swap=\"innerHTML\" class=\"")
 		if err != nil {
 			return err
 		}
@@ -885,15 +877,7 @@ func fineEditForm(f FineWithPlayer, isFineMaster bool) templ.Component {
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("\" hx-target=\"")
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString(templ.EscapeString(fmt.Sprintf("#fr-%d", f.Fine.ID)))
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString("\" hx-swap=\"outerHTML\"><h1 class=\"text-lg\">")
+		_, err = templBuffer.WriteString("\" hx-target=\"this\" hx-swap=\"outerHTML\"><h1 class=\"text-lg\">")
 		if err != nil {
 			return err
 		}
@@ -967,6 +951,14 @@ func fineEditForm(f FineWithPlayer, isFineMaster bool) templ.Component {
 			return err
 		}
 		_, err = templBuffer.WriteString(templ.EscapeString(fmt.Sprintf("%v", f.Fine.ID)))
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("\" class=\"hidden\"><input type=\"amount\" name=\"amount\" value=\"")
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString(templ.EscapeString(fmt.Sprintf("%v", f.Fine.Amount)))
 		if err != nil {
 			return err
 		}
