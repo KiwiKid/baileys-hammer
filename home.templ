@@ -177,6 +177,41 @@ templ home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines
 		@header()
 		@tomSelectLinks()
 		<body class="text-2xl p-1">
+			<script>
+			let touchstartX = 0;
+			let touchendX = 0;
+			let swipeCount = 0;
+
+			const swipeArea = document.getElementById('swipeArea');
+			const secretButton = document.getElementById('secretButton');
+			if(swipeArea){
+				swipeArea.addEventListener('touchstart', function(event) {
+						touchstartX = event.changedTouches[0].screenX;
+					}, false);
+				
+				swipeArea.addEventListener('touchend', function(event) {
+					touchendX = event.changedTouches[0].screenX;
+					handleSwipeGesture();
+				}, false);
+			} else {
+				console.warn('no swipeArea found')
+			}
+					
+		function handleSwipeGesture() {
+			console.log('handleSwipeGesture')
+			if (touchstartX > touchendX) {
+				console.log('handleSwipeGesture1')
+				swipeCount++;
+				if (swipeCount === 2) {
+					console.log('handleSwipeGesture2')
+					secretButton.style.display = 'block';
+					swipeCount = 0;
+				}
+			} else {
+				swipeCount = 0;
+			}
+		}
+		</script>
 			<div>
 				@activeMatchBanner(activeMatch)
 				<h1 class="font-bold mt-4 pb-4 text-center">{ GetTitle(ctx) }</h1>
@@ -232,7 +267,10 @@ templ home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines
 			</div>
 			<div class={ containerClass } id="leaderboard">
 				<div class="w-full">
-					<h3 class="text-2xl font-bold text-center">Leaderboard</h3>
+					<div id="swipeArea" class="swipe-area w-full">
+						<h3 class="text-2xl font-bold text-center">Leaderboard</h3>
+					</div>
+					<button id="secretButton" class="secret-button" style="display:none;">Secret Button!!!</button>
 					<ul>
 						for _, p := range players {
 							<li class="m-4">
