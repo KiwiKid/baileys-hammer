@@ -597,7 +597,7 @@ func fineHandler(db *gorm.DB) http.HandlerFunc {
 							}
 						
 							// Assuming a function GetPresetFineByID that returns a *PresetFine struct for a given ID
-							presetFine, err := GetPresetFine(db, pfId)
+							presetFine, err := GetPresetFine(db, pfId, "")
 							if err != nil {
 								http.Error(w, "Invalid GetPresetFine data", http.StatusBadRequest)
 								return

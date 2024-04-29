@@ -1,4 +1,4 @@
-module baileys-hammer
+module match-mula
 
 go 1.21.1
 

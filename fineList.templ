@@ -2,7 +2,6 @@ package main
 
 import (
 "fmt"
-"github.com/dustin/go-humanize"
 )
 
 func getFinesTotal(fines []FineWithPlayer) float64 {
@@ -83,7 +82,7 @@ templ fineRow(isFineMaster bool, f FineWithPlayer) {
 				if f.Match.StartTime != nil {
 					{ niceDate(f.Match.StartTime) }
 				}
-				{ /* humanize.Time(f.Fine.FineAt) */ }
+				/* humanize.Time(f.Fine.FineAt) */
 			</div>
 		</td>
 		<td>
@@ -237,7 +236,7 @@ templ fineContextRow(f FineWithPlayer, matches []Match) {
 			/>
 			<button
  				class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
- 				hx-post={ "/fines/context" }
+ 				hx-post="/fines/context"
  				hx-swap="outerHTML"
  				hx-include="closest tr"
  				type="submit"
@@ -314,8 +313,8 @@ templ fineEditForm(f FineWithPlayer, isFineMaster bool) {
 			<input
  				type="text"
  				name="context"
- 				value={ f.Fine.Context }
- 				class="mt-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 w-full"
+ 				class="mt-1 px-3 py-2 border border
+ 				value={ f.Fine.Context }-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 w-full"
  				placeholder="Context for the fine"
 			/>
 			<div class="mt-2">

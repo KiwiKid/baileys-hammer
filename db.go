@@ -510,20 +510,21 @@ func GetPresetFines(db *gorm.DB, includeUnapproved bool) ([]PresetFine, error) {
 }
 
 
-func GetPresetFine(db *gorm.DB, id uint64) (*PresetFine, error) {
+func GetPresetFine(db *gorm.DB, id uint64, reasonName string) (*PresetFine, error) {
     var presetFines PresetFine
-    if err := db.Where("id = ?", id).First(&presetFines).Error; err != nil {
+    if err := db.Where("id = ?", id).Or("reason = ?", reasonName).First(&presetFines).Error; err != nil {
         return nil, err
     }
     return &presetFines, nil
 }
 
-func GetFineFromPreset(db *gorm.DB, pfID string) (*Fine, error) {
-    pfId, err := strconv.ParseUint(pfID, 10, 64)
+func GetFineFromPreset(db *gorm.DB, pfIDOrReason string) (*Fine, error) {
+    pfId, err := strconv.ParseUint(pfIDOrReason, 10, 64)
+    var reasonStr = ""
     if err != nil {
-        return nil, err
+        reasonStr = pfIDOrReason
     }
-    presetFine, err := GetPresetFine(db, pfId)
+    presetFine, err := GetPresetFine(db, pfId, reasonStr)
     if err != nil {
         return nil, err
     }
