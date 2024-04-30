@@ -351,11 +351,7 @@ func fineEditHandler(db *gorm.DB) http.HandlerFunc {
 				approved = approvedStr == "true" //todo: on?
 			}
 
-			matchIdStr := r.FormValue("matchId")
-			matchId, err := strconv.ParseUint(matchIdStr, 10, 64)
-            if err != nil {
-                log.Printf("fineEditHandler - Invalid matchID ID")
-            }
+
 
             playerId, err := strconv.ParseUint(r.FormValue("playerId"), 10, 64)
             if err != nil {
@@ -372,18 +368,30 @@ func fineEditHandler(db *gorm.DB) http.HandlerFunc {
 			}*/
 			context := r.FormValue("context")
 
-
-            // Update the fine in the database
-            fine := Fine{
-                Model:    gorm.Model{ID: uint(fineID)},
+			// Update the fine in the database
+			fine := Fine{
+				Model:    gorm.Model{ID: uint(fineID)},
 				PlayerID: uint(playerId),
-                Amount:   amount,
-                Reason:   reason,
+				Amount:   amount,
+				Reason:   reason,
 				Context: context,
-                Approved: approved,
-				FineAt: time.Now(),
-				MatchId: uint(matchId),
-            }
+				Approved: approved,
+			}
+			
+
+			matchIdStr := r.FormValue("matchId")
+			matchId, err := strconv.ParseUint(matchIdStr, 10, 64)
+            if err != nil {
+                log.Printf("fineEditHandler - Invalid matchID ID")
+            }else { 
+				fine.MatchId = uint(matchId)
+				match, getMatchErr := GetMatch(db, matchId);
+				if getMatchErr != nil {
+					fine.FineAt = *match.StartTime
+				}
+			}
+
+
 
             if err := SaveFine(db, &fine); err != nil {
                 http.Error(w, "Failed to update fine", http.StatusInternalServerError)
