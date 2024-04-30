@@ -60,7 +60,7 @@ templ fineRow(isFineMaster bool, f FineWithPlayer) {
 					}
 				>
 					<button
- 						hx-get={ fmt.Sprintf("/fines/edit/%d?isEdit=true", f.Fine.ID) }
+ 						hx-get={ fmt.Sprintf("/fines/edit/%d?isEdit=form", f.Fine.ID) }
  						hx-swap="outerHTML"
  						class={ pri }
 					>
@@ -79,9 +79,8 @@ templ fineRow(isFineMaster bool, f FineWithPlayer) {
 				if len(f.Match.Opponent) > 0 {
 					{ f.Match.Opponent }
 				}
-				if f.Match.StartTime != nil {
-					{ niceDate(f.Match.StartTime) }
-				}
+				fineAt: 
+				{ niceDate(&f.Fine.FineAt) }
 			</div>
 		</td>
 		<td>
@@ -294,8 +293,7 @@ templ fineContestRow(f FineWithPlayer) {
 templ fineEditForm(f FineWithPlayer, isFineMaster bool) {
 	<form
  		hx-post={ fmt.Sprintf("/fines/edit/%d", f.Fine.ID) }
- 		hx-target="this"
- 		hx-swap="outerHTML"
+ 		hx-swap="innerHTML"
 	>
 		<h1 class="text-lg">Edit Fine</h1>
 		<h3>{ F("%s - %s (%s)", f.Player.Name, f.Fine.Reason, f.Fine.Context) }</h3>
@@ -397,6 +395,8 @@ templ fineEditRow(f FineWithPlayer, isFineMaster bool) {
 	<tr
  		id={ fmt.Sprintf("fr-%d", f.Fine.ID) }
  		class="bg-white divide-y divide-gray-200"
+ 		hx-target="this"
+ 		hx-swap="innerHTML"
 	>
 		<td class="px-6 py-4" colspan="10">
 			@fineEditForm(f, isFineMaster)

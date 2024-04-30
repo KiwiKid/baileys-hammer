@@ -378,16 +378,19 @@ func fineEditHandler(db *gorm.DB) http.HandlerFunc {
 				Approved: approved,
 			}
 			
-
 			matchIdStr := r.FormValue("matchId")
 			matchId, err := strconv.ParseUint(matchIdStr, 10, 64)
             if err != nil {
+				log.Printf("FINEMATCH processing EXIT 1")
                 log.Printf("fineEditHandler - Invalid matchID ID")
             }else { 
 				fine.MatchId = uint(matchId)
 				match, getMatchErr := GetMatch(db, matchId);
 				if getMatchErr != nil {
+					log.Printf("FINEMATCH processing EXIT 2")
+				} else {
 					fine.FineAt = *match.StartTime
+					log.Printf("got fineat from match starttime: %v (match:%d)", fine.FineAt, matchId)
 				}
 			}
 
@@ -396,7 +399,9 @@ func fineEditHandler(db *gorm.DB) http.HandlerFunc {
             if err := SaveFine(db, &fine); err != nil {
                 http.Error(w, "Failed to update fine", http.StatusInternalServerError)
                 return
-            }
+            }else {
+				log.Printf("\n\nSAve fine %+v\n\n", fine)
+			}
 
 			player, err := GetPlayerByID(db, fine.PlayerID)
 			if err != nil {
