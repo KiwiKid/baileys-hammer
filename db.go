@@ -150,12 +150,12 @@ func GetPlayersWithFines(db *gorm.DB, playerIds []uint64) ([]PlayerWithFines, er
 
     if len(playerIds) > 0 {
         db.Preload("Fines", func(db *gorm.DB) *gorm.DB {
-            return db.Order("fines.created_at DESC")
+            return db.Order("fines.fine_at DESC")
         }).Where("id IN ?", playerIds).Find(&players)
 
     }else{
         db.Preload("Fines", func(db *gorm.DB) *gorm.DB {
-            return db.Order("fines.created_at DESC")
+            return db.Order("fines.fine_at DESC")
         }).Find(&players).Order("players.name")
     }
     //.Where("active = true")
@@ -274,7 +274,7 @@ func FetchLatestFines(db *gorm.DB, page int, pageSize int) ([]Fine, error) {
     var fines []Fine
     offset := (page - 1) * pageSize
 
-    result := db.Order("created_at DESC").Offset(offset).Limit(pageSize).Find(&fines)
+    result := db.Order("fine_at DESC").Offset(offset).Limit(pageSize).Find(&fines)
     if result.Error != nil {
         return nil, result.Error
     }
