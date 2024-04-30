@@ -533,7 +533,6 @@ func GetFineFromPreset(db *gorm.DB, pfIDOrReason string) (*Fine, error) {
         fine = Fine{
             Amount: presetFine.Amount,
             Reason: presetFine.Reason,
-            FineAt: time.Now(),
         }
         return &fine, nil
     }

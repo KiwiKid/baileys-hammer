@@ -582,7 +582,6 @@ func fineHandler(db *gorm.DB) http.HandlerFunc {
 							fine := Fine{
 								Amount: amount,
 								Reason: reason,
-								FineAt: time.Now(),
 								Context: context,
 								PlayerID: uint(playerId),
 								Approved: approved,
