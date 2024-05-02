@@ -209,7 +209,7 @@ func matchListPage(matches []Match, isOpen bool) templ.Component {
 				return err
 			}
 		}
-		_, err = templBuffer.WriteString("<div id=\"add-match-container\" hx-get=\"/match?isOpen=true\" hx-trigger=\"click\" hx-swap=\"OuterHTML\" class=\"w-full text-center\">")
+		_, err = templBuffer.WriteString("<div id=\"add-match-container\" hx-get=\"/match?isOpen=true\" hx-trigger=\"load once\" hx-swap=\"OuterHTML\" class=\"w-full text-center\">")
 		if err != nil {
 			return err
 		}

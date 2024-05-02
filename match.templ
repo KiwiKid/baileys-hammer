@@ -50,7 +50,7 @@ templ matchListPage(matches []Match, isOpen bool) {
 				<div
  					id="add-match-container"
  					hx-get="/match?isOpen=true"
- 					hx-trigger="click"
+ 					hx-trigger="load once"
  					hx-swap="OuterHTML"
  					class="w-full text-center"
 				>loading add match</div>
