@@ -686,8 +686,6 @@ func GetMatchEvents(db *gorm.DB, id uint64) ([]MatchEvent, error) {
     var events []MatchEvent
     if err := db.Where("match_id = ?", id).Find(&events).Error; err != nil {
         return nil, err
-    }else{
-        log.Printf("GetMatchEvents - got %d for %d", len(events), id)
     }
     return events, nil
 }

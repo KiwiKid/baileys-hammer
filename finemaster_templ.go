@@ -1113,7 +1113,7 @@ func matchesList(isOpen bool, matches []Match, pwfs []PlayerWithFines) templ.Com
 			if err != nil {
 				return err
 			}
-			var_67 := `Matches`
+			var_67 := `🚧 Matches 🚧`
 			_, err = templBuffer.WriteString(var_67)
 			if err != nil {
 				return err

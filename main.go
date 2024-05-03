@@ -258,9 +258,7 @@ func fineEditHandler(db *gorm.DB) http.HandlerFunc {
             if err != nil {
                 http.Error(w, "GetFineByID not found", http.StatusNotFound)
                 return
-            } else { 
-				log.Printf("GOT FINE: \n\n %+v", fine)
-			}
+            }
 
             // Fetch associated player details (assuming GetPlayerByID is a function you have)
             player, err := GetPlayerByID(db, fine.PlayerID)

@@ -121,7 +121,6 @@ func matchHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 		case "GET":
 
 			matchIdStr := chi.URLParam(r, "matchId")
-			fmt.Printf("matchHandler %s", matchIdStr)
 
 			if matchIdStr == "" {
 				matches, err := GetMatches(db, 1, 0, 9999)
@@ -204,7 +203,6 @@ func matchHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 					errComp.Render(GetContext(r), w)
 				}
 
-				log.Printf("GOT FORM %+v", form)
 
 			/*	form = NewMatchForm{
 					MatchId: matchId64,
@@ -395,7 +393,6 @@ func matchHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 			matchComp.Render(GetContext(r), w)
 		case "DELETE":
 			matchIdStr := chi.URLParam(r, "matchId")
-			fmt.Printf("matchHandler %s", matchIdStr)
 			matchId64, err := strconv.ParseUint(matchIdStr, 10, 64)
 			if err != nil {
 				http.Error(w, fmt.Sprintf("Error parsing match ID: %v", err), http.StatusBadRequest)
