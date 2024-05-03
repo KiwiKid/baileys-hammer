@@ -35,8 +35,8 @@ templ matchListPage(matches []Match, isOpen bool) {
 				if len(matches) > 0 {
 					for _, match := range matches {
 						<div class="p-4 border-b last:border-b-0">
-							<div class="text-lg font-medium">{ match.Location }</div>
-							<div class="text-sm text-gray-600">{ match.Opponent }</div>
+							<div class="text-lg font-medium">{ match.Opponent }</div>
+							<div class="text-sm text-gray-600">{ match.Location }</div>
 							<div class="mt-2">
 								<a class="inline-block bg-blue-500 text-white font-semibold py-1 px-3 rounded hover:bg-blue-600" href={   templ.SafeURL(F("/match/%d?type=form", match.ID ) ) }>Edit</a>
 							</div>
@@ -125,7 +125,7 @@ templ createMatch(closeLink templ.SafeURL, players []PlayerWithFines) {
 						<option value={ S("%v", p.ID) }>
 							{ S("%s", p.Name) }
 						</option>
-						}
+					}
 				</select>
 			</div>
 			<div class="mb-4">
@@ -154,31 +154,34 @@ templ editMatchContainer(closeLink templ.SafeURL, genMeta MatchMetaGeneral, succ
 }
 
 templ viewMatch(matchMeta MatchMetaGeneral) {
-	<div class="m-2 w-full"
-	>
+	<div class="m-2 w-full">
 		<div
-			if len(matchMeta.GoalScorers) > int(matchMeta.OpponentGoalCount) {
-			class="p-4 border-b last:border-b-0 bg-green-200"
-		} else if (len(matchMeta.GoalScorers) == int(matchMeta.OpponentGoalCount)){
-			class="p-4 border-b last:border-b-0 bg-yellow-200"
-		} else {
-			class="p-4 border-b last:border-b-0 bg-red-200"
-		}
+ 			if len(matchMeta.GoalScorers) > int(matchMeta.OpponentGoalCount) {
+				class="p-4 border-b last:border-b-0 bg-green-200"
+			}
+ 			else
+ 			if (len(matchMeta.GoalScorers) == int(matchMeta.OpponentGoalCount)) {
+				class="p-4 border-b last:border-b-0 bg-yellow-200"
+			} else {
+				class="p-4 border-b last:border-b-0 bg-red-200"
+			}
 		>{ F("%s - [%d - %d]", matchMeta.Match.Opponent, len(matchMeta.GoalScorers), matchMeta.OpponentGoalCount) }</div>
 		<div>
-		GoalScorers:
-		for _, gs := range matchMeta.GoalScorers {
-			<div class="text-sm text-gray-600">{ gs.Name }</div>
-		}
+			GoalScorers:
+			for _, gs := range matchMeta.GoalScorers {
+				<div class="text-sm text-gray-600">{ gs.Name }</div>
+			}
 		</div>
-		
 		if matchMeta.PlayerOfTheDay != nil && len(UsePlayerOfTheDayName(ctx)) > 0 {
-			{ UsePlayerOfTheDayName(ctx) } <div class="text-sm text-gray-600">{   matchMeta.PlayerOfTheDay.Name }</div>
+			{ UsePlayerOfTheDayName(ctx) }
+			<div class="text-sm text-gray-600">{   matchMeta.PlayerOfTheDay.Name }</div>
 		}
 		if matchMeta.DudOfTheDay != nil && len(UseDudOfTheDayName(ctx)) > 0 {
-			{ UseDudOfTheDayName(ctx) } <div class="text-sm text-gray-600">{  matchMeta.DudOfTheDay.Name }</div>
+			{ UseDudOfTheDayName(ctx) }
+			<div class="text-sm text-gray-600">{  matchMeta.DudOfTheDay.Name }</div>
 		}
-	</div> 
+		<details><summary>debug</summary>{ F("%+v", matchMeta)}</details>
+	</div>
 }
 
 templ editMatch(closeLink templ.SafeURL, genMeta MatchMetaGeneral, successMsg string) {
@@ -254,6 +257,13 @@ templ editMatch(closeLink templ.SafeURL, genMeta MatchMetaGeneral, successMsg st
 				</div>
 			</details>
 			<details><summary>debug</summary>{ fmt.Sprintf("%+v", genMeta) }</details>
+
+			if genMeta.PlayerOfTheDay != nil {
+				<details><summary>debug - PlayerOfTheDay { F("%d", genMeta.Match.PlayerOfTheDay)}</summary>{ fmt.Sprintf("%+v", genMeta.PlayerOfTheDay) }</details>
+			}
+			if genMeta.PlayerOfTheDay != nil {
+				<details><summary>debug - dudof the day { F("%d", genMeta.Match.DudOfTheDay)}</summary>{ fmt.Sprintf("%+v", genMeta.PlayerOfTheDay) }</details>
+			}
 		</form>
 	</div>
 }

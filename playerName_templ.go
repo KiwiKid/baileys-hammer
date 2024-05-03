@@ -808,7 +808,7 @@ func playerRoleSelector(player PlayerWithFines, config *Config, msg string) temp
 			if err != nil {
 				return err
 			}
-			if len(UseInjuryCounterTrackerName(ctx)) > 0 {
+			if len(UseInjuryCounterTrackerName(ctx)) > 0 && "1" == "2" {
 				_, err = templBuffer.WriteString("<div class=\"flex flex-row mt-2\">")
 				if err != nil {
 					return err
