@@ -215,7 +215,9 @@ templ matchMetaDebug(genMeta MatchMetaGeneral) {
 		for _, p := range genMeta.Players { 
 			Fines for { p.Name}
 			for _, f := range p.Fines {
-				{ fmt.Sprintf(`%+v`, f) }<br/>	
+				if f.ID == genMeta.Match.ID {
+					{ fmt.Sprintf(`%+v`, f) }<br/>	
+				}
 			}
 			{ fmt.Sprintf(`%+v`, p) }<br/>
 		}

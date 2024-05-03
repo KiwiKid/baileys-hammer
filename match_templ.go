@@ -911,14 +911,16 @@ func matchMetaDebug(genMeta MatchMetaGeneral) templ.Component {
 				return err
 			}
 			for _, f := range p.Fines {
-				var var_60 string = fmt.Sprintf(`%+v`, f)
-				_, err = templBuffer.WriteString(templ.EscapeString(var_60))
-				if err != nil {
-					return err
-				}
-				_, err = templBuffer.WriteString("<br>")
-				if err != nil {
-					return err
+				if f.ID == genMeta.Match.ID {
+					var var_60 string = fmt.Sprintf(`%+v`, f)
+					_, err = templBuffer.WriteString(templ.EscapeString(var_60))
+					if err != nil {
+						return err
+					}
+					_, err = templBuffer.WriteString("<br>")
+					if err != nil {
+						return err
+					}
 				}
 			}
 			_, err = templBuffer.WriteString(" ")
