@@ -252,12 +252,15 @@ templ presetFines(baseUrl string, passCode string, isOpen bool, presetFines []Pr
 templ matchesList(isOpen bool, matches []Match, pwfs []PlayerWithFines) {
 	<div class="mx-auto bg-gray-200 shadow-xl m-10">
 		if isOpen {
-			<div class="w-full px-8 py-6 text-left bg-white shadow-xl m-10" id="preset-fine">
+			<div class="w-full px-8 py-6 text-left bg-white shadow-xl" id="match-list">
 				<h3 class="text-2xl font-bold text-center" hx-get="/#preset-fine" hx-trigger="click">🚧 Matches 🚧</h3>
 				<div class="mx-auto bg-gray-200 shadow-xl m-10 flex flex-col justify-center items-center">
-					for _, m := range matches {
-						<button hx-trigger="load once" hx-get={ fmt.Sprintf("/match/%d?type=list", m.ID) } hx-swap="outerHTML">Edit "vs { m.Opponent } at { m.Location  }"</button>
-					}
+					<div>
+						for _, m := range matches {
+							<button hx-trigger="load once" hx-get={ fmt.Sprintf("/match/%d?type=list", m.ID) } hx-swap="outerHTML">Edit "vs { m.Opponent } at { m.Location  }"</button>
+						}
+					</div>
+					<button hx-get="/match-list" hx-target="this" class={ F("%s float-right", bigPri) } hx-swap="outerHTML">edit/add matches</button>
 				</div>
 			</div>
 		} else {
@@ -271,7 +274,7 @@ templ matchesList(isOpen bool, matches []Match, pwfs []PlayerWithFines) {
 templ matchesManage(baseUrl string, isOpen bool, matches []Match, pwfs []PlayerWithFines) {
 	<div class="mx-auto bg-gray-200 shadow-xl m-10">
 		if isOpen {
-			<div class="w-full px-8 py-6 text-left bg-white shadow-xl m-10" id="preset-fine">
+			<div class="w-full px-8 py-6 text-left bg-white shadow-xl" id="manage-matches">
 				<h3 class="text-2xl font-bold text-center">Add/Edit Matches</h3>
 				<div class="w-full flex justify-center items-center py-2">
 					<p>Edit existing matches, or add new ones</p>
@@ -285,7 +288,7 @@ templ matchesManage(baseUrl string, isOpen bool, matches []Match, pwfs []PlayerW
 			</div>
 		} else {
 			<div class="flex justify-center w-full">
-				<a href={ makeSafeUrlWithAnchorV2(baseUrl, "standard-matches", true) } class={ bigPri }>Manage Matches</a>
+				<a href={ makeSafeUrlWithAnchorV2(baseUrl, "manage-matches", true) } class={ bigPri }>Manage Matches</a>
 			</div>
 		}
 	</div>

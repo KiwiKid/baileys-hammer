@@ -9,6 +9,11 @@ templ matchSelector(matches []Match, selectedMatchId uint) {
 	<div class="flex flex-col text-3xl sm:flex-row">
 		<label class="block text-gray-700">
 			Match:
+			if selectedMatchId == 0 {
+				<span class="text-sm">
+					⚠️ (no match set)
+				</span>
+			}
 			<select
  				id="matchId"
  				name="matchId"
@@ -34,17 +39,27 @@ templ matchListPage(matches []Match, isOpen bool) {
 		@header()
 		@tomSelectLinks()
 		<body class="text-2xl p-1">
-			<div class="mx-auto bg-gray-200 shadow-xl m-10">
+			<div class="w-full bg-gray-200 shadow-xl m-10">
 				if len(matches) > 0 {
-					for _, match := range matches {
-						<div class="p-4 border-b last:border-b-0">
-							<div class="text-lg font-medium">{ match.Opponent }</div>
-							<div class="text-sm text-gray-600">{ match.Location }</div>
-							<div class="mt-2">
-								<a class="inline-block bg-blue-500 text-white font-semibold py-1 px-3 rounded hover:bg-blue-600" href={   templ.SafeURL(F("/match/%d?type=form", match.ID ) ) }>Edit</a>
+					<div class="grid grid-cols-1 gap-4">
+						for _, match := range matches {
+							<div class="p-4 border-b md:border-b-0 md:border-r last:border-r-0" id={ F("mlp-%d", match.ID) } >
+								<div class="flex justify-between items-center">
+									<div>
+										<div class="text-lg font-medium">{ match.Opponent }</div>
+										<div class="text-sm text-gray-600">{ match.Location }</div>
+									</div>
+									<div class="flex-shrink-0">
+										<a class={ F("%s inline-block bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600", bigPri) } 
+										hx-target={ F("#mlp-%d", match.ID) }
+										hx-swap="outerHTML"
+										hx-get={ F("/match/%d?type=form", match.ID) } >
+										Edit</a>
+									</div>
+								</div>
 							</div>
-						</div>
-					}
+						}
+					</div>
 				} else {
 					<div class="text-center p-4">
 						No Matches? 
@@ -52,6 +67,7 @@ templ matchListPage(matches []Match, isOpen bool) {
 						to get started.
 					</div>
 				}
+
 				<div
  					id="add-match-container"
  					hx-get="/match?isOpen=true"
@@ -187,6 +203,31 @@ templ viewMatch(matchMeta MatchMetaGeneral) {
 				<div class="text-sm text-gray-600">{ gs.Name }</div>
 			}
 		</div>
+		if len(matchMeta.GoalAssisters) > 0 {
+			<div>
+				GoalAssisters:
+				for _, gs := range matchMeta.GoalAssisters {
+					<div class="text-sm text-gray-600">{ gs.Name }</div>
+				}
+			</div>
+		} 
+		<div>
+			for _, p := range matchMeta.Players {
+				for _, f := range p.Fines {
+					if f.MatchId == matchMeta.Match.ID {
+						<div>
+							{ fmt.Sprintf("$%v", f.Amount) }
+							- 
+							{ f.Reason }
+							- 
+							{ f.Context }
+							- 
+							{ f.Contest }
+						</div>
+					}
+				}
+			}
+		</div>
 		<div>
 			if matchMeta.PlayerOfTheDay != nil && len(UsePlayerOfTheDayName(ctx)) > 0 {
 				{ UsePlayerOfTheDayName(ctx) }
@@ -207,21 +248,31 @@ templ viewMatch(matchMeta MatchMetaGeneral) {
 
 templ matchMetaDebug(genMeta MatchMetaGeneral) {
 	<div class="text-sm text-gray-600">
-	<details>
-	<summary>debug</summary><pre>
-		{ fmt.Sprintf(`Match: %+v`, genMeta.Match) }<br/>
-		<br/>
-		Players: 
-		for _, p := range genMeta.Players { 
-			Fines for { p.Name}
-			for _, f := range p.Fines {
-				if f.ID == genMeta.Match.ID {
-					{ fmt.Sprintf(`%+v`, f) }<br/>	
+		<details>
+			<summary>debug</summary>
+			<pre>
+				{ fmt.Sprintf(`Match: %+v`, genMeta.Match) }
+				<br/>
+				<br/>
+				Players: 
+				for _, p := range genMeta.Players {
+					Fines for 
+					{ p.Name }
+					for _, f := range p.Fines {
+						if f.ID == genMeta.Match.ID {
+							{ fmt.Sprintf(`%+v`, f) }
+							<br/>
+						}
+					}
+					== 
+					{ p.Name }
+					== 
+					{ fmt.Sprintf(`%+v`, p) }
+					<br/>
 				}
-			}
-			{ fmt.Sprintf(`%+v`, p) }<br/>
-		}
-	</pre></details></div>
+			</pre>
+		</details>
+	</div>
 }
 
 templ editMatch(closeLink templ.SafeURL, genMeta MatchMetaGeneral, successMsg string) {

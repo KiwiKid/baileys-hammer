@@ -10,7 +10,7 @@ import (
 )
 
 var baseUrl = "/"
-var containerClass = "flex mx-auto bg-gray-200 shadow-xl p-2"
+var containerClass = "w-full flex mx-auto bg-gray-200 shadow-xl p-2"
 var con = "bg-sepia-200 shadow-xl m-10 rounded-lg"
 
 
@@ -235,9 +235,8 @@ templ home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines
 			<div class={ containerClass } id="leaderboard">
 				<div class="w-full">
 					<div id="swipeArea" class="swipe-area w-full">
-						<h3 class="text-2xl font-bold text-center" hx-trigger="dblclick" hx-get="/match-list" hx-push-url="true">Leaderboard</h3>
+						<h3 class="text-2xl font-bold text-center">Leaderboard</h3>
 					</div>
-					<button id="secretButton" class="secret-button" style="display:none;">Secret Button!!!</button>
 					<ul>
 						for _, p := range players {
 							<li class="m-4">

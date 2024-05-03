@@ -58,19 +58,7 @@ templ fineRow(isFineMaster bool, f FineWithPlayer) {
  					if len(f.Fine.Context) > 0 {
 						class="w-3/5"
 					}
-				>
-					<button
- 						hx-get={ fmt.Sprintf("/fines/edit/%d?isEdit=form", f.Fine.ID) }
- 						hx-swap="outerHTML"
- 						class={ pri }
-					>
-						if len(f.Fine.Context) == 0 {
-							Add Context	
-						} else {
-							Edit Context
-						}
-					</button>
-				</div>
+				></div>
 			</div>
 			<div class="italic">
 				if f.Fine.Approved {
@@ -83,19 +71,39 @@ templ fineRow(isFineMaster bool, f FineWithPlayer) {
 			</div>
 		</td>
 		<td>
-			if len(f.Fine.Contest) == 0 {
-				<div class="max-w-96">
-					<button
- 						hx-get={ fmt.Sprintf("/fines/edit/%d?isContest=true&isFineMaster=%d", f.Fine.ID, isFineMaster) }
- 						hx-swap="outerHTML"
- 						class={ smPri }
-					>Contest</button>
-				</div>
-			} else {
-				<div>
-					{ f.Fine.Contest }
-				</div>
-			}
+			<div class="m-2">
+				<button
+					hx-get={ fmt.Sprintf("/fines/edit/%d?isContext=true", f.Fine.ID) }
+					hx-swap="outerHTML"
+					class={ smPri }
+				>
+					if len(f.Fine.Context) == 0 {
+						Add Context	
+						if f.Fine.MatchId == 0 {
+							<span class="text-sm">
+								⚠️
+							</span>
+						}
+					} else {
+						Edit Context
+					}
+				</button>
+			</div>
+			<div class="m-2">
+				if len(f.Fine.Contest) == 0 {
+					<div class="max-w-96">
+						<button
+							hx-get={ fmt.Sprintf("/fines/edit/%d?isContest=true&isFineMaster=%d", f.Fine.ID, isFineMaster) }
+							hx-swap="outerHTML"
+							class={ smPri }
+						>Contest</button>
+					</div>
+				} else {
+					<div>
+						{ f.Fine.Contest }
+					</div>
+				}
+			</div>
 		</td>
 		<td>
 			if isFineMaster {
@@ -205,14 +213,14 @@ templ fineContextRow(f FineWithPlayer, matches []Match) {
  						name="context"
  						value={ f.Fine.Context }
  						class="px-4 py-2 border border-gray-300 rounded-lg w-full focus:ring-blue-500 focus:border-blue-500"
- 						placeholder="Reason"
+ 						placeholder="Context"
 					/>
 				</label>
 			</div>
 			<div class="mt-2">
 				<div hx-get={ fmt.Sprintf("/match-list?type=select&matchId=%d", f.Fine.MatchId) } hx-trigger="load once"></div>
 			</div>
-			<div>OR</div>
+			<!--<div>OR</div>
 			<div class="w-full" id="dateInputDiv">
 				<label class="block ">
 					Date/Time:
@@ -225,7 +233,7 @@ templ fineContextRow(f FineWithPlayer, matches []Match) {
 					/>
 					<p class="italic text-md">(defaults to create time)</p>
 				</label>
-			</div>
+			</div>-->
 			<input
  				type="hidden"
  				name="fid"
@@ -294,7 +302,6 @@ templ fineEditForm(f FineWithPlayer, isFineMaster bool) {
  		hx-post={ fmt.Sprintf("/fines/edit/%d", f.Fine.ID) }
  		hx-swap="innerHTML"
  		hx-target={ fmt.Sprintf("#fr-%d", f.Fine.ID) }
-
 	>
 		<h1 class="text-lg">Edit Fine</h1>
 		<h3>
@@ -337,6 +344,11 @@ PlayerID: %d
 			/>
 			<div class="mt-2">
 				<div hx-get={ fmt.Sprintf("/match-list?type=select&matchId=%d", f.Fine.MatchId) } hx-trigger="load once" hx-target="this"></div>
+				if f.Fine.MatchId == 0 {
+					<span class="text-sm">
+						⚠️
+					</span>
+				}
 			</div>
 			<!-- Hidden Inputs -->
 			<input

@@ -173,6 +173,7 @@ templ playerEventInputSelector(players []Player, events []MatchEvent, eventType 
 							}
 							<option value="">N/A</option>
 						</select>
+						(delete via events below)
 					</label>
 				}
 			</div>
@@ -200,6 +201,7 @@ templ playerEventInputSelector(players []Player, events []MatchEvent, eventType 
 								</option>
 							}
 						</select>
+						(delete via events below)
 					</label>
 					for _, p := range players {
 						{ presentPlayerEvent(playerHasEventCount(p.ID, events, eventType), p) }
