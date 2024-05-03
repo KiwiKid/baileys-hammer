@@ -159,8 +159,10 @@ func matchHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 
 			var renderType = r.URL.Query().Get("type")
 	
+			log.Printf("MatchHanlder - %s", renderType)
 			switch(renderType){
 			case "form":
+				
 				matchComp := editMatch(url, *match, "")
 				matchComp.Render(GetContext(r), w)
 				return

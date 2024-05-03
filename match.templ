@@ -201,15 +201,30 @@ templ viewMatch(matchMeta MatchMetaGeneral) {
 				{  matchMeta.DudOfTheDay.Name }
 			}
 		</div>
-		<div class="text-sm text-gray-600">
-			<details><summary>debug</summary>{ F("%+v", matchMeta) }</details>
-		</div>
+		@matchMetaDebug(matchMeta)
 	</div>
+}
+
+templ matchMetaDebug(genMeta MatchMetaGeneral) {
+	<div class="text-sm text-gray-600">
+	<details>
+	<summary>debug</summary><pre>
+		{ fmt.Sprintf(`Match: %+v`, genMeta.Match) }<br/>
+		<br/>
+		Players: 
+		for _, p := range genMeta.Players { 
+			Fines for { p.Name}
+			for _, f := range p.Fines {
+				{ fmt.Sprintf(`%+v`, f) }<br/>	
+			}
+			{ fmt.Sprintf(`%+v`, p) }<br/>
+		}
+	</pre></details></div>
 }
 
 templ editMatch(closeLink templ.SafeURL, genMeta MatchMetaGeneral, successMsg string) {
 	<div class="w-full mx-auto bg-gray-200 shadow-xl m-10" id={ fmt.Sprintf("edit-match-%d", genMeta.Match.ID) }>
-		<form hx-post={ fmt.Sprintf("/match/%v", genMeta.Match.ID) } hx-target={ fmt.Sprintf("#edit-match-%d", genMeta.Match.ID) } class="mx-auto my-8 p-4 border border-gray-200 rounded-lg shadow">
+		<form hx-post={ fmt.Sprintf("/match/%v", genMeta.Match.ID) } hx-trigger="submit" hx-swap="outerHTML" hx-target={ fmt.Sprintf("#edit-match-%d", genMeta.Match.ID) } class="mx-auto my-8 p-4 border border-gray-200 rounded-lg shadow">
 			<h2 class="text-lg font-semibold mb-4" title={ fmt.Sprintf("%+v", genMeta) }>Edit Match - vs { genMeta.Match.Opponent }</h2>
 			<input
  				type="hidden"
@@ -279,37 +294,7 @@ templ editMatch(closeLink templ.SafeURL, genMeta MatchMetaGeneral, successMsg st
 					<a hx-delete={ fmt.Sprintf("/match/%d", genMeta.Match.ID) } hx-confirm="Are you sure you want to delete this match?" class={ bigDel }>Delete</a>
 				</div>
 			</details>
-			<details><summary>debug</summary><pre>{ 
-				fmt.Sprintf(`
-Match: 
-	Location: %s
-	StartTime: %v
-	Opponent: %s
-	Subtitle: %s
-	EventCount: %d
-	SeasonId: %s
-	PlayerOfTheDay: %s
-	DudOfTheDay: %s
-GoalScorers: %+v
-OpponentGoalCount: %d
-Players: %+v
-PlayerOfTheDay: %s
-DudOfTheDay: %s
-`,
-					genMeta.Match.Location,
-genMeta.Match.StartTime,
-genMeta.Match.Opponent,
-genMeta.Match.Subtitle,
-len(genMeta.Match.Events),
-genMeta.Match.SeasonId,
-genMeta.Match.PlayerOfTheDay,
-genMeta.Match.DudOfTheDay,
-					genMeta.GoalScorers,
-					genMeta.OpponentGoalCount,
-					genMeta.Players,
-					genMeta.PlayerOfTheDay.Name,
-					genMeta.DudOfTheDay.Name,
-				) }</pre></details>
+			@matchMetaDebug(genMeta)
 		</form>
 	</div>
 }

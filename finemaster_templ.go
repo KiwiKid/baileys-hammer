@@ -1109,7 +1109,7 @@ func matchesList(isOpen bool, matches []Match, pwfs []PlayerWithFines) templ.Com
 			return err
 		}
 		if isOpen {
-			_, err = templBuffer.WriteString("<div class=\"w-full px-8 py-6 text-left bg-white shadow-xl m-10\" id=\"preset-fine\"><h3 class=\"text-2xl font-bold text-center\">")
+			_, err = templBuffer.WriteString("<div class=\"w-full px-8 py-6 text-left bg-white shadow-xl m-10\" id=\"preset-fine\"><h3 class=\"text-2xl font-bold text-center\" hx-get=\"/#preset-fine\" hx-trigger=\"click\">")
 			if err != nil {
 				return err
 			}

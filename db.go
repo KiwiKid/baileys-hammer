@@ -626,6 +626,7 @@ func GetMatch(db *gorm.DB, id uint64) (*Match, error){
 }
 
 func WrapMatchWithMeta(db *gorm.DB, match Match) (*MatchMetaGeneral, error){
+    log.Printf("🎁 WrapMatchWithMeta START")
     players, err := GetPlayers(db, 0, 999)
     if err != nil {
         return nil, err
@@ -651,11 +652,10 @@ func WrapMatchWithMeta(db *gorm.DB, match Match) (*MatchMetaGeneral, error){
                 opponentGoalCount = opponentGoalCount + 1
             }
         }
-    
     }
 
     
-    log.Printf("WrapMatchWithMeta - %d:%v %d:%v", match.PlayerOfTheDay, playerOfTheDay, match.DudOfTheDay, dudOfTheDay)
+    log.Printf("🎁 WrapMatchWithMeta END - %d:%v %d:%v", match.PlayerOfTheDay, playerOfTheDay, match.DudOfTheDay, dudOfTheDay)
     return &MatchMetaGeneral{
         Match: match,
         GoalScorers: goalScorers,

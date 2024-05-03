@@ -1098,7 +1098,7 @@ func presetFineMasterHandler(db *gorm.DB) http.HandlerFunc {
 
 		realPass := os.Getenv("PASS")
 		if(pass != realPass) {
-			log.Printf("Error fetching presetFineMasterHandler - key miss match"+pass)
+			log.Printf("Error fetching presetFineMasterHandler - key miss match %s %s", pass, r.Referer())
 			http.Error(w, "Not this time mate.", http.StatusInternalServerError)
 			return
 		}

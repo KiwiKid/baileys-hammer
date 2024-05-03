@@ -79,7 +79,6 @@ templ fineRow(isFineMaster bool, f FineWithPlayer) {
 				if len(f.Match.Opponent) > 0 {
 					{ f.Match.Opponent }
 				}
-				fineAt: 
 				{ niceDate(&f.Fine.FineAt) }
 			</div>
 		</td>
@@ -294,6 +293,8 @@ templ fineEditForm(f FineWithPlayer, isFineMaster bool) {
 	<form
  		hx-post={ fmt.Sprintf("/fines/edit/%d", f.Fine.ID) }
  		hx-swap="innerHTML"
+ 		hx-target={ fmt.Sprintf("#fr-%d", f.Fine.ID) }
+
 	>
 		<h1 class="text-lg">Edit Fine</h1>
 		<h3>
