@@ -1,6 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"time"
+)
 
 templ matchSelector(matches []Match, selectedMatchId uint) {
 	<div class="flex flex-col text-3xl sm:flex-row">
@@ -53,7 +56,7 @@ templ matchListPage(matches []Match, isOpen bool) {
  					id="add-match-container"
  					hx-get="/match?isOpen=true"
  					hx-trigger="click"
- 					hx-swap="OuterHTML"
+ 					hx-swap="outerHTML"
  					class={ bigAdd }
 				>Add New Match</div>
 			</div>
@@ -101,6 +104,18 @@ templ listEvents(events []MatchEvent) {
 	</div>
 }
 
+func nextSundayFormatted() string {
+	now := time.Now()
+	// Calculate days to add to get to the next Sunday
+	daysToAdd := (7 - int(now.Weekday())) % 7
+	if daysToAdd == 0 {
+		daysToAdd = 7 // If today is Sunday, set next Sunday
+	}
+	nextSunday := now.AddDate(0, 0, daysToAdd)
+	nextSunday = time.Date(nextSunday.Year(), nextSunday.Month(), nextSunday.Day(), 14, 0, 0, 0, nextSunday.Location()) // Set time to 2:00 PM
+	return nextSunday.Format("2006-01-02T15:04")
+}
+
 templ createMatch(closeLink templ.SafeURL, players []PlayerWithFines) {
 	<div class="mx-auto bg-gray-200 shadow-xl m-10">
 		<form hx-post="/match" hx-swap="afterend" class="mx-auto my-8 p-4 border border-gray-200 rounded-lg shadow">
@@ -111,7 +126,7 @@ templ createMatch(closeLink templ.SafeURL, players []PlayerWithFines) {
 			</div>
 			<div class="mb-4">
 				<label for="start-time" class="block text-lg font-semibold text-gray-700">Start Time</label>
-				<input type="datetime-local" name="startTime" id="start-time" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"/>
+				<input type="datetime-local" name="startTime" id="start-time" value={ nextSundayFormatted() } class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"/>
 			</div>
 			<div class="mb-4">
 				<label for="opponent" class="block text-lg font-semibold text-gray-700">Opponent</label>
@@ -180,7 +195,7 @@ templ viewMatch(matchMeta MatchMetaGeneral) {
 			{ UseDudOfTheDayName(ctx) }
 			<div class="text-sm text-gray-600">{  matchMeta.DudOfTheDay.Name }</div>
 		}
-		<details><summary>debug</summary>{ F("%+v", matchMeta)}</details>
+		<details><summary>debug</summary>{ F("%+v", matchMeta)   }</details>
 	</div>
 }
 
@@ -257,13 +272,6 @@ templ editMatch(closeLink templ.SafeURL, genMeta MatchMetaGeneral, successMsg st
 				</div>
 			</details>
 			<details><summary>debug</summary>{ fmt.Sprintf("%+v", genMeta) }</details>
-
-			if genMeta.PlayerOfTheDay != nil {
-				<details><summary>debug - PlayerOfTheDay { F("%d", genMeta.Match.PlayerOfTheDay)}</summary>{ fmt.Sprintf("%+v", genMeta.PlayerOfTheDay) }</details>
-			}
-			if genMeta.PlayerOfTheDay != nil {
-				<details><summary>debug - dudof the day { F("%d", genMeta.Match.DudOfTheDay)}</summary>{ fmt.Sprintf("%+v", genMeta.PlayerOfTheDay) }</details>
-			}
 		</form>
 	</div>
 }
