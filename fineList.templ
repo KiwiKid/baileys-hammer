@@ -296,7 +296,27 @@ templ fineEditForm(f FineWithPlayer, isFineMaster bool) {
  		hx-swap="innerHTML"
 	>
 		<h1 class="text-lg">Edit Fine</h1>
-		<h3>{ F("%s - %s (%s)", f.Player.Name, f.Fine.Reason, f.Fine.Context) }</h3>
+		<h3>
+			<pre>
+				{ F(`
+Name: %s
+Reason: %s
+Context: %s
+Amount: %v
+Contest: %s
+FineAt: %s
+PlayerID: %d
+		`, 
+	f.Player.Name,
+	f.Fine.Reason,
+	f.Fine.Context,
+	f.Fine.Amount,
+	f.Fine.Contest,
+	f.Fine.FineAt,
+	f.Fine.PlayerID,
+		 	) }
+			</pre>
+		</h3>
 		<div class="p-4">
 			<label for="reason" class="block text-lg font-semibold text-gray-700">Reason</label>
 			<input

@@ -851,16 +851,32 @@ func fineEditForm(f FineWithPlayer, isFineMaster bool) templ.Component {
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("</h1><h3>")
+		_, err = templBuffer.WriteString("</h1><h3><pre>")
 		if err != nil {
 			return err
 		}
-		var var_53 string = F("%s - %s (%s)", f.Player.Name, f.Fine.Reason, f.Fine.Context)
+		var var_53 string = F(`
+Name: %s
+Reason: %s
+Context: %s
+Amount: %v
+Contest: %s
+FineAt: %s
+PlayerID: %d
+		`,
+			f.Player.Name,
+			f.Fine.Reason,
+			f.Fine.Context,
+			f.Fine.Amount,
+			f.Fine.Contest,
+			f.Fine.FineAt,
+			f.Fine.PlayerID,
+		)
 		_, err = templBuffer.WriteString(templ.EscapeString(var_53))
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("</h3><div class=\"p-4\"><label for=\"reason\" class=\"block text-lg font-semibold text-gray-700\">")
+		_, err = templBuffer.WriteString("</pre></h3><div class=\"p-4\"><label for=\"reason\" class=\"block text-lg font-semibold text-gray-700\">")
 		if err != nil {
 			return err
 		}

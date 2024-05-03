@@ -357,7 +357,31 @@ func fineEditHandler(db *gorm.DB) http.HandlerFunc {
 				errComp.Render(GetContext(r), w)
             }
 
-			/*fineAtStr := r.FormValue("fineAt")
+		/*	matchId, err := strconv.ParseUint(r.FormValue("matchId"), 10, 64)
+            if err != nil {
+				errComp := errMsg(F("Invalid matchId", r.FormValue("matchId")))
+				errComp.Render(GetContext(r), w)
+            }
+
+			var fineAt = time.Now()
+			if matchId != 0 {
+				match, err := GetMatch(db, matchId)
+				if err != nil {
+					errComp := errMsg("Cannot select get the active match?")
+					errComp.Render(GetContext(r), w)
+				} else if activeMatch != nil {
+					fineAt = *match.StartTime
+				}
+			} else {
+				activeMatch, actMatchERr := GetActiveMatch(db)
+				if actMatchERr != nil {
+					errComp := errMsg("Cannot select get the active match?")
+					errComp.Render(GetContext(r), w)
+				}else if activeMatch != nil {
+					fineAt = *activeMatch.StartTime
+				}
+			}
+			fineAtStr := r.FormValue("fineAt")
 			fineAt, err := time.Parse("2006-01-02T15:04", fineAtStr)
 			if err != nil {
 				// Handle parsing error, perhaps set a default value or return an error response
@@ -579,6 +603,15 @@ func fineHandler(db *gorm.DB) http.HandlerFunc {
 							errComp := errMsg("Cannot select \"Fine is not listed here\" with others")
 							errComp.Render(GetContext(r), w)
 						}
+
+						var fineAt = time.Now()
+						activeMatch, actMatchERr := GetActiveMatch(db)
+						if actMatchERr != nil {
+							errComp := errMsg("Cannot select get the active match?")
+							errComp.Render(GetContext(r), w)
+						}else if activeMatch != nil {
+							fineAt = *activeMatch.StartTime
+						}
 	
 						if pfIdStr == "-1" {
 
@@ -587,6 +620,7 @@ func fineHandler(db *gorm.DB) http.HandlerFunc {
 								Reason: reason,
 								Context: context,
 								PlayerID: uint(playerId),
+								FineAt: fineAt,
 								Approved: approved,
 							}
 
@@ -962,7 +996,7 @@ func presetFineHandler(db *gorm.DB) http.HandlerFunc {
 			pass := r.FormValue("pass")
 			realPass := os.Getenv("PASS")
 			if(pass != realPass) {
-				log.Printf("Error fetching presetFineMasterHandler")
+				log.Printf("key Error fetching presetFineHandler")
 				http.Error(w, "Not this time mate.", http.StatusInternalServerError)
 				return
 			}
@@ -1064,7 +1098,7 @@ func presetFineMasterHandler(db *gorm.DB) http.HandlerFunc {
 
 		realPass := os.Getenv("PASS")
 		if(pass != realPass) {
-			log.Printf("Error fetching presetFineMasterHandler")
+			log.Printf("Error fetching presetFineMasterHandler - key miss match"+pass)
 			http.Error(w, "Not this time mate.", http.StatusInternalServerError)
 			return
 		}
