@@ -635,7 +635,7 @@ func WrapMatchWithMeta(db *gorm.DB, match Match) (*MatchMetaGeneral, error){
     var dudOfTheDay *Player
     var goalScorers []Player = []Player{};
     var opponentGoalCount uint = 0
-    for _, p := range players {
+    for i, p := range players {
         if(p.ID == uint(match.PlayerOfTheDay)){
             playerOfTheDay = &p
         }
@@ -646,7 +646,7 @@ func WrapMatchWithMeta(db *gorm.DB, match Match) (*MatchMetaGeneral, error){
             if(e.EventType == "goal" && p.ID == e.PlayerId){
                 goalScorers = append(goalScorers, p)
             }
-            if(e.EventType == "conceded-goal"){
+            if(e.EventType == "conceded-goal" && i == 0){
                 opponentGoalCount = opponentGoalCount + 1
             }
         }
