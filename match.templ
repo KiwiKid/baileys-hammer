@@ -31,20 +31,22 @@ templ matchListPage(matches []Match, isOpen bool) {
 		@header()
 		@tomSelectLinks()
 		<body class="text-2xl p-1">
-		<div class="mx-auto bg-gray-200 shadow-xl m-10">
+			<div class="mx-auto bg-gray-200 shadow-xl m-10">
 				if len(matches) > 0 {
 					for _, match := range matches {
 						<div class="p-4 border-b last:border-b-0">
-							<div class="text-lg font-medium">{match.Location}</div>
-							<div class="text-sm text-gray-600">{match.Opponent}</div>
+							<div class="text-lg font-medium">{ match.Location }</div>
+							<div class="text-sm text-gray-600">{ match.Opponent }</div>
 							<div class="mt-2">
-								<a class="inline-block bg-blue-500 text-white font-semibold py-1 px-3 rounded hover:bg-blue-600" href={templ.SafeURL(F("/match/%d?type=form", match.ID))}>Edit</a>
+								<a class="inline-block bg-blue-500 text-white font-semibold py-1 px-3 rounded hover:bg-blue-600" href={   templ.SafeURL(F("/match/%d?type=form", match.ID ) ) }>Edit</a>
 							</div>
 						</div>
 					}
 				} else {
 					<div class="text-center p-4">
-						No Matches? <a class="text-blue-500 hover:underline" href="/matches/new">Add one</a> to get started.
+						No Matches? 
+						<a class="text-blue-500 hover:underline" href="/matches/new">Add one</a>
+						to get started.
 					</div>
 				}
 				<div
@@ -53,7 +55,7 @@ templ matchListPage(matches []Match, isOpen bool) {
  					hx-trigger="click"
  					hx-swap="OuterHTML"
  					class={ bigAdd }
-				>[New Match]</div>
+				>Add New Match</div>
 			</div>
 			@pageFooter()
 		</body>
@@ -123,7 +125,7 @@ templ createMatch(closeLink templ.SafeURL, players []PlayerWithFines) {
 						<option value={ S("%v", p.ID) }>
 							{ S("%s", p.Name) }
 						</option>
-					}
+						}
 				</select>
 			</div>
 			<div class="mb-4">
@@ -149,6 +151,34 @@ templ editMatchContainer(closeLink templ.SafeURL, genMeta MatchMetaGeneral, succ
 			@pageFooter()
 		</body>
 	</html>
+}
+
+templ viewMatch(matchMeta MatchMetaGeneral) {
+	<div class="m-2 w-full"
+	>
+		<div
+			if len(matchMeta.GoalScorers) > int(matchMeta.OpponentGoalCount) {
+			class="p-4 border-b last:border-b-0 bg-green-200"
+		} else if (len(matchMeta.GoalScorers) == int(matchMeta.OpponentGoalCount)){
+			class="p-4 border-b last:border-b-0 bg-yellow-200"
+		} else {
+			class="p-4 border-b last:border-b-0 bg-red-200"
+		}
+		>{ F("%s - [%d - %d]", matchMeta.Match.Opponent, len(matchMeta.GoalScorers), matchMeta.OpponentGoalCount) }</div>
+		<div>
+		GoalScorers:
+		for _, gs := range matchMeta.GoalScorers {
+			<div class="text-sm text-gray-600">{ gs.Name }</div>
+		}
+		</div>
+		
+		if matchMeta.PlayerOfTheDay != nil && len(UsePlayerOfTheDayName(ctx)) > 0 {
+			{ UsePlayerOfTheDayName(ctx) } <div class="text-sm text-gray-600">{   matchMeta.PlayerOfTheDay.Name }</div>
+		}
+		if matchMeta.DudOfTheDay != nil && len(UseDudOfTheDayName(ctx)) > 0 {
+			{ UseDudOfTheDayName(ctx) } <div class="text-sm text-gray-600">{  matchMeta.DudOfTheDay.Name }</div>
+		}
+	</div> 
 }
 
 templ editMatch(closeLink templ.SafeURL, genMeta MatchMetaGeneral, successMsg string) {

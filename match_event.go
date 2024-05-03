@@ -46,6 +46,8 @@ type MatchMeta struct {
 type MatchMetaGeneral struct {
     Match Match
     Players []Player
+    GoalScorers []Player
+    OpponentGoalCount uint
     PlayerOfTheDay *Player
     DudOfTheDay *Player
 }

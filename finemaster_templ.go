@@ -1091,7 +1091,7 @@ func presetFines(baseUrl string, passCode string, isOpen bool, presetFines []Pre
 	})
 }
 
-func matchesManage(baseUrl string, isOpen bool, matches []Match, pwfs []PlayerWithFines) templ.Component {
+func matchesList(isOpen bool, matches []Match, pwfs []PlayerWithFines) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		templBuffer, templIsBuffer := w.(*bytes.Buffer)
 		if !templIsBuffer {
@@ -1113,65 +1113,35 @@ func matchesManage(baseUrl string, isOpen bool, matches []Match, pwfs []PlayerWi
 			if err != nil {
 				return err
 			}
-			var_67 := `Add/Edit Matches`
+			var_67 := `Matches`
 			_, err = templBuffer.WriteString(var_67)
 			if err != nil {
 				return err
 			}
-			_, err = templBuffer.WriteString("</h3><div class=\"w-full flex justify-center items-center py-2\"><p>")
-			if err != nil {
-				return err
-			}
-			var_68 := `Edit existing matches, or add new ones`
-			_, err = templBuffer.WriteString(var_68)
-			if err != nil {
-				return err
-			}
-			_, err = templBuffer.WriteString("</p></div>")
-			if err != nil {
-				return err
-			}
-			err = createMatch(makeSafeUrl(baseUrl, false, false, false, false, false), pwfs).Render(ctx, templBuffer)
-			if err != nil {
-				return err
-			}
-			_, err = templBuffer.WriteString("<div class=\"mx-auto bg-gray-200 shadow-xl m-10 flex flex-col justify-center items-center\">")
+			_, err = templBuffer.WriteString("</h3><div class=\"mx-auto bg-gray-200 shadow-xl m-10 flex flex-col justify-center items-center\">")
 			if err != nil {
 				return err
 			}
 			for _, m := range matches {
-				var var_69 = []any{bigPri}
-				err = templ.RenderCSSItems(ctx, templBuffer, var_69...)
+				_, err = templBuffer.WriteString("<button hx-trigger=\"load once\" hx-get=\"")
 				if err != nil {
 					return err
 				}
-				_, err = templBuffer.WriteString("<button hx-trigger=\"click\" hx-get=\"")
+				_, err = templBuffer.WriteString(templ.EscapeString(fmt.Sprintf("/match/%d?type=list", m.ID)))
 				if err != nil {
 					return err
 				}
-				_, err = templBuffer.WriteString(templ.EscapeString(fmt.Sprintf("/match/%d?type=form", m.ID)))
+				_, err = templBuffer.WriteString("\" hx-swap=\"outerHTML\">")
 				if err != nil {
 					return err
 				}
-				_, err = templBuffer.WriteString("\" hx-swap=\"outerHTML\" class=\"")
+				var_68 := `Edit "vs `
+				_, err = templBuffer.WriteString(var_68)
 				if err != nil {
 					return err
 				}
-				_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_69).String()))
-				if err != nil {
-					return err
-				}
-				_, err = templBuffer.WriteString("\">")
-				if err != nil {
-					return err
-				}
-				var_70 := `Edit "vs `
-				_, err = templBuffer.WriteString(var_70)
-				if err != nil {
-					return err
-				}
-				var var_71 string = m.Opponent
-				_, err = templBuffer.WriteString(templ.EscapeString(var_71))
+				var var_69 string = m.Opponent
+				_, err = templBuffer.WriteString(templ.EscapeString(var_69))
 				if err != nil {
 					return err
 				}
@@ -1179,18 +1149,18 @@ func matchesManage(baseUrl string, isOpen bool, matches []Match, pwfs []PlayerWi
 				if err != nil {
 					return err
 				}
-				var_72 := `at `
+				var_70 := `at `
+				_, err = templBuffer.WriteString(var_70)
+				if err != nil {
+					return err
+				}
+				var var_71 string = m.Location
+				_, err = templBuffer.WriteString(templ.EscapeString(var_71))
+				if err != nil {
+					return err
+				}
+				var_72 := `"`
 				_, err = templBuffer.WriteString(var_72)
-				if err != nil {
-					return err
-				}
-				var var_73 string = m.Location
-				_, err = templBuffer.WriteString(templ.EscapeString(var_73))
-				if err != nil {
-					return err
-				}
-				var_74 := `"`
-				_, err = templBuffer.WriteString(var_74)
 				if err != nil {
 					return err
 				}
@@ -1208,8 +1178,8 @@ func matchesManage(baseUrl string, isOpen bool, matches []Match, pwfs []PlayerWi
 			if err != nil {
 				return err
 			}
-			var var_75 = []any{bigPri}
-			err = templ.RenderCSSItems(ctx, templBuffer, var_75...)
+			var var_73 = []any{bigPri}
+			err = templ.RenderCSSItems(ctx, templBuffer, var_73...)
 			if err != nil {
 				return err
 			}
@@ -1217,8 +1187,8 @@ func matchesManage(baseUrl string, isOpen bool, matches []Match, pwfs []PlayerWi
 			if err != nil {
 				return err
 			}
-			var var_76 templ.SafeURL = makeSafeUrlWithAnchorV2(baseUrl, "standard-matches", true)
-			_, err = templBuffer.WriteString(templ.EscapeString(string(var_76)))
+			var var_74 templ.SafeURL = makeSafeUrlWithAnchorV2(baseUrl, "standard-matches", true)
+			_, err = templBuffer.WriteString(templ.EscapeString(string(var_74)))
 			if err != nil {
 				return err
 			}
@@ -1226,7 +1196,7 @@ func matchesManage(baseUrl string, isOpen bool, matches []Match, pwfs []PlayerWi
 			if err != nil {
 				return err
 			}
-			_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_75).String()))
+			_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_73).String()))
 			if err != nil {
 				return err
 			}
@@ -1234,8 +1204,172 @@ func matchesManage(baseUrl string, isOpen bool, matches []Match, pwfs []PlayerWi
 			if err != nil {
 				return err
 			}
-			var_77 := `Manage Matches`
+			var_75 := `View Matches`
+			_, err = templBuffer.WriteString(var_75)
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("</a></div>")
+			if err != nil {
+				return err
+			}
+		}
+		_, err = templBuffer.WriteString("</div>")
+		if err != nil {
+			return err
+		}
+		if !templIsBuffer {
+			_, err = templBuffer.WriteTo(w)
+		}
+		return err
+	})
+}
+
+func matchesManage(baseUrl string, isOpen bool, matches []Match, pwfs []PlayerWithFines) templ.Component {
+	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+		templBuffer, templIsBuffer := w.(*bytes.Buffer)
+		if !templIsBuffer {
+			templBuffer = templ.GetBuffer()
+			defer templ.ReleaseBuffer(templBuffer)
+		}
+		ctx = templ.InitializeContext(ctx)
+		var_76 := templ.GetChildren(ctx)
+		if var_76 == nil {
+			var_76 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		_, err = templBuffer.WriteString("<div class=\"mx-auto bg-gray-200 shadow-xl m-10\">")
+		if err != nil {
+			return err
+		}
+		if isOpen {
+			_, err = templBuffer.WriteString("<div class=\"w-full px-8 py-6 text-left bg-white shadow-xl m-10\" id=\"preset-fine\"><h3 class=\"text-2xl font-bold text-center\">")
+			if err != nil {
+				return err
+			}
+			var_77 := `Add/Edit Matches`
 			_, err = templBuffer.WriteString(var_77)
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("</h3><div class=\"w-full flex justify-center items-center py-2\"><p>")
+			if err != nil {
+				return err
+			}
+			var_78 := `Edit existing matches, or add new ones`
+			_, err = templBuffer.WriteString(var_78)
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("</p></div>")
+			if err != nil {
+				return err
+			}
+			err = createMatch(makeSafeUrl(baseUrl, false, false, false, false, false), pwfs).Render(ctx, templBuffer)
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("<div class=\"mx-auto bg-gray-200 shadow-xl m-10 flex flex-col justify-center items-center\">")
+			if err != nil {
+				return err
+			}
+			for _, m := range matches {
+				var var_79 = []any{bigPri}
+				err = templ.RenderCSSItems(ctx, templBuffer, var_79...)
+				if err != nil {
+					return err
+				}
+				_, err = templBuffer.WriteString("<button hx-trigger=\"click\" hx-get=\"")
+				if err != nil {
+					return err
+				}
+				_, err = templBuffer.WriteString(templ.EscapeString(fmt.Sprintf("/match/%d?type=form", m.ID)))
+				if err != nil {
+					return err
+				}
+				_, err = templBuffer.WriteString("\" hx-swap=\"outerHTML\" class=\"")
+				if err != nil {
+					return err
+				}
+				_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_79).String()))
+				if err != nil {
+					return err
+				}
+				_, err = templBuffer.WriteString("\">")
+				if err != nil {
+					return err
+				}
+				var_80 := `Edit "vs `
+				_, err = templBuffer.WriteString(var_80)
+				if err != nil {
+					return err
+				}
+				var var_81 string = m.Opponent
+				_, err = templBuffer.WriteString(templ.EscapeString(var_81))
+				if err != nil {
+					return err
+				}
+				_, err = templBuffer.WriteString(" ")
+				if err != nil {
+					return err
+				}
+				var_82 := `at `
+				_, err = templBuffer.WriteString(var_82)
+				if err != nil {
+					return err
+				}
+				var var_83 string = m.Location
+				_, err = templBuffer.WriteString(templ.EscapeString(var_83))
+				if err != nil {
+					return err
+				}
+				var_84 := `"`
+				_, err = templBuffer.WriteString(var_84)
+				if err != nil {
+					return err
+				}
+				_, err = templBuffer.WriteString("</button>")
+				if err != nil {
+					return err
+				}
+			}
+			_, err = templBuffer.WriteString("</div></div>")
+			if err != nil {
+				return err
+			}
+		} else {
+			_, err = templBuffer.WriteString("<div class=\"flex justify-center w-full\">")
+			if err != nil {
+				return err
+			}
+			var var_85 = []any{bigPri}
+			err = templ.RenderCSSItems(ctx, templBuffer, var_85...)
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("<a href=\"")
+			if err != nil {
+				return err
+			}
+			var var_86 templ.SafeURL = makeSafeUrlWithAnchorV2(baseUrl, "standard-matches", true)
+			_, err = templBuffer.WriteString(templ.EscapeString(string(var_86)))
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("\" class=\"")
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_85).String()))
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("\">")
+			if err != nil {
+				return err
+			}
+			var_87 := `Manage Matches`
+			_, err = templBuffer.WriteString(var_87)
 			if err != nil {
 				return err
 			}
@@ -1263,9 +1397,9 @@ func playersManage(baseUrl string, players []PlayerWithFines, config *Config, is
 			defer templ.ReleaseBuffer(templBuffer)
 		}
 		ctx = templ.InitializeContext(ctx)
-		var_78 := templ.GetChildren(ctx)
-		if var_78 == nil {
-			var_78 = templ.NopComponent
+		var_88 := templ.GetChildren(ctx)
+		if var_88 == nil {
+			var_88 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
 		if isOpen {
@@ -1273,8 +1407,8 @@ func playersManage(baseUrl string, players []PlayerWithFines, config *Config, is
 			if err != nil {
 				return err
 			}
-			var_79 := ` Section for Adding New Player `
-			_, err = templBuffer.WriteString(var_79)
+			var_89 := ` Section for Adding New Player `
+			_, err = templBuffer.WriteString(var_89)
 			if err != nil {
 				return err
 			}
@@ -1290,18 +1424,18 @@ func playersManage(baseUrl string, players []PlayerWithFines, config *Config, is
 			if err != nil {
 				return err
 			}
-			var_80 := `Add New Player (`
-			_, err = templBuffer.WriteString(var_80)
+			var_90 := `Add New Player (`
+			_, err = templBuffer.WriteString(var_90)
 			if err != nil {
 				return err
 			}
-			var var_81 string = fmt.Sprintf("%d", len(players))
-			_, err = templBuffer.WriteString(templ.EscapeString(var_81))
+			var var_91 string = fmt.Sprintf("%d", len(players))
+			_, err = templBuffer.WriteString(templ.EscapeString(var_91))
 			if err != nil {
 				return err
 			}
-			var_82 := `)`
-			_, err = templBuffer.WriteString(var_82)
+			var_92 := `)`
+			_, err = templBuffer.WriteString(var_92)
 			if err != nil {
 				return err
 			}
@@ -1309,8 +1443,8 @@ func playersManage(baseUrl string, players []PlayerWithFines, config *Config, is
 			if err != nil {
 				return err
 			}
-			var_83 := `Name`
-			_, err = templBuffer.WriteString(var_83)
+			var_93 := `Name`
+			_, err = templBuffer.WriteString(var_93)
 			if err != nil {
 				return err
 			}
@@ -1318,8 +1452,8 @@ func playersManage(baseUrl string, players []PlayerWithFines, config *Config, is
 			if err != nil {
 				return err
 			}
-			var var_84 = []any{bigAdd}
-			err = templ.RenderCSSItems(ctx, templBuffer, var_84...)
+			var var_94 = []any{bigAdd}
+			err = templ.RenderCSSItems(ctx, templBuffer, var_94...)
 			if err != nil {
 				return err
 			}
@@ -1327,7 +1461,7 @@ func playersManage(baseUrl string, players []PlayerWithFines, config *Config, is
 			if err != nil {
 				return err
 			}
-			_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_84).String()))
+			_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_94).String()))
 			if err != nil {
 				return err
 			}
@@ -1335,8 +1469,8 @@ func playersManage(baseUrl string, players []PlayerWithFines, config *Config, is
 			if err != nil {
 				return err
 			}
-			var_85 := `Add Player`
-			_, err = templBuffer.WriteString(var_85)
+			var_95 := `Add Player`
+			_, err = templBuffer.WriteString(var_95)
 			if err != nil {
 				return err
 			}
@@ -1344,8 +1478,8 @@ func playersManage(baseUrl string, players []PlayerWithFines, config *Config, is
 			if err != nil {
 				return err
 			}
-			var var_86 = []any{bigSec}
-			err = templ.RenderCSSItems(ctx, templBuffer, var_86...)
+			var var_96 = []any{bigSec}
+			err = templ.RenderCSSItems(ctx, templBuffer, var_96...)
 			if err != nil {
 				return err
 			}
@@ -1353,8 +1487,8 @@ func playersManage(baseUrl string, players []PlayerWithFines, config *Config, is
 			if err != nil {
 				return err
 			}
-			var var_87 templ.SafeURL = makeSafeUrl(baseUrl, false, false, false, false, false)
-			_, err = templBuffer.WriteString(templ.EscapeString(string(var_87)))
+			var var_97 templ.SafeURL = makeSafeUrl(baseUrl, false, false, false, false, false)
+			_, err = templBuffer.WriteString(templ.EscapeString(string(var_97)))
 			if err != nil {
 				return err
 			}
@@ -1362,7 +1496,7 @@ func playersManage(baseUrl string, players []PlayerWithFines, config *Config, is
 			if err != nil {
 				return err
 			}
-			_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_86).String()))
+			_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_96).String()))
 			if err != nil {
 				return err
 			}
@@ -1370,8 +1504,8 @@ func playersManage(baseUrl string, players []PlayerWithFines, config *Config, is
 			if err != nil {
 				return err
 			}
-			var_88 := `Close`
-			_, err = templBuffer.WriteString(var_88)
+			var_98 := `Close`
+			_, err = templBuffer.WriteString(var_98)
 			if err != nil {
 				return err
 			}
@@ -1379,8 +1513,8 @@ func playersManage(baseUrl string, players []PlayerWithFines, config *Config, is
 			if err != nil {
 				return err
 			}
-			var_89 := `Manage Players`
-			_, err = templBuffer.WriteString(var_89)
+			var_99 := `Manage Players`
+			_, err = templBuffer.WriteString(var_99)
 			if err != nil {
 				return err
 			}
@@ -1398,8 +1532,8 @@ func playersManage(baseUrl string, players []PlayerWithFines, config *Config, is
 			if err != nil {
 				return err
 			}
-			var var_90 = []any{bigSec}
-			err = templ.RenderCSSItems(ctx, templBuffer, var_90...)
+			var var_100 = []any{bigSec}
+			err = templ.RenderCSSItems(ctx, templBuffer, var_100...)
 			if err != nil {
 				return err
 			}
@@ -1407,8 +1541,8 @@ func playersManage(baseUrl string, players []PlayerWithFines, config *Config, is
 			if err != nil {
 				return err
 			}
-			var var_91 templ.SafeURL = makeSafeUrl(baseUrl, false, false, false, false, false)
-			_, err = templBuffer.WriteString(templ.EscapeString(string(var_91)))
+			var var_101 templ.SafeURL = makeSafeUrl(baseUrl, false, false, false, false, false)
+			_, err = templBuffer.WriteString(templ.EscapeString(string(var_101)))
 			if err != nil {
 				return err
 			}
@@ -1416,7 +1550,7 @@ func playersManage(baseUrl string, players []PlayerWithFines, config *Config, is
 			if err != nil {
 				return err
 			}
-			_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_90).String()))
+			_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_100).String()))
 			if err != nil {
 				return err
 			}
@@ -1424,8 +1558,8 @@ func playersManage(baseUrl string, players []PlayerWithFines, config *Config, is
 			if err != nil {
 				return err
 			}
-			var_92 := `Close`
-			_, err = templBuffer.WriteString(var_92)
+			var_102 := `Close`
+			_, err = templBuffer.WriteString(var_102)
 			if err != nil {
 				return err
 			}
@@ -1438,8 +1572,8 @@ func playersManage(baseUrl string, players []PlayerWithFines, config *Config, is
 			if err != nil {
 				return err
 			}
-			var var_93 = []any{bigPri}
-			err = templ.RenderCSSItems(ctx, templBuffer, var_93...)
+			var var_103 = []any{bigPri}
+			err = templ.RenderCSSItems(ctx, templBuffer, var_103...)
 			if err != nil {
 				return err
 			}
@@ -1447,8 +1581,8 @@ func playersManage(baseUrl string, players []PlayerWithFines, config *Config, is
 			if err != nil {
 				return err
 			}
-			var var_94 templ.SafeURL = makeSafeUrlWithAnchorV2(baseUrl, "players-manage", true)
-			_, err = templBuffer.WriteString(templ.EscapeString(string(var_94)))
+			var var_104 templ.SafeURL = makeSafeUrlWithAnchorV2(baseUrl, "players-manage", true)
+			_, err = templBuffer.WriteString(templ.EscapeString(string(var_104)))
 			if err != nil {
 				return err
 			}
@@ -1456,7 +1590,7 @@ func playersManage(baseUrl string, players []PlayerWithFines, config *Config, is
 			if err != nil {
 				return err
 			}
-			_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_93).String()))
+			_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_103).String()))
 			if err != nil {
 				return err
 			}
@@ -1464,8 +1598,8 @@ func playersManage(baseUrl string, players []PlayerWithFines, config *Config, is
 			if err != nil {
 				return err
 			}
-			var_95 := `Manage Players`
-			_, err = templBuffer.WriteString(var_95)
+			var_105 := `Manage Players`
+			_, err = templBuffer.WriteString(var_105)
 			if err != nil {
 				return err
 			}

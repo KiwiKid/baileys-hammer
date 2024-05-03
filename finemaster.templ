@@ -249,6 +249,25 @@ templ presetFines(baseUrl string, passCode string, isOpen bool, presetFines []Pr
 	}
 }
 
+templ matchesList(isOpen bool, matches []Match, pwfs []PlayerWithFines) {
+	<div class="mx-auto bg-gray-200 shadow-xl m-10">
+		if isOpen {
+			<div class="w-full px-8 py-6 text-left bg-white shadow-xl m-10" id="preset-fine">
+				<h3 class="text-2xl font-bold text-center">Matches</h3>
+				<div class="mx-auto bg-gray-200 shadow-xl m-10 flex flex-col justify-center items-center">
+					for _, m := range matches {
+						<button hx-trigger="load once" hx-get={ fmt.Sprintf("/match/%d?type=list", m.ID) } hx-swap="outerHTML">Edit "vs { m.Opponent } at { m.Location  }"</button>
+					}
+				</div>
+			</div>
+		} else {
+			<div class="flex justify-center w-full">
+				<a href={ makeSafeUrlWithAnchorV2(baseUrl, "standard-matches", true) } class={ bigPri }>View Matches</a>
+			</div>
+		}
+	</div>
+}
+
 templ matchesManage(baseUrl string, isOpen bool, matches []Match, pwfs []PlayerWithFines) {
 	<div class="mx-auto bg-gray-200 shadow-xl m-10">
 		if isOpen {

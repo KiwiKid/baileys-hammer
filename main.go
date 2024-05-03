@@ -1184,7 +1184,15 @@ func main() {
 			errComp.Render(GetContext(r), w)
 		}
 
-		home := home(playersWithFines, approvedPFines, pendingPFines, fineWithPlayers, *queryParams, activeMatch)
+
+		matches, err := GetMatches(db, 1, 0, 9999)
+		if err != nil {
+			log.Printf("Error retrieving preset fines: %v", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+
+		home := home(playersWithFines, approvedPFines, pendingPFines, fineWithPlayers, *queryParams, matches, activeMatch)
 		home.Render(GetContext(r), w)
 	})
 

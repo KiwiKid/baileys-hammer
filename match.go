@@ -135,6 +135,7 @@ func matchHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 					http.Error(w, "Could not get matches", http.StatusNotFound)
 					return
 				}
+
 				matchComp := matchesManage(r.Header.Get("Referrer"), true, matches, pwfs)
 				matchComp.Render(GetContext(r), w)
 				return
@@ -162,6 +163,10 @@ func matchHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 			switch(renderType){
 			case "form":
 				matchComp := editMatch(url, *match, "")
+				matchComp.Render(GetContext(r), w)
+				return
+			case "list":
+				matchComp := viewMatch(*match)
 				matchComp.Render(GetContext(r), w)
 				return
 			default:

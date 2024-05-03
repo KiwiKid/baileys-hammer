@@ -173,7 +173,7 @@ templ activeMatchBanner(activeMatch *Match) {
 	}
 }
 
-templ home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines []PresetFine, fineWithPlayers []FineWithPlayer, qp HomeQueryParams, activeMatch *Match) {
+templ home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines []PresetFine, fineWithPlayers []FineWithPlayer, qp HomeQueryParams, matches []Match, activeMatch *Match) {
 	<html hx-boost="true">
 		@header()
 		@tomSelectLinks()
@@ -231,6 +231,7 @@ templ home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines
 				}
 				@fineAddV2(baseUrl, qp.FinesOpen, players, approvedPFines, false)
 			</div>
+			@matchesList(qp.MatchesOpen, matches, players)
 			<div class={ containerClass } id="leaderboard">
 				<div class="w-full">
 					<div id="swipeArea" class="swipe-area w-full">

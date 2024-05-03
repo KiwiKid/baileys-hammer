@@ -620,7 +620,7 @@ func playerEventInputSelector(players []Player, events []MatchEvent, eventType s
 				if err != nil {
 					return err
 				}
-				var_32 := `New Goal`
+				var_32 := `Opponent Goal`
 				_, err = templBuffer.WriteString(var_32)
 				if err != nil {
 					return err
@@ -629,7 +629,7 @@ func playerEventInputSelector(players []Player, events []MatchEvent, eventType s
 				if err != nil {
 					return err
 				}
-				var_33 := `New Goal`
+				var_33 := `Opponent Goal`
 				_, err = templBuffer.WriteString(var_33)
 				if err != nil {
 					return err
@@ -638,7 +638,7 @@ func playerEventInputSelector(players []Player, events []MatchEvent, eventType s
 				if err != nil {
 					return err
 				}
-				var_34 := `New Goal`
+				var_34 := `Opponent Goal`
 				_, err = templBuffer.WriteString(var_34)
 				if err != nil {
 					return err
@@ -647,7 +647,7 @@ func playerEventInputSelector(players []Player, events []MatchEvent, eventType s
 				if err != nil {
 					return err
 				}
-				var_35 := `New Goal`
+				var_35 := `Opponent Goal`
 				_, err = templBuffer.WriteString(var_35)
 				if err != nil {
 					return err
@@ -656,7 +656,7 @@ func playerEventInputSelector(players []Player, events []MatchEvent, eventType s
 				if err != nil {
 					return err
 				}
-				var_36 := `New Goal`
+				var_36 := `Opponent Goal`
 				_, err = templBuffer.WriteString(var_36)
 				if err != nil {
 					return err
@@ -665,7 +665,7 @@ func playerEventInputSelector(players []Player, events []MatchEvent, eventType s
 				if err != nil {
 					return err
 				}
-				var_37 := `New Goal`
+				var_37 := `Opponent Goal`
 				_, err = templBuffer.WriteString(var_37)
 				if err != nil {
 					return err
@@ -674,7 +674,7 @@ func playerEventInputSelector(players []Player, events []MatchEvent, eventType s
 				if err != nil {
 					return err
 				}
-				var_38 := `New Goal`
+				var_38 := `Opponent Goal`
 				_, err = templBuffer.WriteString(var_38)
 				if err != nil {
 					return err
@@ -683,7 +683,7 @@ func playerEventInputSelector(players []Player, events []MatchEvent, eventType s
 				if err != nil {
 					return err
 				}
-				var_39 := `New Goal`
+				var_39 := `Opponent Goal`
 				_, err = templBuffer.WriteString(var_39)
 				if err != nil {
 					return err
@@ -692,7 +692,7 @@ func playerEventInputSelector(players []Player, events []MatchEvent, eventType s
 				if err != nil {
 					return err
 				}
-				var_40 := `New Goal`
+				var_40 := `Opponent Goal`
 				_, err = templBuffer.WriteString(var_40)
 				if err != nil {
 					return err
