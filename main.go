@@ -220,7 +220,6 @@ func fineContextHandler(db *gorm.DB) http.HandlerFunc {
 			if getMatchErr != nil {
 				http.Error(w, fmt.Sprintf("Invalid matchId ID - %s", matchIdStr), http.StatusBadRequest)
 				return
-				log.Printf("FINEMATCH processing EXIT 2")
 			} else {
 				fineAt = match.StartTime
 			}
@@ -237,7 +236,7 @@ func fineContextHandler(db *gorm.DB) http.HandlerFunc {
 			return
 		}
 		
-		success := contextSuccess(matchId, context, *fineAt)
+		success := contextSuccess(matchId, context, fineAt)
 		success.Render(GetContext(r), w)
 	}
 }

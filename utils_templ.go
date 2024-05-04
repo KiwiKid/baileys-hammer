@@ -400,7 +400,7 @@ func getIdStr(id string) string {
 	return fmt.Sprintf("#%s", id)
 }
 
-func contextSuccess(matchId uint64, contextStr string, fineAt time.Time) templ.Component {
+func contextSuccess(matchId uint64, contextStr string, fineAt *time.Time) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		templBuffer, templIsBuffer := w.(*bytes.Buffer)
 		if !templIsBuffer {
@@ -450,17 +450,19 @@ func contextSuccess(matchId uint64, contextStr string, fineAt time.Time) templ.C
 			if err != nil {
 				return err
 			}
-			if fineAt.After(twoWeeksAgo) {
-				var var_10 string = humanize.Time(fineAt)
-				_, err = templBuffer.WriteString(templ.EscapeString(var_10))
-				if err != nil {
-					return err
-				}
-			} else {
-				var var_11 string = fineAt.Format("2006-01-02T15:04")
-				_, err = templBuffer.WriteString(templ.EscapeString(var_11))
-				if err != nil {
-					return err
+			if fineAt != nil {
+				if fineAt.After(twoWeeksAgo) {
+					var var_10 string = humanize.Time(*fineAt)
+					_, err = templBuffer.WriteString(templ.EscapeString(var_10))
+					if err != nil {
+						return err
+					}
+				} else {
+					var var_11 string = fineAt.Format("2006-01-02T15:04")
+					_, err = templBuffer.WriteString(templ.EscapeString(var_11))
+					if err != nil {
+						return err
+					}
 				}
 			}
 			_, err = templBuffer.WriteString("</div>")

@@ -335,7 +335,7 @@ func UpdateFineContextByID(db *gorm.DB, fineID uint, matchId uint, context strin
     }
 
     if fineAt != nil {
-        updates["FineAt"] = fineAt
+        updates["FineAt"] = *fineAt
     }
 
 

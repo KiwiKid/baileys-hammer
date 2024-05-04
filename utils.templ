@@ -347,16 +347,18 @@ func getIdStr(id string) string {
 	return fmt.Sprintf("#%s", id)
 }
 
-templ contextSuccess(matchId uint64, contextStr string, fineAt time.Time) {
+templ contextSuccess(matchId uint64, contextStr string, fineAt *time.Time) {
 	@successComp() {
 		<h1>Added Context</h1>
 		<div>{ fmt.Sprintf("%d", matchId) }</div>
 		<div>{ contextStr }</div>
 		<div>
-			if fineAt.After(twoWeeksAgo) {
-				{ humanize.Time(fineAt) }
-			} else {
-				{ fineAt.Format("2006-01-02T15:04") }
+			if fineAt != nil {
+				if fineAt.After(twoWeeksAgo) {
+					{ humanize.Time(*fineAt) }
+				} else {
+					{ fineAt.Format("2006-01-02T15:04") }
+				}
 			}
 		</div>
 	}
