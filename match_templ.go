@@ -1326,7 +1326,7 @@ func editMatch(closeLink templ.SafeURL, genMeta MatchMetaGeneral, successMsg str
 				return err
 			}
 		}
-		if UseShowGoalAssister(ctx) {
+		if UseShowGoalScorerMatchList(ctx) {
 			err = playerEventInputSelector(genMeta.Players, genMeta.Match.Events, "conceded-goal").Render(ctx, templBuffer)
 			if err != nil {
 				return err

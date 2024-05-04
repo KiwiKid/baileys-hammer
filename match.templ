@@ -43,18 +43,21 @@ templ matchListPage(matches []Match, isOpen bool) {
 				if len(matches) > 0 {
 					<div class="grid grid-cols-1 gap-4">
 						for _, match := range matches {
-							<div class="p-4 border-b md:border-b-0 md:border-r last:border-r-0" id={ F("mlp-%d", match.ID) } >
+							<div class="p-4 border-b md:border-b-0 md:border-r last:border-r-0" id={ F("mlp-%d", match.ID) }>
 								<div class="flex justify-between items-center">
 									<div>
 										<div class="text-lg font-medium">{ match.Opponent }</div>
 										<div class="text-sm text-gray-600">{ match.Location }</div>
 									</div>
 									<div class="flex-shrink-0">
-										<a class={ F("%s inline-block bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600", bigPri) } 
-										hx-target={ F("#mlp-%d", match.ID) }
-										hx-swap="outerHTML"
-										hx-get={ F("/match/%d?type=form", match.ID) } >
-										Edit</a>
+										<a
+ 											class={ F("%s inline-block bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600", bigPri) }
+ 											hx-target={ F("#mlp-%d", match.ID) }
+ 											hx-swap="outerHTML"
+ 											hx-get={ F("/match/%d?type=form", match.ID) }
+										>
+											Edit
+										</a>
 									</div>
 								</div>
 							</div>
@@ -67,7 +70,6 @@ templ matchListPage(matches []Match, isOpen bool) {
 						to get started.
 					</div>
 				}
-
 				<div
  					id="add-match-container"
  					hx-get="/match?isOpen=true"
@@ -210,7 +212,7 @@ templ viewMatch(matchMeta MatchMetaGeneral) {
 					<div class="text-sm text-gray-600">{ gs.Name }</div>
 				}
 			</div>
-		} 
+		}
 		<div>
 			for _, p := range matchMeta.Players {
 				for _, f := range p.Fines {
@@ -320,7 +322,7 @@ templ editMatch(closeLink templ.SafeURL, genMeta MatchMetaGeneral, successMsg st
 			if UseShowGoalAssister(ctx) {
 				@playerEventInputSelector(genMeta.Players, genMeta.Match.Events, "assist")
 			}
-			if UseShowGoalAssister(ctx) {
+			if UseShowGoalScorerMatchList(ctx) {
 				@playerEventInputSelector(genMeta.Players, genMeta.Match.Events, "conceded-goal")
 			}
 			if len(UseInjuryCounterTrackerName(ctx)) > 0 {
