@@ -28,7 +28,7 @@ templ fineList(fines []FineWithPlayer, page int, presetFineUpdated uint, isFineM
 			if isFineMaster {
 				<div>{ fmt.Sprintf("$%v", getFinesTotal(fines)) }</div>
 			}
-			<table id="fine-list" class="min-w-full">
+			<table id="fine-list" class="min-w-full mb-36">
 				<tbody class="divide-y divide-gray-900">
 					for _, f := range fines {
 						@fineRow(isFineMaster, f)
@@ -73,9 +73,9 @@ templ fineRow(isFineMaster bool, f FineWithPlayer) {
 		<td>
 			<div class="m-2">
 				<button
-					hx-get={ fmt.Sprintf("/fines/edit/%d?isContext=true", f.Fine.ID) }
-					hx-swap="outerHTML"
-					class={ smPri }
+ 					hx-get={ fmt.Sprintf("/fines/edit/%d?isContext=true", f.Fine.ID) }
+ 					hx-swap="outerHTML"
+ 					class={ smPri }
 				>
 					if len(f.Fine.Context) == 0 {
 						Add Context	
@@ -93,9 +93,9 @@ templ fineRow(isFineMaster bool, f FineWithPlayer) {
 				if len(f.Fine.Contest) == 0 {
 					<div class="max-w-96">
 						<button
-							hx-get={ fmt.Sprintf("/fines/edit/%d?isContest=true&isFineMaster=%d", f.Fine.ID, isFineMaster) }
-							hx-swap="outerHTML"
-							class={ smPri }
+ 							hx-get={ fmt.Sprintf("/fines/edit/%d?isContest=true&isFineMaster=%d", f.Fine.ID, isFineMaster) }
+ 							hx-swap="outerHTML"
+ 							class={ smPri }
 						>Contest</button>
 					</div>
 				} else {
@@ -204,7 +204,7 @@ templ fineContextRow(f FineWithPlayer, matches []Match) {
 	<td colspan="7">
 		<div class="border rounded-lg flex flex-col items-center p-4 space-y-4 w-full mx-auto text-3xl">
 			<div class="text-center w-full">{ f.Player.Name } - { fmt.Sprintf("$%v - ", f.Fine.Amount) } -  { f.Fine.Reason }</div>
-			<p class=" w-full text-gray-700">Add (optional) context for this fine:</p>
+			<p class=" w-full text-gray-700 text-sm">Add (optional) context for this fine:</p>
 			<div class="w-full">
 				<label class="block w-full text-lg font-semibold">
 					Context:

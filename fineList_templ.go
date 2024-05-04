@@ -74,7 +74,7 @@ func fineList(fines []FineWithPlayer, page int, presetFineUpdated uint, isFineMa
 				return err
 			}
 		}
-		_, err = templBuffer.WriteString("<table id=\"fine-list\" class=\"min-w-full\"><tbody class=\"divide-y divide-gray-900\">")
+		_, err = templBuffer.WriteString("<table id=\"fine-list\" class=\"min-w-full mb-36\"><tbody class=\"divide-y divide-gray-900\">")
 		if err != nil {
 			return err
 		}
@@ -581,7 +581,7 @@ func fineContextRow(f FineWithPlayer, matches []Match) templ.Component {
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("</div><p class=\" w-full text-gray-700\">")
+		_, err = templBuffer.WriteString("</div><p class=\" w-full text-gray-700 text-sm\">")
 		if err != nil {
 			return err
 		}

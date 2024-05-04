@@ -208,21 +208,22 @@ func fineContextHandler(db *gorm.DB) http.HandlerFunc {
 
 		matchIdStr := r.FormValue("matchId")
 		var matchId uint64 = 0;
-		var fineAt time.Time;
+		var fineAt *time.Time;
 		if matchIdStr != "NA" {
 			matchId, err = strconv.ParseUint(matchIdStr, 10, 64)
 			if err != nil {
 				http.Error(w, fmt.Sprintf("Invalid matchId ID - %s", matchIdStr), http.StatusBadRequest)
 				return
 			}
-		}else {
-		/*	fineAtStr := r.FormValue("fineAt")
-			fineAt, err = time.Parse("2006-01-02T15:04", fineAtStr)
-			if err != nil {
-				
-				log.Printf("Failed to parse fineAt time - \"%s\" %v", fineAtStr, err)
-				fineAt = time.Now()
-			}*/
+
+			match, getMatchErr := GetMatch(db, matchId);
+			if getMatchErr != nil {
+				http.Error(w, fmt.Sprintf("Invalid matchId ID - %s", matchIdStr), http.StatusBadRequest)
+				return
+				log.Printf("FINEMATCH processing EXIT 2")
+			} else {
+				fineAt = match.StartTime
+			}
 		}
 
 		context := r.FormValue("context")
@@ -236,7 +237,7 @@ func fineContextHandler(db *gorm.DB) http.HandlerFunc {
 			return
 		}
 		
-		success := contextSuccess(matchId, context,  fineAt)
+		success := contextSuccess(matchId, context, *fineAt)
 		success.Render(GetContext(r), w)
 	}
 }

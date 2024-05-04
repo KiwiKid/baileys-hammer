@@ -327,13 +327,17 @@ func UpdateFineContestByID(db *gorm.DB, fineID uint, contest string) error {
 }
 
 
-func UpdateFineContextByID(db *gorm.DB, fineID uint, matchId uint, context string, fineAt time.Time) error {
+func UpdateFineContextByID(db *gorm.DB, fineID uint, matchId uint, context string, fineAt *time.Time) error {
     // Create a map with the fields you want to update
     updates := map[string]interface{}{
         "Context": context,
         "MatchId": matchId,
-        "FineAt": fineAt,
     }
+
+    if fineAt != nil {
+        updates["FineAt"] = fineAt
+    }
+
 
     // Find the Fine by ID and update the Contest field
     result := db.Model(&Fine{}).Where("id = ?", fineID).Updates(updates)
