@@ -255,9 +255,9 @@ templ matchesList(isOpen bool, matches []Match, pwfs []PlayerWithFines) {
 			<div class="w-full px-8 py-6 text-left bg-white shadow-xl" id="match-list">
 				<h3 class="text-2xl font-bold text-center" hx-get="/#preset-fine" hx-trigger="click">🚧 Matches 🚧</h3>
 				<div class="mx-auto bg-gray-200 shadow-xl m-10 flex flex-col justify-center items-center">
-					<div>
+					<div class="w-full">
 						for _, m := range matches {
-							<button hx-trigger="load once" hx-get={ fmt.Sprintf("/match/%d?type=list", m.ID) } hx-swap="outerHTML">Edit "vs { m.Opponent } at { m.Location  }"</button>
+							<div hx-trigger="load once" hx-get={ fmt.Sprintf("/match/%d?type=list", m.ID) } hx-swap="outerHTML">loading { F("%d", m.ID) }...</div>
 						}
 					</div>
 					<button hx-get="/match-list" hx-target="this" class={ F("%s float-right", bigPri) } hx-swap="outerHTML">edit/add matches</button>
