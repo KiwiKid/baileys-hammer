@@ -510,8 +510,8 @@ func fineHandler(db *gorm.DB) http.HandlerFunc {
 				if(len(playerIdStr) == 0 || r.FormValue("fineOption") == "applyAgain") {
 
 					amountStr := r.FormValue("amount")
-					if len(amountStr) == 0 {
-						amountStr = "1"
+					if len(amountStr) == 0 || amountStr == "0" {
+						amountStr = "2"
 					}
 					amount, err := strconv.ParseFloat(amountStr, 64) // 64 specifies the bit size of the float type
 					if err != nil {
@@ -566,8 +566,8 @@ func fineHandler(db *gorm.DB) http.HandlerFunc {
 							return
 						}
 						amountStr := r.FormValue("amount")
-						if len(amountStr) == 0 {
-							amountStr = "1"
+						if len(amountStr) == 0 || amountStr == "0" {
+							amountStr = "2"
 						}
 						amount, err := strconv.ParseFloat(amountStr, 64) // 64 specifies the bit size of the float type
 						if err != nil {
@@ -702,6 +702,7 @@ func fineAddHandler(db *gorm.DB) http.HandlerFunc {
 			var suggestedPFine = &PresetFine{
 				Reason: input.Reason,
 				Approved: true,
+				Amount: 2,
 			}
 			err := SavePresetFine(db, suggestedPFine)
 			if err != nil {
