@@ -484,6 +484,10 @@ func home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines 
 		if err != nil {
 			return err
 		}
+		err = fineList(fineWithPlayers, 0, 0, false, true).Render(ctx, templBuffer)
+		if err != nil {
+			return err
+		}
 		_, err = templBuffer.WriteString("</div>")
 		if err != nil {
 			return err
@@ -526,7 +530,7 @@ func home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines 
 					return err
 				}
 			} else {
-				var_31 := `Existing Fine List`
+				var_31 := `(Existing Fine List)`
 				_, err = templBuffer.WriteString(var_31)
 				if err != nil {
 					return err
@@ -593,7 +597,7 @@ func home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines 
 						return err
 					}
 				} else {
-					var_36 := `Existing Fine List`
+					var_36 := `(Existing Fine List)`
 					_, err = templBuffer.WriteString(var_36)
 					if err != nil {
 						return err
@@ -903,7 +907,7 @@ func home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines 
 		if err != nil {
 			return err
 		}
-		err = fineList(fineWithPlayers, 0, 0, false, time.Time{}).Render(ctx, templBuffer)
+		err = fineList(fineWithPlayers, 0, 0, false, false).Render(ctx, templBuffer)
 		if err != nil {
 			return err
 		}

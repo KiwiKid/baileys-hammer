@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"time"
 )
 
 var finemasterBaseUrl = "/finemaster"
@@ -34,7 +33,7 @@ templ finemaster(pass string, players []PlayerWithFines, fineWithPlayers []FineW
 				</h1>
 			</div>
 			<div class="grid grid-cols-1 gap-2">
-				@fineAddV2(secureFineMasterbaseUrl(finemasterBaseUrl, pass), qp.FinesOpen, players, pFines, true)
+				@fineAddV2(secureFineMasterbaseUrl(finemasterBaseUrl, pass), true, players, pFines, true)
 			</div>
 			<div class="mx-auto p-4 hidden" id="quick-finer">
 				<div class="flex items-center justify-center bg-gray-100 mx-auto">
@@ -91,7 +90,7 @@ templ finemaster(pass string, players []PlayerWithFines, fineWithPlayers []FineW
 			@playersManage(secureFineMasterbaseUrl(finemasterBaseUrl, pass), players, config, qp.PlayerOpen)
 			@presetFines(fmt.Sprintf("%s/%s", finemasterBaseUrl, pass), pass, qp.PresetFinesOpen, pFines)
 			@matchesManage(secureFineMasterbaseUrl(finemasterBaseUrl, pass), qp.MatchesOpen, matches, players)
-			@fineList(fineWithPlayers, 0, qp.PresetFineUpdated, true, time.Time{})
+			@fineList(fineWithPlayers, 0, qp.PresetFineUpdated, true, false)
 			<div class="mt-96"></div>
 			@finemasterNav(fmt.Sprintf("%s/%s", finemasterBaseUrl, pass))
 		</body>

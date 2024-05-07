@@ -11,7 +11,6 @@ import "bytes"
 
 import (
 	"fmt"
-	"time"
 )
 
 var finemasterBaseUrl = "/finemaster"
@@ -159,7 +158,7 @@ func finemaster(pass string, players []PlayerWithFines, fineWithPlayers []FineWi
 		if err != nil {
 			return err
 		}
-		err = fineAddV2(secureFineMasterbaseUrl(finemasterBaseUrl, pass), qp.FinesOpen, players, pFines, true).Render(ctx, templBuffer)
+		err = fineAddV2(secureFineMasterbaseUrl(finemasterBaseUrl, pass), true, players, pFines, true).Render(ctx, templBuffer)
 		if err != nil {
 			return err
 		}
@@ -393,7 +392,7 @@ func finemaster(pass string, players []PlayerWithFines, fineWithPlayers []FineWi
 		if err != nil {
 			return err
 		}
-		err = fineList(fineWithPlayers, 0, qp.PresetFineUpdated, true, time.Time{}).Render(ctx, templBuffer)
+		err = fineList(fineWithPlayers, 0, qp.PresetFineUpdated, true, false).Render(ctx, templBuffer)
 		if err != nil {
 			return err
 		}

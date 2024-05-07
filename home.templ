@@ -187,6 +187,7 @@ templ home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines
 				<h1 class="font-bold mt-4 pb-4 text-center">{ GetTitle(ctx) }</h1>
 				<div>
 					@fineAddV2(baseUrl, true, players, approvedPFines, false)
+					@fineList(fineWithPlayers, 0, 0, false, true)
 				</div>
 				if len(approvedPFines) > 0 {
 					<div class="mx-auto bg-gray-200 shadow-xl p-2">
@@ -195,7 +196,7 @@ templ home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines
 								if qp.FineListOpen {
 									Close Fine List
 								} else {
-									Existing Fine List
+									(Existing Fine List)
 								}
 							</a>
 						</div>
@@ -212,7 +213,7 @@ templ home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines
 									if qp.FineListOpen {
 										Close Fine List
 									} else {
-										Existing Fine List
+										(Existing Fine List)
 									}
 								</a>
 							</div>
@@ -308,7 +309,7 @@ templ home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines
 					</ul>
 				</div>
 			</div>
-			@fineList(fineWithPlayers, 0, 0,false, time.Time{})
+			@fineList(fineWithPlayers, 0, 0,false, false)
 			@pageFooter()
 		</body>
 	</html>

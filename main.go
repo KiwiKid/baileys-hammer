@@ -502,7 +502,7 @@ func fineHandler(db *gorm.DB) http.HandlerFunc {
 				return 
 			}
 
-			fineList := fineList(fineWithPlayers, pageId, 0, finemasterPage, time.Time{})
+			fineList := fineList(fineWithPlayers, pageId, 0, finemasterPage, false)
 			fineList.Render(GetContext(r), w)
 		}
 			case "POST": {

@@ -16,14 +16,20 @@ func getFinesTotal(fines []FineWithPlayer) float64 {
 	return 0
 }
 
-templ fineList(fines []FineWithPlayer, page int, presetFineUpdated uint, isFineMaster bool, onlyAfter time.Time) {
+templ fineList(fines []FineWithPlayer, page int, presetFineUpdated uint, isFineMaster bool, onlyRecent bool) {
 	<div
  		class="m-2 bg-gray-200 h-full shadow-xl p-2 h-full mt-10"
  		id="fine-list-container"
 	>
 		<div class="text-center">
 			<div class="flex justify-center items-center mb-4 cursor-pointer" hx-get="/fines" hx-target="#fine-list-container" hx-swap="outerHTML" hx-trigger="click">
-				<span class="flex-grow text-center font-bold">Recent Fine List</span>
+				<span class="flex-grow text-center font-bold">
+					if onlyRecent {
+						Recent Fine Listed
+					} else {
+						All Fine List
+					}
+				</span>
 				<span class="text-3xl ml-2">↻</span>
 			</div>
 			if isFineMaster {
@@ -32,7 +38,7 @@ templ fineList(fines []FineWithPlayer, page int, presetFineUpdated uint, isFineM
 			<table id="fine-list" class="min-w-full mb-36">
 				<tbody class="divide-y divide-gray-900">
 					for _, f := range fines {
-						if f.Fine.FineAt.After(onlyAfter) {
+						if !onlyRecent || f.Fine.FineAt.After(time.Now().Add(-1 * 12 * time.Hour)) {
 							@fineRow(isFineMaster, f)
 							if presetFineUpdated == f.Fine.ID {
 								@success("updated!")
