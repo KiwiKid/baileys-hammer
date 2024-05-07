@@ -2,6 +2,7 @@ package main
 
 import (
 "fmt"
+	"time"
 )
 
 func getFinesTotal(fines []FineWithPlayer) float64 {
@@ -15,7 +16,7 @@ func getFinesTotal(fines []FineWithPlayer) float64 {
 	return 0
 }
 
-templ fineList(fines []FineWithPlayer, page int, presetFineUpdated uint, isFineMaster bool) {
+templ fineList(fines []FineWithPlayer, page int, presetFineUpdated uint, isFineMaster bool, onlyAfter time.Time) {
 	<div
  		class="m-2 bg-gray-200 h-full shadow-xl p-2 h-full mt-10"
  		id="fine-list-container"
@@ -31,9 +32,11 @@ templ fineList(fines []FineWithPlayer, page int, presetFineUpdated uint, isFineM
 			<table id="fine-list" class="min-w-full mb-36">
 				<tbody class="divide-y divide-gray-900">
 					for _, f := range fines {
-						@fineRow(isFineMaster, f)
-						if presetFineUpdated == f.Fine.ID {
-							@success("updated!")
+						if f.Fine.FineAt.After(onlyAfter) {
+							@fineRow(isFineMaster, f)
+							if presetFineUpdated == f.Fine.ID {
+								@success("updated!")
+							}
 						}
 					}
 				</tbody>

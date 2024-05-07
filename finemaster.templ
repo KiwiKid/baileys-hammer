@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"time"
 )
 
 var finemasterBaseUrl = "/finemaster"
@@ -90,7 +91,7 @@ templ finemaster(pass string, players []PlayerWithFines, fineWithPlayers []FineW
 			@playersManage(secureFineMasterbaseUrl(finemasterBaseUrl, pass), players, config, qp.PlayerOpen)
 			@presetFines(fmt.Sprintf("%s/%s", finemasterBaseUrl, pass), pass, qp.PresetFinesOpen, pFines)
 			@matchesManage(secureFineMasterbaseUrl(finemasterBaseUrl, pass), qp.MatchesOpen, matches, players)
-			@fineList(fineWithPlayers, 0, qp.PresetFineUpdated, true)
+			@fineList(fineWithPlayers, 0, qp.PresetFineUpdated, true, time.Time{})
 			<div class="mt-96"></div>
 			@finemasterNav(fmt.Sprintf("%s/%s", finemasterBaseUrl, pass))
 		</body>
@@ -253,7 +254,7 @@ templ matchesList(isOpen bool, matches []Match, pwfs []PlayerWithFines) {
 	<div class="mx-auto bg-gray-200 shadow-xl m-10">
 		if isOpen {
 			<div class="w-full px-8 py-6 text-left bg-white shadow-xl" id="match-list">
-				<h3 class="text-2xl font-bold text-center" hx-get="/#preset-fine" hx-trigger="click">🚧 Matches 🚧</h3>
+				<h3 class="text-2xl font-bold text-center" hx-get="/#preset-fine" hx-push-url="/#preset-fine">🚧 Matches 🚧</h3>
 				<div class="mx-auto bg-gray-200 shadow-xl m-10 flex flex-col justify-center items-center">
 					<div class="w-full">
 						for _, m := range matches {

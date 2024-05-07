@@ -408,7 +408,7 @@ func isSelected(selectedIds []uint, id uint) bool {
 templ fineSuperSelect(players []PlayerWithFines, approvedPFines []PresetFine, selectedFineIds []uint) {
 	<div class="w-full mx-auto bg-gray-200 shadow-xl m-10" id="fine-ss" hx-get="/fines/add" hx-trigger="pageLoaded" hx-target="#fine-ss">
 		<form id="ss-form" hx-post="/fines-multi" method="POST" class="flex flex-col space-y-4 bg-white shadow-md p-6 rounded-lg">
-			<p class="font-bold text-3xl">Select players and fines:</p>
+			<p class="font-bold text-3xl">Fines</p>
 			<div class="flex flex-row">
 				<select
  					id="select-fine"
@@ -417,6 +417,7 @@ templ fineSuperSelect(players []PlayerWithFines, approvedPFines []PresetFine, se
  					ts-create="true"
  					ts-create-filter="true"
  					ts-create-on-blur="true"
+ 					ts-clear-after-add="true"
  					ts-open-on-focus="true"
  					ts-add-post-url="/fines/add"
  					ts-add-post-url-body-value="reason"
@@ -426,7 +427,7 @@ templ fineSuperSelect(players []PlayerWithFines, approvedPFines []PresetFine, se
  					name="pfines[]"
  					multiple
  					required
- 					placeholder="Select fine(s)..."
+ 					placeholder="Caused Own Goal"
  					class="text-3xl border border-gray-300 rounded-md text-gray-700 flex-grow mb-2"
 				>
 					<option value="">Select a fine...</option>
@@ -450,7 +451,7 @@ templ fineSuperSelect(players []PlayerWithFines, approvedPFines []PresetFine, se
  					tx-close-after-select="true"
  					ts-option-class="text-3xl w-full py-3"
  					multiple
- 					placeholder="Select player(s)..."
+ 					placeholder="John Doe"
  					class="text-3xl  border border-gray-300 rounded-md text-gray-700 flex-grow mb-2"
 				>
 					<option value="">Select a player...</option>
@@ -465,7 +466,7 @@ templ fineSuperSelect(players []PlayerWithFines, approvedPFines []PresetFine, se
  					name="context"
  					value=""
  					class="px-4 py-2 border border-gray-300 rounded-lg w-full focus:ring-blue-500 focus:border-blue-500"
- 					placeholder="Context for the fine"
+ 					placeholder="John fell over causing an own-goal"
 				/>
 			</div>
 			<button type="submit" class={ bigAdd }>Create Fine(s)</button>

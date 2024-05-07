@@ -45,6 +45,10 @@ func makeSafeUrlWithAnchorV2(baseUrl string, anchorTag string, useAnchor bool) t
 			url := makeUrl(baseUrl, false, false, false, false, true) + anchor
 			return templ.SafeURL(url)
 		}
+		case "manage-matches": {
+			url := makeUrl(baseUrl, false, false, false, false, true) + anchor
+			return templ.SafeURL(url)
+		}
 		default: {
 			panic(fmt.Sprintf("Failed to match anchor [%s] tag ", anchorTag))
 		}
@@ -181,6 +185,9 @@ templ home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines
 			<div>
 				@activeMatchBanner(activeMatch)
 				<h1 class="font-bold mt-4 pb-4 text-center">{ GetTitle(ctx) }</h1>
+				<div>
+					@fineAddV2(baseUrl, true, players, approvedPFines, false)
+				</div>
 				if len(approvedPFines) > 0 {
 					<div class="mx-auto bg-gray-200 shadow-xl p-2">
 						<div id="fines" class="flex justify-center w-full p-3">
@@ -188,7 +195,7 @@ templ home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines
 								if qp.FineListOpen {
 									Close Fine List
 								} else {
-									Fine List
+									Existing Fine List
 								}
 							</a>
 						</div>
@@ -205,7 +212,7 @@ templ home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines
 									if qp.FineListOpen {
 										Close Fine List
 									} else {
-										Fine List
+										Existing Fine List
 									}
 								</a>
 							</div>
@@ -229,7 +236,6 @@ templ home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines
 						}
 					</div>
 				}
-				@fineAddV2(baseUrl, qp.FinesOpen, players, approvedPFines, false)
 			</div>
 			@matchesList(qp.MatchesOpen, matches, players)
 			<div class={ containerClass } id="leaderboard">
@@ -302,7 +308,7 @@ templ home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines
 					</ul>
 				</div>
 			</div>
-			@fineList(fineWithPlayers, 0, 0,false)
+			@fineList(fineWithPlayers, 0, 0,false, time.Time{})
 			@pageFooter()
 		</body>
 	</html>
@@ -341,13 +347,11 @@ templ fineAddV2(baseUrl string, isOpen bool, players []PlayerWithFines, presetFi
 			<div class="flex justify-center w-full p-3" id="fine-add">
 				<div class="flex flex-col justify-center w-full p-4">
 					@fineSuperSelect(players, presetFines, []uint{})
-					<a class={ bigSec } href={ makeSafeUrlWithAnchor(baseUrl, false, false, false, false, false, "fine-add") }>
-						if isFineMaster {
+					if isFineMaster {
+						<a class={ bigSec } href={ makeSafeUrlWithAnchor(baseUrl, false, false, false, false, false, "fine-add") }>
 							Close Fine a Player
-						} else {
-							Close Suggest a Fine
-						}
-					</a>
+						</a>
+					}
 				</div>
 			</div>
 		} else {

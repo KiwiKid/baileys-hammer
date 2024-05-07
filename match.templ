@@ -136,7 +136,7 @@ func nextSundayFormatted() string {
 
 templ createMatch(closeLink templ.SafeURL, players []PlayerWithFines) {
 	<div class="mx-auto bg-gray-200 shadow-xl m-10">
-		<form hx-post="/match" hx-swap="afterend" class="mx-auto my-8 p-4 border border-gray-200 rounded-lg shadow">
+		<form hx-post="/match" hx-swap="beforebegin" class="mx-auto my-8 p-4 border border-gray-200 rounded-lg shadow">
 			<h2 class="text-lg font-semibold mb-4">Create New Match</h2>
 			<div class="mb-4">
 				<label for="location" class="block text-lg font-semibold text-gray-700">Location</label>

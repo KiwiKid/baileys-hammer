@@ -502,7 +502,7 @@ func fineHandler(db *gorm.DB) http.HandlerFunc {
 				return 
 			}
 
-			fineList := fineList(fineWithPlayers, pageId, 0, finemasterPage)
+			fineList := fineList(fineWithPlayers, pageId, 0, finemasterPage, time.Time{})
 			fineList.Render(GetContext(r), w)
 		}
 			case "POST": {
@@ -818,8 +818,14 @@ func fineMultiHandler(db *gorm.DB) http.HandlerFunc {
 
 					if(activeMatch != nil){
 						fine.MatchId = activeMatch.ID
+						if(activeMatch.StartTime != nil){
+							fine.FineAt = *activeMatch.StartTime
+						}else {
+							fine.FineAt = time.Now()
+						}
 					}
 
+					fine.CreatedAt = time.Now()
 					err = SaveFine(db, fine)
 					if err != nil {
 						http.Error(w, "Invalid player ID", http.StatusBadRequest)

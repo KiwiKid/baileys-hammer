@@ -11,6 +11,7 @@ import "bytes"
 
 import (
 	"fmt"
+	"time"
 )
 
 func getFinesTotal(fines []FineWithPlayer) float64 {
@@ -24,7 +25,7 @@ func getFinesTotal(fines []FineWithPlayer) float64 {
 	return 0
 }
 
-func fineList(fines []FineWithPlayer, page int, presetFineUpdated uint, isFineMaster bool) templ.Component {
+func fineList(fines []FineWithPlayer, page int, presetFineUpdated uint, isFineMaster bool, onlyAfter time.Time) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		templBuffer, templIsBuffer := w.(*bytes.Buffer)
 		if !templIsBuffer {
@@ -79,18 +80,20 @@ func fineList(fines []FineWithPlayer, page int, presetFineUpdated uint, isFineMa
 			return err
 		}
 		for _, f := range fines {
-			err = fineRow(isFineMaster, f).Render(ctx, templBuffer)
-			if err != nil {
-				return err
-			}
-			_, err = templBuffer.WriteString(" ")
-			if err != nil {
-				return err
-			}
-			if presetFineUpdated == f.Fine.ID {
-				err = success("updated!").Render(ctx, templBuffer)
+			if f.Fine.FineAt.After(onlyAfter) {
+				err = fineRow(isFineMaster, f).Render(ctx, templBuffer)
 				if err != nil {
 					return err
+				}
+				_, err = templBuffer.WriteString(" ")
+				if err != nil {
+					return err
+				}
+				if presetFineUpdated == f.Fine.ID {
+					err = success("updated!").Render(ctx, templBuffer)
+					if err != nil {
+						return err
+					}
 				}
 			}
 		}
