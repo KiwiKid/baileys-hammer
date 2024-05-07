@@ -38,12 +38,22 @@ func fineList(fines []FineWithPlayer, page int, presetFineUpdated uint, isFineMa
 			var_1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, err = templBuffer.WriteString("<div class=\"m-2 bg-gray-200 h-full shadow-xl p-2 h-full mt-10\" id=\"fine-list-container\"><div class=\"text-center\"><div class=\"flex justify-center items-center mb-4 cursor-pointer\" hx-get=\"/fines\" hx-target=\"#fine-list-container\" hx-swap=\"outerHTML\" hx-trigger=\"click\"><span class=\"flex-grow text-center font-bold\">")
+		_, err = templBuffer.WriteString("<div class=\"m-2 bg-gray-200 h-full shadow-xl p-2 h-full mt-10\" id=\"fine-list-container\"><div class=\"text-center\"><div class=\"flex justify-center items-center mb-4 cursor-pointer\"")
+		if err != nil {
+			return err
+		}
+		if !onlyRecent {
+			_, err = templBuffer.WriteString(" hx-get=\"/fines\" hx-target=\"#fine-list-container\" hx-swap=\"outerHTML\" hx-trigger=\"click\"")
+			if err != nil {
+				return err
+			}
+		}
+		_, err = templBuffer.WriteString("><span class=\"flex-grow text-center font-bold\">")
 		if err != nil {
 			return err
 		}
 		if onlyRecent {
-			var_2 := `Recent Fine Listed`
+			var_2 := `Recently Fined List`
 			_, err = templBuffer.WriteString(var_2)
 			if err != nil {
 				return err
@@ -55,16 +65,26 @@ func fineList(fines []FineWithPlayer, page int, presetFineUpdated uint, isFineMa
 				return err
 			}
 		}
-		_, err = templBuffer.WriteString("</span><span class=\"text-3xl ml-2\">")
+		_, err = templBuffer.WriteString("</span>")
 		if err != nil {
 			return err
 		}
-		var_4 := `↻`
-		_, err = templBuffer.WriteString(var_4)
-		if err != nil {
-			return err
+		if !onlyRecent {
+			_, err = templBuffer.WriteString("<span class=\"text-3xl ml-2\">")
+			if err != nil {
+				return err
+			}
+			var_4 := `↻`
+			_, err = templBuffer.WriteString(var_4)
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("</span>")
+			if err != nil {
+				return err
+			}
 		}
-		_, err = templBuffer.WriteString("</span></div>")
+		_, err = templBuffer.WriteString("</div>")
 		if err != nil {
 			return err
 		}
@@ -88,7 +108,7 @@ func fineList(fines []FineWithPlayer, page int, presetFineUpdated uint, isFineMa
 			return err
 		}
 		for _, f := range fines {
-			if !onlyRecent || f.Fine.FineAt.After(time.Now().Add(-1*12*time.Hour)) {
+			if !onlyRecent || f.Fine.FineAt.After(time.Now().Add(-5*24*time.Hour)) {
 				err = fineRow(isFineMaster, f).Render(ctx, templBuffer)
 				if err != nil {
 					return err

@@ -357,37 +357,12 @@ func fineEditHandler(db *gorm.DB) http.HandlerFunc {
 				errComp.Render(GetContext(r), w)
             }
 
-		/*	matchId, err := strconv.ParseUint(r.FormValue("matchId"), 10, 64)
+			matchId, err := strconv.ParseUint(r.FormValue("matchId"), 10, 64)
             if err != nil {
 				errComp := errMsg(F("Invalid matchId", r.FormValue("matchId")))
 				errComp.Render(GetContext(r), w)
             }
 
-			var fineAt = time.Now()
-			if matchId != 0 {
-				match, err := GetMatch(db, matchId)
-				if err != nil {
-					errComp := errMsg("Cannot select get the active match?")
-					errComp.Render(GetContext(r), w)
-				} else if activeMatch != nil {
-					fineAt = *match.StartTime
-				}
-			} else {
-				activeMatch, actMatchERr := GetActiveMatch(db)
-				if actMatchERr != nil {
-					errComp := errMsg("Cannot select get the active match?")
-					errComp.Render(GetContext(r), w)
-				}else if activeMatch != nil {
-					fineAt = *activeMatch.StartTime
-				}
-			}
-			fineAtStr := r.FormValue("fineAt")
-			fineAt, err := time.Parse("2006-01-02T15:04", fineAtStr)
-			if err != nil {
-				// Handle parsing error, perhaps set a default value or return an error response
-				log.Printf("Failed to parse fineAt time - \"%s\" %v", fineAtStr, err)
-				fineAt = time.Now()
-			}*/
 			context := r.FormValue("context")
 
 			// Update the fine in the database
@@ -399,25 +374,26 @@ func fineEditHandler(db *gorm.DB) http.HandlerFunc {
 				Context: context,
 				Approved: approved,
 			}
+
 			
-			matchIdStr := r.FormValue("matchId")
-			matchId, err := strconv.ParseUint(matchIdStr, 10, 64)
-            if err != nil {
-				log.Printf("FINEMATCH processing EXIT 1")
-                log.Printf("fineEditHandler - Invalid matchID ID")
-            }else { 
-				fine.MatchId = uint(matchId)
-				match, getMatchErr := GetMatch(db, matchId);
-				if getMatchErr != nil {
-					log.Printf("FINEMATCH processing EXIT 2")
-				} else {
+			if matchId != 0 {
+				match, err := GetMatch(db, matchId)
+				if err != nil {
+					errComp := errMsg("Cannot select get the active match?")
+					errComp.Render(GetContext(r), w)
+				} else if match != nil {
 					fine.FineAt = *match.StartTime
-					log.Printf("got fineat from match starttime: %v (match:%d)", fine.FineAt, matchId)
+				}
+			} else {
+				activeMatch, actMatchERr := GetActiveMatch(db)
+				if actMatchERr != nil {
+					errComp := errMsg("Cannot select get the active match?")
+					errComp.Render(GetContext(r), w)
+				}else if activeMatch != nil {
+					fine.FineAt = *activeMatch.StartTime
 				}
 			}
-
-
-
+			
             if err := SaveFine(db, &fine); err != nil {
                 http.Error(w, "Failed to update fine", http.StatusInternalServerError)
                 return
