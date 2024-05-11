@@ -323,27 +323,6 @@ templ fineEditForm(f FineWithPlayer, isFineMaster bool) {
  		hx-target={ fmt.Sprintf("#fr-%d", f.Fine.ID) }
 	>
 		<h1 class="text-lg">Edit Fine</h1>
-		<h3>
-			<pre>
-				{ F(`
-Name: %s
-Reason: %s
-Context: %s
-Amount: %v
-Contest: %s
-FineAt: %s
-PlayerID: %d
-		`, 
-	f.Player.Name,
-	f.Fine.Reason,
-	f.Fine.Context,
-	f.Fine.Amount,
-	f.Fine.Contest,
-	f.Fine.FineAt,
-	f.Fine.PlayerID,
-		 	) }
-			</pre>
-		</h3>
 		<div class="p-4">
 			<label for="reason" class="block text-lg font-semibold text-gray-700">Reason</label>
 			<input
@@ -357,8 +336,8 @@ PlayerID: %d
 			<input
  				type="text"
  				name="context"
- 				class="mt-1 px-3 py-2 border border
- 				value={ f.Fine.Context }-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 w-full"
+ 				class="mt-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 w-full"
+ 				value={ f.Fine.Context }
  				placeholder="Context for the fine"
 			/>
 			<div class="mt-2">
@@ -440,6 +419,29 @@ PlayerID: %d
  				hx-delete={ fmt.Sprintf("/fines?fid=%d", f.Fine.ID) }
 			>Delete</button>
 		</div>
+		<pre>
+			{ F(`
+ineID: %d
+PlayerID: %d
+Name: %s
+Reason: %s
+Context: %s
+Amount: %v
+Contest: %s
+FineAt: %s
+PlayerID: %d
+		`, 
+	f.Fine.ID,
+	f.Player.ID,
+	f.Player.Name,
+	f.Fine.Reason,
+	f.Fine.Context,
+	f.Fine.Amount,
+	f.Fine.Contest,
+	f.Fine.FineAt,
+	f.Fine.PlayerID,
+		 	) }
+		</pre>
 	</form>
 }
 
@@ -454,5 +456,18 @@ templ fineEditRow(f FineWithPlayer, isFineMaster bool) {
 			@fineEditForm(f, isFineMaster)
 		</td>
 	</tr>
+}
+
+templ fineEditDiv(f FineWithPlayer, isFineMaster bool) {
+	<div
+ 		id={ fmt.Sprintf("fr-%d", f.Fine.ID) }
+ 		class="bg-white divide-y divide-gray-200"
+ 		hx-target="this"
+ 		hx-swap="innerHTML"
+	>
+		<td class="px-6 py-4" colspan="10">
+			@fineEditForm(f, isFineMaster)
+		</td>
+	</div>
 }
 

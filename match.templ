@@ -319,6 +319,9 @@ templ editMatch(closeLink templ.SafeURL, genMeta MatchMetaGeneral, successMsg st
 			if UseShowGoalScorerMatchList(ctx) {
 				@playerEventInputSelector(genMeta.Players, genMeta.Match.Events, "conceded-goal")
 			}
+			if len(UseInjuryCounterTrackerName(ctx)) > 0 {
+				@playerEventInputSelector(genMeta.Players, genMeta.Match.Events, "injury")
+			}
 			[wait for attentance]
 			<div hx-get="/fines/add" hx-trigger="load" hx-target="this"></div>
 			if len(UseDudOfTheDayName(ctx)) > 0 {
@@ -326,9 +329,6 @@ templ editMatch(closeLink templ.SafeURL, genMeta MatchMetaGeneral, successMsg st
 			}
 			if len(UsePlayerOfTheDayName(ctx)) > 0 {
 				@playerInputSelector(genMeta.Players, genMeta.Match.PlayerOfTheDay, "potd")
-			}
-			if len(UseInjuryCounterTrackerName(ctx)) > 0 {
-				@playerEventInputSelector(genMeta.Players, genMeta.Match.Events, "injury")
 			}
 			@success(successMsg)
 			<div class="flex items-center justify-between mt-4">

@@ -500,7 +500,7 @@ templ fineSuperSelectResults(players []PlayerWithFines, approvedPFines[]PresetFi
 								{ fmt.Sprintf("%+v",nf) }
 							</details>
 							<button
- 								hx-get={ fmt.Sprintf("/fines/edit/%d?isEdit=form", nf.ID) }
+ 								hx-get={ fmt.Sprintf("/fines/edit/%d?isEdit=fineEditDiv", nf.ID) }
  								hx-swap="outerHTML"
  								hx-target="this"
  								class={ smPri }

@@ -878,7 +878,7 @@ func fineSuperSelectResults(players []PlayerWithFines, approvedPFines []PresetFi
 							if err != nil {
 								return err
 							}
-							_, err = templBuffer.WriteString(templ.EscapeString(fmt.Sprintf("/fines/edit/%d?isEdit=form", nf.ID)))
+							_, err = templBuffer.WriteString(templ.EscapeString(fmt.Sprintf("/fines/edit/%d?isEdit=fineEditDiv", nf.ID)))
 							if err != nil {
 								return err
 							}

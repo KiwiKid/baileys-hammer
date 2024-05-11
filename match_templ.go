@@ -1320,6 +1320,12 @@ func editMatch(closeLink templ.SafeURL, genMeta MatchMetaGeneral, successMsg str
 				return err
 			}
 		}
+		if len(UseInjuryCounterTrackerName(ctx)) > 0 {
+			err = playerEventInputSelector(genMeta.Players, genMeta.Match.Events, "injury").Render(ctx, templBuffer)
+			if err != nil {
+				return err
+			}
+		}
 		_, err = templBuffer.WriteString(" ")
 		if err != nil {
 			return err
@@ -1341,12 +1347,6 @@ func editMatch(closeLink templ.SafeURL, genMeta MatchMetaGeneral, successMsg str
 		}
 		if len(UsePlayerOfTheDayName(ctx)) > 0 {
 			err = playerInputSelector(genMeta.Players, genMeta.Match.PlayerOfTheDay, "potd").Render(ctx, templBuffer)
-			if err != nil {
-				return err
-			}
-		}
-		if len(UseInjuryCounterTrackerName(ctx)) > 0 {
-			err = playerEventInputSelector(genMeta.Players, genMeta.Match.Events, "injury").Render(ctx, templBuffer)
 			if err != nil {
 				return err
 			}

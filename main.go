@@ -296,9 +296,12 @@ func fineEditHandler(db *gorm.DB) http.HandlerFunc {
 				return
 			}
 
-
+			log.Printf("NEW FINE %+v", fineWithPlayer.Fine)
 			if (isEdit == "true") {
 				fineEditRow := fineEditRow(fineWithPlayer, isFineMaster)
+				fineEditRow.Render(GetContext(r), w)
+			} else if(isEdit == "fineEditDiv"){
+				fineEditRow := fineEditDiv(fineWithPlayer, isFineMaster)
 				fineEditRow.Render(GetContext(r), w)
 			} else if(isEdit == "form") {
 				fineFormRow := fineEditForm(fineWithPlayer, isFineMaster)
@@ -1213,7 +1216,6 @@ func main() {
 		home.Render(GetContext(r), w)
 	})
 
-	log.Printf("Router 1/2")
 	r.HandleFunc("/match-list", matchListHandler(db))
 	r.HandleFunc("/match/{matchId}", matchHandler(db))
 	r.HandleFunc("/match", matchHandler(db))
@@ -1223,17 +1225,11 @@ func main() {
 	r.HandleFunc("/match/{matchId}/event", matchEventHandler(db))
 	r.HandleFunc("/match/{matchId}/event/{eventId}", matchEventHandler(db))
 	r.HandleFunc("/match/{matchId}/events", matchEventListHandler(db))
-	log.Printf("Router 2/2")
 	if err := http.ListenAndServe(":8080", r); err != nil {
-		log.Printf("Router 3/4")
-
 		log.Panic("Server error: %v", err)
 	}else {
-		log.Printf("Router 3/3")
-
 		log.Printf("\n=================\n\n    Listening on\n\n================\n%d", 8080)	
 	}
-	log.Printf("Router 4/4")
 }
 
 
