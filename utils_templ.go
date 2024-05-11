@@ -633,7 +633,7 @@ func isSelected(selectedIds []uint, id uint) bool {
 	return false
 }
 
-func fineSuperSelect(players []PlayerWithFines, approvedPFines []PresetFine, selectedFineIds []uint) templ.Component {
+func fineSuperSelect(players []PlayerWithFines, approvedPFines []PresetFine, selectedFineIds []uint, instance string) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		templBuffer, templIsBuffer := w.(*bytes.Buffer)
 		if !templIsBuffer {
@@ -646,7 +646,23 @@ func fineSuperSelect(players []PlayerWithFines, approvedPFines []PresetFine, sel
 			var_19 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, err = templBuffer.WriteString("<div class=\"w-full mx-auto bg-gray-200 shadow-xl m-10\" id=\"fine-ss\" hx-get=\"/fines/add\" hx-trigger=\"pageLoaded\" hx-target=\"#fine-ss\"><form id=\"ss-form\" hx-post=\"/fines-multi\" method=\"POST\" class=\"flex flex-col space-y-4 bg-white shadow-md p-6 rounded-lg\"><p class=\"font-bold text-3xl\">")
+		_, err = templBuffer.WriteString("<div class=\"w-full mx-auto bg-gray-200 shadow-xl m-10\" id=\"")
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString(templ.EscapeString(F("fine-ss-%s", instance)))
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("\" hx-get=\"/fines/add\" hx-trigger=\"pageLoaded\" hx-target=\"")
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString(templ.EscapeString(F("#fine-ss-%s", instance)))
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("\"><form id=\"ss-form\" hx-post=\"/fines-multi\" method=\"POST\" class=\"flex flex-col space-y-4 bg-white shadow-md p-6 rounded-lg\"><p class=\"font-bold text-3xl\">")
 		if err != nil {
 			return err
 		}
@@ -809,7 +825,7 @@ func fineSuperSelectResults(players []PlayerWithFines, approvedPFines []PresetFi
 			var_28 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		err = fineSuperSelect(players, approvedPFines, getFineIds(newFines)).Render(ctx, templBuffer)
+		err = fineSuperSelect(players, approvedPFines, getFineIds(newFines), "1").Render(ctx, templBuffer)
 		if err != nil {
 			return err
 		}

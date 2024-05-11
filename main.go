@@ -741,7 +741,7 @@ func fineAddHandler(db *gorm.DB) http.HandlerFunc {
 				pendingPFines = append(pendingPFines, f)
 			}
 		}*/
-		fsComp := fineSuperSelect(playersWithFines, pFines, newFines)
+		fsComp := fineSuperSelect(playersWithFines, pFines, newFines, "2")
 		fsComp.Render(GetContext(r), w)
 	}
 }
@@ -1079,12 +1079,12 @@ func presetFineMasterHandler(db *gorm.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		pass := chi.URLParam(r, "pass")
 
-		realPass := os.Getenv("PASS")
+		/*realPass := os.Getenv("PASS")
 		if(pass != realPass) {
 			log.Printf("Error fetching presetFineMasterHandler - key miss match %s %s", pass, r.Referer())
 			http.Error(w, "Not this time mate.", http.StatusInternalServerError)
 			return
-		}
+		}*/
 
 		decoder := schema.NewDecoder()
 		queryParams := new(FineMasterQueryParams)
@@ -1135,6 +1135,8 @@ func main() {
 	db, err := DBInit()
 	if err != nil {
 		log.Fatalf("failed to connect database: %v", err)
+	} else {
+		log.Printf("DB connected.")
 	}
 
 	r := chi.NewRouter()
@@ -1211,6 +1213,7 @@ func main() {
 		home.Render(GetContext(r), w)
 	})
 
+	log.Printf("Router 1/2")
 	r.HandleFunc("/match-list", matchListHandler(db))
 	r.HandleFunc("/match/{matchId}", matchHandler(db))
 	r.HandleFunc("/match", matchHandler(db))
@@ -1220,11 +1223,17 @@ func main() {
 	r.HandleFunc("/match/{matchId}/event", matchEventHandler(db))
 	r.HandleFunc("/match/{matchId}/event/{eventId}", matchEventHandler(db))
 	r.HandleFunc("/match/{matchId}/events", matchEventListHandler(db))
-
+	log.Printf("Router 2/2")
 	if err := http.ListenAndServe(":8080", r); err != nil {
-		log.Printf("Server error: %v", err)
+		log.Printf("Router 3/4")
+
+		log.Panic("Server error: %v", err)
+	}else {
+		log.Printf("Router 3/3")
+
+		log.Printf("\n=================\n\n    Listening on\n\n================\n%d", 8080)	
 	}
-	log.Printf("Listening on %d", 8080)
+	log.Printf("Router 4/4")
 }
 
 

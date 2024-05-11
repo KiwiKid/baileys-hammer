@@ -405,8 +405,8 @@ func isSelected(selectedIds []uint, id uint) bool {
 	return false
 }
 
-templ fineSuperSelect(players []PlayerWithFines, approvedPFines []PresetFine, selectedFineIds []uint) {
-	<div class="w-full mx-auto bg-gray-200 shadow-xl m-10" id="fine-ss" hx-get="/fines/add" hx-trigger="pageLoaded" hx-target="#fine-ss">
+templ fineSuperSelect(players []PlayerWithFines, approvedPFines []PresetFine, selectedFineIds []uint, instance string) {
+	<div class="w-full mx-auto bg-gray-200 shadow-xl m-10" id={ F("fine-ss-%s", instance) } hx-get="/fines/add" hx-trigger="pageLoaded" hx-target={ F("#fine-ss-%s", instance) }>
 		<form id="ss-form" hx-post="/fines-multi" method="POST" class="flex flex-col space-y-4 bg-white shadow-md p-6 rounded-lg">
 			<p class="font-bold text-3xl">Fines</p>
 			<div class="flex flex-row">
@@ -421,7 +421,7 @@ templ fineSuperSelect(players []PlayerWithFines, approvedPFines []PresetFine, se
  					ts-open-on-focus="true"
  					ts-add-post-url="/fines/add"
  					ts-add-post-url-body-value="reason"
-                    tx-close-after-select="true"
+ 					tx-close-after-select="true"
  					ts-item-class="text-3xl py-3"
  					ts-option-class="text-3xl w-full py-3"
  					tx-max-items="99"
@@ -485,7 +485,7 @@ func getFineIds(fines []Fine) []uint {
 }
 
 templ fineSuperSelectResults(players []PlayerWithFines, approvedPFines[]PresetFine, newFines []Fine) {
-	@fineSuperSelect(players, approvedPFines, getFineIds(newFines))
+	@fineSuperSelect(players, approvedPFines, getFineIds(newFines), "1")
 	if len(newFines) > 0 {
 		<div class="text-2xl list-none bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-lg">
 			<h1 class="text-3xl">{ fmt.Sprintf("Added %d Fines:", len(newFines)) }</h1>

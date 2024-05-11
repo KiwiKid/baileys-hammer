@@ -38,7 +38,7 @@ func fineList(fines []FineWithPlayer, page int, presetFineUpdated uint, isFineMa
 			var_1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, err = templBuffer.WriteString("<div class=\"m-2 bg-gray-200 h-full shadow-xl p-2 h-full mt-10\" id=\"fine-list-container\"><div class=\"text-center\"><div class=\"flex justify-center items-center mb-4 cursor-pointer\"")
+		_, err = templBuffer.WriteString("<div class=\"m-2 bg-gray-200 shadow-xl p-2 mt-10\" id=\"fine-list-container\"><div class=\"text-center\"><div class=\"flex-grow justify-center items-center mb-4 cursor-pointer\"")
 		if err != nil {
 			return err
 		}

@@ -310,12 +310,6 @@ templ editMatch(closeLink templ.SafeURL, genMeta MatchMetaGeneral, successMsg st
 				<label for="subtitle" class="block text-lg font-semibold text-gray-700 ">Notes: (optional)</label>
 				<input type="text" name="subtitle" id="subtitle" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" value={ genMeta.Match.Subtitle }/>
 			</div>
-			if len(UsePlayerOfTheDayName(ctx)) > 0 {
-				@playerInputSelector(genMeta.Players, genMeta.Match.PlayerOfTheDay, "potd")
-			}
-			if len(UseDudOfTheDayName(ctx)) > 0 {
-				@playerInputSelector(genMeta.Players, genMeta.Match.DudOfTheDay, "dotd")
-			}
 			if UseShowGoalScorerMatchList(ctx) {
 				@playerEventInputSelector(genMeta.Players, genMeta.Match.Events, "goal")
 			}
@@ -324,6 +318,14 @@ templ editMatch(closeLink templ.SafeURL, genMeta MatchMetaGeneral, successMsg st
 			}
 			if UseShowGoalScorerMatchList(ctx) {
 				@playerEventInputSelector(genMeta.Players, genMeta.Match.Events, "conceded-goal")
+			}
+			[wait for attentance]
+			<div hx-get="/fines/add" hx-trigger="load" hx-target="this"></div>
+			if len(UseDudOfTheDayName(ctx)) > 0 {
+				@playerInputSelector(genMeta.Players, genMeta.Match.DudOfTheDay, "dotd")
+			}
+			if len(UsePlayerOfTheDayName(ctx)) > 0 {
+				@playerInputSelector(genMeta.Players, genMeta.Match.PlayerOfTheDay, "potd")
 			}
 			if len(UseInjuryCounterTrackerName(ctx)) > 0 {
 				@playerEventInputSelector(genMeta.Players, genMeta.Match.Events, "injury")
