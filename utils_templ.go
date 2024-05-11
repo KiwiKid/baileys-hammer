@@ -37,7 +37,7 @@ func tomSelectLinks() templ.Component {
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("</script><script src=\"https://kiwikid.github.io/hx-tomselect/hx-tom-select.js\">")
+		_, err = templBuffer.WriteString("</script><script src=\"https://cdn.jsdelivr.net/gh/KiwiKid/hx-tomselect/hx-tomselect.js\">")
 		if err != nil {
 			return err
 		}
