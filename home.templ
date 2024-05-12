@@ -169,7 +169,6 @@ templ activeMatchBanner(activeMatch *Match) {
 	if activeMatch != nil {
 		<div class="top-0 left-0 w-full bg-green-400 text-white text-center py-2 shadow-md">
 			if activeMatch.StartTime != nil {
-				<span class="italic">({ humanize.Time(*activeMatch.StartTime  ) })</span>
 				{ activeMatch.StartTime.Format("Jan 02 - 3:04 PM") }
 			}
 			{ F("vs %s @ %s", activeMatch.Opponent, activeMatch.Location) }

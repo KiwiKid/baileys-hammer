@@ -547,7 +547,7 @@ func GetFineFromPreset(db *gorm.DB, pfIDOrReason string) (*Fine, error) {
 
 func GetActiveMatch(db *gorm.DB) (*Match, error) {
     var match Match
-    now := time.Now()
+    now := time.Now().Add(-48 * time.Hour)
 
     // Find the nearest upcoming match where the start time is in the future
     result := db.Where("start_time > ?", now).Order("start_time ASC").First(&match)
