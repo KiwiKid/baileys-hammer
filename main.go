@@ -805,6 +805,8 @@ func fineMultiHandler(db *gorm.DB) http.HandlerFunc {
 						}
 					}
 
+					fine.Approved = config.DefaultToApproved
+
 					fine.CreatedAt = time.Now()
 					err = SaveFine(db, fine)
 					if err != nil {

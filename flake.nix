@@ -33,6 +33,23 @@
           '';
         };
 
+        deploy = pkgs.mkShell {
+          buildInputs = [
+            go
+            templ
+            flyctl
+          ];
+          shellHook = ''
+            echo "Building the Go project..."
+            git config user.name $GIT_AUTHOR_USER
+            git config user.email $GIT_AUTHOR_EMAIL
+            export DATABASE_URL=./tmp/data/dev.db
+            templ generate
+            echo "Deploying the application..."
+            fly deploy
+          '';
+        };
+
         dev = pkgs.mkShell {
           buildInputs = [ 
             air
@@ -62,14 +79,6 @@
             echo "Building Docker image..."
             docker build -t baileys-hammer .
             docker run -p 8080:8080 baileys-hammer
-          '';
-        };
-
-        deploy = pkgs.mkShell {
-          buildInputs = [ flyctl ];
-          shellHook = ''
-            echo "Deploying the application..."
-            flyctl deploy
           '';
         };
       };
