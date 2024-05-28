@@ -44,10 +44,13 @@ func DBInit() (*gorm.DB, error) {
     if len(dbUrl) == 0 {
         log.Panic("No DATABASE_URL set")
     }
+
+    log.Printf("connecting to db: %s", dbUrl)
     db, err := gorm.Open(sqlite.Open(dbUrl), &gorm.Config{})
     if err != nil {
+        log.Printf("Could not access dbUrl:%s - %v", dbUrl, err)
         return nil, err
-    }else{
+    }else {
         log.Printf("Connected to db at \"%s\"", dbUrl)
     }
 

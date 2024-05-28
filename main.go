@@ -1225,7 +1225,15 @@ func main() {
 	r.HandleFunc("/match/{matchId}/event", matchEventHandler(db))
 	r.HandleFunc("/match/{matchId}/event/{eventId}", matchEventHandler(db))
 	r.HandleFunc("/match/{matchId}/events", matchEventListHandler(db))
-	if err := http.ListenAndServe(":8080", r); err != nil {
+
+	port := os.Getenv("PORT")
+    if len(port) == 0 {
+		port = "8080"
+    }
+	portStr := fmt.Sprintf(":%s", port)
+
+	log.Printf("Using port (%s)", portStr)
+	if err := http.ListenAndServe(portStr, r); err != nil {
 		log.Panic("Server error: %v", err)
 	}else {
 		log.Printf("\n=================\n\n    Listening on\n\n================\n%d", 8080)	

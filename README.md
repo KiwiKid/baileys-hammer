@@ -7,6 +7,8 @@ baileys-hammer is an application for tracking seasonal fines for a sports team, 
 $ templ watch --generate 
 $ air
 
+nix develop .#devShells.dev
+nix develop .#devShells.build
 
 
 $ docker build -t baileys-hammer .
