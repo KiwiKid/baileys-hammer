@@ -273,8 +273,15 @@ func fineEditHandler(db *gorm.DB) http.HandlerFunc {
 				if err != nil {
 					http.Error(w, fmt.Sprintf("GetMatch Match not found - %d", fine.MatchId), http.StatusNotFound)
 					return
+
+				} else if match.StartTime != nil {
+					fine.FineAt = *match.StartTime
+				} else {
+					fine.FineAt = time.Now()
 				}
+
 			}
+
 
             // Prepare the data for rendering
             fineWithPlayer := FineWithPlayer{
