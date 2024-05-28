@@ -296,7 +296,9 @@ templ editMatch(closeLink templ.SafeURL, genMeta MatchMetaGeneral, successMsg st
 			</div>
 			<div class="mb-4">
 				<label for="start-time" class="block text-lg font-semibold text-gray-700">Start Time</label>
-				{  genMeta.Match.StartTime.Format("2006-01-02T15:04") }
+				if genMeta.Match.StartTime != nil {
+					{  genMeta.Match.StartTime.Format("2006-01-02T15:04") }
+				}
 				<input
  					type="datetime-local"
  					name="startTime"
