@@ -4,7 +4,8 @@ baileys-hammer is an application for tracking seasonal fines for a sports team, 
 
 ## Development
 ```
-nix develop .#devShells.dev
+(using vscode by default)
+nix develop .
 
 # pre-commit/deploy
 nix develop .#devShells.build
@@ -18,6 +19,8 @@ nix develop .#devShells.deploy
 $ docker build -t baileys-hammer .
 $ docker run -p 8080:8080 baileys-hammer
 
+# or build docker via nix flake:
+nix develop .#devShells.dockerBuild
 
 fly deploy
 ```

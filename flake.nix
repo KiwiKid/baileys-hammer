@@ -29,7 +29,7 @@
             git config user.name $GIT_AUTHOR_USER
             git config user.email $GIT_AUTHOR_EMAIL
             export DATABASE_URL=./tmp/data/dev.db
-            templ generate && go run *.go
+            templ generate && go build -o ./tmp/main .
           '';
         };
 
@@ -61,6 +61,7 @@
             git config user.name $GIT_AUTHOR_USER
             git config user.email $GIT_AUTHOR_EMAIL
             export DATABASE_URL=./tmp/data/dev.db
+            code .
             tmux kill-session -t devSession
             tmux new-session -d -s devSession \; \
               split-window -h \; \
@@ -81,6 +82,10 @@
             docker run -p 8080:8080 baileys-hammer
           '';
         };
+
+
       };
+      defaultPackage.x86_64-linux = self.devShells.dev;
+
     };
 }
