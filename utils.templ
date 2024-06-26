@@ -522,7 +522,7 @@ templ fineSuperSelectResults(players []PlayerWithFines, approvedPFines[]PresetFi
 					}
 				}
 			} else {
-				<div>No fines created? { fmt.Sprintf("%d %d", len(approvedPFines)) }</div>
+				<div>No fines created? { fmt.Sprintf("%d", len(approvedPFines)) }</div>
 			}
 		</div>
 	} else {

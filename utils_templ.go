@@ -644,9 +644,9 @@ func fineSuperSelectResults(players []PlayerWithFines, approvedPFines []PresetFi
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var36 string
-				templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d %d", len(approvedPFines)))
+				templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", len(approvedPFines)))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 525, Col: 70}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 525, Col: 67}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var36))
 				if templ_7745c5c3_Err != nil {

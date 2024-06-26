@@ -112,7 +112,7 @@ templ fineRow(isFineMaster bool, f FineWithPlayer) {
 				if len(f.Fine.Contest) == 0 {
 					<div class="max-w-96">
 						<button
- 							hx-get={ fmt.Sprintf("/fines/edit/%d?isContest=true&isFineMaster=%d", f.Fine.ID, isFineMaster) }
+ 							hx-get={ fmt.Sprintf("/fines/edit/%d?isContest=true&isFineMaster=%t", f.Fine.ID, isFineMaster) }
  							hx-swap="outerHTML"
  							class={ smPri }
 						>Contest</button>
@@ -318,7 +318,7 @@ templ fineContestRow(f FineWithPlayer) {
 
 templ fineEditForm(f FineWithPlayer, isFineMaster bool) {
 	<form
- 		hx-post={ fmt.Sprintf("/fines/edit/%d", f.Fine.ID) }
+ 		hx-post={ fmt.Sprintf("/fines/edit/%d", f.Fine.ID) } 
  		hx-swap="innerHTML"
  		hx-target={ fmt.Sprintf("#fr-%d", f.Fine.ID) }
 	>

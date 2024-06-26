@@ -63,7 +63,7 @@ templ listMatchEvents(matchState MatchState, matchEvents []MatchEvent) {
 
 templ addMatchEvent(meta MatchMeta, matchId uint64, isOpen bool) {
 	[addMatchEvent: 
-	{ fmt.Sprintf("meta: %+v", meta, isOpen) }
+	{ fmt.Sprintf("meta: %+v %t", meta, isOpen) }
 	]
 	if isOpen {
 		<form hx-post={ fmt.Sprintf("/match/%d/event", matchId) } hx-swap="outerHTML" class="space-y-4">

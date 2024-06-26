@@ -35,6 +35,7 @@ templ matchSelector(matches []Match, selectedMatchId uint) {
 }
 
 templ matchListPage(matches []Match, isOpen bool) {
+	<!DOCTYPE html>
 	<html hx-boost="true">
 		@header()
 		@tomSelectLinks()
@@ -84,6 +85,7 @@ templ matchListPage(matches []Match, isOpen bool) {
 }
 
 templ matchPage(data MatchPageData) {
+	<!DOCTYPE html>
 	<html hx-boost="true">
 		@header()
 		<body class="text-2xl p-1">
@@ -176,6 +178,7 @@ templ createMatch(closeLink templ.SafeURL, players []PlayerWithFines) {
 }
 
 templ editMatchContainer(closeLink templ.SafeURL, genMeta MatchMetaGeneral, successMsg string) {
+	<!DOCTYPE html>
 	<html hx-boost="true">
 		@header()
 		@tomSelectLinks()
@@ -275,12 +278,12 @@ templ matchMetaDebug(genMeta MatchMetaGeneral) {
 			</pre>
 		</details>
 	</div>
-}
+} 
 
 templ editMatch(closeLink templ.SafeURL, genMeta MatchMetaGeneral, successMsg string) {
 	<div class="w-full mx-auto bg-gray-200 shadow-xl m-10" id={ fmt.Sprintf("edit-match-%d", genMeta.Match.ID) }>
 		<form hx-post={ fmt.Sprintf("/match/%v", genMeta.Match.ID) } hx-trigger="submit" hx-swap="outerHTML" hx-target={ fmt.Sprintf("#edit-match-%d", genMeta.Match.ID) } class="mx-auto my-8 p-4 border border-gray-200 rounded-lg shadow">
-			<h2 class="text-lg font-semibold mb-4" title={ fmt.Sprintf("%+v", genMeta) }>Edit Match - vs { genMeta.Match.Opponent }</h2>
+			<div hx-get={ fmt.Sprintf("/match/%d?type=form", genMeta.Match.ID) }  class="text-lg underline font-semibold mb-4" >Edit Match - vs { genMeta.Match.Opponent }</div>
 			<input
  				type="hidden"
  				name="matchId"
@@ -309,10 +312,11 @@ templ editMatch(closeLink templ.SafeURL, genMeta MatchMetaGeneral, successMsg st
 					}
 				/>
 			</div>
-			<div class="mb-4">
+			<div class="mb-4 border-b-8 border-solid border-blue-500">
 				<label for="subtitle" class="block text-lg font-semibold text-gray-700 ">Notes: (optional)</label>
 				<input type="text" name="subtitle" id="subtitle" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" value={ genMeta.Match.Subtitle }/>
 			</div>
+			<span>[game start]</span>
 			if UseShowGoalScorerMatchList(ctx) {
 				@playerEventInputSelector(genMeta.Players, genMeta.Match.Events, "goal")
 			}
@@ -325,7 +329,9 @@ templ editMatch(closeLink templ.SafeURL, genMeta MatchMetaGeneral, successMsg st
 			if len(UseInjuryCounterTrackerName(ctx)) > 0 {
 				@playerEventInputSelector(genMeta.Players, genMeta.Match.Events, "injury")
 			}
-			[wait for attentance]
+			<span class="border-b-8 border-solid border-blue-500">			[fine-session-start]
+			</span>
+			<div hx-get="/fines/add" hx-trigger="load" hx-target="this"></div>
 			if len(UseDudOfTheDayName(ctx)) > 0 {
 				@playerInputSelector(genMeta.Players, genMeta.Match.DudOfTheDay, "dotd")
 			}
@@ -338,7 +344,7 @@ templ editMatch(closeLink templ.SafeURL, genMeta MatchMetaGeneral, successMsg st
 			</div>
 			<div class="flex items-center justify-between mt-4">
 				<a href={ closeLink } class={ bigSec }>Close</a>
-			</div>
+			</div> 
 			if UseMatchEventTracker(ctx) {
 				<div class={ bigPri } hx-get={ fmt.Sprintf("/match/%v/events", genMeta.Match.ID) } hx-trigger="click" hx-target="#event-place" hx-swap="innerHTML">
 					(
@@ -347,7 +353,6 @@ templ editMatch(closeLink templ.SafeURL, genMeta MatchMetaGeneral, successMsg st
 				</div>
 				<div id="event-place"></div>
 			}
-			<div hx-get="/fines/add" hx-trigger="load" hx-target="this"></div>
 
 			<details>
 				<summary>danger zone</summary>

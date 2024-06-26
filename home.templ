@@ -9,10 +9,6 @@ import (
 	"golang.org/x/text/language"
 )
 
-var baseUrl = "/"
-var containerClass = "w-full flex mx-auto bg-gray-200 shadow-xl p-2"
-var con = "bg-sepia-200 shadow-xl m-10 rounded-lg"
-
 
 func makeSafeUrlWithAnchor(baseUrl string, fineListOpen bool, finesOpen bool, playersOpen bool, presetFinesOpen bool, manageOpen bool, anchorTag string) templ.SafeURL {
 	url := makeUrl(baseUrl, fineListOpen, finesOpen, playersOpen, presetFinesOpen, manageOpen) + "#" +  anchorTag
@@ -83,25 +79,6 @@ templ downArrow() {
 		<path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
 	</svg>
 }
-
-var pri = " bg-blue-500 p-1 hover:bg-blue-600 text-white font-bold md:p-4 py-1 px-1 rounded-lg hover:scale-105 transition transform ease-out duration-200"
-
-var sec = " text-3xl bg-gray-500 p-1 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg hover:scale-105 transition transform ease-out duration-200"
-
-var add = " text-3xl bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:scale-105 transition transform ease-out duration-200"
-var del = " text-3xl bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg hover:scale-105 transition transform ease-out duration-200"
-
-var bigBtnTxt = "text-3xl py-4 mx-auto items-center justify-center w-full text-center py-2 px-4  rounded-md border hover:bg-opacity-75 focus:outline-none"
-var sm = " text-lg mx-auto items-center justify-center w-4/5 py-1 px-2"
-var bigPri = fmt.Sprintf("%s %s", bigBtnTxt, pri)
-var bigSec = fmt.Sprintf("%s %s", bigBtnTxt, sec)
-var bigAdd = fmt.Sprintf("%s %s", bigBtnTxt, add)
-var bigDel = fmt.Sprintf("%s %s", bigBtnTxt, del)
-
-var smPri = fmt.Sprintf("%s %s", pri, sm)
-
-var S = fmt.Sprint
-var F = fmt.Sprintf
 
 var Title = cases.Title(language.Und, cases.NoLower).String
 
@@ -177,36 +154,21 @@ templ activeMatchBanner(activeMatch *Match) {
 }
 
 templ home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines []PresetFine, fineWithPlayers []FineWithPlayer, qp HomeQueryParams, matches []Match, activeMatch *Match) {
+	<!DOCTYPE html>
 	<html hx-boost="true">
 		@header()
 		@tomSelectLinks()
-		<body class="text-2xl p-1">
-			<div>
-				@activeMatchBanner(activeMatch)
-				<h1 class="font-bold mt-4 pb-4 text-center">{ GetTitle(ctx) }</h1>
+		<body class="text-2xl p-1 flex justify-center">
+			<div class="lg:max-w-screen-2xl w-full">
 				<div>
-					@fineAddV2(baseUrl, true, players, approvedPFines, false)
-					@fineList(fineWithPlayers, 0, 0, false, true)
-				</div>
-				if len(approvedPFines) > 0 {
-					<div class="mx-auto bg-gray-200 shadow-xl p-2">
-						<div id="fines" class="flex justify-center w-full p-3">
-							<a href={ makeSafeUrlWithAnchor(baseUrl, !qp.FineListOpen, false, false, false, false, "fines") } hx-transition="true" class={ bigPri }>
-								if qp.FineListOpen {
-									Close Fine List
-								} else {
-									(Existing Fine List)
-								}
-							</a>
-						</div>
-						if qp.FineListOpen {
-							<ul class="list-inside space-y-3 text-lg font-handwriting text-brown-900">
-								for _, pf := range approvedPFines {
-									<li class="pl-6 border-l-4 border-gold-700 hover:bg-sepia-300 transition duration-300 ease-in-out">
-										{ fmt.Sprintf("$%v - %s - %s", pf.Amount, pf.Reason, pf.Context) }
-									</li>
-								}
-							</ul>
+					@activeMatchBanner(activeMatch)
+					<h1 class="font-bold mt-4 pb-4 text-center">{ GetTitle(ctx) }</h1>
+					<div>
+						@fineAddV2(baseUrl, true, players, approvedPFines, false)
+						@fineList(fineWithPlayers, 0, 0, false, true)
+					</div>
+					if len(approvedPFines) > 0 {
+						<div class="mx-auto bg-gray-200 shadow-xl p-2">
 							<div id="fines" class="flex justify-center w-full p-3">
 								<a href={ makeSafeUrlWithAnchor(baseUrl, !qp.FineListOpen, false, false, false, false, "fines") } hx-transition="true" class={ bigPri }>
 									if qp.FineListOpen {
@@ -216,100 +178,123 @@ templ home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines
 									}
 								</a>
 							</div>
-							<div class="w-full flex justify-center items-center">
-								<div _="on click toggle .hidden on next &lt;section/&gt;" class="flex justify-center items-center cursor-pointer">
-									<h3 class={ bigPri }>Pending Fines { fmt.Sprintf("(%d)", len(pendingPFines)) }</h3>
-								</div>
-							</div>
-							if len(pendingPFines) > 0 {
-								<section class="bg-sepia-200 shadow-xl m-10 rounded-lg hidden">
-									<ul class="list-inside space-y-3 text-lg font-handwriting text-brown-900">
-										for _, pf := range pendingPFines {
-											<li class="pl-6 border-l-4 border-gold-700 hover:bg-sepia-300 transition duration-300 ease-in-out">
-												{ fmt.Sprintf("$%v - %s", pf.Amount, pf.Reason) }
-												<span class="ml-2 inline-block bg-red-100 text-red-800 font-bold px-2 py-1 rounded-full text-lg font-semibold shadow-sm">(pending approval)</span>
-											</li>
-										}
-									</ul>
-								</section>
-							}
-						}
-					</div>
-				}
-			</div>
-			@matchesList(qp.MatchesOpen, matches, players)
-			<div class={ containerClass } id="leaderboard">
-				<div class="w-full">
-					<div id="swipeArea" class="swipe-area w-full">
-						<h3 class="text-2xl font-bold text-center">Leaderboard</h3>
-					</div>
-					<ul>
-						for _, p := range players {
-							<li class="m-4">
-								<div
- 									_="on click toggle .hidden on next &lt;section/&gt;"
- 									class={ bigPri }
-								>
-									{ p.Name }
-									- 
-									{ fmt.Sprintf("$%d (%d)", p.TotalFines,  p.TotalFineCount) }
-									if UseRoles(ctx) {
-										if len(p.Role) > 0 {
-											- 
-											{ p.Role }
-										}
+							if qp.FineListOpen {
+								<ul class="list-inside space-y-3 text-lg font-handwriting text-brown-900">
+									for _, pf := range approvedPFines {
+										<li class="pl-6 border-l-4 border-gold-700 hover:bg-sepia-300 transition duration-300 ease-in-out">
+											{ fmt.Sprintf("$%v - %s - %s", pf.Amount, pf.Reason, pf.Context) }
+										</li>
 									}
+								</ul>
+								<div id="fines" class="flex justify-center w-full p-3">
+									<a href={ makeSafeUrlWithAnchor(baseUrl, !qp.FineListOpen, false, false, false, false, "fines") } hx-transition="true" class={ bigPri }>
+										if qp.FineListOpen {
+											Close Fine List
+										} else {
+											(Existing Fine List)
+										}
+									</a>
 								</div>
-								<section class="fines-info hidden">
-									<div class="p-2">
+								if len(pendingPFines) > 0 {
+									<div class="w-full flex justify-center items-center">
+										<div _="on click toggle .hidden on next &lt;section/&gt;" class="flex justify-center items-center cursor-pointer">
+											<h3 class={ bigPri }>Pending Fines { fmt.Sprintf("(%d)", len(pendingPFines)) }</h3>
+										</div>
+									</div>
+								}
+								if len(pendingPFines) > 0 {
+									<section class="bg-sepia-200 shadow-xl m-10 rounded-lg hidden">
+										<ul class="list-inside space-y-3 text-lg font-handwriting text-brown-900">
+											for _, pf := range pendingPFines {
+												<li class="pl-6 border-l-4 border-gold-700 hover:bg-sepia-300 transition duration-300 ease-in-out">
+													{ fmt.Sprintf("$%v - %s", pf.Amount, pf.Reason) }
+													<span class="ml-2 inline-block bg-red-100 text-red-800 font-bold px-2 py-1 rounded-full text-lg font-semibold shadow-sm">(pending approval)</span>
+												</li>
+											}
+										</ul>
+									</section>
+								}
+							}
+						</div>
+					}
+				</div>
+				if qp.MatchesOpen {
+					qp.MatchesOpen!!
+				}
+				@matchesList(qp.MatchesOpen, matches, players)
+				<div class={ containerClass } id="leaderboard">
+					<div class="w-full">
+						<div id="swipeArea" class="swipe-area w-full">
+							<h3 class="text-2xl font-bold text-center">Leaderboard</h3>
+						</div>
+						<ul>
+							for _, p := range players {
+								<li class="m-4">
+									<div
+										_="on click toggle .hidden on next &lt;section/&gt;"
+										class={ bigPri }
+									>
+										{ p.Name }
+										- 
+										{ fmt.Sprintf("$%d (%d)", p.TotalFines,  p.TotalFineCount) }
 										if UseRoles(ctx) {
 											if len(p.Role) > 0 {
-												<div>
-													<div>
-														{ p.Role }
-														if len(p.RoleDescription) > 0 {
-															- ( 
-															{ p.RoleDescription }
-															)
-														}
-													</div>
-												</div>
+												- 
+												{ p.Role }
 											}
 										}
-										for _, f := range p.Fines {
-											<div class="mt-4 bg-gray-100 p-4 rounded-lg flex flex-row flex-wrap justify-between">
-												<div class="w-full sm:w-1/2 p-1">
-													{ f.Reason }
-												</div>
-												<div class="w-full sm:w-1/2 p-1">
-													{ fmt.Sprintf("$%.0f", f.Amount) }
-												</div>
-												<div class="w-full sm:w-1/2 p-1">
-													if f.FineAt.After(twoWeeksAgo) {
-														{ humanize.Time(f.FineAt) }
-													} else {
-														{ f.FineAt.Format("2006-01-02") }
-													}
-												</div>
-												<div class="w-full sm:w-1/2 p-1">
-													{ f.Context }
-												</div>
-												if len(f.Contest) > 0 {
-													<div class="w-full sm:w-1/2 p-1">
-														{ f.Contest }
+									</div>
+									<section class="fines-info hidden">
+										<div class="p-2">
+											if UseRoles(ctx) {
+												if len(p.Role) > 0 {
+													<div>
+														<div>
+															{ p.Role }
+															if len(p.RoleDescription) > 0 {
+																- ( 
+																{ p.RoleDescription }
+																)
+															}
+														</div>
 													</div>
 												}
-											</div>
-										}
-									</div>
-								</section>
-							</li>
-						}
-					</ul>
+											}
+											for _, f := range p.Fines {
+												<div class="mt-4 bg-gray-100 p-4 rounded-lg flex flex-row flex-wrap justify-between">
+													<div class="w-full sm:w-1/2 p-1">
+														{ f.Reason }
+													</div>
+													<div class="w-full sm:w-1/2 p-1">
+														{ fmt.Sprintf("$%.0f", f.Amount) }
+													</div>
+													<div class="w-full sm:w-1/2 p-1">
+														if f.FineAt.After(twoWeeksAgo) {
+															{ humanize.Time(f.FineAt) }
+														} else {
+															{ f.FineAt.Format("2006-01-02") }
+														}
+													</div>
+													<div class="w-full sm:w-1/2 p-1">
+														{ f.Context }
+													</div>
+													if len(f.Contest) > 0 {
+														<div class="w-full sm:w-1/2 p-1">
+															{ f.Contest }
+														</div>
+													}
+												</div>
+											}
+										</div>
+									</section>
+								</li>
+							}
+						</ul>
+					</div>
 				</div>
+				@fineList(fineWithPlayers, 0, 0,false, false)
+				@pageFooter()
 			</div>
-			@fineList(fineWithPlayers, 0, 0,false, false)
-			@pageFooter()
 		</body>
 	</html>
 }
