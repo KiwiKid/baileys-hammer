@@ -169,15 +169,6 @@ templ home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines
 					</div>
 					if len(approvedPFines) > 0 {
 						<div class="mx-auto bg-gray-200 shadow-xl p-2">
-							<div id="fines" class="flex justify-center w-full p-3">
-								<a href={ makeSafeUrlWithAnchor(baseUrl, !qp.FineListOpen, false, false, false, false, "fines") } hx-transition="true" class={ bigPri }>
-									if qp.FineListOpen {
-										Close Fine List
-									} else {
-										(Existing Fine List)
-									}
-								</a>
-							</div>
 							if qp.FineListOpen {
 								<ul class="list-inside space-y-3 text-lg font-handwriting text-brown-900">
 									for _, pf := range approvedPFines {
@@ -187,7 +178,14 @@ templ home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines
 									}
 								</ul>
 								<div id="fines" class="flex justify-center w-full p-3">
-									<a href={ makeSafeUrlWithAnchor(baseUrl, !qp.FineListOpen, false, false, false, false, "fines") } hx-transition="true" class={ bigPri }>
+									<a href={ makeSafeUrlWithAnchor(baseUrl, !qp.FineListOpen, false, false, false, false, "fines") } hx-transition="true" 
+									if qp.FineListOpen {
+										class={ bigSec }
+									} else {
+										class={ bigPri }
+									}
+									>
+									
 										if qp.FineListOpen {
 											Close Fine List
 										} else {
@@ -218,10 +216,6 @@ templ home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines
 						</div>
 					}
 				</div>
-				if qp.MatchesOpen {
-					qp.MatchesOpen!!
-				}
-				@matchesList(qp.MatchesOpen, matches, players)
 				<div class={ containerClass } id="leaderboard">
 					<div class="w-full">
 						<div id="swipeArea" class="swipe-area w-full">
@@ -292,6 +286,7 @@ templ home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines
 						</ul>
 					</div>
 				</div>
+				@matchesList(qp.MatchesOpen, matches, players, false)
 				@fineList(fineWithPlayers, 0, 0,false, false)
 				@pageFooter()
 			</div>

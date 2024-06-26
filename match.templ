@@ -34,7 +34,7 @@ templ matchSelector(matches []Match, selectedMatchId uint) {
 	</div>
 }
 
-templ matchListPage(matches []Match, isOpen bool) {
+templ matchListPage(matches []Match, isOpen bool, isFineMaster bool) {
 	<!DOCTYPE html>
 	<html hx-boost="true">
 		@header()
@@ -50,16 +50,18 @@ templ matchListPage(matches []Match, isOpen bool) {
 										<div class="text-lg font-medium">{ match.Opponent }</div>
 										<div class="text-sm text-gray-600">{ match.Location }</div>
 									</div>
-									<div class="flex-shrink-0">
-										<a
- 											class={ F("%s inline-block bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600", bigPri) }
- 											hx-target={ F("#mlp-%d", match.ID) }
- 											hx-swap="outerHTML"
- 											hx-get={ F("/match/%d?type=form", match.ID) }
-										>
-											Edit
-										</a>
-									</div>
+									if isFineMaster {
+										<div class="flex-shrink-0">
+											<a
+												class={ F("%s inline-block bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600", bigPri) }
+												hx-target={ F("#mlp-%d", match.ID) }
+												hx-swap="outerHTML"
+												hx-get={ F("/match/%d?type=form", match.ID) }
+											>
+												Edit
+											</a>
+										</div>
+									}
 								</div>
 							</div>
 						}
@@ -71,13 +73,15 @@ templ matchListPage(matches []Match, isOpen bool) {
 						to get started.
 					</div>
 				}
-				<div
- 					id="add-match-container"
- 					hx-get="/match?isOpen=true"
- 					hx-trigger="click"
- 					hx-swap="outerHTML"
- 					class={ bigAdd }
-				>Add New Match</div>
+				if isFineMaster {
+					<div
+						id="add-match-container"
+						hx-get="/match?isOpen=true"
+						hx-trigger="click"
+						hx-swap="outerHTML"
+						class={ bigAdd }
+					>Add New Match</div>
+				}
 			</div>
 			@pageFooter()
 		</body>

@@ -255,7 +255,7 @@ templ presetFines(baseUrl string, passCode string, isOpen bool, presetFines []Pr
 	}
 }
 
-templ matchesList(isOpen bool, matches []Match, pwfs []PlayerWithFines) {
+templ matchesList(isOpen bool, matches []Match, pwfs []PlayerWithFines, isFineMaster bool) {
 	<div class="mx-auto bg-gray-200 shadow-xl m-10">
 	if isOpen {
 		matchesList is open!
@@ -266,11 +266,11 @@ templ matchesList(isOpen bool, matches []Match, pwfs []PlayerWithFines) {
 					if isOpen {
 						<div class="w-full">
 							for _, m := range matches {
-								<div hx-trigger="load once" hx-get={ fmt.Sprintf("/match/%d?type=list", m.ID) } hx-swap="outerHTML">loading { F("%d", m.ID) }</div>
+								<div hx-trigger="load once" hx-get={ fmt.Sprintf("/match/%d?type=list&isFineMaster=%t", m.ID, isFineMaster) } hx-swap="outerHTML">loading { F("%d", m.ID) }</div>
 							}
 						</div>
 					} else {
-						<button hx-get="/match-list" hx-target="this" class={ F("%s float-right", bigPri) } hx-swap="outerHTML">edit/add matches</button>
+						<button hx-get={ fmt.Sprintf("/match-list?isFineMaster=%t", isFineMaster) } hx-target="this" class={ F("%s float-right", bigPri) } hx-swap="outerHTML">edit/add matches</button>
 					}
 				</div>
 			</div>

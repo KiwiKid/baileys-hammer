@@ -89,6 +89,7 @@ func matchListHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) 
 			}
 			resType := r.URL.Query().Get("type")
 			matchIdStr := r.URL.Query().Get("matchId")
+			isFineMaster := r.URL.Query().Get("isFineMaster") == "true"
 			matchId, err := strconv.ParseInt(matchIdStr, 10, 64)
 			if err != nil {
 				matchId = 0
@@ -97,7 +98,7 @@ func matchListHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) 
 				matchComp := matchSelector(match, uint(matchId))
 				matchComp.Render(GetContext(r), w)
 			} else {
-				matchComp := matchListPage(match, isOpen)
+				matchComp := matchListPage(match, isOpen, isFineMaster)
 				matchComp.Render(GetContext(r), w)
 			}
 
