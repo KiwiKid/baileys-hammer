@@ -26,6 +26,7 @@ templ playerInputSelector(players []Player, playerId uint64, inputType string) {
 						{ UsePlayerOfTheDayName(ctx) }
 						<select
  							hx-ext="tomselect"
+							ts-debug="true"
  							name="playerOfTheDay"
  							ts-max-items="1"
  							ts-item-class="text-2xl py-3"
@@ -56,6 +57,7 @@ templ playerInputSelector(players []Player, playerId uint64, inputType string) {
  							id="player-select-dud-of-day"
  							name="dudOfTheDay"
  							hx-ext="tomselect"
+							ts-debug="true"
  							ts-max-items="1"
  							ts-item-class="text-3xl py-3"
  							ts-option-class="text-3xl py-3"
@@ -127,6 +129,7 @@ templ playerEventInputSelector(players []Player, events []MatchEvent, eventType 
 						)
 						<select
  							hx-ext="tomselect"
+							ts-debug="true"
  							ts-no-delete="true"
  							ts-item-class="text-3xl py-3"
  							ts-option-class="text-3xl py-3"

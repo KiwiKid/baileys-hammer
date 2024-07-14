@@ -140,7 +140,7 @@ func playerInputSelector(players []Player, playerId uint64, inputType string) te
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" <select hx-ext=\"tomselect\" name=\"playerOfTheDay\" ts-max-items=\"1\" ts-item-class=\"text-2xl py-3\" ts-option-class=\"text-2xl py-3\" class=\"mt-1 w-full border-gray-300  bg-white rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50\"><option value=\"\">N/A</option> ")
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" <select hx-ext=\"tomselect\" ts-debug=\"true\" name=\"playerOfTheDay\" ts-max-items=\"1\" ts-item-class=\"text-2xl py-3\" ts-option-class=\"text-2xl py-3\" class=\"mt-1 w-full border-gray-300  bg-white rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50\"><option value=\"\">N/A</option> ")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -162,7 +162,7 @@ func playerInputSelector(players []Player, playerId uint64, inputType string) te
 					var templ_7745c5c3_Var8 string
 					templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(F("%d", p.ID))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `playerName.templ`, Line: 41, Col: 31}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `playerName.templ`, Line: 42, Col: 31}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 					if templ_7745c5c3_Err != nil {
@@ -175,7 +175,7 @@ func playerInputSelector(players []Player, playerId uint64, inputType string) te
 					var templ_7745c5c3_Var9 string
 					templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(p.Name)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `playerName.templ`, Line: 43, Col: 17}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `playerName.templ`, Line: 44, Col: 17}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 					if templ_7745c5c3_Err != nil {
@@ -208,13 +208,13 @@ func playerInputSelector(players []Player, playerId uint64, inputType string) te
 				var templ_7745c5c3_Var10 string
 				templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(UseDudOfTheDayName(ctx))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `playerName.templ`, Line: 54, Col: 31}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `playerName.templ`, Line: 55, Col: 31}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" <select id=\"player-select-dud-of-day\" name=\"dudOfTheDay\" hx-ext=\"tomselect\" ts-max-items=\"1\" ts-item-class=\"text-3xl py-3\" ts-option-class=\"text-3xl py-3\"><option value=\"\">N/A</option> ")
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" <select id=\"player-select-dud-of-day\" name=\"dudOfTheDay\" hx-ext=\"tomselect\" ts-debug=\"true\" ts-max-items=\"1\" ts-item-class=\"text-3xl py-3\" ts-option-class=\"text-3xl py-3\"><option value=\"\">N/A</option> ")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -236,7 +236,7 @@ func playerInputSelector(players []Player, playerId uint64, inputType string) te
 					var templ_7745c5c3_Var11 string
 					templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(F("%d", p.ID))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `playerName.templ`, Line: 69, Col: 31}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `playerName.templ`, Line: 71, Col: 31}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 					if templ_7745c5c3_Err != nil {
@@ -249,7 +249,7 @@ func playerInputSelector(players []Player, playerId uint64, inputType string) te
 					var templ_7745c5c3_Var12 string
 					templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(p.Name)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `playerName.templ`, Line: 71, Col: 17}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `playerName.templ`, Line: 73, Col: 17}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 					if templ_7745c5c3_Err != nil {
@@ -341,7 +341,7 @@ func playerEventInputSelector(players []Player, events []MatchEvent, eventType s
 				var templ_7745c5c3_Var14 string
 				templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(UseInjuryCounterTrackerName(ctx))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `playerName.templ`, Line: 122, Col: 40}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `playerName.templ`, Line: 124, Col: 40}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 				if templ_7745c5c3_Err != nil {
@@ -355,7 +355,7 @@ func playerEventInputSelector(players []Player, events []MatchEvent, eventType s
 					var templ_7745c5c3_Var15 string
 					templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(presentPlayerEvent(playerHasEventCount(p.ID, events, eventType), p))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `playerName.templ`, Line: 125, Col: 76}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `playerName.templ`, Line: 127, Col: 76}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 					if templ_7745c5c3_Err != nil {
@@ -366,14 +366,14 @@ func playerEventInputSelector(players []Player, events []MatchEvent, eventType s
 						return templ_7745c5c3_Err
 					}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(") <select hx-ext=\"tomselect\" ts-no-delete=\"true\" ts-item-class=\"text-3xl py-3\" ts-option-class=\"text-3xl py-3\" name=\"")
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(") <select hx-ext=\"tomselect\" ts-debug=\"true\" ts-no-delete=\"true\" ts-item-class=\"text-3xl py-3\" ts-option-class=\"text-3xl py-3\" name=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var16 string
 				templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("eventType%s", Title(eventType)))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `playerName.templ`, Line: 133, Col: 59}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `playerName.templ`, Line: 136, Col: 59}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 				if templ_7745c5c3_Err != nil {
@@ -391,7 +391,7 @@ func playerEventInputSelector(players []Player, events []MatchEvent, eventType s
 					var templ_7745c5c3_Var17 string
 					templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(F("%d", p.ID))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `playerName.templ`, Line: 140, Col: 31}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `playerName.templ`, Line: 143, Col: 31}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 					if templ_7745c5c3_Err != nil {
@@ -404,7 +404,7 @@ func playerEventInputSelector(players []Player, events []MatchEvent, eventType s
 					var templ_7745c5c3_Var18 string
 					templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(p.Name)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `playerName.templ`, Line: 142, Col: 17}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `playerName.templ`, Line: 145, Col: 17}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 					if templ_7745c5c3_Err != nil {
@@ -438,7 +438,7 @@ func playerEventInputSelector(players []Player, events []MatchEvent, eventType s
 					var templ_7745c5c3_Var19 string
 					templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(presentPlayerEvent(playerHasEventCount(p.ID, events, eventType), p))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `playerName.templ`, Line: 155, Col: 76}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `playerName.templ`, Line: 158, Col: 76}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 					if templ_7745c5c3_Err != nil {
@@ -456,7 +456,7 @@ func playerEventInputSelector(players []Player, events []MatchEvent, eventType s
 				var templ_7745c5c3_Var20 string
 				templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("eventType%s", Title(eventType)))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `playerName.templ`, Line: 163, Col: 59}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `playerName.templ`, Line: 166, Col: 59}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
 				if templ_7745c5c3_Err != nil {
@@ -474,7 +474,7 @@ func playerEventInputSelector(players []Player, events []MatchEvent, eventType s
 					var templ_7745c5c3_Var21 string
 					templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(F("%d", p.ID))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `playerName.templ`, Line: 169, Col: 31}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `playerName.templ`, Line: 172, Col: 31}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 					if templ_7745c5c3_Err != nil {
@@ -487,7 +487,7 @@ func playerEventInputSelector(players []Player, events []MatchEvent, eventType s
 					var templ_7745c5c3_Var22 string
 					templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(p.Name)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `playerName.templ`, Line: 171, Col: 17}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `playerName.templ`, Line: 174, Col: 17}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 					if templ_7745c5c3_Err != nil {
@@ -520,7 +520,7 @@ func playerEventInputSelector(players []Player, events []MatchEvent, eventType s
 				var templ_7745c5c3_Var23 string
 				templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("eventType%s", Title(eventType)))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `playerName.templ`, Line: 191, Col: 59}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `playerName.templ`, Line: 194, Col: 59}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
 				if templ_7745c5c3_Err != nil {
@@ -538,7 +538,7 @@ func playerEventInputSelector(players []Player, events []MatchEvent, eventType s
 					var templ_7745c5c3_Var24 string
 					templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.JoinStringErrs(F("%d", p.ID))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `playerName.templ`, Line: 198, Col: 31}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `playerName.templ`, Line: 201, Col: 31}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var24))
 					if templ_7745c5c3_Err != nil {
@@ -551,7 +551,7 @@ func playerEventInputSelector(players []Player, events []MatchEvent, eventType s
 					var templ_7745c5c3_Var25 string
 					templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.JoinStringErrs(p.Name)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `playerName.templ`, Line: 200, Col: 17}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `playerName.templ`, Line: 203, Col: 17}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var25))
 					if templ_7745c5c3_Err != nil {
@@ -570,7 +570,7 @@ func playerEventInputSelector(players []Player, events []MatchEvent, eventType s
 					var templ_7745c5c3_Var26 string
 					templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinStringErrs(presentPlayerEvent(playerHasEventCount(p.ID, events, eventType), p))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `playerName.templ`, Line: 207, Col: 75}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `playerName.templ`, Line: 210, Col: 75}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var26))
 					if templ_7745c5c3_Err != nil {
@@ -595,7 +595,7 @@ func playerEventInputSelector(players []Player, events []MatchEvent, eventType s
 				var templ_7745c5c3_Var27 string
 				templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs(F("%d", getEventCount(events, eventType)))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `playerName.templ`, Line: 216, Col: 49}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `playerName.templ`, Line: 219, Col: 49}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var27))
 				if templ_7745c5c3_Err != nil {
@@ -608,7 +608,7 @@ func playerEventInputSelector(players []Player, events []MatchEvent, eventType s
 				var templ_7745c5c3_Var28 string
 				templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("eventType%s", Title(eventType)))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `playerName.templ`, Line: 225, Col: 59}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `playerName.templ`, Line: 228, Col: 59}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var28))
 				if templ_7745c5c3_Err != nil {
@@ -656,7 +656,7 @@ func playerRoleSelector(player PlayerWithFines, config *Config, msg string) temp
 		var templ_7745c5c3_Var30 string
 		templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/players?playerId=%d", player.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `playerName.templ`, Line: 249, Col: 77}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `playerName.templ`, Line: 252, Col: 77}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var30))
 		if templ_7745c5c3_Err != nil {
@@ -669,7 +669,7 @@ func playerRoleSelector(player PlayerWithFines, config *Config, msg string) temp
 		var templ_7745c5c3_Var31 string
 		templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", player.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `playerName.templ`, Line: 254, Col: 42}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `playerName.templ`, Line: 257, Col: 42}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var31))
 		if templ_7745c5c3_Err != nil {
@@ -682,7 +682,7 @@ func playerRoleSelector(player PlayerWithFines, config *Config, msg string) temp
 		var templ_7745c5c3_Var32 string
 		templ_7745c5c3_Var32, templ_7745c5c3_Err = templ.JoinStringErrs(player.Name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `playerName.templ`, Line: 261, Col: 26}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `playerName.templ`, Line: 264, Col: 26}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var32))
 		if templ_7745c5c3_Err != nil {
@@ -700,7 +700,7 @@ func playerRoleSelector(player PlayerWithFines, config *Config, msg string) temp
 			var templ_7745c5c3_Var33 string
 			templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.JoinStringErrs(player.Role)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `playerName.templ`, Line: 273, Col: 27}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `playerName.templ`, Line: 276, Col: 27}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var33))
 			if templ_7745c5c3_Err != nil {
@@ -713,7 +713,7 @@ func playerRoleSelector(player PlayerWithFines, config *Config, msg string) temp
 			var templ_7745c5c3_Var34 string
 			templ_7745c5c3_Var34, templ_7745c5c3_Err = templ.JoinStringErrs(player.RoleDescription)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `playerName.templ`, Line: 285, Col: 38}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `playerName.templ`, Line: 288, Col: 38}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var34))
 			if templ_7745c5c3_Err != nil {
@@ -740,7 +740,7 @@ func playerRoleSelector(player PlayerWithFines, config *Config, msg string) temp
 				var templ_7745c5c3_Var36 string
 				templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/match/%d/event", 9999))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `playerName.templ`, Line: 291, Col: 75}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `playerName.templ`, Line: 294, Col: 75}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var36))
 				if templ_7745c5c3_Err != nil {
@@ -813,7 +813,7 @@ func playerRoleSelector(player PlayerWithFines, config *Config, msg string) temp
 		var templ_7745c5c3_Var41 string
 		templ_7745c5c3_Var41, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/players?playerId=%d", player.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `playerName.templ`, Line: 303, Col: 85}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `playerName.templ`, Line: 306, Col: 85}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var41))
 		if templ_7745c5c3_Err != nil {
@@ -826,7 +826,7 @@ func playerRoleSelector(player PlayerWithFines, config *Config, msg string) temp
 		var templ_7745c5c3_Var42 string
 		templ_7745c5c3_Var42, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("Are you sure you want to delete %s?", player.Name))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `playerName.templ`, Line: 303, Col: 164}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `playerName.templ`, Line: 306, Col: 164}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var42))
 		if templ_7745c5c3_Err != nil {
@@ -852,7 +852,7 @@ func playerRoleSelector(player PlayerWithFines, config *Config, msg string) temp
 		var templ_7745c5c3_Var44 string
 		templ_7745c5c3_Var44, templ_7745c5c3_Err = templ.JoinStringErrs(player.Name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `playerName.templ`, Line: 303, Col: 204}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `playerName.templ`, Line: 306, Col: 204}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var44))
 		if templ_7745c5c3_Err != nil {

@@ -29,7 +29,7 @@ func tomSelectLinks() templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<link href=\"https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.css\" rel=\"stylesheet\"><script src=\"https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js\"></script><script src=\"https://cdn.jsdelivr.net/gh/KiwiKid/hx-tomselect/hx-tomselect.js\"></script><!--<script>\n\t(function() {   \n    /** stable build*/\n    const version = '06'\n\n    /**\n     * @typedef {Object} SupportedAttribute\n     * Defines an attribute supported by a configuration modification system.\n     * @property {string} key - The key of the configuration attribute to modify.\n     * @property {ConfigChange} configChange - The modifications to apply to the TomSelect configuration.\n     */\n\n    /**\n     * @typedef {'simple' | 'callback'} AttributeType\n     */\n\n      /**\n     * @typedef {function(HTMLElement, Object):void} CallbackFunction\n     * Description of what the callback does and its parameters.\n     * @param {string} a - The first number parameter.\n     \n     */\n      /**\n     * @typedef {Object} AttributeConfig\n     * Defines an attribute supported by a configuration modification system.\n     * @property {string} key - The key of the configuration attribute to modify.\n     * @property {string} _description\n     * @property {ConfidenceLevel} _isBeta\n     * @property {CallbackFunction|string|null} configChange - The modifications to apply to the TomSelect configuration.\n     * \n     */\n\n\n\n    /**\n     * @type {SupportedAttribute[]}\n     */\n\n    /**\n     * @typedef {'ts-max-items' | 'ts-max-options' | 'ts-create' | 'ts-sort' | 'ts-sort-direction' | 'ts-allow-empty-option', 'ts-clear-after-add', 'ts-raw-config', 'ts-create-on-blur', 'ts-no-delete'} TomSelectConfigKey\n     * Defines the valid keys for configuration options in TomSelect.\n     * Each key is a string literal corresponding to a specific property that can be configured in TomSelect.\n     */\n\n    /**\n     * @type {Array<AttributeConfig>}\n     */\n    const attributeConfigs = [\n        {\n            key: 'ts-create',\n            configChange: 'create',\n            _description: 'Allow creating new items'\n        },{\n            key: 'ts-create-on-blur',\n            configChange: 'createOnBlur'\n        },{\n            key: 'ts-create-filter',\n            configChange:  (elm, config) => ({\n                createFilter: function(input) {\n                    try {\n                        const filter = elm.getAttribute('ts-create-filter')\n                        const matchEx = filter == \"true\" ? /^[^,]*$/ : elm.getAttribute('ts-create-filter')\n                        var match = input.match(matchEx); // Example filter: disallow commas in input\n                        if(match) return !this.options.hasOwnProperty(input);\n                        elm.setAttribute('tom-select-warning', JSON.stringify(err));\n                        return false;\n                    } catch (err) {\n                        return false\n                    }\n                }\n            })\n        },{\n            key: 'ts-delimiter',\n            configChange: 'delimiter'\n        },{\n            key: 'ts-highlight',\n            configChange: 'highlight'\n        },{\n            key: 'ts-multiple',\n            configChange: 'multiple'\n        },{\n            key: 'ts-persist',\n            configChange: 'persist'\n        },{\n            key: 'ts-open-on-focus',\n            configChange: 'openOnFocus'\n        },{\n            key: 'ts-max-items',\n            configChange: 'maxItems'\n        },{\n            key: 'ts-hide-selected',\n            configChange: 'hideSelected'\n        },{\n            key: 'tx-close-after-select',\n            configChange: 'closeAfterSelect'\n        },{\n            key: 'tx-duplicates',\n            configChange: 'duplicates'\n        },\n        {\n            key: 'ts-max-options',\n            configChange: 'maxOptions'\n        },{\n            key: 'ts-sort',\n            configChange: (elm, config) => ({\n                sortField: {\n                    field: elm.getAttribute('ts-sort'),\n                },\n            })\n        },{\n            key: 'ts-sort-direction',\n            configChange: (elm, config) => ({\n                sortField: {\n                    direction: elm.getAttribute('ts-sort-direction') ?? 'asc'\n                },\n            })\n        },{\n            key: 'ts-allow-empty-option',\n            type: 'simple',\n            configChange: 'allowEmptyOption'\n        },{\n            key: 'ts-clear-after-add',\n            configChange: {\n                create: true,\n                onItemAdd: function() {\n\t\t\t\t\tdebugger\n                    this.setTextboxValue('');\n               //     this.refreshOptions();\n                }\n            }\n        },{\n            key: 'ts-remove-button-title',\n            configChange: (elm, config) => deepAssign(config,{\n                plugins: {\n                    remove_button: {\n                        title: elm.getAttribute('ts-remove-button-title') == 'true' ? 'Remove this item' : elm.getAttribute('ts-remove-button-title')\n                    }\n                },\n            })\n        },{\n            key: 'ts-delete-confirm',\n            configChange: (elm, config) => ({\n                onDelete: function(values) {\n                    if(elm.getAttribute('ts-delete-confirm') == \"true\"){\n                        return confirm(values.length > 1 ? 'Are you sure you want to remove these ' + values.length + ' items?' : 'Are you sure you want to remove \"' + values[0] + '\"?');\n                    }else {\n                        return confirm(elm.getAttribute('ts-delete-confirm'));\n                    }\n                    \n                }\n            })\n        },{\n            key: 'ts-add-post-url',\n            configChange: (elm, config) => ({\n                    onOptionAdd: function(value, item) {\n                        this.lock();\n                        const valueKeyName = elm.getAttribute('ts-add-post-url-body-value') ?? 'value'\n                        const body = {}\n                        body[valueKeyName] = value\n                        fetch(elm.getAttribute('ts-add-post-url'), {\n                            method: 'POST',\n                            headers: {\n                                'Content-Type': 'application/json',\n                            },\n                            body: JSON.stringify(body),\n                        })\n\t\t\t\t\t\t.then((res) => {\n\t\t\t\t\t\t\tif (!res.ok) {\n\t\t\t\t\t\t\t\tthrow new Error(`HTTP status ${res.status}`); // Throw an error if response is not ok.\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\treturn res.text(); // Return the response as text for HTMX processing.\n\t\t\t\t\t\t})\n                        .then((responseHtml) => htmx.process(elm, responseHtml))\n                        .catch(error => {\n                            console.error('Error adding item', error)\n                            elm.setAttribute('tom-select-warning', `ts-add-post-url - Error processing item: ${JSON.stringify(error)}`);\n                            this.removeItem(value);\n                        })\n                        .finally(() => {\n                            this.unlock();\n                        });\n                }\n            }),\n            _isBeta: true,\n        },{\n            key: 'ts-add-post-url-body-value',\n            configChange: '',\n            _isBeta: true,\n        },\n        {\n            key: 'ts-no-active',\n            configChange: {\n                plugins: ['no_active_items'],\n                persist: false,\n                create: true\n            }\n        },{\n            key: 'ts-remove-selector-on-select',\n            type: 'simple',\n            configChange: null\n        },{\n            key: 'ts-no-delete',\n            configChange: {\n                onDelete: () => { return false},\n            }\n        },{\n            key: 'ts-option-class',\n            configChange: 'optionClass'\n        },{\n            key: 'ts-option-class-ext',\n            configChange: (elm, config) => ({\n                'optionClass': `${elm.getAttribute('ts-option-class-ext')} option`\n            })\n        },{\n            key: 'ts-item-class',\n            configChange: 'itemClass'\n        },{\n            key: 'ts-item-class-ext',\n            configChange:(elm, config) => ({\n                key: 'ts-option-class-ext',\n                configChange: {\n                    'itemClass': `${elm.getAttribute('ts-option-class-ext')} item`\n                }\n            })\n        },\n        {\n            key: 'ts-raw-config',\n            configChange: (elm, config) => elm.getAttribute('ts-raw-config')\n        }\n    ]\n\n    /**\n     * Deeply assigns properties to an object, merging any existing nested properties.\n     * \n     * @param {Object} target The target object to which properties will be assigned.\n     * @param {Object} updates The updates to apply. This object can contain deeply nested properties.\n     * @returns {Object} The updated target object.\n     */\n    function deepAssign(target, updates) {\n        Object.keys(updates).forEach(key => {\n            if (typeof updates[key] === 'object' && updates[key] !== null && !Array.isArray(updates[key])) {\n                if (!target[key]) target[key] = {};\n                deepAssign(target[key], updates[key]);\n            } else {\n                target[key] = updates[key];\n            }\n        });\n        return target;\n    }\n\n    function attachTomSelect(s){\n        try {\n            if(s.attributes?.length == 0){\n                throw new Error(\"no attributes on select?\")\n            }\n            \n            let config = {\n                maxItems: 999,\n                plugins: {}\n            };\n            const debug = s.getAttribute('hx-ext')?.split(',').map(item => item.trim()).includes('debug');\n            if (debug) { console.log(s.attributes) }\n\n            Array.from(s.attributes).forEach((a) => {\n                const attributeConfig = attributeConfigs.find((ac) => ac.key == a.name)\n                if (attributeConfig != null){\n                    let configChange = {}\n                    if(typeof attributeConfig.configChange == 'string'){\n                        configChange[attributeConfig.configChange] = a.value\n                    }else if(typeof attributeConfig.configChange == 'function'){\n                        configChange = attributeConfig.configChange(s, config)\n                    }else if(typeof attributeConfig.configChange == 'object'){\n                        configChange = attributeConfig.configChange\n                    }else if(a.name.startsWith('ts-')) {\n                        s.setAttribute('tom-select-warning', `Invalid config key found: ${attr.name}`);\n                        console.warn(`Could not find config match:${JSON.stringify(attributeConfig)}`)\n                    }\n                \n                    deepAssign(config, configChange)\n                }else if(a.name.startsWith('ts-')){\n                    console.warn(`Invalid config key found: ${a.name}`);\n                    s.setAttribute(`tom-select-warning_${a.name}`, `Invalid config key found`);\n                }\n            })\n\n        if (debug) {  console.info('hx-tomselect - tom-select-success - config', config) }\n        const ts = new TomSelect(s, config);\n        s.setAttribute('tom-select-success', `success`);\n        s.setAttribute('hx-tom-select-version', `hx-ts-${version}_ts-${ts.version}`);\n\n    } catch (err) {\n        s.setAttribute('tom-select-error', JSON.stringify(err));\n        console.error(`htmx-tomselect - Failed to load hx-tomsselect ${err}`);\n    }\n    }\n\n    htmx.defineExtension('tomselect', {\n        // This is doing all the tom-select attachment at this stage, but relies on this full document scan (would prefer onLoad of speicfic content):\n        onEvent: function (name, evt) {\n            if (name === \"htmx:afterProcessNode\") {\n                const newSelects = document.querySelectorAll('select[hx-ext*=\"tomselect\"]:not([tom-select-success]):not([tom-select-error])')\n                newSelects.forEach((s) => {\n                    attachTomSelect(s)\n                })\n            }\n        },\n        onLoad: function (content) {\n            console.log('onLoad')\n                    const newSelects = content.querySelectorAll('select[hx-ext*=\"tomselect\"]:not([tom-select-success]):not([tom-select-error])')\n                    newSelects.forEach((s) => {\n                        attachTomSelect(s)\n                    })\n\n            // When the DOM changes, this block ensures TomSelect will reflect the current html state (i.e. new <option selected></option> will be respected)\n            // Still evaulating the need of this\n             /*   const selectors = document.querySelectorAll('select[hx-ext*=\"tomselect\"]')\n            selectors.forEach((s) => {\n                console.log('SYNC RAN')\n                s.tomselect.clear();\n                s.tomselect.clearOptions();\n                s.tomselect.sync(); \n            })*/\n        },\n\t\tbeforeHistorySave: function(){\n\t\t\tdocument.querySelectorAll('select[hx-ext*=\"tomselect\"]')\n            \t.forEach(elt => elt.tomselect.destroy())\n\t\t}\n    });\n\n})();\n\t</script>-->")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<script src=\"https://unpkg.com/htmx.org\"></script><link href=\"https://unpkg.com/tailwindcss@2.2.19/dist/tailwind.min.css\" rel=\"stylesheet\"><link href=\"https://cdn.jsdelivr.net/npm/tom-select@latest/dist/css/tom-select.css\" rel=\"stylesheet\"><script src=\"https://cdn.jsdelivr.net/npm/tom-select@latest/dist/js/tom-select.complete.min.js\"></script><script src=\"https://cdn.jsdelivr.net/npm/hx-tomselect/hx-tomselect.js\"></script><script>\n        console.log('WOAH - RAN')\n    </script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -70,7 +70,7 @@ func contextSuccess(matchId uint64, contextStr string, fineAt *time.Time) templ.
 			var templ_7745c5c3_Var4 string
 			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", matchId))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 353, Col: 35}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 27, Col: 35}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 			if templ_7745c5c3_Err != nil {
@@ -83,7 +83,7 @@ func contextSuccess(matchId uint64, contextStr string, fineAt *time.Time) templ.
 			var templ_7745c5c3_Var5 string
 			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(contextStr)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 354, Col: 19}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 28, Col: 19}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 			if templ_7745c5c3_Err != nil {
@@ -98,7 +98,7 @@ func contextSuccess(matchId uint64, contextStr string, fineAt *time.Time) templ.
 					var templ_7745c5c3_Var6 string
 					templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(humanize.Time(*fineAt))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 358, Col: 29}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 32, Col: 29}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 					if templ_7745c5c3_Err != nil {
@@ -108,7 +108,7 @@ func contextSuccess(matchId uint64, contextStr string, fineAt *time.Time) templ.
 					var templ_7745c5c3_Var7 string
 					templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(fineAt.Format("2006-01-02T15:04"))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 360, Col: 40}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 34, Col: 40}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 					if templ_7745c5c3_Err != nil {
@@ -189,7 +189,7 @@ func success(msg string) templ.Component {
 			var templ_7745c5c3_Var10 string
 			templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(msg)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 376, Col: 41}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 50, Col: 41}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 			if templ_7745c5c3_Err != nil {
@@ -228,7 +228,7 @@ func warning(msg string) templ.Component {
 			var templ_7745c5c3_Var12 string
 			templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(msg)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 384, Col: 41}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 58, Col: 41}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 			if templ_7745c5c3_Err != nil {
@@ -266,7 +266,7 @@ func errMsg(msg string) templ.Component {
 		var templ_7745c5c3_Var14 string
 		templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(msg)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 391, Col: 40}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 65, Col: 40}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 		if templ_7745c5c3_Err != nil {
@@ -316,7 +316,7 @@ func fineSuperSelect(players []PlayerWithFines, approvedPFines []PresetFine, sel
 		var templ_7745c5c3_Var16 string
 		templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(F("fine-ss-%s", instance))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 409, Col: 86}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 83, Col: 86}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 		if templ_7745c5c3_Err != nil {
@@ -329,13 +329,13 @@ func fineSuperSelect(players []PlayerWithFines, approvedPFines []PresetFine, sel
 		var templ_7745c5c3_Var17 string
 		templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(F("#fine-ss-%s", instance))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 409, Col: 171}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 83, Col: 171}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\"><form id=\"ss-form\" hx-post=\"/fines-multi\" method=\"POST\" class=\"flex flex-col space-y-4 bg-white shadow-md p-6 rounded-lg\"><p class=\"font-bold text-3xl\">Fines</p><div class=\"flex flex-row\"><select id=\"select-fine\" hx-ext=\"tomselect\" ts-persist=\"false\" ts-create=\"true\" ts-create-filter=\"true\" ts-create-on-blur=\"true\" ts-clear-after-add=\"true\" ts-open-on-focus=\"true\" ts-add-post-url=\"/fines/add\" ts-add-post-url-body-value=\"reason\" tx-close-after-select=\"true\" ts-item-class=\"text-3xl py-3\" ts-option-class=\"text-3xl w-full py-3\" tx-max-items=\"99\" name=\"pfines[]\" multiple required placeholder=\"Caused Own Goal\" class=\"text-3xl border border-gray-300 rounded-md text-gray-700 flex-grow mb-2\"><option value=\"\">Select a fine...</option> ")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\"><form id=\"ss-form\" hx-post=\"/fines-multi\" method=\"POST\" class=\"flex flex-col space-y-4 bg-white shadow-md p-6 rounded-lg\"><p class=\"font-bold text-3xl\">Fines</p><div class=\"flex flex-row\"><select id=\"select-fine\" hx-ext=\"tomselect\" ts-persist=\"false\" ts-create=\"true\" ts-create-filter=\"true\" ts-create-on-blur=\"true\" ts-clear-after-add=\"true\" ts-open-on-focus=\"true\" ts-add-post-url=\"/fines/add\" ts-add-post-url-body-value=\"reason\" tx-close-after-select=\"true\" ts-item-class=\"text-3xl py-3\" ts-option-class=\"text-3xl w-full py-3\" tx-max-items=\"99\" hx-debug=\"true\" name=\"pfines[]\" multiple required placeholder=\"Caused Own Goal\" class=\"text-3xl border border-gray-300 rounded-md text-gray-700 flex-grow mb-2\"><option value=\"\">Select a fine...</option> ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -348,7 +348,7 @@ func fineSuperSelect(players []PlayerWithFines, approvedPFines []PresetFine, sel
 				var templ_7745c5c3_Var18 string
 				templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", apf.ID))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 437, Col: 57}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 112, Col: 57}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 				if templ_7745c5c3_Err != nil {
@@ -361,7 +361,7 @@ func fineSuperSelect(players []PlayerWithFines, approvedPFines []PresetFine, sel
 				var templ_7745c5c3_Var19 string
 				templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(apf.Reason)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 437, Col: 72}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 112, Col: 72}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 				if templ_7745c5c3_Err != nil {
@@ -379,7 +379,7 @@ func fineSuperSelect(players []PlayerWithFines, approvedPFines []PresetFine, sel
 				var templ_7745c5c3_Var20 string
 				templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", apf.ID))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 439, Col: 48}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 114, Col: 48}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
 				if templ_7745c5c3_Err != nil {
@@ -392,7 +392,7 @@ func fineSuperSelect(players []PlayerWithFines, approvedPFines []PresetFine, sel
 				var templ_7745c5c3_Var21 string
 				templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(apf.Reason)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 439, Col: 63}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 114, Col: 63}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 				if templ_7745c5c3_Err != nil {
@@ -404,7 +404,7 @@ func fineSuperSelect(players []PlayerWithFines, approvedPFines []PresetFine, sel
 				}
 			}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</select></div><div class=\"flex flex-row\"><select id=\"select-player\" required hx-ext=\"tomselect\" tx-max-items=\"99\" name=\"players[]\" ts-item-class=\"text-3xl py-3\" tx-close-after-select=\"true\" ts-option-class=\"text-3xl w-full py-3\" multiple placeholder=\"John Doe\" class=\"text-3xl  border border-gray-300 rounded-md text-gray-700 flex-grow mb-2\"><option value=\"\">Select a player...</option> ")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</select></div><div class=\"flex flex-row\"><select id=\"select-player\" required hx-ext=\"tomselect\" tx-max-items=\"99\" name=\"players[]\" ts-item-class=\"text-3xl py-3\" tx-close-after-select=\"true\" ts-option-class=\"text-3xl w-full py-3\" hx-debug=\"true\" multiple placeholder=\"John Doe\" class=\"text-3xl  border border-gray-300 rounded-md text-gray-700 flex-grow mb-2\"><option value=\"\">Select a player...</option> ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -416,7 +416,7 @@ func fineSuperSelect(players []PlayerWithFines, approvedPFines []PresetFine, sel
 			var templ_7745c5c3_Var22 string
 			templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", p.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 460, Col: 45}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 136, Col: 45}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 			if templ_7745c5c3_Err != nil {
@@ -429,7 +429,7 @@ func fineSuperSelect(players []PlayerWithFines, approvedPFines []PresetFine, sel
 			var templ_7745c5c3_Var23 string
 			templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(p.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 460, Col: 56}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 136, Col: 56}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
 			if templ_7745c5c3_Err != nil {
@@ -506,7 +506,7 @@ func fineSuperSelectResults(players []PlayerWithFines, approvedPFines []PresetFi
 			var templ_7745c5c3_Var27 string
 			templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("Added %d Fines:", len(newFines)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 491, Col: 71}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 167, Col: 71}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var27))
 			if templ_7745c5c3_Err != nil {
@@ -527,7 +527,7 @@ func fineSuperSelectResults(players []PlayerWithFines, approvedPFines []PresetFi
 							var templ_7745c5c3_Var28 string
 							templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%s - %s - %s", nf.Reason, p.Name, nf.Context))
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 498, Col: 68}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 174, Col: 68}
 							}
 							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var28))
 							if templ_7745c5c3_Err != nil {
@@ -540,7 +540,7 @@ func fineSuperSelectResults(players []PlayerWithFines, approvedPFines []PresetFi
 							var templ_7745c5c3_Var29 string
 							templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%+v", nf))
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 500, Col: 31}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 176, Col: 31}
 							}
 							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var29))
 							if templ_7745c5c3_Err != nil {
@@ -562,7 +562,7 @@ func fineSuperSelectResults(players []PlayerWithFines, approvedPFines []PresetFi
 							var templ_7745c5c3_Var31 string
 							templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/fines/edit/%d?isEdit=fineEditDiv", nf.ID))
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 503, Col: 73}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 179, Col: 73}
 							}
 							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var31))
 							if templ_7745c5c3_Err != nil {
@@ -625,7 +625,7 @@ func fineSuperSelectResults(players []PlayerWithFines, approvedPFines []PresetFi
 							var templ_7745c5c3_Var35 string
 							templ_7745c5c3_Var35, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/fines?fid=%d", nf.ID))
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 517, Col: 56}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 193, Col: 56}
 							}
 							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var35))
 							if templ_7745c5c3_Err != nil {
@@ -646,7 +646,7 @@ func fineSuperSelectResults(players []PlayerWithFines, approvedPFines []PresetFi
 				var templ_7745c5c3_Var36 string
 				templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", len(approvedPFines)))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 525, Col: 67}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 201, Col: 67}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var36))
 				if templ_7745c5c3_Err != nil {

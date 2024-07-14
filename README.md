@@ -24,7 +24,7 @@ nix develop .#devShells.deploy
 
 
 
-# or via docker
+# or via dockerFines<
 $ docker build -t baileys-hammer .
 $ docker run -p 8080:8080 baileys-hammer
 

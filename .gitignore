@@ -5,3 +5,5 @@ dbdb
 
 .env
 tmp/build-errors.log
+test/tmp/build-errors.log
+tmp/build-errors.log
