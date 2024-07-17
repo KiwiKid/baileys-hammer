@@ -38,7 +38,6 @@ templ matchListPage(matches []Match, isOpen bool, isFineMaster bool) {
 	<!DOCTYPE html>
 	<html hx-boost="true">
 		@header()
-		@tomSelectLinks()
 		<body class="text-2xl p-1">
 			<div class="w-full bg-gray-200 shadow-xl m-10">
 				if len(matches) > 0 {
@@ -185,7 +184,6 @@ templ editMatchContainer(closeLink templ.SafeURL, genMeta MatchMetaGeneral, succ
 	<!DOCTYPE html>
 	<html hx-boost="true">
 		@header()
-		@tomSelectLinks()
 		<body class="text-2xl p-1">
 			@editMatch(closeLink, genMeta, successMsg)
 			@pageFooter()

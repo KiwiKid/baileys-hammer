@@ -16,7 +16,7 @@ import (
 	"time"
 )
 
-func tomSelectLinks() templ.Component {
+func headLinks() templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
 		if !templ_7745c5c3_IsBuffer {
@@ -29,7 +29,7 @@ func tomSelectLinks() templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<script src=\"https://unpkg.com/htmx.org\"></script><link href=\"https://unpkg.com/tailwindcss@2.2.19/dist/tailwind.min.css\" rel=\"stylesheet\"><link href=\"https://cdn.jsdelivr.net/npm/tom-select@latest/dist/css/tom-select.css\" rel=\"stylesheet\"><script src=\"https://cdn.jsdelivr.net/npm/tom-select@latest/dist/js/tom-select.complete.min.js\"></script><script src=\"https://cdn.jsdelivr.net/npm/hx-tomselect/hx-tomselect.js\"></script><script>\n        console.log('WOAH - RAN')\n    </script>")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<script src=\"https://unpkg.com/htmx.org\"></script><link href=\"https://unpkg.com/tailwindcss@2.2.19/dist/tailwind.min.css\" rel=\"stylesheet\"><link href=\"https://cdn.jsdelivr.net/npm/tom-select@latest/dist/css/tom-select.css\" rel=\"stylesheet\"><script src=\"https://cdn.jsdelivr.net/npm/tom-select@latest/dist/js/tom-select.complete.min.js\"></script><script src=\"https://cdn.jsdelivr.net/npm/hx-tomselect@1.0.5/hx-tomselect.js\"></script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -70,7 +70,7 @@ func contextSuccess(matchId uint64, contextStr string, fineAt *time.Time) templ.
 			var templ_7745c5c3_Var4 string
 			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", matchId))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 27, Col: 35}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 25, Col: 35}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 			if templ_7745c5c3_Err != nil {
@@ -83,7 +83,7 @@ func contextSuccess(matchId uint64, contextStr string, fineAt *time.Time) templ.
 			var templ_7745c5c3_Var5 string
 			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(contextStr)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 28, Col: 19}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 26, Col: 19}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 			if templ_7745c5c3_Err != nil {
@@ -98,7 +98,7 @@ func contextSuccess(matchId uint64, contextStr string, fineAt *time.Time) templ.
 					var templ_7745c5c3_Var6 string
 					templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(humanize.Time(*fineAt))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 32, Col: 29}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 30, Col: 29}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 					if templ_7745c5c3_Err != nil {
@@ -108,7 +108,7 @@ func contextSuccess(matchId uint64, contextStr string, fineAt *time.Time) templ.
 					var templ_7745c5c3_Var7 string
 					templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(fineAt.Format("2006-01-02T15:04"))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 34, Col: 40}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 32, Col: 40}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 					if templ_7745c5c3_Err != nil {
@@ -189,7 +189,7 @@ func success(msg string) templ.Component {
 			var templ_7745c5c3_Var10 string
 			templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(msg)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 50, Col: 41}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 48, Col: 41}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 			if templ_7745c5c3_Err != nil {
@@ -228,7 +228,7 @@ func warning(msg string) templ.Component {
 			var templ_7745c5c3_Var12 string
 			templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(msg)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 58, Col: 41}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 56, Col: 41}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 			if templ_7745c5c3_Err != nil {
@@ -266,7 +266,7 @@ func errMsg(msg string) templ.Component {
 		var templ_7745c5c3_Var14 string
 		templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(msg)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 65, Col: 40}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 63, Col: 40}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 		if templ_7745c5c3_Err != nil {
@@ -316,7 +316,7 @@ func fineSuperSelect(players []PlayerWithFines, approvedPFines []PresetFine, sel
 		var templ_7745c5c3_Var16 string
 		templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(F("fine-ss-%s", instance))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 83, Col: 86}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 81, Col: 86}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 		if templ_7745c5c3_Err != nil {
@@ -329,13 +329,13 @@ func fineSuperSelect(players []PlayerWithFines, approvedPFines []PresetFine, sel
 		var templ_7745c5c3_Var17 string
 		templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(F("#fine-ss-%s", instance))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 83, Col: 171}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 81, Col: 171}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\"><form id=\"ss-form\" hx-post=\"/fines-multi\" method=\"POST\" class=\"flex flex-col space-y-4 bg-white shadow-md p-6 rounded-lg\"><p class=\"font-bold text-3xl\">Fines</p><div class=\"flex flex-row\"><select id=\"select-fine\" hx-ext=\"tomselect\" ts-persist=\"false\" ts-create=\"true\" ts-create-filter=\"true\" ts-create-on-blur=\"true\" ts-clear-after-add=\"true\" ts-open-on-focus=\"true\" ts-add-post-url=\"/fines/add\" ts-add-post-url-body-value=\"reason\" tx-close-after-select=\"true\" ts-item-class=\"text-3xl py-3\" ts-option-class=\"text-3xl w-full py-3\" tx-max-items=\"99\" hx-debug=\"true\" name=\"pfines[]\" multiple required placeholder=\"Caused Own Goal\" class=\"text-3xl border border-gray-300 rounded-md text-gray-700 flex-grow mb-2\"><option value=\"\">Select a fine...</option> ")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\"><form id=\"ss-form\" hx-post=\"/fines-multi\" method=\"POST\" class=\"flex flex-col space-y-4 bg-white shadow-md p-6 rounded-lg\"><p class=\"font-bold text-3xl\">Fines</p><div class=\"flex flex-row\"><select id=\"select-fine\" hx-ext=\"tomselect\" ts-persist=\"false\" ts-create=\"true\" ts-create-filter=\"true\" ts-create-on-blur=\"true\" ts-clear-after-add=\"true\" ts-open-on-focus=\"true\" ts-add-post-url=\"/fines/add\" ts-add-post-url-body-value=\"reason\" tx-close-after-select=\"true\" ts-item-class=\"text-5xl\tpy-5\" ts-option-class=\"text-5xl w-full py-5\" tx-max-items=\"99\" hx-debug=\"true\" name=\"pfines[]\" multiple required placeholder=\"Caused Own Goal\" class=\"border border-gray-300 rounded-md text-gray-700 flex-grow mb-2\"><option value=\"\">Select a fine...</option> ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -348,7 +348,7 @@ func fineSuperSelect(players []PlayerWithFines, approvedPFines []PresetFine, sel
 				var templ_7745c5c3_Var18 string
 				templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", apf.ID))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 112, Col: 57}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 110, Col: 57}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 				if templ_7745c5c3_Err != nil {
@@ -361,7 +361,7 @@ func fineSuperSelect(players []PlayerWithFines, approvedPFines []PresetFine, sel
 				var templ_7745c5c3_Var19 string
 				templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(apf.Reason)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 112, Col: 72}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 110, Col: 72}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 				if templ_7745c5c3_Err != nil {
@@ -379,7 +379,7 @@ func fineSuperSelect(players []PlayerWithFines, approvedPFines []PresetFine, sel
 				var templ_7745c5c3_Var20 string
 				templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", apf.ID))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 114, Col: 48}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 112, Col: 48}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
 				if templ_7745c5c3_Err != nil {
@@ -392,7 +392,7 @@ func fineSuperSelect(players []PlayerWithFines, approvedPFines []PresetFine, sel
 				var templ_7745c5c3_Var21 string
 				templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(apf.Reason)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 114, Col: 63}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 112, Col: 63}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 				if templ_7745c5c3_Err != nil {
@@ -404,7 +404,7 @@ func fineSuperSelect(players []PlayerWithFines, approvedPFines []PresetFine, sel
 				}
 			}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</select></div><div class=\"flex flex-row\"><select id=\"select-player\" required hx-ext=\"tomselect\" tx-max-items=\"99\" name=\"players[]\" ts-item-class=\"text-3xl py-3\" tx-close-after-select=\"true\" ts-option-class=\"text-3xl w-full py-3\" hx-debug=\"true\" multiple placeholder=\"John Doe\" class=\"text-3xl  border border-gray-300 rounded-md text-gray-700 flex-grow mb-2\"><option value=\"\">Select a player...</option> ")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</select></div><div class=\"flex flex-row\"><select id=\"select-player\" required hx-ext=\"tomselect\" tx-max-items=\"99\" name=\"players[]\" tx-close-after-select=\"true\" ts-item-class=\"text-5xl\tpy-5\" ts-option-class=\"text-5xl w-full py-5\" hx-debug=\"true\" multiple placeholder=\"John Doe\" class=\"text-3xl  border border-gray-300 rounded-md text-gray-700 flex-grow mb-2\"><option value=\"\">Select a player...</option> ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -416,7 +416,7 @@ func fineSuperSelect(players []PlayerWithFines, approvedPFines []PresetFine, sel
 			var templ_7745c5c3_Var22 string
 			templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", p.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 136, Col: 45}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 134, Col: 45}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 			if templ_7745c5c3_Err != nil {
@@ -429,7 +429,7 @@ func fineSuperSelect(players []PlayerWithFines, approvedPFines []PresetFine, sel
 			var templ_7745c5c3_Var23 string
 			templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(p.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 136, Col: 56}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 134, Col: 56}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
 			if templ_7745c5c3_Err != nil {
@@ -506,7 +506,7 @@ func fineSuperSelectResults(players []PlayerWithFines, approvedPFines []PresetFi
 			var templ_7745c5c3_Var27 string
 			templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("Added %d Fines:", len(newFines)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 167, Col: 71}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 165, Col: 71}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var27))
 			if templ_7745c5c3_Err != nil {
@@ -527,7 +527,7 @@ func fineSuperSelectResults(players []PlayerWithFines, approvedPFines []PresetFi
 							var templ_7745c5c3_Var28 string
 							templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%s - %s - %s", nf.Reason, p.Name, nf.Context))
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 174, Col: 68}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 172, Col: 68}
 							}
 							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var28))
 							if templ_7745c5c3_Err != nil {
@@ -540,7 +540,7 @@ func fineSuperSelectResults(players []PlayerWithFines, approvedPFines []PresetFi
 							var templ_7745c5c3_Var29 string
 							templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%+v", nf))
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 176, Col: 31}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 174, Col: 31}
 							}
 							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var29))
 							if templ_7745c5c3_Err != nil {
@@ -562,7 +562,7 @@ func fineSuperSelectResults(players []PlayerWithFines, approvedPFines []PresetFi
 							var templ_7745c5c3_Var31 string
 							templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/fines/edit/%d?isEdit=fineEditDiv", nf.ID))
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 179, Col: 73}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 177, Col: 73}
 							}
 							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var31))
 							if templ_7745c5c3_Err != nil {
@@ -625,7 +625,7 @@ func fineSuperSelectResults(players []PlayerWithFines, approvedPFines []PresetFi
 							var templ_7745c5c3_Var35 string
 							templ_7745c5c3_Var35, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/fines?fid=%d", nf.ID))
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 193, Col: 56}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 191, Col: 56}
 							}
 							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var35))
 							if templ_7745c5c3_Err != nil {
@@ -646,7 +646,7 @@ func fineSuperSelectResults(players []PlayerWithFines, approvedPFines []PresetFi
 				var templ_7745c5c3_Var36 string
 				templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", len(approvedPFines)))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 201, Col: 67}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 199, Col: 67}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var36))
 				if templ_7745c5c3_Err != nil {

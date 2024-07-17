@@ -39,7 +39,22 @@ func fineList(fines []FineWithPlayer, page int, presetFineUpdated uint, isFineMa
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"m-2 bg-gray-200 shadow-xl p-2 mt-10\" id=\"fine-list-container\"><div class=\"text-center\"><div class=\"flex-grow justify-center items-center mb-4 cursor-pointer\"")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"m-2 bg-gray-200 shadow-xl p-2 mt-10\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		if onlyRecent {
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" id=\"recent-fine-list-container\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		} else {
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" id=\"fine-list-container\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("><div class=\"text-center\"><div class=\"flex-grow justify-center items-center mb-4 cursor-pointer\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -86,7 +101,7 @@ func fineList(fines []FineWithPlayer, page int, presetFineUpdated uint, isFineMa
 			var templ_7745c5c3_Var2 string
 			templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("$%v", getFinesTotal(fines)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `fineList.templ`, Line: 46, Col: 51}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `fineList.templ`, Line: 52, Col: 51}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 			if templ_7745c5c3_Err != nil {
@@ -150,7 +165,7 @@ func fineRow(isFineMaster bool, f FineWithPlayer) templ.Component {
 		var templ_7745c5c3_Var4 string
 		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("fr-%d", f.Fine.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `fineList.templ`, Line: 66, Col: 39}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `fineList.templ`, Line: 72, Col: 39}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 		if templ_7745c5c3_Err != nil {
@@ -163,7 +178,7 @@ func fineRow(isFineMaster bool, f FineWithPlayer) templ.Component {
 		var templ_7745c5c3_Var5 string
 		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(f.Player.Name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `fineList.templ`, Line: 70, Col: 50}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `fineList.templ`, Line: 76, Col: 50}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 		if templ_7745c5c3_Err != nil {
@@ -176,7 +191,7 @@ func fineRow(isFineMaster bool, f FineWithPlayer) templ.Component {
 		var templ_7745c5c3_Var6 string
 		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(f.Fine.Reason)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `fineList.templ`, Line: 72, Col: 19}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `fineList.templ`, Line: 78, Col: 19}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 		if templ_7745c5c3_Err != nil {
@@ -189,7 +204,7 @@ func fineRow(isFineMaster bool, f FineWithPlayer) templ.Component {
 		var templ_7745c5c3_Var7 string
 		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(f.Fine.Context)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `fineList.templ`, Line: 75, Col: 20}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `fineList.templ`, Line: 81, Col: 20}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 		if templ_7745c5c3_Err != nil {
@@ -213,7 +228,7 @@ func fineRow(isFineMaster bool, f FineWithPlayer) templ.Component {
 			var templ_7745c5c3_Var8 string
 			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("$%v - ", f.Fine.Amount))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `fineList.templ`, Line: 84, Col: 43}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `fineList.templ`, Line: 90, Col: 43}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 			if templ_7745c5c3_Err != nil {
@@ -228,7 +243,7 @@ func fineRow(isFineMaster bool, f FineWithPlayer) templ.Component {
 			var templ_7745c5c3_Var9 string
 			templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(f.Match.Opponent)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `fineList.templ`, Line: 87, Col: 23}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `fineList.templ`, Line: 93, Col: 23}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 			if templ_7745c5c3_Err != nil {
@@ -242,7 +257,7 @@ func fineRow(isFineMaster bool, f FineWithPlayer) templ.Component {
 		var templ_7745c5c3_Var10 string
 		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(niceDate(&f.Fine.FineAt))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `fineList.templ`, Line: 89, Col: 30}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `fineList.templ`, Line: 95, Col: 30}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 		if templ_7745c5c3_Err != nil {
@@ -264,7 +279,7 @@ func fineRow(isFineMaster bool, f FineWithPlayer) templ.Component {
 		var templ_7745c5c3_Var12 string
 		templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/fines/edit/%d?isContext=true", f.Fine.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `fineList.templ`, Line: 95, Col: 70}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `fineList.templ`, Line: 101, Col: 70}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 		if templ_7745c5c3_Err != nil {
@@ -325,7 +340,7 @@ func fineRow(isFineMaster bool, f FineWithPlayer) templ.Component {
 			var templ_7745c5c3_Var15 string
 			templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/fines/edit/%d?isContest=true&isFineMaster=%t", f.Fine.ID, isFineMaster))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `fineList.templ`, Line: 115, Col: 102}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `fineList.templ`, Line: 121, Col: 102}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 			if templ_7745c5c3_Err != nil {
@@ -356,7 +371,7 @@ func fineRow(isFineMaster bool, f FineWithPlayer) templ.Component {
 			var templ_7745c5c3_Var17 string
 			templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(f.Fine.Contest)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `fineList.templ`, Line: 122, Col: 22}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `fineList.templ`, Line: 128, Col: 22}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 			if templ_7745c5c3_Err != nil {
@@ -380,7 +395,7 @@ func fineRow(isFineMaster bool, f FineWithPlayer) templ.Component {
 				var templ_7745c5c3_Var18 string
 				templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", f.Fine.ID))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `fineList.templ`, Line: 138, Col: 46}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `fineList.templ`, Line: 144, Col: 46}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 				if templ_7745c5c3_Err != nil {
@@ -398,7 +413,7 @@ func fineRow(isFineMaster bool, f FineWithPlayer) templ.Component {
 					var templ_7745c5c3_Var19 string
 					templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%v", f.Fine.Amount))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `fineList.templ`, Line: 156, Col: 52}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `fineList.templ`, Line: 162, Col: 52}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 					if templ_7745c5c3_Err != nil {
@@ -448,7 +463,7 @@ func fineRow(isFineMaster bool, f FineWithPlayer) templ.Component {
 				var templ_7745c5c3_Var22 string
 				templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", f.Fine.ID))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `fineList.templ`, Line: 181, Col: 45}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `fineList.templ`, Line: 187, Col: 45}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 				if templ_7745c5c3_Err != nil {
@@ -466,7 +481,7 @@ func fineRow(isFineMaster bool, f FineWithPlayer) templ.Component {
 					var templ_7745c5c3_Var23 string
 					templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%v", f.Fine.Amount))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `fineList.templ`, Line: 192, Col: 49}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `fineList.templ`, Line: 198, Col: 49}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
 					if templ_7745c5c3_Err != nil {
@@ -509,7 +524,7 @@ func fineRow(isFineMaster bool, f FineWithPlayer) templ.Component {
 			var templ_7745c5c3_Var25 string
 			templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/fines/edit/%d?isEdit=true", f.Fine.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `fineList.templ`, Line: 211, Col: 67}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `fineList.templ`, Line: 217, Col: 67}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var25))
 			if templ_7745c5c3_Err != nil {
@@ -522,7 +537,7 @@ func fineRow(isFineMaster bool, f FineWithPlayer) templ.Component {
 			var templ_7745c5c3_Var26 string
 			templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("#fr-%d", f.Fine.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `fineList.templ`, Line: 212, Col: 50}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `fineList.templ`, Line: 218, Col: 50}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var26))
 			if templ_7745c5c3_Err != nil {
@@ -577,7 +592,7 @@ func fineContextRow(f FineWithPlayer, matches []Match) templ.Component {
 		var templ_7745c5c3_Var29 string
 		templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.JoinStringErrs(f.Player.Name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `fineList.templ`, Line: 225, Col: 50}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `fineList.templ`, Line: 231, Col: 50}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var29))
 		if templ_7745c5c3_Err != nil {
@@ -590,7 +605,7 @@ func fineContextRow(f FineWithPlayer, matches []Match) templ.Component {
 		var templ_7745c5c3_Var30 string
 		templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("$%v - ", f.Fine.Amount))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `fineList.templ`, Line: 225, Col: 93}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `fineList.templ`, Line: 231, Col: 93}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var30))
 		if templ_7745c5c3_Err != nil {
@@ -603,7 +618,7 @@ func fineContextRow(f FineWithPlayer, matches []Match) templ.Component {
 		var templ_7745c5c3_Var31 string
 		templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.JoinStringErrs(f.Fine.Reason)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `fineList.templ`, Line: 225, Col: 114}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `fineList.templ`, Line: 231, Col: 114}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var31))
 		if templ_7745c5c3_Err != nil {
@@ -616,7 +631,7 @@ func fineContextRow(f FineWithPlayer, matches []Match) templ.Component {
 		var templ_7745c5c3_Var32 string
 		templ_7745c5c3_Var32, templ_7745c5c3_Err = templ.JoinStringErrs(f.Fine.Context)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `fineList.templ`, Line: 233, Col: 29}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `fineList.templ`, Line: 239, Col: 29}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var32))
 		if templ_7745c5c3_Err != nil {
@@ -629,7 +644,7 @@ func fineContextRow(f FineWithPlayer, matches []Match) templ.Component {
 		var templ_7745c5c3_Var33 string
 		templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/match-list?type=select&matchId=%d", f.Fine.MatchId))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `fineList.templ`, Line: 240, Col: 83}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `fineList.templ`, Line: 246, Col: 83}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var33))
 		if templ_7745c5c3_Err != nil {
@@ -642,7 +657,7 @@ func fineContextRow(f FineWithPlayer, matches []Match) templ.Component {
 		var templ_7745c5c3_Var34 string
 		templ_7745c5c3_Var34, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", f.Fine.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `fineList.templ`, Line: 259, Col: 41}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `fineList.templ`, Line: 265, Col: 41}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var34))
 		if templ_7745c5c3_Err != nil {
@@ -710,7 +725,7 @@ func fineContestRow(f FineWithPlayer) templ.Component {
 		var templ_7745c5c3_Var39 string
 		templ_7745c5c3_Var39, templ_7745c5c3_Err = templ.JoinStringErrs(f.Fine.Contest)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `fineList.templ`, Line: 289, Col: 27}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `fineList.templ`, Line: 295, Col: 27}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var39))
 		if templ_7745c5c3_Err != nil {
@@ -723,7 +738,7 @@ func fineContestRow(f FineWithPlayer) templ.Component {
 		var templ_7745c5c3_Var40 string
 		templ_7745c5c3_Var40, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", f.Fine.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `fineList.templ`, Line: 297, Col: 40}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `fineList.templ`, Line: 303, Col: 40}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var40))
 		if templ_7745c5c3_Err != nil {
@@ -758,7 +773,7 @@ func fineContestRow(f FineWithPlayer) templ.Component {
 		var templ_7745c5c3_Var43 string
 		templ_7745c5c3_Var43, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/fines/contest"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `fineList.templ`, Line: 301, Col: 45}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `fineList.templ`, Line: 307, Col: 45}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var43))
 		if templ_7745c5c3_Err != nil {
@@ -826,7 +841,7 @@ func fineEditForm(f FineWithPlayer, isFineMaster bool) templ.Component {
 		var templ_7745c5c3_Var48 string
 		templ_7745c5c3_Var48, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/fines/edit/%d", f.Fine.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `fineList.templ`, Line: 321, Col: 53}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `fineList.templ`, Line: 327, Col: 53}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var48))
 		if templ_7745c5c3_Err != nil {
@@ -839,7 +854,7 @@ func fineEditForm(f FineWithPlayer, isFineMaster bool) templ.Component {
 		var templ_7745c5c3_Var49 string
 		templ_7745c5c3_Var49, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("#fr-%d", f.Fine.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `fineList.templ`, Line: 323, Col: 47}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `fineList.templ`, Line: 329, Col: 47}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var49))
 		if templ_7745c5c3_Err != nil {
@@ -852,7 +867,7 @@ func fineEditForm(f FineWithPlayer, isFineMaster bool) templ.Component {
 		var templ_7745c5c3_Var50 string
 		templ_7745c5c3_Var50, templ_7745c5c3_Err = templ.JoinStringErrs(f.Fine.Reason)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `fineList.templ`, Line: 331, Col: 26}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `fineList.templ`, Line: 337, Col: 26}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var50))
 		if templ_7745c5c3_Err != nil {
@@ -865,7 +880,7 @@ func fineEditForm(f FineWithPlayer, isFineMaster bool) templ.Component {
 		var templ_7745c5c3_Var51 string
 		templ_7745c5c3_Var51, templ_7745c5c3_Err = templ.JoinStringErrs(f.Fine.Context)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `fineList.templ`, Line: 340, Col: 27}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `fineList.templ`, Line: 346, Col: 27}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var51))
 		if templ_7745c5c3_Err != nil {
@@ -878,7 +893,7 @@ func fineEditForm(f FineWithPlayer, isFineMaster bool) templ.Component {
 		var templ_7745c5c3_Var52 string
 		templ_7745c5c3_Var52, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/match-list?type=select&matchId=%d", f.Fine.MatchId))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `fineList.templ`, Line: 344, Col: 83}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `fineList.templ`, Line: 350, Col: 83}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var52))
 		if templ_7745c5c3_Err != nil {
@@ -901,7 +916,7 @@ func fineEditForm(f FineWithPlayer, isFineMaster bool) templ.Component {
 		var templ_7745c5c3_Var53 string
 		templ_7745c5c3_Var53, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%v", f.Player.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `fineList.templ`, Line: 355, Col: 43}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `fineList.templ`, Line: 361, Col: 43}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var53))
 		if templ_7745c5c3_Err != nil {
@@ -914,7 +929,7 @@ func fineEditForm(f FineWithPlayer, isFineMaster bool) templ.Component {
 		var templ_7745c5c3_Var54 string
 		templ_7745c5c3_Var54, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%v", f.Fine.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `fineList.templ`, Line: 361, Col: 41}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `fineList.templ`, Line: 367, Col: 41}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var54))
 		if templ_7745c5c3_Err != nil {
@@ -927,7 +942,7 @@ func fineEditForm(f FineWithPlayer, isFineMaster bool) templ.Component {
 		var templ_7745c5c3_Var55 string
 		templ_7745c5c3_Var55, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%v", f.Fine.Amount))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `fineList.templ`, Line: 367, Col: 45}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `fineList.templ`, Line: 373, Col: 45}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var55))
 		if templ_7745c5c3_Err != nil {
@@ -945,7 +960,7 @@ func fineEditForm(f FineWithPlayer, isFineMaster bool) templ.Component {
 			var templ_7745c5c3_Var56 string
 			templ_7745c5c3_Var56, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%v", f.Fine.Amount))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `fineList.templ`, Line: 376, Col: 46}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `fineList.templ`, Line: 382, Col: 46}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var56))
 			if templ_7745c5c3_Err != nil {
@@ -1014,7 +1029,7 @@ func fineEditForm(f FineWithPlayer, isFineMaster bool) templ.Component {
 		var templ_7745c5c3_Var60 string
 		templ_7745c5c3_Var60, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/fines/edit/%d", f.Fine.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `fineList.templ`, Line: 408, Col: 54}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `fineList.templ`, Line: 414, Col: 54}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var60))
 		if templ_7745c5c3_Err != nil {
@@ -1027,7 +1042,7 @@ func fineEditForm(f FineWithPlayer, isFineMaster bool) templ.Component {
 		var templ_7745c5c3_Var61 string
 		templ_7745c5c3_Var61, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("#fr-%d", f.Fine.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `fineList.templ`, Line: 409, Col: 49}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `fineList.templ`, Line: 415, Col: 49}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var61))
 		if templ_7745c5c3_Err != nil {
@@ -1075,7 +1090,7 @@ func fineEditForm(f FineWithPlayer, isFineMaster bool) templ.Component {
 		var templ_7745c5c3_Var65 string
 		templ_7745c5c3_Var65, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/fines?fid=%d", f.Fine.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `fineList.templ`, Line: 419, Col: 56}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `fineList.templ`, Line: 425, Col: 56}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var65))
 		if templ_7745c5c3_Err != nil {
@@ -1108,7 +1123,7 @@ PlayerID: %d
 			f.Fine.PlayerID,
 		))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `fineList.templ`, Line: 443, Col: 5}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `fineList.templ`, Line: 449, Col: 5}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var66))
 		if templ_7745c5c3_Err != nil {
@@ -1145,7 +1160,7 @@ func fineEditRow(f FineWithPlayer, isFineMaster bool) templ.Component {
 		var templ_7745c5c3_Var68 string
 		templ_7745c5c3_Var68, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("fr-%d", f.Fine.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `fineList.templ`, Line: 450, Col: 39}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `fineList.templ`, Line: 456, Col: 39}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var68))
 		if templ_7745c5c3_Err != nil {
@@ -1190,7 +1205,7 @@ func fineEditDiv(f FineWithPlayer, isFineMaster bool) templ.Component {
 		var templ_7745c5c3_Var70 string
 		templ_7745c5c3_Var70, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("fr-%d", f.Fine.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `fineList.templ`, Line: 463, Col: 39}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `fineList.templ`, Line: 469, Col: 39}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var70))
 		if templ_7745c5c3_Err != nil {

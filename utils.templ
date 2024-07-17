@@ -6,16 +6,14 @@ import (
 	"github.com/dustin/go-humanize"
 )
 
-templ tomSelectLinks() {
-    <script src="https://unpkg.com/htmx.org"></script>
-    <link href="https://unpkg.com/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet"/>
+templ headLinks(){
+	<script src="https://unpkg.com/htmx.org"></script>
+	<link href="https://unpkg.com/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet"/>
     <link href="https://cdn.jsdelivr.net/npm/tom-select@latest/dist/css/tom-select.css" rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/tom-select@latest/dist/js/tom-select.complete.min.js"></script>
-	<script src="https://cdn.jsdelivr.net/npm/hx-tomselect/hx-tomselect.js"></script>
-    <script>
-        console.log('WOAH - RAN')
-    </script>
+	<script src="https://cdn.jsdelivr.net/npm/hx-tomselect@1.0.5/hx-tomselect.js"></script>
 }
+
 
 func getIdStr(id string) string {
 	return fmt.Sprintf("#%s", id)
@@ -96,15 +94,15 @@ templ fineSuperSelect(players []PlayerWithFines, approvedPFines []PresetFine, se
  					ts-add-post-url="/fines/add"
  					ts-add-post-url-body-value="reason"
  					tx-close-after-select="true"
- 					ts-item-class="text-3xl py-3"
- 					ts-option-class="text-3xl w-full py-3"
+ 					ts-item-class="text-5xl	py-5"
+ 					ts-option-class="text-5xl w-full py-5"
  					tx-max-items="99"
                     hx-debug="true"
  					name="pfines[]"
  					multiple
  					required
  					placeholder="Caused Own Goal"
- 					class="text-3xl border border-gray-300 rounded-md text-gray-700 flex-grow mb-2"
+ 					class="border border-gray-300 rounded-md text-gray-700 flex-grow mb-2"
 				>
 					<option value="">Select a fine...</option>
 					for _, apf := range approvedPFines {
@@ -123,9 +121,9 @@ templ fineSuperSelect(players []PlayerWithFines, approvedPFines []PresetFine, se
  					hx-ext="tomselect"
  					tx-max-items="99"
  					name="players[]"
- 					ts-item-class="text-3xl py-3"
  					tx-close-after-select="true"
- 					ts-option-class="text-3xl w-full py-3"
+ 					ts-item-class="text-5xl	py-5"
+ 					ts-option-class="text-5xl w-full py-5"
                     hx-debug="true"
  					multiple
  					placeholder="John Doe"
