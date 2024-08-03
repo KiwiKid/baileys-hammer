@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -755,6 +756,8 @@ func fineMultiHandler(db *gorm.DB) http.HandlerFunc {
 		context := r.FormValue("context")
 		savedFines := []Fine{}
 
+		warnStr := "No players selected"
+
 		log.Printf("pfineIDs: %+v %d", len(pfineIDs), len(playerIDs))
 
 		for _, pfineIDStr := range pfineIDs {
@@ -788,6 +791,8 @@ func fineMultiHandler(db *gorm.DB) http.HandlerFunc {
 					} else {
 						fine.FineAt = time.Now()
 					}
+				} else {
+					warnStr = "No active match"
 				}
 
 				fine.Approved = config.DefaultToApproved
@@ -819,7 +824,7 @@ func fineMultiHandler(db *gorm.DB) http.HandlerFunc {
 			return
 		}
 
-		res := fineSuperSelectResults(playersWithFines, pFines, savedFines)
+		res := fineSuperSelectResults(playersWithFines, pFines, savedFines, warnStr)
 		res.Render(GetContext(r), w)
 	}
 }
@@ -1135,6 +1140,60 @@ func main() {
 	startServer(r, portStr)
 }
 
+func getUserInfo(r *http.Request) (string, error) {
+	// Example: Extract username from a header
+	username := r.Header.Get("X-Username")
+	if username == "" {
+		return "", errors.New("username not found in request")
+	}
+	return username, nil
+}
+
+func checkWhitelist(db *gorm.DB, username string) (bool, error) {
+	var user User
+	result := db.Where("username = ?", username).First(&user)
+	if result.Error != nil {
+		if result.Error == gorm.ErrRecordNotFound {
+			return false, nil
+		}
+		return false, result.Error
+	}
+	return true, nil
+}
+
+func AuthMiddleware(db *gorm.DB, next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user, err := getUserInfo(r)
+		if err != nil {
+			log.Printf("getUserInfo err (%+v)", err)
+			http.Error(w, "Request Auth", http.StatusUnauthorized)
+			return
+		}
+
+		checkUser, err := checkWhitelist(db, user)
+		if err != nil {
+			log.Printf("checkWhitelist err (%+v)", err)
+			http.Error(w, "Request Auth", http.StatusUnauthorized)
+			return
+		}
+
+		if !checkUser {
+			http.Error(w, "Request Auth (checkUser)", http.StatusUnauthorized)
+			return
+		}
+		ctx := context.WithValue(r.Context(), userContextKey, user)
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
+func getUserFromContext(ctx context.Context) *User {
+	user, ok := ctx.Value(userContextKey).(*User)
+	if !ok {
+		return nil
+	}
+	return user
+}
+
 // setupRouter initializes the HTTP routes and returns a router.
 func setupRouter(db *gorm.DB) *chi.Mux {
 	r := chi.NewRouter()
@@ -1167,6 +1226,7 @@ func homeHandler(db *gorm.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		decoder := schema.NewDecoder()
 		queryParams := new(HomeQueryParams)
+		warnStr := ""
 		if err := decoder.Decode(queryParams, r.URL.Query()); err != nil {
 			log.Printf("presetFineMasterHandler - Error decoding query params: %v", err)
 			http.Error(w, "Bad Request - home Decode", http.StatusBadRequest)
@@ -1206,6 +1266,8 @@ func homeHandler(db *gorm.DB) http.HandlerFunc {
 		if err != nil {
 			errComp := errMsg(F("Could not get active match %v", err))
 			errComp.Render(GetContext(r), w)
+		} else if activeMatch == nil {
+			warnStr = "No active match - go to the matches page and add the next match"
 		}
 
 		matches, err := GetMatches(db, 1, 0, 9999)
@@ -1214,7 +1276,7 @@ func homeHandler(db *gorm.DB) http.HandlerFunc {
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		}
 
-		home := home(playersWithFines, approvedPFines, pendingPFines, fineWithPlayers, *queryParams, matches, activeMatch)
+		home := home(playersWithFines, approvedPFines, pendingPFines, fineWithPlayers, *queryParams, matches, activeMatch, warnStr)
 		home.Render(GetContext(r), w)
 	}
 }

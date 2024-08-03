@@ -159,11 +159,14 @@ func getFineIds(fines []Fine) []uint {
 	return ids
 }
 
-templ fineSuperSelectResults(players []PlayerWithFines, approvedPFines[]PresetFine, newFines []Fine) {
+templ fineSuperSelectResults(players []PlayerWithFines, approvedPFines []PresetFine, newFines []Fine, warnStr string) {
 	@fineSuperSelect(players, approvedPFines, getFineIds(newFines), "1")
 	if len(newFines) > 0 {
 		<div class="text-2xl list-none bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-lg">
 			<h1 class="text-3xl">{ fmt.Sprintf("Added %d Fines:", len(newFines)) }</h1>
+			if len(warnStr) > 0 {
+				@warning(warnStr)
+			}
 			if len(newFines) > 0 {
 				for _, p := range players {
 					for _, nf := range newFines {

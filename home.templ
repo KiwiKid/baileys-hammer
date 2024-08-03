@@ -191,11 +191,14 @@ templ activeMatchBanner(activeMatch *Match) {
 	}
 }
 
-templ home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines []PresetFine, fineWithPlayers []FineWithPlayer, qp HomeQueryParams, matches []Match, activeMatch *Match) {
+templ home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines []PresetFine, fineWithPlayers []FineWithPlayer, qp HomeQueryParams, matches []Match, activeMatch *Match, warnStr string) {
 	<!DOCTYPE html>
 	<html hx-boost="true">
 		@header()
 		<body class="text-2xl p-3 flex justify-center">
+			if len(warnStr) > 0 {
+				@warning(warnStr)
+			}
 			<div class="lg:max-w-screen-2xl w-full">
 				<div>
 					@activeMatchBanner(activeMatch)

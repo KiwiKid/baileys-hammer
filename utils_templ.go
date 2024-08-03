@@ -481,7 +481,7 @@ func getFineIds(fines []Fine) []uint {
 	return ids
 }
 
-func fineSuperSelectResults(players []PlayerWithFines, approvedPFines []PresetFine, newFines []Fine) templ.Component {
+func fineSuperSelectResults(players []PlayerWithFines, approvedPFines []PresetFine, newFines []Fine, warnStr string) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
 		if !templ_7745c5c3_IsBuffer {
@@ -516,6 +516,12 @@ func fineSuperSelectResults(players []PlayerWithFines, approvedPFines []PresetFi
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
+			if len(warnStr) > 0 {
+				templ_7745c5c3_Err = warning(warnStr).Render(ctx, templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
 			if len(newFines) > 0 {
 				for _, p := range players {
 					for _, nf := range newFines {
@@ -527,7 +533,7 @@ func fineSuperSelectResults(players []PlayerWithFines, approvedPFines []PresetFi
 							var templ_7745c5c3_Var28 string
 							templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%s - %s - %s", nf.Reason, p.Name, nf.Context))
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 173, Col: 68}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 176, Col: 68}
 							}
 							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var28))
 							if templ_7745c5c3_Err != nil {
@@ -540,7 +546,7 @@ func fineSuperSelectResults(players []PlayerWithFines, approvedPFines []PresetFi
 							var templ_7745c5c3_Var29 string
 							templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%+v", nf))
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 175, Col: 31}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 178, Col: 31}
 							}
 							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var29))
 							if templ_7745c5c3_Err != nil {
@@ -562,7 +568,7 @@ func fineSuperSelectResults(players []PlayerWithFines, approvedPFines []PresetFi
 							var templ_7745c5c3_Var31 string
 							templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/fines/edit/%d?isEdit=fineEditDiv", nf.ID))
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 178, Col: 73}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 181, Col: 73}
 							}
 							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var31))
 							if templ_7745c5c3_Err != nil {
@@ -625,7 +631,7 @@ func fineSuperSelectResults(players []PlayerWithFines, approvedPFines []PresetFi
 							var templ_7745c5c3_Var35 string
 							templ_7745c5c3_Var35, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/fines?fid=%d", nf.ID))
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 192, Col: 56}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 195, Col: 56}
 							}
 							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var35))
 							if templ_7745c5c3_Err != nil {
@@ -646,7 +652,7 @@ func fineSuperSelectResults(players []PlayerWithFines, approvedPFines []PresetFi
 				var templ_7745c5c3_Var36 string
 				templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", len(approvedPFines)))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 200, Col: 67}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `utils.templ`, Line: 203, Col: 67}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var36))
 				if templ_7745c5c3_Err != nil {

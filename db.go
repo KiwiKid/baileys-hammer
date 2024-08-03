@@ -536,7 +536,7 @@ func GetActiveMatch(db *gorm.DB) (*Match, error) {
 
 	if result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			// No upcoming match found is not considered an error; return nil
+			log.Print("No active match found - create one in the future to allow for it to be associated with a game")
 			return nil, nil
 		}
 		// Some other error occurred; return the error
@@ -712,3 +712,11 @@ func DeleteMatch(db *gorm.DB, matchId uint) error {
 	}
 	return nil
 }
+
+type User struct {
+	ID       uint     `gorm:"primaryKey"`
+	Username string   `gorm:"uniqueIndex"`
+	Roles    []string `gorm:"-"`
+}
+
+const userContextKey contextKey = "user"
