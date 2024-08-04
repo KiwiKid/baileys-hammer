@@ -23,6 +23,7 @@
           buildInputs = [
             go
             templ
+            flyctl
           ];
           shellHook = ''
             echo "Building the Go project..."
@@ -56,6 +57,7 @@
             templ
             go
             pkgs.tmux
+            flyctl
           ];
           shellHook = ''
             git config user.name $GIT_AUTHOR_USER
@@ -75,7 +77,11 @@
         };
 
         dockerBuild = pkgs.mkShell {
-          buildInputs = [ docker ];
+          buildInputs = [ 
+            docker
+            flyctl
+          
+          ];
           shellHook = ''
             echo "Building Docker image..."
             docker build -t baileys-hammer .

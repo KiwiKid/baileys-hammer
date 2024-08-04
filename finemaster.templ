@@ -286,7 +286,7 @@ templ matchesManage(baseUrl string, isOpen bool, matches []Match, pwfs []PlayerW
 					<p>Edit existing matches, or add new ones</p>
 				</div>
 				@createMatch(makeSafeUrl(baseUrl, false, false, false, false, false), pwfs)
-				<!--<div class="mx-auto bg-gray-200 shadow-xl m-10 flex flex-col justify-center items-center">
+				<div class="mx-auto bg-gray-200 shadow-xl m-10 flex flex-col justify-center items-center">
 					for _, m := range matches {
 						<button hx-trigger="click" hx-get={ fmt.Sprintf("/match/%d?type=form", m.ID) } hx-swap="outerHTML" class={ bigPri }>
 						Edit vs { m.Opponent } at { m.Location } 
@@ -295,7 +295,7 @@ templ matchesManage(baseUrl string, isOpen bool, matches []Match, pwfs []PlayerW
 						}
 						</button>
 					}
-				</div>-->
+				</div>
 			</div>
 		} else {
 			<div class="flex justify-center w-full">

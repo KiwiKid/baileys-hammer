@@ -1,6 +1,8 @@
 package main
 
 import (
+	"database/sql/driver"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -70,6 +72,18 @@ func DBInit() (*gorm.DB, error) {
 
 	if (!db.Migrator().HasColumn(&Match{}, "DudOfTheDay")) {
 		db.Migrator().AddColumn(&Match{}, "DudOfTheDay")
+	}
+
+	if (!db.Migrator().HasColumn(&Match{}, "MatchLat")) {
+		db.Migrator().AddColumn(&Match{}, "MatchLat")
+	}
+
+	if (!db.Migrator().HasColumn(&Match{}, "MatchLng")) {
+		db.Migrator().AddColumn(&Match{}, "MatchLng")
+	}
+
+	if (!db.Migrator().HasColumn(&Match{}, "MatchRectangle")) {
+		db.Migrator().AddColumn(&Match{}, "MatchRectangle")
 	}
 
 	if (!db.Migrator().HasColumn(&Fine{}, "Context")) {
@@ -546,6 +560,28 @@ func GetActiveMatch(db *gorm.DB) (*Match, error) {
 	return &match, nil
 }
 
+type LatLng struct {
+	Lat float64 `json:"lat"`
+	Lng float64 `json:"lng"`
+}
+
+// LatLngArray is a slice of LatLng
+type LatLngArray []LatLng
+
+// Value implements the driver.Valuer interface, converting LatLngArray to a JSON-encoded byte array.
+func (l LatLngArray) Value() (driver.Value, error) {
+	return json.Marshal(l)
+}
+
+func (l *LatLngArray) Scan(value interface{}) error {
+	bytes, ok := value.([]byte)
+	if !ok {
+		return errors.New("type assertion to []byte failed")
+	}
+
+	return json.Unmarshal(bytes, l)
+}
+
 type Match struct {
 	gorm.Model
 	Location       string
@@ -556,6 +592,9 @@ type Match struct {
 	SeasonId       uint64
 	PlayerOfTheDay uint64
 	DudOfTheDay    uint64
+	MatchLat       float64
+	MatchLng       float64
+	MatchPointList LatLngArray `json:"coords"`
 }
 
 type MatchEvent struct {

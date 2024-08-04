@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"time"
+	"math"
 )
 
 templ matchSelector(matches []Match, selectedMatchId uint) {
@@ -34,15 +35,57 @@ templ matchSelector(matches []Match, selectedMatchId uint) {
 	</div>
 }
 
-templ matchListPage(matches []Match, isOpen bool, isFineMaster bool) {
-	<!DOCTYPE html>
-	<html hx-boost="true">
-		@header()
-		<body class="text-2xl p-1">
+templ matchMap(match Match) {
+	if (math.Abs(match.MatchLat) > 0 && math.Abs(match.MatchLng) > 0) {
+			<div
+				data-center={ fmt.Sprintf("[%v, %v]", match.MatchLat, match.MatchLng) }
+				data-zoom="15"
+				data-reverse-order-all
+				class="h-36 f-right"
+				id="map"
+			>
+				<div data-tile="EsriWorldImagery"></div>
+				<div data-tile="OpenStreetMap" data-default-tile></div>
+
+										match.MatchPointList : { fmt.Sprintf("(%v) %v",  len(match.MatchPointList), match.MatchPointList)} 
+
+				if len(match.MatchPointList) > 0 {
+					<div>
+						for mpi, matchPoint := range match.MatchPointList {
+							<div data-hyperleaflet-source data-geometry-display="json">
+								<span
+									data-id={ fmt.Sprintf("%v", mpi + 1) }
+									data-geometry-type="Point"
+									data-geometry={ fmt.Sprintf("[%v, %v]", matchPoint.Lat, matchPoint.Lng) }
+									></span>
+								if mpi != len(match.MatchPointList) {
+									<span
+										data-id={ fmt.Sprintf("%v", mpi) }
+										data-geometry-type="LineString"
+										data-geometry={ fmt.Sprintf("[%v, %v], [%v, %v]", matchPoint.Lat, matchPoint.Lng,  match.MatchPointList[mpi + 1].Lat, match.MatchPointList[mpi + 1].Lng) }
+									></span>
+								}
+							</div>
+						}
+					</div>
+				}
+		</div>
+	}
+}
+
+templ matchListPage(matches []Match, isOpen bool, isFineMaster bool, noHeader bool) {
+		<!DOCTYPE html>
+		<html hx-boost="true">
+		if !noHeader {
+			@header()
+		}
+			<body class="text-2xl p-1">
+			
 			<div class="w-full bg-gray-200 shadow-xl m-10">
 				if len(matches) > 0 {
 					<div class="grid grid-cols-1 gap-4">
 						for _, match := range matches {
+
 							<div class="p-4 border-b md:border-b-0 md:border-r last:border-r-0" id={ F("mlp-%d", match.ID) }>
 								<div class="flex justify-between items-center">
 									<div>
@@ -300,6 +343,14 @@ templ editMatch(closeLink templ.SafeURL, genMeta MatchMetaGeneral, successMsg st
 				<input type="text" name="location" id="location" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" value={ genMeta.Match.Location }/>
 			</div>
 			<div class="mb-4">
+				<label for="matchLat" class="block text-lg font-semibold text-gray-700">matchLat</label>
+				<input type="text" name="matchLat" id="matchLat" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" value={ fmt.Sprintf("%v", genMeta.Match.MatchLat) }/>
+			</div>
+			<div class="mb-4">
+				<label for="matchLng" class="block text-lg font-semibold text-gray-700">matchLng</label>
+				<input type="text" name="matchLng" id="matchLng" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" value={ fmt.Sprintf("%v", genMeta.Match.MatchLng) }/>
+			</div>
+			<div class="mb-4">
 				<label for="start-time" class="block text-lg font-semibold text-gray-700">Start Time</label>
 				if genMeta.Match.StartTime != nil {
 					{  genMeta.Match.StartTime.Format("2006-01-02T15:04") }
@@ -333,7 +384,9 @@ templ editMatch(closeLink templ.SafeURL, genMeta MatchMetaGeneral, successMsg st
 			}
 			<span class="border-b-8 border-solid border-blue-500">			[fine-session-start]
 			</span>
-			<div hx-get="/fines/add" hx-trigger="load" hx-target="this"></div>
+			<div class="p-10">
+				<div hx-get="/fines/add" hx-trigger="load" hx-target="this"></div>
+			</div>
 			if len(UseDudOfTheDayName(ctx)) > 0 {
 				@playerInputSelector(genMeta.Players, genMeta.Match.DudOfTheDay, "dotd")
 			}

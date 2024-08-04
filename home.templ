@@ -182,11 +182,12 @@ var twoWeeksAgo = time.Now().AddDate(0, 0, -14)
 
 templ activeMatchBanner(activeMatch *Match) {
 	if activeMatch != nil {
-		<div class="top-0 left-0 w-full bg-green-400 text-white text-center py-2 shadow-md">
+		<div class="top-0 left-0 w-full text-4xl  bg-green-400 text-white text-center py-2 shadow-md">
 			if activeMatch.StartTime != nil {
 				{ activeMatch.StartTime.Format("Jan 02 - 3:04 PM") }
 			}
 			{ F("vs %s @ %s", activeMatch.Opponent, activeMatch.Location) }
+			@matchMap(*activeMatch)
 		</div>
 	}
 }

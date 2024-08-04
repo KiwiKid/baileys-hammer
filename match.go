@@ -25,6 +25,8 @@ type MatchForm struct {
 	Opponent              string   `schema:"opponent"`
 	Subtitle              string   `schema:"subtitle"`
 	PlayerOfTheDay        uint64   `schema:"playerOfTheDay"`
+	MatchLng              float64  `schema:"matchLng"`
+	MatchLat              float64  `schema:"matchLat"`
 	DudOfTheDay           uint64   `schema:"dudOfTheDay"`
 	EventTypeInjury       []uint64 `schema:"eventTypeInjury"`
 	EventTypeGoal         []uint64 `schema:"eventTypeGoal"`
@@ -98,7 +100,7 @@ func matchListHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) 
 				matchComp := matchSelector(match, uint(matchId))
 				matchComp.Render(GetContext(r), w)
 			} else {
-				matchComp := matchListPage(match, isOpen, isFineMaster)
+				matchComp := matchListPage(match, isOpen, isFineMaster, false)
 				matchComp.Render(GetContext(r), w)
 			}
 
@@ -243,6 +245,8 @@ func matchHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 					SeasonId:       seasonId,
 					PlayerOfTheDay: form.PlayerOfTheDay,
 					DudOfTheDay:    form.DudOfTheDay,
+					MatchLat:       form.MatchLat,
+					MatchLng:       form.MatchLng,
 				}
 
 				if len(form.StartTime) > 0 {
