@@ -3,6 +3,7 @@ package main
 import (
 "fmt"
 	"time"
+	"encoding/base64"
 )
 
 func getFinesTotal(fines []FineWithPlayer) float64 {
@@ -64,6 +65,25 @@ templ fineList(fines []FineWithPlayer, page int, presetFineUpdated uint, isFineM
 				</tbody>
 			</table>
 		</div>
+	</div>
+}
+
+templ bigFineImages(fineImages []FineImage, fineId uint){
+	<div class="flex flex-wrap gap-4">
+		for _, fi := range fineImages {
+			<img class="h-64 w-64" src={ fmt.Sprintf("data:image/jpeg;base64,%s", base64.StdEncoding.EncodeToString(fi.Data)) } alt={ fi.Filename } />
+		}
+	</div>
+}
+
+templ fineImages(fineImages []FineImage, fineId uint, message string) {
+	if len(message) > 0 {
+		@warning(message)
+	}
+	<div class="flex flex-wrap gap-4">
+	for _, fi := range fineImages {
+		<img class="h-64 w-64" src={ fmt.Sprintf("data:image/jpeg;base64,%s", base64.StdEncoding.EncodeToString(fi.Data)) } alt={ fi.Filename } />
+	}
 	</div>
 }
 
@@ -223,6 +243,17 @@ templ fineRow(isFineMaster bool, f FineWithPlayer) {
 			</td>
 		}
 	</tr>
+	
+}
+
+templ fineUploadForm(fineId uint) {
+	<div>
+		<form hx-post={ fmt.Sprintf("/fines/edit/%d/image", fineId) } hx-encoding="multipart/form-data">
+		Image:
+			<input type="file" name="image"/>
+			<button class={ bigSec} type="submit">Upload Image</button>
+		</form>
+	</div>
 }
 
 templ fineContextRow(f FineWithPlayer, matches []Match) {
@@ -244,9 +275,14 @@ templ fineContextRow(f FineWithPlayer, matches []Match) {
 				
 			</div>
 			<div>
-			Images:
-			        <input type="file" name="images" accept="image/*" multiple></input>
-	</div>
+	GREG1:
+
+	
+			@fineImagesAndForm(f.Fine.ID)
+
+			END
+			</div>
+
 			<div class="mt-2">
 				<div hx-get={ fmt.Sprintf("/match-list?type=select&matchId=%d", f.Fine.MatchId) } hx-trigger="load once"></div>
 			</div>
@@ -327,6 +363,13 @@ templ fineContestRow(f FineWithPlayer) {
 	</div>
 }
 
+templ fineImagesAndForm(fineId uint){
+	<div hx-get={ fmt.Sprintf("/fines/edit/%d/image?displayType=fineImage", fineId) } hx-trigger="revealed" >
+		Images Loading...
+	</div>
+	@fineUploadForm(fineId)
+}
+
 templ fineEditForm(f FineWithPlayer, isFineMaster bool) {
 	<form
  		hx-post={ fmt.Sprintf("/fines/edit/%d", f.Fine.ID) } 
@@ -359,7 +402,7 @@ templ fineEditForm(f FineWithPlayer, isFineMaster bool) {
 					</span>
 				}
 			</div>
-			<input type="file" name="images" accept="image/*" multiple></input>
+			@fineUploadForm(f.Fine.ID)
 			<!-- Hidden Inputs -->
 			<input
  				type="playerId"

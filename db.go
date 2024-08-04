@@ -43,6 +43,14 @@ func (l *ImageArray) Scan(value interface{}) error {
 	return json.Unmarshal(bytes, l)
 }
 
+type FineImage struct {
+	gorm.Model
+	Filename string
+	FineID   uint
+	Image    string
+	Data     []byte
+}
+
 // Fine represents a fine assigned to a player
 type Fine struct {
 	gorm.Model
@@ -75,7 +83,7 @@ func DBInit() (*gorm.DB, error) {
 	}
 
 	// Migrate the schema
-	err = db.AutoMigrate(&Player{}, &Fine{}, &PresetFine{}, &Match{}, &MatchEvent{})
+	err = db.AutoMigrate(&Player{}, &Fine{}, &PresetFine{}, &Match{}, &MatchEvent{}, &FineImage{})
 	if err != nil {
 		return nil, err
 	}
@@ -445,6 +453,15 @@ func DeleteFineByID(db *gorm.DB, id uint) error {
 		return gorm.ErrRecordNotFound
 	}
 	return nil
+}
+
+
+func GetFineImages(db *gorm.DB, fineId uint) ([]FineImage, error) {
+	var images []FineImage
+	if err := db.Where("fine_id = ?", fineId).Find(&images).Error; err != nil {
+		return nil, err
+	}
+	return images, nil
 }
 
 type PresetFine struct {

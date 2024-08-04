@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
@@ -304,7 +305,6 @@ func fineEditHandler(db *gorm.DB) http.HandlerFunc {
 				return
 			}
 
-			log.Printf("NEW FINE %+v", fineWithPlayer.Fine)
 			if isEdit == "true" {
 				fineEditRow := fineEditRow(fineWithPlayer, isFineMaster)
 				fineEditRow.Render(GetContext(r), w)
@@ -432,6 +432,90 @@ func fineEditHandler(db *gorm.DB) http.HandlerFunc {
 
 		default:
 			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		}
+	}
+}
+
+func fineImageHandler(db *gorm.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		message := ""
+		switch r.Method {
+		case "POST":
+			{
+
+				fineIDParam := chi.URLParam(r, "fid")
+				fineID, err := strconv.Atoi(fineIDParam)
+				if err != nil {
+					http.Error(w, "Invalid fine ID", http.StatusBadRequest)
+					return
+				}
+
+				file, header, err := r.FormFile("image")
+				if err != nil {
+					http.Error(w, err.Error(), http.StatusBadRequest)
+					return
+				}
+				defer file.Close()
+
+				filename := header.Filename
+				imageData, err := ioutil.ReadAll(file)
+				if err != nil {
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return
+				}
+
+				// Find the fine
+				var fine Fine
+				if err := db.First(&fine, fineID).Error; err != nil {
+					http.Error(w, "Fine not found", http.StatusNotFound)
+					return
+				}
+
+				// Create the image and associate it with the fine
+				image := FineImage{
+					Filename: filename,
+					Data:     imageData,
+					FineID:   uint(fineID),
+				}
+
+				if result := db.Create(&image); result.Error != nil {
+					http.Error(w, result.Error.Error(), http.StatusInternalServerError)
+					return
+				}
+				message = fmt.Sprintf("Image uploaded successfully: %s", filename)
+				//	warningComp := warning("upload success")
+				//	warningComp.Render(GetContext(r), w)
+			}
+		case "GET":
+			{
+				fineIDParam := chi.URLParam(r, "fid")
+				fineID, err := strconv.Atoi(fineIDParam)
+
+				if err != nil {
+					errorComp := warning(fmt.Sprintf("Invalid fine ID: %v", err))
+					errorComp.Render(GetContext(r), w)
+				}
+
+				fineImgs, err := GetFineImages(db, uint(fineID))
+				if err != nil {
+					errorComp := warning(fmt.Sprintf("Invalid fine ID: %v", err))
+					errorComp.Render(GetContext(r), w)
+				}
+				log.Printf("fineImageHandler %+v", fineImgs)
+
+				displayType := r.URL.Query().Get("displayType")
+
+				switch displayType {
+				case "bigFineImage":
+					fineImgComp := bigFineImages(fineImgs, uint(fineID))
+					fineImgComp.Render(GetContext(r), w)
+				default:
+				case "fineImage":
+					fineImgComp := fineImages(fineImgs, uint(fineID), message)
+					fineImgComp.Render(GetContext(r), w)
+				}
+
+			}
 		}
 	}
 }
@@ -1264,6 +1348,7 @@ func setupRouter(db *gorm.DB) *chi.Mux {
 	r.HandleFunc("/fines-multi", fineMultiHandler(db))
 	r.HandleFunc("/fines/approve", fineApproveHandler(db))
 	r.HandleFunc("/fines/edit/{fid}", fineEditHandler(db))
+	r.HandleFunc("/fines/edit/{fid}/image", fineImageHandler(db))
 	r.HandleFunc("/fines/contest", fineContestHandler(db))
 	r.HandleFunc("/fines/context", fineContextHandler(db))
 	r.HandleFunc("/preset-fines", presetFineHandler(db))
