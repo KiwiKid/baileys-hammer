@@ -7,31 +7,34 @@ import (
 
 // Define a Config struct to hold our configuration.
 type Config struct {
-	Title                 string
-	UseRoles              bool
-	UseMatchEventTracker  bool
-	DefaultToApproved bool
-	UsePlayerOfTheDayName string
-	ShowGoalScorerMatchList bool
-	ShowGoalAssistMatchList bool
-	UseDudOfTheDayName string
+	Title                    string
+	UsePreviewPassword       bool
+	UseRoles                 bool
+	UseMatchEventTracker     bool
+	DefaultToApproved        bool
+	UsePlayerOfTheDayName    string
+	ShowGoalScorerMatchList  bool
+	ShowGoalAssistMatchList  bool
+	UseDudOfTheDayName       string
 	InjuryCounterTrackerName string
-	ShowOpponentScore bool
+	ShowOpponentScore        bool
 }
 
 var devConfig = &Config{
-	Title: "🔨 Baileys Hammer 🔨",
-	UseRoles: true,
-	UseMatchEventTracker: true,
+	Title:                    "🔨 Baileys Hammer 🔨",
+	UseRoles:                 true,
+	UsePreviewPassword:       true,
+	UseMatchEventTracker:     true,
 	InjuryCounterTrackerName: "Injuries (Mr Glass)",
-	UsePlayerOfTheDayName: "Player of the Day",
-	UseDudOfTheDayName: "Dick of the Day",
+	UsePlayerOfTheDayName:    "Player of the Day",
+	UseDudOfTheDayName:       "Dick of the Day",
 }
 
 var config = &Config{
-	Title: "🔨 Baileys Hammer 🔨",
-	UseRoles: true,
+	Title:                "🔨 Baileys Hammer 🔨",
+	UseRoles:             true,
 	UseMatchEventTracker: true,
+	UsePreviewPassword:   false,
 	/**
 
 	If true, new fines will be approved by default (can be later decline by the finemaster)
@@ -39,27 +42,27 @@ var config = &Config{
 	*/
 	DefaultToApproved: true,
 
-	ShowGoalScorerMatchList: true,
-	ShowGoalAssistMatchList: true,
+	ShowGoalScorerMatchList:  true,
+	ShowGoalAssistMatchList:  true,
 	InjuryCounterTrackerName: "🚑 Mr Glass 🚑",
-	UsePlayerOfTheDayName: "Player of the Day",
-	UseDudOfTheDayName: "🍆 Dick of the Day 🍆",
-	ShowOpponentScore: true,
+	UsePlayerOfTheDayName:    "Player of the Day",
+	UseDudOfTheDayName:       "🍆 Dick of the Day 🍆",
+	ShowOpponentScore:        true,
 }
 
 // Use a custom type for keys to avoid conflicts in context values.
 type contextKey string
 
 const (
-	titleKey                 contextKey = "Title"
-	useRolesKey              contextKey = "UseRoles"
-	useMatchEventTrackerKey  contextKey = "UseMatchEventTracker"
-	UsePlayerOfTheDayNameKey contextKey = "UsePlayerOfTheDayName"
-	ShowGoalScorerMatchListKey contextKey = "ShowGoalScorerMatchList"
-	ShowGoalAssistMatchListKey contextKey = "ShowGoalAssistMatchList"
-	UseDudOfTheDayNameKey contextKey = "UseDudOfTheDayName"
+	titleKey                    contextKey = "Title"
+	useRolesKey                 contextKey = "UseRoles"
+	useMatchEventTrackerKey     contextKey = "UseMatchEventTracker"
+	UsePlayerOfTheDayNameKey    contextKey = "UsePlayerOfTheDayName"
+	ShowGoalScorerMatchListKey  contextKey = "ShowGoalScorerMatchList"
+	ShowGoalAssistMatchListKey  contextKey = "ShowGoalAssistMatchList"
+	UseDudOfTheDayNameKey       contextKey = "UseDudOfTheDayName"
 	InjuryCounterTrackerNameKey contextKey = "InjuryCounterTrackerName"
-	ShowOpponentScoreKey contextKey = "ShowOpponentScoreKey"
+	ShowOpponentScoreKey        contextKey = "ShowOpponentScoreKey"
 )
 
 func GetTitle(ctx context.Context) string {
@@ -90,7 +93,6 @@ func UsePlayerOfTheDayName(ctx context.Context) string {
 	return ""
 }
 
-
 func UseDudOfTheDayName(ctx context.Context) string {
 	if useDudOfTheDay, ok := ctx.Value(UseDudOfTheDayNameKey).(string); ok {
 		return useDudOfTheDay
@@ -112,7 +114,6 @@ func UseShowGoalScorerMatchList(ctx context.Context) bool {
 	return false
 }
 
-
 func UseShowGoalAssister(ctx context.Context) bool {
 	if ShowGoalAssistMatchList, ok := ctx.Value(ShowGoalAssistMatchListKey).(bool); ok {
 		return ShowGoalAssistMatchList
@@ -127,12 +128,8 @@ func UseShowOpponentScore(ctx context.Context) bool {
 	return false
 }
 
-
-
-
-
 func GetContext(r *http.Request) context.Context {
-	
+
 	ctx := context.WithValue(r.Context(), titleKey, config.Title)
 	ctx = context.WithValue(ctx, useRolesKey, config.UseRoles)
 	ctx = context.WithValue(ctx, useMatchEventTrackerKey, config.UseMatchEventTracker)

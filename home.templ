@@ -182,7 +182,7 @@ var twoWeeksAgo = time.Now().AddDate(0, 0, -14)
 
 templ activeMatchBanner(activeMatch *Match) {
 	if activeMatch != nil {
-		<div class="top-0 left-0 w-full text-4xl  bg-green-400 text-white text-center py-2 shadow-md">
+		<div class="top-0 p-4 left-0 w-full text-4xl  bg-green-400 text-white text-center py-2 shadow-md">
 			if activeMatch.StartTime != nil {
 				{ activeMatch.StartTime.Format("Jan 02 - 3:04 PM") }
 			}
@@ -192,7 +192,7 @@ templ activeMatchBanner(activeMatch *Match) {
 	}
 }
 
-templ home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines []PresetFine, fineWithPlayers []FineWithPlayer, qp HomeQueryParams, matches []Match, activeMatch *Match, warnStr string) {
+templ home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines []PresetFine, fineWithPlayers []FineWithPlayer, qp HomeQueryParams, matches []Match, activeMatch *Match, warnStr string, previewPassword string) {
 	<!DOCTYPE html>
 	<html hx-boost="true">
 		@header()
@@ -332,13 +332,11 @@ templ home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines
 				@pageFooter()
 				<form hx-post="/admin">
 					<label>Password:
-					<input class="px-4 py-2 border border-gray-300 rounded-lg w-full focus:ring-blue-500 focus:border-blue-500" type="text" name="password"></input>
+					<input value={ previewPassword } class="px-4 py-2 border border-gray-300 rounded-lg w-full focus:ring-blue-500 focus:border-blue-500" type="text" name="password"></input>
 					</label>
 					<button class={ bigSec } type="submit">Enter Fine Master Zone</button>
 				</form>
 			</div>
-				
-			
 		</body>
 	</html>
 }

@@ -81,16 +81,18 @@ templ fineImages(fineImages []FineImage, fineId uint, message string) {
 		@warning(message)
 	}
 	<div class="flex flex-wrap gap-4">
-	for _, fi := range fineImages {
-		<img class="h-64 w-64" src={ fmt.Sprintf("data:image/jpeg;base64,%s", base64.StdEncoding.EncodeToString(fi.Data)) } alt={ fi.Filename } />
-	}
+		for _, fi := range fineImages {
+			<div>
+				<img class="h-64 w-64" src={ fmt.Sprintf("data:image/jpeg;base64,%s", base64.StdEncoding.EncodeToString(fi.Data)) } alt={ fi.Filename } />
+			</div>
+		}
 	</div>
 }
 
 templ fineRow(isFineMaster bool, f FineWithPlayer) {
 	<tr
  		id={ fmt.Sprintf("fr-%d", f.Fine.ID) }
- 		class="bg-gray-200 p-2 "
+ 		class="bg-gray-200 p-2"
 	>
 		<td class="p-2 text-gray-900 flex flex-col text-wrap">
 			<div class="text-bold text-3xl">{ f.Player.Name }</div>
@@ -243,12 +245,11 @@ templ fineRow(isFineMaster bool, f FineWithPlayer) {
 			</td>
 		}
 	</tr>
-	
 }
 
 templ fineUploadForm(fineId uint) {
 	<div>
-		<form hx-post={ fmt.Sprintf("/fines/edit/%d/image", fineId) } hx-encoding="multipart/form-data">
+		<form hx-post={ fmt.Sprintf("/fines/edit/%d/image?displayType=fineImage", fineId) } hx-encoding="multipart/form-data">
 		Image:
 			<input type="file" name="image"/>
 			<button class={ bigSec} type="submit">Upload Image</button>

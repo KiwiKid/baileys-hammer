@@ -501,7 +501,6 @@ func fineImageHandler(db *gorm.DB) http.HandlerFunc {
 					errorComp := warning(fmt.Sprintf("Invalid fine ID: %v", err))
 					errorComp.Render(GetContext(r), w)
 				}
-				log.Printf("fineImageHandler %+v", fineImgs)
 
 				displayType := r.URL.Query().Get("displayType")
 
@@ -1421,7 +1420,12 @@ func homeHandler(db *gorm.DB) http.HandlerFunc {
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		}
 
-		home := home(playersWithFines, approvedPFines, pendingPFines, fineWithPlayers, *queryParams, matches, activeMatch, warnStr)
+		previewPassword := ""
+		if config.UsePreviewPassword {
+			previewPassword = os.Getenv("PASS")
+		}
+
+		home := home(playersWithFines, approvedPFines, pendingPFines, fineWithPlayers, *queryParams, matches, activeMatch, warnStr, previewPassword)
 		home.Render(GetContext(r), w)
 	}
 }
