@@ -111,8 +111,13 @@ templ matchListPage(matches []Match, isOpen bool, isFineMaster bool, noHeader bo
 				} else {
 					<div class="text-center p-4">
 						No Matches? 
-						<a class="text-blue-500 hover:underline" href="/matches/new">Add one</a>
-						to get started.
+						if isFineMaster {
+							<a class="text-blue-500 hover:underline" href="/matches/new">Add one</a>
+							to get started.
+						} else {
+							<a href="/#adminEntry">Enter Admin</a>
+						}
+						
 					</div>
 				}
 				if isFineMaster {

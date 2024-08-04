@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"net/http"
+	"os"
 )
 
 // Define a Config struct to hold our configuration.
@@ -23,7 +24,7 @@ type Config struct {
 var devConfig = &Config{
 	Title:                    "🔨 Baileys Hammer 🔨",
 	UseRoles:                 true,
-	UsePreviewPassword:       true,
+	UsePreviewPassword:       os.Getenv("PREVIEW_ENV") == "true",
 	UseMatchEventTracker:     true,
 	InjuryCounterTrackerName: "Injuries (Mr Glass)",
 	UsePlayerOfTheDayName:    "Player of the Day",
@@ -34,7 +35,7 @@ var config = &Config{
 	Title:                "🔨 Baileys Hammer 🔨",
 	UseRoles:             true,
 	UseMatchEventTracker: true,
-	UsePreviewPassword:   false,
+	UsePreviewPassword:   os.Getenv("PREVIEW_ENV") == "true",
 	/**
 
 	If true, new fines will be approved by default (can be later decline by the finemaster)

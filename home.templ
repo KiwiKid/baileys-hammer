@@ -192,6 +192,19 @@ templ activeMatchBanner(activeMatch *Match) {
 	}
 }
 
+templ adminEnter(previewPassword string){
+	<form hx-post="/admin" id="adminEntry" class="p-10">
+		if len(previewPassword) > 0 {
+			@warning("Preview Mode active - password is visible, freely navigate into the finemaster zone via the 'Enter Fine Master Zone' button (set the password with PASS env var - hide the password via PREVIEW_ENV env var)")
+		}
+		<label>Password:
+		<input value={ previewPassword } class="px-4 py-2 border border-gray-300 rounded-lg w-full focus:ring-blue-500 focus:border-blue-500" type="text" name="password"
+		></input>
+		</label>
+		<button class={ bigSec } type="submit">Enter Fine Master Zone</button>
+	</form>
+}
+
 templ home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines []PresetFine, fineWithPlayers []FineWithPlayer, qp HomeQueryParams, matches []Match, activeMatch *Match, warnStr string, previewPassword string) {
 	<!DOCTYPE html>
 	<html hx-boost="true">
@@ -329,13 +342,8 @@ templ home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines
 				</div>
 				@matchesList(qp.MatchesOpen, matches, players, false)
 				@fineList(fineWithPlayers, 0, 0,false, false)
+				@adminEnter(previewPassword)
 				@pageFooter()
-				<form hx-post="/admin">
-					<label>Password:
-					<input value={ previewPassword } class="px-4 py-2 border border-gray-300 rounded-lg w-full focus:ring-blue-500 focus:border-blue-500" type="text" name="password"></input>
-					</label>
-					<button class={ bigSec } type="submit">Enter Fine Master Zone</button>
-				</form>
 			</div>
 		</body>
 	</html>

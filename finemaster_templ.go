@@ -101,7 +101,7 @@ func finemaster(pass string, players []PlayerWithFines, fineWithPlayers []FineWi
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<body class=\"p-1 flex justify-center\"><div class=\"lg:max-w-screen-2xl w-full\"><div class=\"bg-gray-900 text-center p-5\"><h1 class=\"text-xl md:text-3xl lg:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-teal-400\">Fine Master Zone</h1></div><div class=\"grid grid-cols-1 gap-2\">")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<body class=\"p-1 flex justify-center\"><div class=\"lg:max-w-screen-2xl w-full\"><div class=\"bg-gray-900 text-center p-5\"><h1 class=\"text-xl md:text-3xl lg:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-teal-400\"><a class=\"text-white\" href=\"/\">&lt;&lt; Home </a> Fine Master Zone </h1></div><div class=\"grid grid-cols-1 gap-2\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
