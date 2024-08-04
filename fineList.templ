@@ -241,7 +241,12 @@ templ fineContextRow(f FineWithPlayer, matches []Match) {
  						placeholder="Context"
 					/>
 				</label>
+				
 			</div>
+			<div>
+			Images:
+			        <input type="file" name="images" accept="image/*" multiple></input>
+	</div>
 			<div class="mt-2">
 				<div hx-get={ fmt.Sprintf("/match-list?type=select&matchId=%d", f.Fine.MatchId) } hx-trigger="load once"></div>
 			</div>
@@ -354,6 +359,7 @@ templ fineEditForm(f FineWithPlayer, isFineMaster bool) {
 					</span>
 				}
 			</div>
+			<input type="file" name="images" accept="image/*" multiple></input>
 			<!-- Hidden Inputs -->
 			<input
  				type="playerId"

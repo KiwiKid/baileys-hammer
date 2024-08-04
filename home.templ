@@ -330,7 +330,15 @@ templ home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines
 				@matchesList(qp.MatchesOpen, matches, players, false)
 				@fineList(fineWithPlayers, 0, 0,false, false)
 				@pageFooter()
+				<form hx-post="/admin">
+					<label>Password:
+					<input type="text" name="password"></input>
+					</label>
+					<button class={ bigSec } type="submit">Enter Admin</button>
+				</form>
 			</div>
+				
+			
 		</body>
 	</html>
 }

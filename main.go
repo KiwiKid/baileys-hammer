@@ -226,11 +226,17 @@ func fineContextHandler(db *gorm.DB) http.HandlerFunc {
 
 		context := r.FormValue("context")
 
+		log.Printf("fineContextHanlder")
+
 		err = UpdateFineContextByID(db, uint(fineID), uint(matchId), context, fineAt)
+		log.Printf("fineContextHanlder-3")
 		if err != nil {
 			http.Error(w, "Invalid UpdateFineContextByID ID", http.StatusBadRequest)
 			return
 		}
+		log.Printf("fineContextHanlder-4")
+
+		log.Printf("fineContextHanlder-end")
 
 		success := contextSuccess(matchId, context, fineAt)
 		success.Render(GetContext(r), w)
@@ -680,6 +686,56 @@ func fineHandler(db *gorm.DB) http.HandlerFunc {
 	}
 }
 
+func adminHandler(db *gorm.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case "POST":
+			{
+
+				if err := r.ParseForm(); err != nil {
+					http.Error(w, "fineHandler - Invalid form data", http.StatusBadRequest)
+					return
+				}
+				password := r.FormValue("password")
+				pass := os.Getenv("PASS")
+				if password != pass {
+					success := warning(fmt.Sprintf("Sorry Invalid password (%v) Hint: ends with a number", password))
+					success.Render(GetContext(r), w)
+					http.Error(w, "Invalid password", http.StatusBadRequest)
+					return
+				}
+
+				var url = fmt.Sprintf("/finemaster/%s", pass)
+				log.Printf("REdirecting to %s", url)
+				w.Header().Set("HX-Redirect", url)
+				w.Header().Set("HX-Reload", "true")
+			}
+		case "DELETE":
+
+			fIDStr := r.URL.Query().Get("fid")
+
+			fID, err := strconv.ParseUint(fIDStr, 10, 64)
+			if err != nil || fID == 0 {
+				http.Error(w, fmt.Sprintf("Error parsing fine id %v", err), http.StatusBadRequest)
+				return
+			}
+
+			if err := DeleteFineByID(db, uint(fID)); err != nil {
+				log.Printf("Error deleting preset fine: %v", err)
+				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+				return
+			}
+			w.Header().Set("HX-Redirect", r.Header.Get("Referrer"))
+			w.WriteHeader(http.StatusOK)
+			return
+
+		default:
+			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+			return
+		}
+	}
+}
+
 func fineAddHandler(db *gorm.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var newFines []uint
@@ -768,6 +824,8 @@ func fineMultiHandler(db *gorm.DB) http.HandlerFunc {
 					errComp := errMsg(F("Invalid player ID: [%s]", playerIDStr))
 					errComp.Render(GetContext(r), w)
 					return
+				} else {
+					warnStr = ""
 				}
 				fine, err := GetFineFromPreset(db, pfineIDStr)
 				if err != nil {
@@ -1200,6 +1258,8 @@ func setupRouter(db *gorm.DB) *chi.Mux {
 
 	r.HandleFunc("/players", playerHandler(db))
 	r.HandleFunc("/fines", fineHandler(db))
+	r.HandleFunc("/admin", adminHandler(db))
+
 	r.HandleFunc("/fines/add", fineAddHandler(db))
 	r.HandleFunc("/fines-multi", fineMultiHandler(db))
 	r.HandleFunc("/fines/approve", fineApproveHandler(db))

@@ -25,6 +25,24 @@ type Player struct {
 	RoleDescription string
 }
 
+type ImageArray struct {
+	Images []string
+}
+
+// Value implements the driver.Valuer interface, converting LatLngArray to a JSON-encoded byte array.
+func (l ImageArray) Value() (driver.Value, error) {
+	return json.Marshal(l)
+}
+
+func (l *ImageArray) Scan(value interface{}) error {
+	bytes, ok := value.([]byte)
+	if !ok {
+		return errors.New("type assertion to []byte failed")
+	}
+
+	return json.Unmarshal(bytes, l)
+}
+
 // Fine represents a fine assigned to a player
 type Fine struct {
 	gorm.Model
@@ -36,6 +54,7 @@ type Fine struct {
 	Approved bool
 	Context  string
 	Contest  string
+	Images   ImageArray
 }
 
 // DBInit initializes the database and creates the tables

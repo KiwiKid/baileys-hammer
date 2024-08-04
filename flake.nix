@@ -51,6 +51,23 @@
           '';
         };
 
+        tdeploy = pkgs.mkShell {
+          buildInputs = [
+            go
+            templ
+            flyctl
+          ];
+          shellHook = ''
+            echo "Building the Go project..."
+            git config user.name $GIT_AUTHOR_USER
+            git config user.email $GIT_AUTHOR_EMAIL
+            export DATABASE_URL=./tmp/data/dev.db
+            templ generate
+            echo "Deploying the application..."
+            fly deploy -c fly-dev.toml
+          '';
+        };
+
         dev = pkgs.mkShell {
           buildInputs = [ 
             air
