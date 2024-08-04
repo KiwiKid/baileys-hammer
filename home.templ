@@ -332,7 +332,7 @@ templ home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines
 				@pageFooter()
 				<form hx-post="/admin">
 					<label>Password:
-					<input type="text" name="password"></input>
+					<input class="px-4 py-2 border border-gray-300 rounded-lg w-full focus:ring-blue-500 focus:border-blue-500" type="text" name="password"></input>
 					</label>
 					<button class={ bigSec } type="submit">Enter Fine Master Zone</button>
 				</form>

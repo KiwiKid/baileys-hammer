@@ -799,7 +799,7 @@ func home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines 
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<form hx-post=\"/admin\"><label>Password: <input type=\"text\" name=\"password\"></label> ")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<form hx-post=\"/admin\"><label>Password: <input class=\"px-4 py-2 border border-gray-300 rounded-lg w-full focus:ring-blue-500 focus:border-blue-500\" type=\"text\" name=\"password\"></label> ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
