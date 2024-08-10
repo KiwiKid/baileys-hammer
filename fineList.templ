@@ -41,13 +41,14 @@ templ fineList(fines []FineWithPlayer, page int, presetFineUpdated uint, isFineM
 					if onlyRecent {
 						Recently Fined List
 					} else {
-						All Fine List
+						All Fine List 
 					}
 				</span>
 
 				if !onlyRecent {
 					<span class="text-3xl ml-2">↻</span>
 				}
+				<div hx-get="/fines?viewMode=sheet" hx-trigger="click">load sheet view</div>
 			</div>
 			if isFineMaster {
 				<div>{ fmt.Sprintf("$%v", getFinesTotal(fines)) }</div>
@@ -246,6 +247,41 @@ templ fineRow(isFineMaster bool, f FineWithPlayer) {
 		}
 	</tr>
 }
+
+
+templ fineListSheet(fines []FineWithPlayer) {
+	<div class="m-2 bg-white shadow p-4 mt-10">
+		<h2 class="text-center font-bold text-lg mb-4">Fine List</h2>
+
+		<table class="min-w-full table-auto border-collapse">
+			<thead>
+				<tr class="bg-gray-100">
+					<th class="p-2 border border-gray-300">Player</th>
+					<th class="p-2 border border-gray-300">Fine Amount</th>
+										<th class="p-2 border border-gray-300">Fine Context</th>
+
+					<th class="p-2 border border-gray-300">Fine Event</th>
+											<th class="p-2 border border-gray-300">Fine Contest</th>
+
+					<th class="p-2 border border-gray-300">Date</th>
+				</tr>
+			</thead>
+			<tbody class="divide-y divide-gray-200">
+				for _, f := range fines {
+					<tr>
+						<td class="p-2 border border-gray-300">{ f.Player.Name }</td>
+						<td class="p-2 border border-gray-300">{ fmt.Sprintf("$%v", f.Fine.Amount) }</td>
+						<td class="p-2 border border-gray-300">{ fmt.Sprintf("%v", f.Fine.Context) }</td>
+						<td class="p-2 border border-gray-300">{ fmt.Sprintf("%s - %s",  f.Match.Location, f.Match.Opponent) }</td>
+						<td class="p-2 border border-gray-300">{ fmt.Sprintf("%v", f.Fine.Contest) }</td>
+						<td class="p-2 border border-gray-300">{ f.Fine.FineAt.Format("Jan 2, 2006") }</td>
+					</tr>
+				}
+			</tbody>
+		</table>
+	</div>
+}
+
 
 templ fineUploadForm(fineId uint) {
 	<div>

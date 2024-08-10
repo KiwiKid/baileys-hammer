@@ -569,6 +569,12 @@ func fineHandler(db *gorm.DB) http.HandlerFunc {
 					return
 				}
 
+				viewMode := r.URL.Query().Get("viewMode")
+
+				if viewMode == "sheet" {
+					fineListSheet := fineListSheet(fineWithPlayers)
+					fineListSheet.Render(GetContext(r), w)
+				}
 				fineList := fineList(fineWithPlayers, pageId, 0, finemasterPage, false)
 				fineList.Render(GetContext(r), w)
 			}
