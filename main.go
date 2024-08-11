@@ -519,6 +519,48 @@ func fineImageHandler(db *gorm.DB) http.HandlerFunc {
 	}
 }
 
+type PlayerFinesTotal struct {
+	Name       string
+	TotalFines float64
+}
+
+func fineSummaryHandler(db *gorm.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case "GET":
+			{
+				playersWithFines, err := GetPlayersWithFines(db, []uint64{})
+				if err != nil {
+					log.Printf("Error fetching players with fines: %v", err)
+					http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+					return
+				}
+
+				var playerFinesTotals []PlayerFinesTotal
+
+				var grandTotal float64
+
+				for _, player := range playersWithFines {
+					totalFines := 0.0
+					for _, fine := range player.Fines {
+						totalFines += fine.Amount
+						grandTotal += fine.Amount
+					}
+
+					// Store the player's total fines
+					playerFinesTotals = append(playerFinesTotals, PlayerFinesTotal{
+						Name:       player.Name,
+						TotalFines: totalFines,
+					})
+				}
+
+				fineSummary := fineTotals(playerFinesTotals, grandTotal)
+				fineSummary.Render(GetContext(r), w)
+			}
+		}
+	}
+}
+
 type FineWithPlayer struct {
 	Fine   Fine
 	Player Player
@@ -1347,6 +1389,8 @@ func setupRouter(db *gorm.DB) *chi.Mux {
 
 	r.HandleFunc("/players", playerHandler(db))
 	r.HandleFunc("/fines", fineHandler(db))
+	r.HandleFunc("/fines/summary", fineSummaryHandler(db))
+
 	r.HandleFunc("/admin", adminHandler(db))
 
 	r.HandleFunc("/fines/add", fineAddHandler(db))

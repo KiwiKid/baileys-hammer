@@ -72,7 +72,7 @@
           buildInputs = [ 
             air
             templ
-            go
+            goF/su
             pkgs.tmux
             flyctl
           ];
@@ -80,6 +80,7 @@
             git config user.name $GIT_AUTHOR_USER
             git config user.email $GIT_AUTHOR_EMAIL
             export DATABASE_URL=./tmp/data/dev.db
+            export PASS=pass
             code .
             tmux kill-session -t devSession
             tmux new-session -d -s devSession \; \

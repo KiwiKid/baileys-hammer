@@ -48,7 +48,9 @@ templ fineList(fines []FineWithPlayer, page int, presetFineUpdated uint, isFineM
 				if !onlyRecent {
 					<span class="text-3xl ml-2">↻</span>
 				}
-				<div hx-get="/fines?viewMode=sheet" hx-trigger="click">load sheet view</div>
+				<div hx-get="/fines?viewMode=sheet" hx-trigger="revealed">load sheet view</div>
+				<div hx-get="/fines/summary" hx-trigger="revealed">load totals view</div>
+
 			</div>
 			if isFineMaster {
 				<div>{ fmt.Sprintf("$%v", getFinesTotal(fines)) }</div>
@@ -248,6 +250,30 @@ templ fineRow(isFineMaster bool, f FineWithPlayer) {
 	</tr>
 }
 
+templ fineTotals(totals []PlayerFinesTotal, grandTotal float64) {
+	<div class="m-2 bg-white shadow p-4 mt-10">
+		<h2 class="text-center font-bold text-lg mb-4">Fine Totals: { fmt.Sprintf("%v", grandTotal)} </h2>
+
+		<table class="min-w-full table-auto border-collapse">
+			<thead>
+				<tr class="bg-gray-100">
+					<th class="p-2 border border-gray-300">Player</th>
+					<th class="p-2 border border-gray-300">Fine Total</th>
+				</tr>
+			</thead>
+			<tbody class="divide-y divide-gray-200">
+			<tr>{}
+			</tr>
+				for _, t := range totals {
+					<tr>
+						<td class="p-2 border border-gray-300">{ t.Name }</td>
+						<td class="p-2 border border-gray-300">{ fmt.Sprintf("$%v", t.TotalFines) }</td>
+					</tr>
+				}
+			</tbody>
+		</table>
+	</div>
+}
 
 templ fineListSheet(fines []FineWithPlayer) {
 	<div class="m-2 bg-white shadow p-4 mt-10">
@@ -267,6 +293,8 @@ templ fineListSheet(fines []FineWithPlayer) {
 				</tr>
 			</thead>
 			<tbody class="divide-y divide-gray-200">
+			<tr>{}
+			</tr>
 				for _, f := range fines {
 					<tr>
 						<td class="p-2 border border-gray-300">{ f.Player.Name }</td>
