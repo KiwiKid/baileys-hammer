@@ -28,16 +28,15 @@ templ fineList(fines []FineWithPlayer, page int, presetFineUpdated uint, isFineM
  		
 	>
 		<div class="text-center">
-			<div
- 				class="flex-grow justify-center items-center mb-4 cursor-pointer"
- 				if !onlyRecent {
-					hx-get="/fines"
-					hx-target="#fine-list-container"
-					hx-swap="outerHTML"
-					hx-trigger="click"
-				}
-			>
-				<span class="flex-grow text-center font-bold">
+			<div class="flex-grow justify-center items-center mb-4">
+				<span class="flex-grow text-center font-bold"
+					if !onlyRecent {
+						hx-get="/fines"
+						hx-target="#fine-list-container"
+						hx-swap="outerHTML"
+						hx-trigger="click"
+					}
+				>
 					if onlyRecent {
 						Recently Fined List
 					} else {
@@ -47,10 +46,10 @@ templ fineList(fines []FineWithPlayer, page int, presetFineUpdated uint, isFineM
 
 				if !onlyRecent {
 					<span class="text-3xl ml-2">↻</span>
+				
+					<div class={ bigPri } hx-get="/fines?viewMode=sheet" hx-trigger="click" hx-swap="outerHTML">load sheet view</div>
+					<div class={ bigPri } hx-get="/fines/summary" hx-trigger="click" hx-swap="outerHTML">load totals view</div>
 				}
-				<div hx-get="/fines?viewMode=sheet" hx-trigger="revealed">load sheet view</div>
-				<div hx-get="/fines/summary" hx-trigger="revealed">load totals view</div>
-
 			</div>
 			if isFineMaster {
 				<div>{ fmt.Sprintf("$%v", getFinesTotal(fines)) }</div>
@@ -252,13 +251,16 @@ templ fineRow(isFineMaster bool, f FineWithPlayer) {
 
 templ fineTotals(totals []PlayerFinesTotal, grandTotal float64) {
 	<div class="m-2 bg-white shadow p-4 mt-10">
-		<h2 class="text-center font-bold text-lg mb-4">Fine Totals: { fmt.Sprintf("%v", grandTotal)} </h2>
+		<h2 class="text-center font-bold text-lg mb-4">Fine Totals: { fmt.Sprintf("$%v", grandTotal)} </h2>
 
 		<table class="min-w-full table-auto border-collapse">
 			<thead>
 				<tr class="bg-gray-100">
 					<th class="p-2 border border-gray-300">Player</th>
 					<th class="p-2 border border-gray-300">Fine Total</th>
+					<th class="p-2 border border-gray-300">Subs Outstanding</th>
+					<th class="p-2 border border-gray-300">Fines Outstanding</th>
+					<th class="p-2 border border-gray-300">SeasonId</th>
 				</tr>
 			</thead>
 			<tbody class="divide-y divide-gray-200">
@@ -266,8 +268,10 @@ templ fineTotals(totals []PlayerFinesTotal, grandTotal float64) {
 			</tr>
 				for _, t := range totals {
 					<tr>
-						<td class="p-2 border border-gray-300">{ t.Name }</td>
+						<td class="p-2 border border-gray-300">{ t.Player.Name }</td>
 						<td class="p-2 border border-gray-300">{ fmt.Sprintf("$%v", t.TotalFines) }</td>
+						<td class="p-2 border border-gray-300">{ fmt.Sprintf("$%v", t.Player.SubsOutstandingAmount) }</td>
+						<td class="p-2 border border-gray-300">{ fmt.Sprintf("$%v", t.Player.FinesOutstandingAmount) }</td>
 					</tr>
 				}
 			</tbody>
@@ -277,36 +281,47 @@ templ fineTotals(totals []PlayerFinesTotal, grandTotal float64) {
 
 templ fineListSheet(fines []FineWithPlayer) {
 	<div class="m-2 bg-white shadow p-4 mt-10">
-		<h2 class="text-center font-bold text-lg mb-4">Fine List</h2>
+		<h2 class="text-center font-bold text-lg mb-4">Fine Sheet View</h2>
+		<div class="grid grid-cols-8 bg-gray-100 border border-gray-300">
+			<div class="border border-gray-300 p-2">Player</div>
+			<div class="border border-gray-300 p-2">Fine Amount</div>
+			<div class="border border-gray-300 p-2">Fine Context</div>
+			<div class="border border-gray-300 p-2">Fine Place</div>
+			<div class="border border-gray-300 p-2">Fine Contest</div>
+			<div class="border border-gray-300 p-2">Court Session Order</div>
+			<div class="border border-gray-300 p-2">Date</div>
+			<div class="border border-gray-300 p-2">Add Court Session Order</div>
+		</div>
 
-		<table class="min-w-full table-auto border-collapse">
-			<thead>
-				<tr class="bg-gray-100">
-					<th class="p-2 border border-gray-300">Player</th>
-					<th class="p-2 border border-gray-300">Fine Amount</th>
-										<th class="p-2 border border-gray-300">Fine Context</th>
+		for _, f := range fines {
+			<div class="grid grid-cols-8 border border-gray-300">
+			<div class="border border-gray-300 p-2">{ f.Player.Name }</div>
+				<div class="border border-gray-300 p-2">{ fmt.Sprintf("$%v", f.Fine.Amount) }</div>
+				<div class="border border-gray-300 p-2">{ f.Fine.Reason } - { f.Fine.Context } </div>
+				<div class="border border-gray-300 p-2">
+					{ fmt.Sprintf("%s - %s ",  f.Match.Location, f.Match.Opponent ) }
+				</div>
+				<div class="border border-gray-300 p-2">{ fmt.Sprintf("%s", f.Fine.Contest) }</div>
+				<div class="border border-gray-300 p-2">{ fmt.Sprintf("%d", f.Fine.CourtSessionOrder) }</div>
 
-					<th class="p-2 border border-gray-300">Fine Event</th>
-											<th class="p-2 border border-gray-300">Fine Contest</th>
-
-					<th class="p-2 border border-gray-300">Date</th>
-				</tr>
-			</thead>
-			<tbody class="divide-y divide-gray-200">
-			<tr>{}
-			</tr>
-				for _, f := range fines {
-					<tr>
-						<td class="p-2 border border-gray-300">{ f.Player.Name }</td>
-						<td class="p-2 border border-gray-300">{ fmt.Sprintf("$%v", f.Fine.Amount) }</td>
-						<td class="p-2 border border-gray-300">{ fmt.Sprintf("%v", f.Fine.Context) }</td>
-						<td class="p-2 border border-gray-300">{ fmt.Sprintf("%s - %s",  f.Match.Location, f.Match.Opponent) }</td>
-						<td class="p-2 border border-gray-300">{ fmt.Sprintf("%v", f.Fine.Contest) }</td>
-						<td class="p-2 border border-gray-300">{ f.Fine.FineAt.Format("Jan 2, 2006") }</td>
-					</tr>
-				}
-			</tbody>
-		</table>
+				<div class="border border-gray-300 p-2">{ f.Fine.FineAt.Format("Jan 2, 2006") }</div>
+				<div class="border border-gray-300 p-2">
+					<form hx-post="/fines/court-display-order" class="max-w-md mx-auto bg-white p-6 rounded-lg shadow-md">
+						<div class="mb-4">
+							<label for="fid" class="block text-gray-700 font-medium mb-2">Fine ID</label>
+							<input type="hidden" id="fid" name="fid" required value={ fmt.Sprintf("%v", f.Fine.ID) } class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+						</div>
+						<div class="mb-4">
+							<label for="courtSessionOrder" class="block text-gray-700 font-medium mb-2">Court Session Order</label>
+							<input type="number" id="courtSessionOrder" name="courtSessionOrder" value={ fmt.Sprint("%d", f.Fine.CourtSessionOrder) } required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+						</div>
+						<button type="submit" class="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
+							Submit
+						</button>
+					</form>
+				</div>
+			</div>
+		}
 	</div>
 }
 

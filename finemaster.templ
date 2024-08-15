@@ -23,7 +23,7 @@ templ finemasterNav(finemasterBaseUrl string) {
 	</nav>
 }
 
-templ finemaster(pass string, players []PlayerWithFines, fineWithPlayers []FineWithPlayer, pFines []PresetFine, matches []Match, qp FineMasterQueryParams) {
+templ finemaster(pass string, players []PlayerWithFines, fineWithPlayers []FineWithPlayer, pFines []PresetFine, matches []Match, qp FineMasterQueryParams, activeSeason *Season, activeMatch *Match, warnStr string) {
 	<!DOCTYPE html>
 	<html hx-boost="true">
 		@header()
@@ -34,6 +34,19 @@ templ finemaster(pass string, players []PlayerWithFines, fineWithPlayers []FineW
 					<a class="text-white" href="/">&lt;&lt; Home </a> Fine Master Zone 
 				</h1>
 			</div>
+			if activeMatch != nil {
+				if activeSeason != nil {
+					@success(fmt.Sprintf("Active Match: %s @ %s in season %s", activeMatch.Opponent, activeMatch.Location, activeSeason.Title)) 	
+				}else {
+					@success(fmt.Sprintf("Active Match: %s @ %s", activeMatch.Opponent, activeMatch.Location)) 	
+					@warning("no active season found")
+				}
+			} else {
+				@warning("no active match found")
+			}
+			if len(warnStr) > 0 {
+				@warning(warnStr)
+			}
 			<div class="grid grid-cols-1 gap-2">
 				@fineAddV2(secureFineMasterbaseUrl(finemasterBaseUrl, pass), true, players, pFines, true)
 			</div>
@@ -89,12 +102,30 @@ templ finemaster(pass string, players []PlayerWithFines, fineWithPlayers []FineW
 					Toggle Quick Fines
 				</div>
 			</div>
-			@playersManage(secureFineMasterbaseUrl(finemasterBaseUrl, pass), players, config, qp.PlayerOpen)
+			@playersManage(secureFineMasterbaseUrl(finemasterBaseUrl, pass), players, config, qp.PlayerOpen, activeSeason.ID)
 			@presetFines(fmt.Sprintf("%s/%s", finemasterBaseUrl, pass), pass, qp.PresetFinesOpen, pFines)
 			@matchesManage(secureFineMasterbaseUrl(finemasterBaseUrl, pass), qp.MatchesOpen, matches, players)
+			@manageSeasonsButton()
+			<button hx-get={ fmt.Sprintf("/season/%d/payments?displayType=table", activeSeason.ID) } hx-swap="outerHTML" class={ bigPri } >Load payments</button>
 			@fineList(fineWithPlayers, 0, qp.PresetFineUpdated, true, false)
+			
+			<details>
+				<summary>season bulk update zone</summary>
+				<div class="flex items-center justify-between mt-20">
+
+					
+
+					<div id="responseDiv">
+						<!-- The response will be placed here -->
+					</div>
+				</div>
+				<div class={ bigSec } hx-get="/season/update/set-season" hx-trigger="click" hx-swap="outerHTML">Load Set Season on Players/Fines
+				</div>
+				<form hx-post="/fines/summary" hx-swap="outerHTML" hx-confirm="Are you sure you want to update all fine amounts to 2?">
+					<button class={ bigSec } type="submit" >Update Fine Amounts to 2</button>
+				</form>
+			</details>
 			<div class="mt-96"></div>
-			@finemasterNav(fmt.Sprintf("%s/%s", finemasterBaseUrl, pass))
 			</div>
 		</body>
 	</html>
@@ -277,6 +308,7 @@ templ matchesList(isOpen bool, matches []Match, pwfs []PlayerWithFines, isFineMa
 	</div>
 }
 
+
 templ matchesManage(baseUrl string, isOpen bool, matches []Match, pwfs []PlayerWithFines) {
 	<div class="mx-auto bg-gray-200 shadow-xl m-10">
 		if isOpen {
@@ -305,7 +337,42 @@ templ matchesManage(baseUrl string, isOpen bool, matches []Match, pwfs []PlayerW
 	</div>
 }
 
-templ playersManage(baseUrl string, players []PlayerWithFines, config *Config, isOpen bool) {
+templ manageSeasonsButton(){
+	<div  class={ bigPri } hx-get="/season" hx-trigger="click" hx-swap="outerHTML">
+		Manage Seasons
+	</div>
+}
+
+templ manageSeasons(seasons []Season, activeSeasonTitle string) {
+	<div>
+		Manage Seasons - 
+		if len(activeSeasonTitle) > 0 {
+			@success(fmt.Sprintf("%s is currently active", activeSeasonTitle))
+		} else {
+			@warning("No season is currently active - create one below")
+		}
+		for _, season := range seasons {
+			@updateSeason(season)
+		}
+		@createSeason()
+	</div>
+}
+
+templ manageSeason(season Season){
+	<div>manageSeason:
+		{ fmt.Sprintf("%+v", season) }
+	</div>
+}
+
+templ selectSeasons(seasons []Season) {
+	<select name="season" id="season">
+		for _, season := range seasons {
+			<option value={ fmt.Sprintf("%d", season.ID) }>{ season.Title }</option>
+		}
+	</select>
+}
+
+templ playersManage(baseUrl string, players []PlayerWithFines, config *Config, isOpen bool, activeSeasonId uint) {
 	if isOpen {
 		<div class="flex items-center justify-center bg-gray-100  p-3" id="players-manage">
 			<div class="w-full px-8 py-6 text-left bg-white shadow-xl m-10">
@@ -329,6 +396,8 @@ templ playersManage(baseUrl string, players []PlayerWithFines, config *Config, i
 						@playerRoleSelector(p, config, "")
 					}
 				</div>
+
+				
 				<div class="flex justify-center w-full p-3">
 					<a href={ makeSafeUrl(baseUrl, false, false, false, false, false) } hx-transition="true" class={ bigSec }>Close</a>
 				</div>

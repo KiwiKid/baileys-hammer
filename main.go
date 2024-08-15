@@ -31,6 +31,14 @@ type Context struct {
 
 func playerHandler(db *gorm.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		var activeSeasonId uint64 = 0
+		activeSeason, err := GetActiveSeason(db)
+		if err != nil {
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		} else if activeSeason != nil {
+			activeSeasonId = uint64(activeSeason.ID)
+		}
 		switch r.Method {
 		case "GET":
 			displayType := r.URL.Query().Get("type")
@@ -50,7 +58,7 @@ func playerHandler(db *gorm.DB) http.HandlerFunc {
 				playerIds := []uint64{
 					playerId,
 				}
-				playersWithFines, err := GetPlayersWithFines(db, playerIds)
+				playersWithFines, err := GetPlayersWithFines(db, activeSeasonId, playerIds)
 				if err != nil || len(playersWithFines) == 0 {
 					log.Printf("Error fetching players with fines: %v", err)
 					http.Error(w, "Internal Server Error", http.StatusInternalServerError)
@@ -88,7 +96,7 @@ func playerHandler(db *gorm.DB) http.HandlerFunc {
 		case "POST":
 			{
 				if err := r.ParseForm(); err != nil {
-					log.Printf("Error parsing form data: %v", err)
+					log.Printf("Error parsing form data in playerHandler POST: %v", err)
 					http.Error(w, "Bad Request savePlayerHandler ParseForm", http.StatusBadRequest)
 					return
 				}
@@ -115,7 +123,8 @@ func playerHandler(db *gorm.DB) http.HandlerFunc {
 				playerIds := []uint64{
 					uint64(player.ID),
 				}
-				playersWithFines, err := GetPlayersWithFines(db, playerIds)
+
+				playersWithFines, err := GetPlayersWithFines(db, activeSeasonId, playerIds)
 				if err != nil || len(playersWithFines) == 0 {
 					log.Printf("Error fetching players with fines: %v", err)
 					http.Error(w, "Internal Server Error", http.StatusInternalServerError)
@@ -131,7 +140,7 @@ func playerHandler(db *gorm.DB) http.HandlerFunc {
 			{
 				log.Println("PlayerHanlder")
 				if err := r.ParseForm(); err != nil {
-					log.Printf("Error parsing form data: %v", err)
+					log.Printf("Error parsing form data in playerHanlder DELETE: %v", err)
 					http.Error(w, "Bad Request savePlayerHandler ParseForm", http.StatusBadRequest)
 					return
 				}
@@ -242,6 +251,38 @@ func fineContextHandler(db *gorm.DB) http.HandlerFunc {
 		success := contextSuccess(matchId, context, fineAt)
 		success.Render(GetContext(r), w)
 	}
+}
+
+func fineSetCourtSessionOrderHandler(db *gorm.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		if err := r.ParseForm(); err != nil {
+			http.Error(w, "fineSetCourtSessionOrderHandler - Invalid form data", http.StatusBadRequest)
+			return
+		}
+
+		// Extract and validate form data
+		fineID, err := strconv.ParseUint(r.FormValue("fid"), 10, 64)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Invalid fid - %s", r.FormValue("fid")), http.StatusBadRequest)
+			return
+		}
+		courtSessionOrderInt, err := strconv.ParseUint(r.FormValue("courtSessionOrder"), 10, 64)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Invalid courtSessionOrder - %v", err), http.StatusBadRequest)
+			return
+		}
+
+		err = UpdateFineCourtSessionOrderByID(db, uint(fineID), uint(courtSessionOrderInt))
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Invalid UpdateFineCourtSessionOrderByID - %v", err), http.StatusBadRequest)
+			return
+		}
+
+		success := success(fmt.Sprintf("Added Court Session Order #%d to fine %d", courtSessionOrderInt, fineID))
+		success.Render(GetContext(r), w)
+	}
+
 }
 
 func fineEditHandler(db *gorm.DB) http.HandlerFunc {
@@ -366,6 +407,15 @@ func fineEditHandler(db *gorm.DB) http.HandlerFunc {
 				errComp.Render(GetContext(r), w)
 			}
 
+			activeSeason, err := GetActiveSeason(db)
+			var seasonId uint
+			if err != nil {
+				errComp := errMsg("Cannot select get the active season?")
+				errComp.Render(GetContext(r), w)
+			} else if activeSeason != nil {
+				seasonId = activeSeason.ID
+			}
+
 			matchId, err := strconv.ParseUint(r.FormValue("matchId"), 10, 64)
 			if err != nil {
 				errComp := errMsg(F("Invalid matchId", r.FormValue("matchId")))
@@ -378,6 +428,7 @@ func fineEditHandler(db *gorm.DB) http.HandlerFunc {
 			fine := Fine{
 				Model:    gorm.Model{ID: uint(fineID)},
 				PlayerID: uint(playerId),
+				SeasonID: seasonId,
 				Amount:   amount,
 				Reason:   reason,
 				Context:  context,
@@ -520,8 +571,8 @@ func fineImageHandler(db *gorm.DB) http.HandlerFunc {
 }
 
 type PlayerFinesTotal struct {
-	Name       string
 	TotalFines float64
+	Player     PlayerWithFines
 }
 
 func fineSummaryHandler(db *gorm.DB) http.HandlerFunc {
@@ -529,7 +580,7 @@ func fineSummaryHandler(db *gorm.DB) http.HandlerFunc {
 		switch r.Method {
 		case "GET":
 			{
-				playersWithFines, err := GetPlayersWithFines(db, []uint64{})
+				playersWithFines, err := GetPlayersWithFines(db, 0, []uint64{})
 				if err != nil {
 					log.Printf("Error fetching players with fines: %v", err)
 					http.Error(w, "Internal Server Error", http.StatusInternalServerError)
@@ -549,13 +600,32 @@ func fineSummaryHandler(db *gorm.DB) http.HandlerFunc {
 
 					// Store the player's total fines
 					playerFinesTotals = append(playerFinesTotals, PlayerFinesTotal{
-						Name:       player.Name,
+						Player:     player,
 						TotalFines: totalFines,
 					})
 				}
 
 				fineSummary := fineTotals(playerFinesTotals, grandTotal)
 				fineSummary.Render(GetContext(r), w)
+			}
+		case "POST":
+			{
+
+				fTot, pfTot, err := SetAllFineAmounts(db, 2.0)
+
+				if err != nil {
+					er := warning(fmt.Sprintf("Error parsing form data 2 %+v", err))
+					er.Render(GetContext(r), w)
+				} else {
+
+					success := success("Fine amounts updated fines: " + fmt.Sprintf("%d", fTot) + " preset fines: " + fmt.Sprintf("%d", pfTot))
+					success.Render(GetContext(r), w)
+				}
+			}
+		default:
+			{
+				er := warning("Method not allowed")
+				er.Render(GetContext(r), w)
 			}
 		}
 	}
@@ -616,9 +686,11 @@ func fineHandler(db *gorm.DB) http.HandlerFunc {
 				if viewMode == "sheet" {
 					fineListSheet := fineListSheet(fineWithPlayers)
 					fineListSheet.Render(GetContext(r), w)
+					return
 				}
 				fineList := fineList(fineWithPlayers, pageId, 0, finemasterPage, false)
 				fineList.Render(GetContext(r), w)
+				return
 			}
 		case "POST":
 			{
@@ -897,7 +969,7 @@ func fineAddHandler(db *gorm.DB) http.HandlerFunc {
 			//success.Render(GetContext(r), w)
 		}
 
-		playersWithFines, err := GetPlayersWithFines(db, []uint64{})
+		playersWithFines, err := GetPlayersWithFines(db, 0, []uint64{})
 		if err != nil {
 			log.Printf("Error fetching players with fines: %v", err)
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
@@ -984,6 +1056,16 @@ func fineMultiHandler(db *gorm.DB) http.HandlerFunc {
 					warnStr = "No active match"
 				}
 
+				activeSeason, err := GetActiveSeason(db)
+				if err != nil {
+					errComp := errMsg(F("Could not get active season %v", err))
+					errComp.Render(GetContext(r), w)
+				} else if activeSeason != nil {
+					fine.SeasonID = uint(activeSeason.ID)
+				} else {
+					warnStr = warnStr + "\nNo active season"
+				}
+
 				fine.Approved = config.DefaultToApproved
 
 				fine.CreatedAt = time.Now()
@@ -999,7 +1081,7 @@ func fineMultiHandler(db *gorm.DB) http.HandlerFunc {
 			}
 		}
 
-		playersWithFines, err := GetPlayersWithFines(db, []uint64{})
+		playersWithFines, err := GetPlayersWithFines(db, 0, []uint64{})
 		if err != nil {
 			log.Printf("Error fetching players with fines: %v", err)
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
@@ -1257,6 +1339,7 @@ type FineMasterQueryParams struct {
 func presetFineMasterHandler(db *gorm.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		pass := chi.URLParam(r, "pass")
+		warnStr := ""
 
 		/*realPass := os.Getenv("PASS")
 		if(pass != realPass) {
@@ -1273,7 +1356,7 @@ func presetFineMasterHandler(db *gorm.DB) http.HandlerFunc {
 			return
 		}
 
-		playersWithFines, err := GetPlayersWithFines(db, []uint64{})
+		playersWithFines, err := GetPlayersWithFines(db, 0, []uint64{})
 		if err != nil {
 			log.Printf("Error fetching players with fines: %v", err)
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
@@ -1300,7 +1383,25 @@ func presetFineMasterHandler(db *gorm.DB) http.HandlerFunc {
 			return
 		}
 
-		finemaster := finemaster(pass, playersWithFines, fineWithPlayers, pFines, matches, *queryParams)
+		activeSeason, err := GetActiveSeason(db)
+		if err != nil {
+			log.Printf("Error fetching active season: %v", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		} else if activeSeason == nil {
+			warnStr = warnStr + "\n\nNo active season - go to the season page to add a new season"
+		}
+
+		activeMatch, err := GetActiveMatch(db)
+		if err != nil {
+			log.Printf("Error fetching active match: %v", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		} else if activeMatch == nil {
+			warnStr = warnStr + "\n\nNo active match - go to the matches page and add the next match"
+		}
+
+		finemaster := finemaster(pass, playersWithFines, fineWithPlayers, pFines, matches, *queryParams, activeSeason, activeMatch, warnStr)
 		finemaster.Render(GetContext(r), w)
 	}
 }
@@ -1400,6 +1501,7 @@ func setupRouter(db *gorm.DB) *chi.Mux {
 	r.HandleFunc("/fines/edit/{fid}/image", fineImageHandler(db))
 	r.HandleFunc("/fines/contest", fineContestHandler(db))
 	r.HandleFunc("/fines/context", fineContextHandler(db))
+	r.HandleFunc("/fines/court-display-order", fineSetCourtSessionOrderHandler(db))
 	r.HandleFunc("/preset-fines", presetFineHandler(db))
 	r.HandleFunc("/preset-fines/approve", presetFineApproveHandler(db))
 	r.HandleFunc("/preset-fines/{showOrHide}", fineQuickHideHandler(db))
@@ -1408,10 +1510,17 @@ func setupRouter(db *gorm.DB) *chi.Mux {
 	r.HandleFunc("/match-list", matchListHandler(db))
 	r.HandleFunc("/match/{matchId}", matchHandler(db))
 	r.HandleFunc("/match", matchHandler(db))
+
 	r.HandleFunc("/playersName", playerNamesHandler(db))
+	r.HandleFunc("/season/{seasonId}/payments", playerPayments(db))
+
 	r.HandleFunc("/match/{matchId}/event", matchEventHandler(db))
 	r.HandleFunc("/match/{matchId}/event/{eventId}", matchEventHandler(db))
 	r.HandleFunc("/match/{matchId}/events", matchEventListHandler(db))
+	r.HandleFunc("/season/update/{updateType}", seasonBulkUpdateHandler(db))
+
+	r.HandleFunc("/season", seasonHandler(db))
+	r.HandleFunc("/season/{seasonId}", seasonSpecificHandler(db))
 
 	return r
 }
@@ -1426,7 +1535,7 @@ func homeHandler(db *gorm.DB) http.HandlerFunc {
 			http.Error(w, "Bad Request - home Decode", http.StatusBadRequest)
 		}
 
-		playersWithFines, err := GetPlayersWithFines(db, []uint64{})
+		playersWithFines, err := GetPlayersWithFines(db, 0, []uint64{})
 		if err != nil {
 			log.Printf("Error fetching players with fines: %v", err)
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
@@ -1460,8 +1569,6 @@ func homeHandler(db *gorm.DB) http.HandlerFunc {
 		if err != nil {
 			errComp := errMsg(F("Could not get active match %v", err))
 			errComp.Render(GetContext(r), w)
-		} else if activeMatch == nil {
-			warnStr = "No active match - go to the matches page and add the next match"
 		}
 
 		matches, err := GetMatches(db, 1, 0, 9999)

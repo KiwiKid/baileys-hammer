@@ -72,7 +72,7 @@
           buildInputs = [ 
             air
             templ
-            goF/su
+            go
             pkgs.tmux
             flyctl
           ];

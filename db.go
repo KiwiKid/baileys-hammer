@@ -18,11 +18,22 @@ import (
 // Player represents a player in the social football team
 type Player struct {
 	gorm.Model
-	Name            string `gorm:"unique" form:"name"`
-	Fines           []Fine
-	Active          bool
-	Role            string
-	RoleDescription string
+	Name                   string `gorm:"unique" form:"name"`
+	Fines                  []Fine
+	Active                 bool
+	Role                   string
+	RoleDescription        string
+	LatestSeasonId         int     `form:"seasonId" json:"seasonId"`
+	SubsOutstandingAmount  float64 `form:"subsOutstandingAmount"`
+	FinesOutstandingAmount float64 `form:"finesOutstandingAmount"`
+}
+
+type PlayerPayment struct {
+	gorm.Model
+	PlayerID        uint
+	SeasonID        uint
+	Amount          float64
+	PaymentLoggedAt time.Time
 }
 
 type ImageArray struct {
@@ -54,15 +65,17 @@ type FineImage struct {
 // Fine represents a fine assigned to a player
 type Fine struct {
 	gorm.Model
-	PlayerID uint
-	MatchId  uint
-	FineAt   time.Time
-	Reason   string
-	Amount   float64
-	Approved bool
-	Context  string
-	Contest  string
-	Images   ImageArray
+	PlayerID          uint
+	SeasonID          uint
+	CourtSessionOrder uint
+	MatchId           uint
+	FineAt            time.Time
+	Reason            string
+	Amount            float64
+	Approved          bool
+	Context           string
+	Contest           string
+	Images            ImageArray
 }
 
 // DBInit initializes the database and creates the tables
@@ -83,7 +96,7 @@ func DBInit() (*gorm.DB, error) {
 	}
 
 	// Migrate the schema
-	err = db.AutoMigrate(&Player{}, &Fine{}, &PresetFine{}, &Match{}, &MatchEvent{}, &FineImage{})
+	err = db.AutoMigrate(&Player{}, &Fine{}, &PresetFine{}, &Match{}, &MatchEvent{}, &FineImage{}, &Season{}, &PlayerPayment{})
 	if err != nil {
 		return nil, err
 	}
@@ -117,6 +130,10 @@ func DBInit() (*gorm.DB, error) {
 		db.Migrator().AddColumn(&Fine{}, "Context")
 	}
 
+	if (!db.Migrator().HasColumn(&Fine{}, "CourtSessionOrder")) {
+		db.Migrator().AddColumn(&Fine{}, "CourtSessionOrder")
+	}
+
 	if (!db.Migrator().HasColumn(&Fine{}, "MatchId")) {
 		db.Migrator().AddColumn(&Fine{}, "MatchId")
 	}
@@ -129,12 +146,24 @@ func DBInit() (*gorm.DB, error) {
 		db.Migrator().AddColumn(&Fine{}, "FineAt")
 	}
 
+	if (!db.Migrator().HasColumn(&Fine{}, "SeasonId")) {
+		db.Migrator().AddColumn(&Fine{}, "SeasonId")
+	}
+
 	if (!db.Migrator().HasColumn(&Player{}, "RoleDescription")) {
 		db.Migrator().AddColumn(&Player{}, "RoleDescription")
 	}
 
 	if (!db.Migrator().HasColumn(&Player{}, "Role")) {
 		db.Migrator().AddColumn(&Player{}, "Role")
+	}
+
+	if (!db.Migrator().HasColumn(&Player{}, "SubsOutstandingAmount")) {
+		db.Migrator().AddColumn(&Player{}, "SubsOutstandingAmount")
+	}
+
+	if (!db.Migrator().HasColumn(&Player{}, "FinesOutstandingAmount")) {
+		db.Migrator().AddColumn(&Player{}, "FinesOutstandingAmount")
 	}
 
 	if (!db.Migrator().HasColumn(&PresetFine{}, "Context")) {
@@ -170,19 +199,21 @@ func DBInit() (*gorm.DB, error) {
 
 // PlayerWithFines represents a player along with their fines
 type PlayerWithFines struct {
-	ID                uint
-	Name              string
-	TotalFineCount    int
-	TotalFines        int
-	Role              string
-	RoleDescription   string
-	Fines             []Fine
-	PendingFines      []Fine
-	PendingFineSum    int
-	PendingTotalCount int
+	ID                     uint
+	Name                   string
+	TotalFineCount         int
+	TotalFines             int
+	Role                   string
+	RoleDescription        string
+	Fines                  []Fine
+	PendingFines           []Fine
+	PendingFineSum         int
+	PendingTotalCount      int
+	FinesOutstandingAmount float64
+	SubsOutstandingAmount  float64
 }
 
-func GetPlayersWithFines(db *gorm.DB, playerIds []uint64) ([]PlayerWithFines, error) {
+func GetPlayersWithFines(db *gorm.DB, seasonId uint64, playerIds []uint64) ([]PlayerWithFines, error) {
 	var playersWithFines []PlayerWithFines
 
 	var players []Player
@@ -190,12 +221,19 @@ func GetPlayersWithFines(db *gorm.DB, playerIds []uint64) ([]PlayerWithFines, er
 	if len(playerIds) > 0 {
 		db.Preload("Fines", func(db *gorm.DB) *gorm.DB {
 			return db.Order("fines.fine_at DESC")
-		}).Where("id IN ?", playerIds).Find(&players)
+		}).Where("id IN ?", playerIds).Find(&players).Order("players.name")
 
 	} else {
-		db.Preload("Fines", func(db *gorm.DB) *gorm.DB {
-			return db.Order("fines.fine_at DESC")
-		}).Find(&players).Order("players.name")
+		if seasonId == 0 {
+			db.Preload("Fines", func(db *gorm.DB) *gorm.DB {
+				return db.Order("fines.fine_at DESC")
+			}).Find(&players).Where("season_ids IN ?", seasonId).Order("players.name")
+		} else {
+			db.Preload("Fines", func(db *gorm.DB) *gorm.DB {
+				return db.Order("fines.fine_at DESC")
+			}).Find(&players).Order("players.name")
+		}
+
 	}
 	//.Where("active = true")
 
@@ -216,16 +254,18 @@ func GetPlayersWithFines(db *gorm.DB, playerIds []uint64) ([]PlayerWithFines, er
 			}
 		}
 		pwf := PlayerWithFines{
-			ID:                player.ID,
-			Name:              player.Name,
-			TotalFineCount:    len(approvedFines),
-			TotalFines:        fineSum,
-			Role:              player.Role,
-			RoleDescription:   player.RoleDescription,
-			Fines:             approvedFines,
-			PendingFines:      pendingFines,
-			PendingFineSum:    pendingSum,
-			PendingTotalCount: len(pendingFines),
+			ID:                     player.ID,
+			Name:                   player.Name,
+			TotalFineCount:         len(approvedFines),
+			TotalFines:             fineSum,
+			Role:                   player.Role,
+			RoleDescription:        player.RoleDescription,
+			Fines:                  approvedFines,
+			PendingFines:           pendingFines,
+			PendingFineSum:         pendingSum,
+			PendingTotalCount:      len(pendingFines),
+			FinesOutstandingAmount: player.FinesOutstandingAmount,
+			SubsOutstandingAmount:  player.SubsOutstandingAmount,
 		}
 		playersWithFines = append(playersWithFines, pwf)
 	}
@@ -235,6 +275,138 @@ func GetPlayersWithFines(db *gorm.DB, playerIds []uint64) ([]PlayerWithFines, er
 	})
 
 	return playersWithFines, nil
+}
+
+func SetAllFineAmounts(db *gorm.DB, amount float64) (int64, int64, error) {
+	// Create a map with the fields you want to update
+	updates := map[string]interface{}{
+		"Amount": amount,
+	}
+
+	// Find the Fine by ID and update the Contest field
+	result := db.Model(&Fine{}).Where("amount < ? OR amount is null", amount).Updates(updates)
+
+	// Check if the update operation resulted in an error
+	if result.Error != nil {
+		return 0, 0, result.Error
+	}
+
+	result2 := db.Model(&PresetFine{}).Where("amount < ? OR amount is null", amount).Updates(updates)
+	// Check if the update operation resulted in an error
+	if result2.Error != nil {
+		return result.RowsAffected, 0, result2.Error
+	}
+
+	return result.RowsAffected, result2.RowsAffected, nil
+}
+
+func SetSeasonId(db *gorm.DB, days int) (int64, int64, error) {
+	activeSeason, err := GetActiveSeason(db)
+	if err != nil {
+		return 0, 0, err
+	}
+	if activeSeason == nil {
+		return 0, 0, errors.New("no active season found")
+	}
+
+	playerUpdates := map[string]interface{}{
+		"LatestSeasonId": activeSeason.ID,
+	}
+
+	playerResult := db.Model(&Player{}).Where("created_at > ?", time.Now().AddDate(0, 0, -days)).Updates(playerUpdates)
+
+	if playerResult.Error != nil {
+		return 0, 0, playerResult.Error
+	}
+
+	updates := map[string]interface{}{
+		"SeasonID": activeSeason.ID,
+	}
+
+	result := db.Model(&Fine{}).Where("created_at > ? AND (season_id != ? OR season_id is null)", time.Now().AddDate(0, 0, -days), activeSeason.ID).Updates(updates)
+	if result.Error != nil {
+		return 0, playerResult.RowsAffected, result.Error
+	}
+
+	return result.RowsAffected, playerResult.RowsAffected, nil
+}
+
+func SetPlayerFinesOutstandingForActiveSeason(db *gorm.DB, seasonID uint) (int, error) {
+
+	playerWithFines, err := GetPlayersWithFines(db, seasonId, []uint64{})
+	if err != nil {
+		return 0, err
+	}
+
+	var rows = 0
+	for _, player := range playerWithFines {
+
+		var total = 0.0
+		for _, fine := range player.PendingFines {
+			total = total + fine.Amount
+		}
+
+		updates := map[string]interface{}{
+			"FinesOutstandingAmount": total,
+		}
+
+		result := db.Model(&Player{}).Where("id = ?", player.ID).Updates(updates)
+		if result.Error != nil {
+			return 0, result.Error
+		} else {
+			rows = rows + int(result.RowsAffected)
+
+		}
+
+	}
+
+	return rows, nil
+}
+func SetPlayerSubsOutstandingForActiveSeason(db *gorm.DB, seasonID uint, seasonSubs int) (int, error) {
+
+	updates := map[string]interface{}{
+		"SubsOutstandingAmount": seasonSubs,
+	}
+
+	result := db.Model(&Player{}).Where("latest_season_id = ?", seasonID).Updates(updates)
+	if result.Error != nil {
+		return 0, result.Error
+	}
+
+	return int(result.RowsAffected), nil
+}
+
+func CreatePlayerPayment(db *gorm.DB, playerId uint, amount float64, seasonId uint) error {
+	payment := PlayerPayment{
+		PlayerID:        playerId,
+		Amount:          amount,
+		PaymentLoggedAt: time.Now(),
+		SeasonID:        seasonId,
+	}
+
+	if err := db.Save(&payment).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func GetPlayerPayments(db *gorm.DB, seasonId uint) ([]PlayerPayment, error) {
+	var payments []PlayerPayment
+	if err := db.Where("season_id = ?", seasonId).Find(&payments).Error; err != nil {
+		return nil, err
+	}
+	return payments, nil
+}
+
+func DeletePlayerPayment(db *gorm.DB, paymentId uint) error {
+	result := db.Delete(&PlayerPayment{}, paymentId)
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
 }
 
 func FetchActivePlayers(db *gorm.DB) ([]Player, error) {
@@ -327,6 +499,22 @@ func GetPlayers(db *gorm.DB, page int, pageSize int) ([]Player, error) {
 	}
 
 	return players, nil
+}
+
+func UpdateFineCourtSessionOrderByID(db *gorm.DB, fineID uint, courtSessionOrder uint) error {
+	// Create a map with the fields you want to update
+	updates := map[string]interface{}{
+		"CourtSessionOrder": courtSessionOrder,
+	}
+	result := db.Model(&Fine{}).Where("id = ?", fineID).Updates(updates)
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	log.Printf("Fine %d updated with court session order %d", fineID, courtSessionOrder)
+	return nil
 }
 
 func SaveFine(db *gorm.DB, fine *Fine) error {
@@ -455,7 +643,6 @@ func DeleteFineByID(db *gorm.DB, id uint) error {
 	return nil
 }
 
-
 func GetFineImages(db *gorm.DB, fineId uint) ([]FineImage, error) {
 	var images []FineImage
 	if err := db.Where("fine_id = ?", fineId).Find(&images).Error; err != nil {
@@ -499,6 +686,11 @@ func GetFineWithPlayers(db *gorm.DB, pageId uint64, limit int) ([]FineWithPlayer
 	}
 
 	var fineWithPlayers []FineWithPlayer
+
+	// sort the fines by CourtSessionOrder
+	sort.Slice(fines, func(i, j int) bool {
+		return fines[i].CourtSessionOrder < fines[j].CourtSessionOrder
+	})
 
 	for _, fine := range fines {
 		var matchedPlayer Player
@@ -618,6 +810,13 @@ func (l *LatLngArray) Scan(value interface{}) error {
 	return json.Unmarshal(bytes, l)
 }
 
+type Season struct {
+	gorm.Model
+	Title     string
+	StartDate time.Time
+	IsActive  bool
+}
+
 type Match struct {
 	gorm.Model
 	Location       string
@@ -681,6 +880,48 @@ func GetMatch(db *gorm.DB, id uint64) (*Match, error) {
 	return &match, nil
 }
 
+func GetSeasons(db *gorm.DB) ([]Season, error) {
+	var seasons []Season
+	if err := db.Find(&seasons).Error; err != nil {
+		return nil, err
+	}
+	return seasons, nil
+}
+
+func GetSeasonById(db *gorm.DB, id uint) (*Season, error) {
+	var season Season
+	if err := db.Where("id = ?", id).First(&season).Error; err != nil {
+		return nil, err
+	}
+	return &season, nil
+}
+
+func DeleteSeason(db *gorm.DB, seasonId uint) error {
+
+	// update all fines to not have a season
+	result := db.Model(&Fine{}).Where("season_id = ?", seasonId).Update("season_id", nil)
+	if result.Error != nil {
+		return result.Error
+	}
+
+	result2 := db.Delete(&Season{}, seasonId)
+	if result2.Error != nil {
+		return result2.Error
+	}
+	if result2.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
+}
+
+func GetActiveSeason(db *gorm.DB) (*Season, error) {
+	var season Season
+	if err := db.Where("is_active = ?", true).Order("start_date desc").First(&season).Error; err != nil {
+		return nil, err
+	}
+	return &season, nil
+}
+
 func WrapMatchWithMeta(db *gorm.DB, match Match) (*MatchMetaGeneral, error) {
 	log.Printf("🎁 WrapMatchWithMeta START")
 	players, err := GetPlayers(db, 0, 999)
@@ -734,6 +975,13 @@ func GetMatchWithEvents(db *gorm.DB, id uint) (*Match, error) {
 	}
 
 	return &match, nil
+}
+
+func SaveSeason(db *gorm.DB, season *Season) error {
+	if err := db.Save(season).Error; err != nil {
+		return err
+	}
+	return nil
 }
 
 func SaveMatch(db *gorm.DB, match *Match) (uint, error) {

@@ -110,6 +110,228 @@ func matchListHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) 
 	}
 }
 
+func seasonBulkUpdateHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case "POST":
+			// get type from url param (not query string)
+			updateType := chi.URLParam(r, "updateType")
+			switch updateType {
+			case "set-season":
+				{
+					err := r.ParseForm()
+					if err != nil {
+						warnComp := warning("Invalid form data")
+						warnComp.Render(GetContext(r), w)
+						return
+					}
+					days := r.FormValue("days")
+					daysInt, err := strconv.ParseInt(days, 10, 64)
+					if err != nil {
+						warnComp := warning("Invalid days")
+						warnComp.Render(GetContext(r), w)
+						return
+					}
+					finesUpdated, playersUpdated, err := SetSeasonId(db, int(daysInt))
+
+					if err != nil {
+						er := warning(fmt.Sprintf("Error parsing form data 2 %+v", err))
+						er.Render(GetContext(r), w)
+					} else {
+
+						success := success(fmt.Sprintf("SetSeasonId days:%d updated %d fine and %d players", daysInt, finesUpdated, playersUpdated))
+						success.Render(GetContext(r), w)
+					}
+				}
+			case "set-player-subs-outstanding-for-season":
+				{
+					activeSeason, err := GetActiveSeason(db)
+					if err != nil {
+						er := warning(fmt.Sprintf("Could not get active season %+v", err))
+						er.Render(GetContext(r), w)
+						return
+					}
+					seasonSubs := r.FormValue("seasonSubs")
+					seasonSubsInt, err := strconv.ParseInt(seasonSubs, 10, 64)
+					if err != nil {
+						warnComp := warning("Invalid seasonSubs")
+						warnComp.Render(GetContext(r), w)
+						return
+					}
+
+					recordsUpdated, err := SetPlayerSubsOutstandingForActiveSeason(db, activeSeason.ID, int(seasonSubsInt))
+
+					if err != nil {
+						er := warning(fmt.Sprintf("Error parsing form data 2 %+v", err))
+						er.Render(GetContext(r), w)
+					} else {
+
+						success := success(fmt.Sprintf("SetPlayerSubsOutstandingForSeason updated %d records", recordsUpdated))
+						success.Render(GetContext(r), w)
+					}
+				}
+			}
+		case "GET":
+			updateType := chi.URLParam(r, "updateType")
+			switch updateType {
+			case "set-season":
+
+				activeSeason, err := GetActiveSeason(db)
+				if err != nil {
+					er := warning(fmt.Sprintf("Could not get active season %+v", err))
+					er.Render(GetContext(r), w)
+					return
+				}
+
+				setSeasonForm := setSeasonForm(activeSeason.Title)
+				setSeasonForm.Render(GetContext(r), w)
+				return
+			default:
+				http.Error(w, "Method Not Allowed (updateType needed)", http.StatusMethodNotAllowed)
+				return
+			}
+
+		default:
+			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+			return
+		}
+	}
+}
+
+func seasonSpecificHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case "DELETE":
+			seasonIdStr := chi.URLParam(r, "seasonId")
+			seasonId, err := strconv.ParseUint(seasonIdStr, 10, 64)
+
+			if err != nil {
+				warning := warning(fmt.Sprintf("Error parsing season ID: %v", err))
+				warning.Render(GetContext(r), w)
+				return
+			}
+
+			delErr := DeleteSeason(db, uint(seasonId))
+			if delErr != nil {
+				warning := warning(fmt.Sprintf("Error deleting season: %+v", delErr))
+				warning.Render(GetContext(r), w)
+				return
+			}
+
+			success := success(fmt.Sprintf("Deleted season: %d", seasonId))
+			success.Render(GetContext(r), w)
+
+		}
+	}
+}
+
+func seasonHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case "GET":
+			seasons, err := GetSeasons(db)
+			if err != nil {
+				http.Error(w, "Could not get seasons", http.StatusNotFound)
+				return
+			}
+			displayType := r.URL.Query().Get("type")
+			switch displayType {
+			case "selector":
+				seasonSelComp := selectSeasons(seasons)
+				seasonSelComp.Render(GetContext(r), w)
+			default:
+				activeSeason, err := GetActiveSeason(db)
+				var activeSeasonTitle = ""
+				if err == nil {
+					activeSeasonTitle = activeSeason.Title
+				}
+
+				seasonComp := manageSeasons(seasons, activeSeasonTitle)
+				seasonComp.Render(GetContext(r), w)
+			}
+
+			return
+
+		case "POST":
+			err := r.ParseForm()
+			if err != nil {
+				warnComp := warning("Invalid form data")
+				warnComp.Render(GetContext(r), w)
+				return
+			}
+
+			title := r.FormValue("title")
+			if title == "" {
+				warnComp := warning("Title is required")
+				warnComp.Render(GetContext(r), w)
+				return
+			}
+			startDate := r.FormValue("startDate")
+			seasonIdStr := r.FormValue("seasonId")
+			isActive := r.FormValue("isActive") == "on"
+
+			// Parse start date like 2024-08-01T09:25
+			startDateParsed, err := time.Parse("2006-01-02T15:04", startDate)
+			if err != nil {
+				warnComp := warning("Invalid start date")
+				warnComp.Render(GetContext(r), w)
+				return
+			}
+
+			var season *Season
+			if seasonIdStr != "" {
+				// If seasonId is provided, attempt to parse and update the season
+				seasonId, err := strconv.ParseUint(seasonIdStr, 10, 64)
+				if err != nil {
+					warnComp := warning("Invalid season ID")
+					warnComp.Render(GetContext(r), w)
+					return
+				}
+
+				// Fetch the season from the database to update it
+				season, err = GetSeasonById(db, uint(seasonId))
+				if err != nil {
+					warnComp := warning("Season not found")
+					warnComp.Render(GetContext(r), w)
+					return
+				}
+				// Update the season fields
+				season.Title = title
+				season.StartDate = startDateParsed
+				season.IsActive = isActive
+			} else {
+				// If seasonId is not provided, create a new season
+				season = &Season{
+					Title:     title,
+					StartDate: startDateParsed,
+					IsActive:  isActive,
+				}
+			}
+
+			log.Printf("Season %+v", season)
+			// Save the season (either update or create)
+			savErr := SaveSeason(db, season)
+			if savErr != nil {
+				warnComp := warning("Could not save season")
+				warnComp.Render(GetContext(r), w)
+				return
+			}
+			if len(seasonIdStr) > 0 {
+				successComp := success("Season updated")
+				successComp.Render(GetContext(r), w)
+			} else {
+				successComp := success("Season created")
+				successComp.Render(GetContext(r), w)
+			}
+
+			return
+		default:
+			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+			return
+		}
+	}
+}
+
 func matchHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 	var matchId uint
 	var err error
@@ -128,7 +350,7 @@ func matchHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 					errComp.Render(GetContext(r), w)
 				}
 
-				pwfs, err := GetPlayersWithFines(db, []uint64{})
+				pwfs, err := GetPlayersWithFines(db, 0, []uint64{})
 				if err != nil {
 					http.Error(w, "Could not get matches", http.StatusNotFound)
 					return

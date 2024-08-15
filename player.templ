@@ -296,6 +296,26 @@ templ playerRoleSelector(player PlayerWithFines, config *Config, msg string) {
 						}
 					</label>
 				}
+				<label for="SubsOutstandingAmount" class="block mt-2">SubsOutstandingAmount
+					<input 
+						type="text"
+						name="subsOutstandingAmount"
+						id="subsOutstandingAmount"
+						value={ fmt.Sprintf("%v", player.SubsOutstandingAmount) }
+						placeholder="Subs Outstanding"
+						class="w-full text-3xl px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600"
+					/>
+				</label>
+				<label for="FinesOutstandingAmount" class="block mt-2">FinesOutstandingAmount
+					<input 
+						type="text"
+						name="finesOutstandingAmount"
+						id="finesOutstandingAmount"
+						value={ fmt.Sprintf("%v", player.FinesOutstandingAmount) }
+						placeholder="Fines Outstanding"
+						class="w-full text-3xl px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600"
+					/>
+				</label>
 				if len(msg) > 0 {
 					@success(msg)
 				}
@@ -310,3 +330,50 @@ templ playerRoleSelector(player PlayerWithFines, config *Config, msg string) {
 	</div>
 }
 
+templ viewPlayerPayments(playerPayments []PlayerPaymentsWithTotals, players []Player, seasonId uint64) {
+	<div class="flex flex-row w-full">
+	 { fmt.Sprintf("%d", len(playerPayments)) } Total PlayerPayments
+		for _, pay := range playerPayments {
+			<div>
+			{ fmt.Sprintf("%+v", pay) }
+			</div>
+		}
+		@addPlayerPayment(players, seasonId)
+	</div>
+}
+
+templ addPlayerPayment(players []Player, seasonId uint64){
+	<div class="w-full mx-auto bg-gray-200 shadow-xl m-10">
+		<form hx-post={ fmt.Sprintf("/season/%d/payments", seasonId)} class="flex flex-col space-y-4 bg-white shadow-md p-6 rounded-lg">
+			<div class="flex flex-row w-full">
+				<select
+					id="select-player"
+					required
+					hx-ext="tomselect"
+					tx-max-items="99"
+					name="players[]"
+					tx-close-after-select="true"
+					ts-item-class="text-5xl	py-5"
+					ts-option-class="text-5xl w-full py-5"
+					hx-debug="true"
+					multiple
+					placeholder="John Doe"
+					class="text-3xl  border border-gray-300 rounded-md text-gray-700 flex-grow mb-2"
+				>
+					<option value="">Select a player...</option>
+					for _, p := range players {
+						<option value={ fmt.Sprintf("%d", p.ID) }>{ p.Name }</option>
+					}
+				</select>
+				
+			</div>
+			<div>
+			<label>
+					Amount
+					<input name="amount"></input>
+				</label>
+			</div>
+			<button type="submit">Add Payment</button>
+		</form>
+	</div>
+}

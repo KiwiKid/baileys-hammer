@@ -23,6 +23,7 @@ var bigAdd = fmt.Sprintf("%s %s", bigBtnTxt, add)
 var bigDel = fmt.Sprintf("%s %s", bigBtnTxt, del)
 
 var smPri = fmt.Sprintf("%s %s", pri, sm)
+var smDel = fmt.Sprintf("%s %s", del, sm)
 
 var S = fmt.Sprint
 var F = fmt.Sprintf
