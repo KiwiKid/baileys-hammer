@@ -73,28 +73,3 @@ templ updateSeason(season Season) {
 	</form>
 	</div>
 }
-
-
-
-templ setSeasonForm(activeSeasonTitle string) {
-		<form hx-post="/season/update/set-season" class="max-w-md mx-auto bg-white p-6 rounded-lg shadow-md">
-		<h2 class="text-lg">Will Set all fines/players more than X days old to the current season</h2>
-
-			<div class="mb-4">
-				<label for="days" class="block text-gray-700 font-medium mb-2"></label>
-				<input type="number" id="days" name="days" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"/>
-			</div>
-			
-			<button type="submit" class="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-			if len(activeSeasonTitle) == 0 {
-				disabled="disabled"
-			}
-			>
-
-				Set Missing Season Ids
-				if len(activeSeasonTitle) == 0 {
-					@warning("No active season - create one to set against all fines to use this helper")
-				}
-			</button>
-		</form>
-}
