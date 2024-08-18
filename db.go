@@ -68,6 +68,7 @@ type Fine struct {
 	PlayerID          uint
 	SeasonID          uint
 	CourtSessionOrder uint
+	CourtSessionNote  string
 	MatchId           uint
 	FineAt            time.Time
 	Reason            string
@@ -132,6 +133,10 @@ func DBInit() (*gorm.DB, error) {
 
 	if (!db.Migrator().HasColumn(&Fine{}, "CourtSessionOrder")) {
 		db.Migrator().AddColumn(&Fine{}, "CourtSessionOrder")
+	}
+
+	if (!db.Migrator().HasColumn(&Fine{}, "CourtSessionNote")) {
+		db.Migrator().AddColumn(&Fine{}, "CourtSessionNote")
 	}
 
 	if (!db.Migrator().HasColumn(&Fine{}, "MatchId")) {
@@ -501,10 +506,11 @@ func GetPlayers(db *gorm.DB, page int, pageSize int) ([]Player, error) {
 	return players, nil
 }
 
-func UpdateFineCourtSessionOrderByID(db *gorm.DB, fineID uint, courtSessionOrder uint) error {
+func UpdateFineCourtSessionOrderByID(db *gorm.DB, fineID uint, courtSessionOrder uint, courtSessionNotes string) error {
 	// Create a map with the fields you want to update
 	updates := map[string]interface{}{
 		"CourtSessionOrder": courtSessionOrder,
+		"CourtSessionNote":  courtSessionNotes,
 	}
 	result := db.Model(&Fine{}).Where("id = ?", fineID).Updates(updates)
 	if result.Error != nil {
@@ -687,8 +693,15 @@ func GetFineWithPlayers(db *gorm.DB, pageId uint64, limit int) ([]FineWithPlayer
 
 	var fineWithPlayers []FineWithPlayer
 
-	// sort the fines by CourtSessionOrder
+	// sort the fines by CourtSessionOrder, 0 at the bottom
 	sort.Slice(fines, func(i, j int) bool {
+		if fines[i].CourtSessionOrder == 0 {
+			return false
+		}
+		if fines[j].CourtSessionOrder == 0 {
+			return true
+		}
+
 		return fines[i].CourtSessionOrder < fines[j].CourtSessionOrder
 	})
 
@@ -917,7 +930,10 @@ func DeleteSeason(db *gorm.DB, seasonId uint) error {
 func GetActiveSeason(db *gorm.DB) (*Season, error) {
 	var season Season
 	if err := db.Where("is_active = ?", true).Order("start_date desc").First(&season).Error; err != nil {
-		return nil, err
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil // No active season, return nil instead of an error
+		}
+		return nil, err // Other errors should be returned
 	}
 	return &season, nil
 }

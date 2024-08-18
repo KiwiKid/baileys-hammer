@@ -76,11 +76,24 @@ func playerPayments(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 					totalRecords++
 				}
 			}
-			success := success(fmt.Sprintf("Payment %d added $%v", totalRecords, totalAdded))
+			success := success(fmt.Sprintf("%d Payment  added for $%v and %d player(s) ", totalRecords, totalAdded, len(playerIDs)))
 			success.Render(GetContext(r), w)
 			return
 
 		case "GET":
+			activeSeason, err := GetActiveSeason(db)
+			if err != nil {
+				http.Error(w, "Failed when getting active season", http.StatusNotFound)
+				return
+			}
+
+			displayType := r.URL.Query().Get("displayType")
+			if displayType == "button" {
+
+				btn := playerPaymentsButton("Open Player Payments", "table", activeSeason)
+				btn.Render(GetContext(r), w)
+				return
+			}
 
 			seasonIdParam := chi.URLParam(r, "seasonId")
 			seasonId, err := strconv.ParseUint(seasonIdParam, 10, 64)
@@ -103,21 +116,20 @@ func playerPayments(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 						total += pay.Amount
 					}
 				}
-				if total > 0 {
-					playerTotals = append(playerTotals, PlayerPaymentsWithTotals{
-						PlayerPayments: playerPayments,
-						Total:          total,
-						PlayerName:     player.Name,
-					})
-				}
+				//	if total > 0 {
+				playerTotals = append(playerTotals, PlayerPaymentsWithTotals{
+					PlayerPayments: playerPayments,
+					Total:          total,
+					PlayerName:     player.Name,
+				})
+				//	}
 			}
-			displayType := r.URL.Query().Get("displayType")
 			if displayType == "" {
 				displayType = "table"
 			}
 			switch displayType {
 			case "table":
-				paymentsComp := viewPlayerPayments(playerTotals, players, seasonId)
+				paymentsComp := viewPlayerPayments(playerTotals, players, activeSeason)
 				paymentsComp.Render(GetContext(r), w)
 				return
 			default:
@@ -125,7 +137,7 @@ func playerPayments(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 		}
-		http.Error(w, "Invalid htpp method  type", http.StatusBadRequest)
+		http.Error(w, "Invalid http method  type", http.StatusBadRequest)
 		return
 
 	}

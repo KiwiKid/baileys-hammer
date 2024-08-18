@@ -330,26 +330,96 @@ templ playerRoleSelector(player PlayerWithFines, config *Config, msg string) {
 	</div>
 }
 
-templ viewPlayerPayments(playerPayments []PlayerPaymentsWithTotals, players []Player, seasonId uint64) {
-	<div class="flex flex-row w-full">
-	 { fmt.Sprintf("%d", len(playerPayments)) } Total PlayerPayments
-		for _, pay := range playerPayments {
-			<div>
-			{ fmt.Sprintf("%+v", pay) }
-			</div>
-		}
+
+templ playerPaymentsButton(title string, displayType string, activeSeason *Season) {
+	<div>
+	if activeSeason != nil {
+		<button hx-get={ fmt.Sprintf("/season/%d/payments?displayType=%s", activeSeason.ID, displayType) } hx-swap="outerHTML" 
+			if displayType == "button" {
+				class={ bigSec }
+			} else {
+				class={ bigPri }
+			}
+		 >{ title }</button>
+	} else {
+		@warning("no active season - player payments disabled")
+	}
+	</div>
+}
+
+
+templ viewPlayerPayments(playerPayments []PlayerPaymentsWithTotals, players []Player, activeSeason *Season) {
+	<div hx-target="this">
+		@playerPaymentsButton("Close Payments", "button", activeSeason)
 		@addPlayerPayment(players, seasonId)
+		<div class="flex flex-row w-full" >
+			<div class="flex flex-col space-y-4">
+				<div class="flex flex-row bg-gray-800 text-white p-4 rounded-t-lg">
+					<div class="flex-1 font-bold">Player Name</div>
+					<div class="flex-1 text-center font-bold">Total Payment</div>
+					<div class="flex-1 text-right font-bold">Details</div>
+				</div>
+
+				for _, pay := range playerPayments {
+					<div class="bg-gray-100 border-b last:rounded-b-lg last:border-b-0">
+						<details class="p-4 hover:bg-gray-200 cursor-pointer">
+							<summary class="flex flex-row items-center">
+								<div class="flex-1 font-semibold text-gray-800">
+									{pay.PlayerName}
+								</div>
+								<div class="flex-1 text-center text-gray-600">
+									{fmt.Sprintf("$%v", pay.Total)}
+								</div>
+								<div class="flex-1 text-right text-gray-600">
+									View Details
+								</div>
+							</summary>
+
+							<div class="mt-4 space-y-2">
+								for _, payment := range pay.PlayerPayments {
+									<div class="flex flex-row bg-gray-50 p-2 rounded-lg">
+										<div class="flex-1 text-gray-600">
+											{payment.PaymentLoggedAt.Format("2006-01-02 15:04")}
+										</div>
+										<div class="flex-1 text-center text-gray-800">
+											{fmt.Sprintf("$%v", payment.Amount)}
+										</div>
+										<div class="flex-1 text-right text-gray-600">
+											Season: { fmt.Sprintf("%d", payment.SeasonID)}
+										</div>
+									</div>
+								}
+							</div>
+						</details>
+					</div>
+				}
+			</div>
+		</div>
+		@playerPaymentsButton("Close Payments", "button", activeSeason)
 	</div>
 }
 
 templ addPlayerPayment(players []Player, seasonId uint64){
 	<div class="w-full mx-auto bg-gray-200 shadow-xl m-10">
-		<form hx-post={ fmt.Sprintf("/season/%d/payments", seasonId)} class="flex flex-col space-y-4 bg-white shadow-md p-6 rounded-lg">
+	<script>
+		window.emptyPlayerPayment = function(){
+			debugger
+			const elm = document.getElementById("select-player-pay")
+			if(elm && elm.tomselect){
+				elm.tomselect.clear()
+			}
+			const elm2 = document.getElementById("pay-amount")
+			if(elm2){
+				elm2.value = ""
+			}
+		}
+	</script>
+		<form hx-post={ fmt.Sprintf("/season/%d/payments", seasonId)} hx-target="#pay-response" hx-on::after-request="window.emptyPlayerPayment()" class="flex flex-col space-y-4 bg-white shadow-md p-6 rounded-lg">
 			<div class="flex flex-row w-full">
 				<select
-					id="select-player"
+					id="select-player-pay"
 					required
-					hx-ext="tomselect"
+					hx-ext="tomselect" 
 					tx-max-items="99"
 					name="players[]"
 					tx-close-after-select="true"
@@ -370,10 +440,11 @@ templ addPlayerPayment(players []Player, seasonId uint64){
 			<div>
 			<label>
 					Amount
-					<input name="amount"></input>
+					<input id="pay-amount" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" name="amount"></input>
 				</label>
 			</div>
-			<button type="submit">Add Payment</button>
+			<button class={ bigAdd } type="submit">Add Payment</button>
+			<div id="pay-response"></div>
 		</form>
 	</div>
 }

@@ -17,15 +17,30 @@ func getFinesTotal(fines []FineWithPlayer) float64 {
 	return 0
 }
 
+
+templ fineSummaryButton(title string, viewMode string){
+	<div class="mt-10">
+		switch viewMode {
+			case "button": 
+				<div class="flex-grow justify-center items-center mb-4"></div>
+			
+			case "summary":
+				<div class="flex-grow justify-center items-center mb-4"></div>
+			
+			default: 
+				@warning(fmt.Sprintf("No view mode for %s", viewMode))
+			
+		}
+	</div>
+}
+
 templ fineList(fines []FineWithPlayer, page int, presetFineUpdated uint, isFineMaster bool, onlyRecent bool) {
-	<div
- 		class="m-2 bg-gray-200 shadow-xl p-2 mt-10"
+	<div class="m-2 bg-gray-200 shadow-xl p-2 mt-10"
 		if onlyRecent {
 			id="recent-fine-list-container"
 		} else {
 			id="fine-list-container"
 		}
- 		
 	>
 		<div class="text-center">
 			<div class="flex-grow justify-center items-center mb-4">
@@ -46,9 +61,6 @@ templ fineList(fines []FineWithPlayer, page int, presetFineUpdated uint, isFineM
 
 				if !onlyRecent {
 					<span class="text-3xl ml-2">↻</span>
-				
-					<div class={ bigPri } hx-get="/fines?viewMode=sheet" hx-trigger="click" hx-swap="outerHTML">load sheet view</div>
-					<div class={ bigPri } hx-get="/fines/summary" hx-trigger="click" hx-swap="outerHTML">load totals view</div>
 				}
 			</div>
 			if isFineMaster {
@@ -67,8 +79,13 @@ templ fineList(fines []FineWithPlayer, page int, presetFineUpdated uint, isFineM
 				</tbody>
 			</table>
 		</div>
+		
 	</div>
 }
+
+
+
+
 
 templ bigFineImages(fineImages []FineImage, fineId uint){
 	<div class="flex flex-wrap gap-4">
@@ -84,7 +101,7 @@ templ fineImages(fineImages []FineImage, fineId uint, message string) {
 	}
 	<div class="flex flex-wrap gap-4">
 		for _, fi := range fineImages {
-			<div>
+			<div> 
 				<img class="h-64 w-64" src={ fmt.Sprintf("data:image/jpeg;base64,%s", base64.StdEncoding.EncodeToString(fi.Data)) } alt={ fi.Filename } />
 			</div>
 		}
@@ -249,18 +266,63 @@ templ fineRow(isFineMaster bool, f FineWithPlayer) {
 	</tr>
 }
 
-templ fineTotals(totals []PlayerFinesTotal, grandTotal float64) {
-	<div class="m-2 bg-white shadow p-4 mt-10">
-		<h2 class="text-center font-bold text-lg mb-4">Fine Totals: { fmt.Sprintf("$%v", grandTotal)} </h2>
+templ finesListButton(title string, toViewMode string, external bool){
+	<div class="mt-10">
+		switch toViewMode {
+			case "sheet-button":
+			if external {
+				<a href={ templ.SafeURL(fmt.Sprintf("/fines?viewMode=%s", toViewMode)) } target="_">{ title }</a>
+			} else {	
+				<div class={ bigSec } 
+					
+						
+					
+					hx-get={ fmt.Sprintf("/fines?viewMode=%s", toViewMode) } 
+					hx-trigger="click" 
+					hx-swap="outerHTML" 
+					
+				>{ title }</div>
+				}
+			case "sheet":
+				<div class={ bigPri } 
+					if external {
+						hx-get={ fmt.Sprintf("/fines?viewMode=%s", toViewMode) } 
+						target="_"
+					} else {
+						hx-get={ fmt.Sprintf("/fines?viewMode=%s", toViewMode) } 
+						hx-trigger="click" 
+						hx-swap="outerHTML" 
+					}
+				>{ title }</div>
+			case "summary":
+				<div class={ bigSec } 
+						if external {
+							hx-get={ "/fines/summary" } 
+							target="_"
+						} else {
+							hx-get={ "/fines/summary" } 
+							hx-trigger="click" 
+							hx-swap="outerHTML"
+						}
+					>{ title }
+				</div>
+			default:
+				<div>@warning(fmt.Sprintf("fineListButton toViewMode not found - %s", toViewMode))</div>
+		}
+	</div>
+}
 
+templ fineTotals(totals []PlayerFinesTotal, grandTotal float64) {
+	<div class="m-2 bg-white shadow p-4 mt-10" hx-target="this">
+		<h2 class="text-center font-bold text-lg mb-4">Fine Totals: { fmt.Sprintf("$%v", grandTotal)} </h2>
+		@fineSummaryButton("Close Total View", "button")
 		<table class="min-w-full table-auto border-collapse">
 			<thead>
 				<tr class="bg-gray-100">
 					<th class="p-2 border border-gray-300">Player</th>
 					<th class="p-2 border border-gray-300">Fine Total</th>
-					<th class="p-2 border border-gray-300">Subs Outstanding</th>
-					<th class="p-2 border border-gray-300">Fines Outstanding</th>
-					<th class="p-2 border border-gray-300">SeasonId</th>
+					<th class="p-2 border border-gray-300">Fine Payments Total</th>
+					<th class="p-2 border border-gray-300">Owing</th>
 				</tr>
 			</thead>
 			<tbody class="divide-y divide-gray-200">
@@ -270,17 +332,28 @@ templ fineTotals(totals []PlayerFinesTotal, grandTotal float64) {
 					<tr>
 						<td class="p-2 border border-gray-300">{ t.Player.Name }</td>
 						<td class="p-2 border border-gray-300">{ fmt.Sprintf("$%v", t.TotalFines) }</td>
-						<td class="p-2 border border-gray-300">{ fmt.Sprintf("$%v", t.Player.SubsOutstandingAmount) }</td>
-						<td class="p-2 border border-gray-300">{ fmt.Sprintf("$%v", t.Player.FinesOutstandingAmount) }</td>
+						<td class="p-2 border border-gray-300">{ fmt.Sprintf("$%v", t.TotalPayments) }</td>
+						if (t.PaymentDifference > 0) {
+							<td class="p-2 border border-gray-300 bg-red">@warning(fmt.Sprintf("$%v", t.PaymentDifference))</td>
+						}else {
+							<td class="p-2 border border-gray-300 bg-green">@success(fmt.Sprintf("$%v", t.PaymentDifference))</td>
+						} 
+						
+
 					</tr>
 				}
 			</tbody>
 		</table>
+		@fineSummaryButton("Close Total View", "button")
 	</div>
 }
 
-templ fineListSheet(fines []FineWithPlayer) {
-	<div class="m-2 bg-white shadow p-4 mt-10">
+templ fineListSheet(fines []FineWithPlayer, standAlone bool, full bool) {
+	<div class="m-2 bg-white shadow p-4 mt-10"  hx-target="this">
+		if !standAlone {
+			@finesListButton("Close Court Sheet", "sheet-button", false)
+			<a class={bigPri} href="/court">Standalone</a>
+		}
 		<h2 class="text-center font-bold text-lg mb-4">Fine Sheet View</h2>
 		<div class="grid grid-cols-8 bg-gray-100 border border-gray-300">
 			<div class="border border-gray-300 p-2">Player</div>
@@ -288,11 +361,12 @@ templ fineListSheet(fines []FineWithPlayer) {
 			<div class="border border-gray-300 p-2">Fine Context</div>
 			<div class="border border-gray-300 p-2">Fine Place</div>
 			<div class="border border-gray-300 p-2">Fine Contest</div>
-			<div class="border border-gray-300 p-2">Court Session Order</div>
 			<div class="border border-gray-300 p-2">Date</div>
-			<div class="border border-gray-300 p-2">Add Court Session Order</div>
+			if full {
+				<div class="border border-gray-300 p-2">Court Session Order</div>
+				<div class="border border-gray-300 p-2">Add Court Session Order</div>
+			}
 		</div>
-
 		for _, f := range fines {
 			<div class="grid grid-cols-8 border border-gray-300">
 			<div class="border border-gray-300 p-2">{ f.Player.Name }</div>
@@ -302,24 +376,31 @@ templ fineListSheet(fines []FineWithPlayer) {
 					{ fmt.Sprintf("%s - %s ",  f.Match.Location, f.Match.Opponent ) }
 				</div>
 				<div class="border border-gray-300 p-2">{ fmt.Sprintf("%s", f.Fine.Contest) }</div>
-				<div class="border border-gray-300 p-2">{ fmt.Sprintf("%d", f.Fine.CourtSessionOrder) }</div>
+				<div class="border border-gray-300 p-2">{ fmt.Sprintf("%d %s", f.Fine.CourtSessionOrder, f.Fine.CourtSessionNote) }</div>
 
 				<div class="border border-gray-300 p-2">{ f.Fine.FineAt.Format("Jan 2, 2006") }</div>
-				<div class="border border-gray-300 p-2">
-					<form hx-post="/fines/court-display-order" class="max-w-md mx-auto bg-white p-6 rounded-lg shadow-md">
-						<div class="mb-4">
-							<label for="fid" class="block text-gray-700 font-medium mb-2">Fine ID</label>
-							<input type="hidden" id="fid" name="fid" required value={ fmt.Sprintf("%v", f.Fine.ID) } class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"/>
-						</div>
-						<div class="mb-4">
-							<label for="courtSessionOrder" class="block text-gray-700 font-medium mb-2">Court Session Order</label>
-							<input type="number" id="courtSessionOrder" name="courtSessionOrder" value={ fmt.Sprint("%d", f.Fine.CourtSessionOrder) } required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"/>
-						</div>
-						<button type="submit" class="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
-							Submit
-						</button>
-					</form>
-				</div>
+				if full {
+					<div class="border border-gray-300 p-2">
+						<form hx-post="/fines/court-display-order" hx-target="#court-note-result" class="max-w-md mx-auto bg-white p-6 rounded-lg shadow-md">
+							<div class="mb-4">
+								<input type="hidden" id="fid" name="fid" required value={ fmt.Sprintf("%v", f.Fine.ID) } class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+							</div>
+							<div class="mb-4">
+								<label for="courtSessionOrder" class="block text-gray-700 font-medium mb-2">Court Session Order</label>
+								<input type="number" id="courtSessionOrder" name="courtSessionOrder" value={ fmt.Sprint("%d", f.Fine.CourtSessionOrder) } required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+							</div>
+							<div class="mb-4">
+								<label for="courtSessionNote" class="block text-gray-700 font-medium mb-2">Court Session Note</label>
+								<input type="text" id="courtSessionNote" name="courtSessionNote" value={ f.Fine.CourtSessionNote } class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+							</div>
+							<button type="submit" class="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
+								Add Court Details
+							</button>
+						</form>
+						<div id="court-note-result"></div>
+						<details><summary>debug</summary>{ fmt.Sprintf("%+v", f)}</details>
+					</div>
+				}
 			</div>
 		}
 	</div>

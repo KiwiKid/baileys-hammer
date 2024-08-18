@@ -253,6 +253,31 @@ func fineContextHandler(db *gorm.DB) http.HandlerFunc {
 	}
 }
 
+func courtHandler(db *gorm.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case "GET":
+			{
+				full := r.URL.Query().Get("full") == "true"
+
+				if full {
+					courtComp := courtManage(true)
+					courtComp.Render(GetContext(r), w)
+					return
+				}
+
+				courtComp := courtManage(false)
+				courtComp.Render(GetContext(r), w)
+				return
+			}
+		default:
+			warning := warning("Method not allowed")
+			warning.Render(GetContext(r), w)
+			return
+		}
+	}
+}
+
 func fineSetCourtSessionOrderHandler(db *gorm.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
@@ -272,8 +297,10 @@ func fineSetCourtSessionOrderHandler(db *gorm.DB) http.HandlerFunc {
 			http.Error(w, fmt.Sprintf("Invalid courtSessionOrder - %v", err), http.StatusBadRequest)
 			return
 		}
+		courtSessionNotes := r.FormValue("courtSessionNote")
+		log.Printf("fineSetCourtSessionOrderHandler %d courtSessionNote:[%s]", courtSessionOrderInt, courtSessionNotes)
 
-		err = UpdateFineCourtSessionOrderByID(db, uint(fineID), uint(courtSessionOrderInt))
+		err = UpdateFineCourtSessionOrderByID(db, uint(fineID), uint(courtSessionOrderInt), courtSessionNotes)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Invalid UpdateFineCourtSessionOrderByID - %v", err), http.StatusBadRequest)
 			return
@@ -356,6 +383,7 @@ func fineEditHandler(db *gorm.DB) http.HandlerFunc {
 				fineFormRow := fineEditForm(fineWithPlayer, isFineMaster)
 				fineFormRow.Render(GetContext(r), w)
 			} else if isContest == "true" {
+
 				fineContestRow := fineContestRow(fineWithPlayer)
 				fineContestRow.Render(GetContext(r), w)
 			} else if isContext == "true" {
@@ -571,8 +599,11 @@ func fineImageHandler(db *gorm.DB) http.HandlerFunc {
 }
 
 type PlayerFinesTotal struct {
-	TotalFines float64
-	Player     PlayerWithFines
+	PaymentDifference float64
+	TotalFines        float64
+	TotalPayments     float64
+	PlayerPayment     []PlayerPayment
+	Player            PlayerWithFines
 }
 
 func fineSummaryHandler(db *gorm.DB) http.HandlerFunc {
@@ -580,6 +611,13 @@ func fineSummaryHandler(db *gorm.DB) http.HandlerFunc {
 		switch r.Method {
 		case "GET":
 			{
+				viewMode := r.URL.Query().Get("viewMode")
+				if viewMode == "button" {
+					fineList := fineSummaryButton("Open Total View", "summary")
+					fineList.Render(GetContext(r), w)
+					return
+				}
+
 				playersWithFines, err := GetPlayersWithFines(db, 0, []uint64{})
 				if err != nil {
 					log.Printf("Error fetching players with fines: %v", err)
@@ -587,21 +625,36 @@ func fineSummaryHandler(db *gorm.DB) http.HandlerFunc {
 					return
 				}
 
+				playerPayments, err := GetPlayerPayments(db, 0)
+
 				var playerFinesTotals []PlayerFinesTotal
 
 				var grandTotal float64
 
 				for _, player := range playersWithFines {
 					totalFines := 0.0
+					totalPayments := 0.0
+					thisPlayersPayments := []PlayerPayment{}
 					for _, fine := range player.Fines {
 						totalFines += fine.Amount
 						grandTotal += fine.Amount
 					}
 
+					for _, payment := range playerPayments {
+						if payment.PlayerID == player.ID {
+							totalPayments += payment.Amount
+							thisPlayersPayments = append(thisPlayersPayments, payment)
+						}
+
+					}
+
 					// Store the player's total fines
 					playerFinesTotals = append(playerFinesTotals, PlayerFinesTotal{
-						Player:     player,
-						TotalFines: totalFines,
+						Player:            player,
+						TotalFines:        totalFines,
+						TotalPayments:     totalPayments,
+						PlayerPayment:     thisPlayersPayments,
+						PaymentDifference: totalFines - totalPayments,
 					})
 				}
 
@@ -642,6 +695,17 @@ func fineHandler(db *gorm.DB) http.HandlerFunc {
 		switch r.Method {
 		case "GET":
 			{
+				viewMode := r.URL.Query().Get("viewMode")
+				if viewMode == "list-button" {
+					fineList := finesListButton("Open Fine List", "list", false)
+					fineList.Render(GetContext(r), w)
+					return
+				} else if viewMode == "sheet-button" {
+					fineList := finesListButton("Open Court Sheet", "sheet", false)
+					fineList.Render(GetContext(r), w)
+					return
+				}
+
 				var pageId = 0
 				pageStr := r.URL.Query().Get("page")
 				if len(pageStr) == 0 {
@@ -681,15 +745,24 @@ func fineHandler(db *gorm.DB) http.HandlerFunc {
 					return
 				}
 
-				viewMode := r.URL.Query().Get("viewMode")
+				standAlone := r.URL.Query().Get("standAlone") == "true"
 
-				if viewMode == "sheet" {
-					fineListSheet := fineListSheet(fineWithPlayers)
+				full := r.URL.Query().Get("full") == "true"
+
+				switch viewMode {
+				case "sheet":
+					log.Printf("fineHandler - fineListSheet %+v", fineWithPlayers)
+
+					fineListSheet := fineListSheet(fineWithPlayers, standAlone, full)
 					fineListSheet.Render(GetContext(r), w)
 					return
+				default:
+					log.Printf("fineHandler - fineList ")
+
+					fineList := fineList(fineWithPlayers, pageId, 0, finemasterPage, false)
+					fineList.Render(GetContext(r), w)
 				}
-				fineList := fineList(fineWithPlayers, pageId, 0, finemasterPage, false)
-				fineList.Render(GetContext(r), w)
+
 				return
 			}
 		case "POST":
@@ -1502,6 +1575,9 @@ func setupRouter(db *gorm.DB) *chi.Mux {
 	r.HandleFunc("/fines/contest", fineContestHandler(db))
 	r.HandleFunc("/fines/context", fineContextHandler(db))
 	r.HandleFunc("/fines/court-display-order", fineSetCourtSessionOrderHandler(db))
+
+	r.HandleFunc("/court", courtHandler(db))
+
 	r.HandleFunc("/preset-fines", presetFineHandler(db))
 	r.HandleFunc("/preset-fines/approve", presetFineApproveHandler(db))
 	r.HandleFunc("/preset-fines/{showOrHide}", fineQuickHideHandler(db))

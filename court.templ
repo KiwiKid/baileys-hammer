@@ -1,0 +1,18 @@
+package main
+
+import (
+    "fmt"
+)
+
+
+templ courtManage(full bool) {
+    <head>
+    		@headLinks()
+		
+		
+		@globalStyles()
+    </head>
+    <body>
+        <div class={ bigSec } hx-get={ fmt.Sprintf("/fines?viewMode=sheet&standAlone=true&full=%t", full)} hx-trigger="revealed" hx-swap="outerHTML" >loading.. (court)</div>
+    </body>
+}

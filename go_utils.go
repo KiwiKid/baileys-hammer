@@ -22,7 +22,7 @@ type Config struct {
 }
 
 var devConfig = &Config{
-	Title:                    "🔨 Baileys Hammer 🔨",
+	Title:                    "🔨 [YOUR-TEAMS]'s fines 🔨",
 	UseRoles:                 true,
 	UsePreviewPassword:       os.Getenv("PREVIEW_ENV") == "true",
 	UseMatchEventTracker:     true,
@@ -33,7 +33,7 @@ var devConfig = &Config{
 
 var config = &Config{
 	Title:                "🔨 Baileys Hammer 🔨",
-	UseRoles:             true,
+	UseRoles:             false,
 	UseMatchEventTracker: true,
 	UsePreviewPassword:   os.Getenv("PREVIEW_ENV") == "true",
 	/**
@@ -130,16 +130,32 @@ func UseShowOpponentScore(ctx context.Context) bool {
 }
 
 func GetContext(r *http.Request) context.Context {
+	title := os.Getenv("TITLE")
+	if title == "" {
+		title = "🔨 Baileys Hammer 🔨"
+	}
+	ctx := context.WithValue(r.Context(), titleKey, title)
 
-	ctx := context.WithValue(r.Context(), titleKey, config.Title)
-	ctx = context.WithValue(ctx, useRolesKey, config.UseRoles)
-	ctx = context.WithValue(ctx, useMatchEventTrackerKey, config.UseMatchEventTracker)
-	ctx = context.WithValue(ctx, UsePlayerOfTheDayNameKey, config.UsePlayerOfTheDayName)
-	ctx = context.WithValue(ctx, UseDudOfTheDayNameKey, config.UseDudOfTheDayName)
-	ctx = context.WithValue(ctx, InjuryCounterTrackerNameKey, config.InjuryCounterTrackerName)
-	ctx = context.WithValue(ctx, ShowGoalScorerMatchListKey, config.ShowGoalScorerMatchList)
-	ctx = context.WithValue(ctx, ShowGoalAssistMatchListKey, config.ShowGoalAssistMatchList)
-	ctx = context.WithValue(ctx, ShowOpponentScoreKey, config.ShowOpponentScore)
+	if os.Getenv("DEV_ENV") == "true" {
+		ctx = context.WithValue(ctx, useRolesKey, devConfig.UseRoles)
+		ctx = context.WithValue(ctx, useMatchEventTrackerKey, devConfig.UseMatchEventTracker)
+		ctx = context.WithValue(ctx, UsePlayerOfTheDayNameKey, devConfig.UsePlayerOfTheDayName)
+		ctx = context.WithValue(ctx, UseDudOfTheDayNameKey, devConfig.UseDudOfTheDayName)
+		ctx = context.WithValue(ctx, InjuryCounterTrackerNameKey, devConfig.InjuryCounterTrackerName)
+		ctx = context.WithValue(ctx, ShowGoalScorerMatchListKey, devConfig.ShowGoalScorerMatchList)
+		ctx = context.WithValue(ctx, ShowGoalAssistMatchListKey, devConfig.ShowGoalAssistMatchList)
+		ctx = context.WithValue(ctx, ShowOpponentScoreKey, devConfig.ShowOpponentScore)
+	} else {
+		ctx := context.WithValue(r.Context(), titleKey, config.Title)
+		ctx = context.WithValue(ctx, useRolesKey, config.UseRoles)
+		ctx = context.WithValue(ctx, useMatchEventTrackerKey, config.UseMatchEventTracker)
+		ctx = context.WithValue(ctx, UsePlayerOfTheDayNameKey, config.UsePlayerOfTheDayName)
+		ctx = context.WithValue(ctx, UseDudOfTheDayNameKey, config.UseDudOfTheDayName)
+		ctx = context.WithValue(ctx, InjuryCounterTrackerNameKey, config.InjuryCounterTrackerName)
+		ctx = context.WithValue(ctx, ShowGoalScorerMatchListKey, config.ShowGoalScorerMatchList)
+		ctx = context.WithValue(ctx, ShowGoalAssistMatchListKey, config.ShowGoalAssistMatchList)
+		ctx = context.WithValue(ctx, ShowOpponentScoreKey, config.ShowOpponentScore)
+	}
 
 	return ctx
 }

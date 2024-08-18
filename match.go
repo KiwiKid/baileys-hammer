@@ -241,12 +241,13 @@ func seasonHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 				seasonSelComp.Render(GetContext(r), w)
 			default:
 				activeSeason, err := GetActiveSeason(db)
-				var activeSeasonTitle = ""
-				if err == nil {
-					activeSeasonTitle = activeSeason.Title
+				if err != nil {
+					warnComp := warning("Failed to GetActiveSeason")
+					warnComp.Render(GetContext(r), w)
+					return
 				}
 
-				seasonComp := manageSeasons(seasons, activeSeasonTitle)
+				seasonComp := manageSeasons(seasons, activeSeason)
 				seasonComp.Render(GetContext(r), w)
 			}
 

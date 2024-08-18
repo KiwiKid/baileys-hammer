@@ -82,10 +82,76 @@ templ downArrow() {
 
 var Title = cases.Title(language.Und, cases.NoLower).String
 
-templ header() {
-	<head>
-		<title>{ GetTitle(ctx) }</title>
-		@headLinks()
+templ globalStyles(){
+	<style>
+
+		/* Loading state applied by HTMX */
+		.htmx-request {
+			background-color: #6cb2eb; /* Lighten background to indicate loading */
+			cursor: wait; /* Change cursor to indicate loading */
+			opacity: 0.7; /* Dim button */
+			pointer-events: none; /* Disable interaction during loading */
+			position: relative; /* Keep elements inside positioned correctly */
+			color: transparent; /* Hide original text */
+		}
+
+		/* Loading text */
+		.htmx-request::after {
+			content: "Loading...";
+			display: inline-block;
+			font-size: 14px;
+			color: white;
+			position: absolute;
+			left: 50%;
+			top: 50%;
+			transform: translate(-50%, -50%);
+			white-space: nowrap; /* Ensure text stays on one line */
+		}
+
+		/* Larger loading spinner */
+		.htmx-request::before {
+			content: "";
+			display: inline-block;
+			width: 30px;
+			height: 30px;
+			border: 3px solid rgba(255, 255, 255, 0.7);
+			border-top-color: transparent;
+			border-radius: 50%;
+			position: absolute;
+			left: 50%;
+			top: 50%;
+			transform: translate(-50%, calc(-50% - 20px)); /* Adjust position above the text */
+			animation: spin 1s linear infinite;
+		}
+
+		/* Keyframes for the spinner animation */
+		@keyframes spin {
+			from {
+				transform: rotate(0deg) translate(-50%, calc(-50% - 20px));
+			}
+			to {
+				transform: rotate(360deg) translate(-50%, calc(-50% - 20px));
+			}
+		}
+
+	</style>
+	<style>
+		.ts-control input {
+			font-size: calc(2rem + 0.5vw);
+			display: block;
+			color: #a0a0a0;
+		}
+
+		.ts-dropdown-content {
+			font-size: calc(2rem + 0.5vw);
+  			line-height: 1;
+			width: 100%;
+			padding-top: 1.25rem;
+			padding-bottom: 1.25rem;
+			max-height: 1000px  !important;
+		}
+
+		</style>
 		<script>
 		htmx.defineExtension('select-hide', {
 
@@ -114,24 +180,15 @@ templ header() {
 			}
 		});
 		</script>
-		<style>
-		.ts-control input {
-			font-size: calc(2rem + 0.5vw);
-			display: block;
-			color: #a0a0a0;
-		}
+}
 
-		.ts-dropdown-content {
-			font-size: calc(2rem + 0.5vw);
-  			line-height: 1;
-			width: 100%;
-			padding-top: 1.25rem;
-			padding-bottom: 1.25rem;
-			max-height: 1000px  !important;
-		}
-
-
-		</style>
+templ header() {
+	<head>
+		<title>{ GetTitle(ctx) }</title>
+		@headLinks()
+		
+		
+		@globalStyles()
 	</head>
 }
 
