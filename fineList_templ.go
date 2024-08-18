@@ -1548,15 +1548,7 @@ func fineContextRow(f FineWithPlayer, matches []Match) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\"> <button class=\"px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600\" hx-post=\"/fines/context\" hx-swap=\"outerHTML\" hx-include=\"closest tr\" type=\"submit\">Save</button><div>")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = fineImagesAndForm(f.Fine.ID).Render(ctx, templ_7745c5c3_Buffer)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</div><div class=\"w-full text-center mt-4\">")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\"> <button class=\"px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600\" hx-post=\"/fines/context\" hx-swap=\"outerHTML\" hx-include=\"closest tr\" type=\"submit\">Save</button><!--<div>\n\t\t\t\t@fineImagesAndForm(f.Fine.ID)\n\t\t\t</div>--><div class=\"w-full text-center mt-4\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
