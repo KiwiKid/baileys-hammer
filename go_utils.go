@@ -2,8 +2,12 @@ package main
 
 import (
 	"context"
+	"log"
 	"net/http"
 	"os"
+
+	"github.com/gorilla/sessions"
+	"gorm.io/gorm"
 )
 
 // Define a Config struct to hold our configuration.
@@ -129,12 +133,70 @@ func UseShowOpponentScore(ctx context.Context) bool {
 	return false
 }
 
-func GetContext(r *http.Request) context.Context {
+func saveTeamToSession(r *http.Request, team Team, session *sessions.Session) {
+	session.Values["TeamID"] = team.ID
+	session.Values["team"] = team
+	session.Values["TeamName"] = team.TeamName
+	session.Values["ShowFineAddOnHomePage"] = team.ShowFineAddOnHomePage
+	session.Values["ShowCourtTotals"] = team.ShowCourtTotals
+	session.Save(r, nil)
+}
+
+var store = sessions.NewCookieStore([]byte("your-secret-key"))
+
+func getTeamId(ctx context.Context) uint {
+	teamId, ok := ctx.Value("team_id").(uint)
+	if !ok {
+		// Handle the case where the title is not found or not a string
+		teamId = 0
+	}
+	return teamId
+}
+
+func GetContext(r *http.Request, db *gorm.DB) context.Context {
+
+	session, _ := store.Get(r, "session-name")
+
+	// Get the selected team ID from the session
+	teamID, teamExists := session.Values["team_id"].(uint)
+
+	var team Team
+	ctx := r.Context()
+
+	// Check if team data exists in session; if not, fetch from the database
+	if teamExists {
+		if t, ok := session.Values["team"].(Team); ok {
+			team = t
+		} else {
+			team, err := GetTeam(db, teamID)
+			if err != nil {
+				log.Printf("Error fetching team data from the database: %+v", err)
+			} else {
+				saveTeamToSession(r, *team, session)
+			}
+
+		}
+	} else {
+		// Query the database only if no team is selected and no session data exists
+
+		teams, err := GetTeams(db, 1, 0)
+		if err != nil {
+			log.Printf("Error fetching team data from the database: %+v", err)
+		}
+		if len(teams) == 1 {
+			team = teams[0]
+			saveTeamToSession(r, team, session)
+		} else {
+			// Handle the case when no or multiple teams exist
+			// You may want to redirect to a team selection page
+		}
+	}
+
 	title := os.Getenv("TITLE")
 	if title == "" {
 		title = "🔨 Baileys Hammer 🔨"
 	}
-	ctx := context.WithValue(r.Context(), titleKey, title)
+	ctx = context.WithValue(r.Context(), titleKey, title)
 
 	if os.Getenv("DEV_ENV") == "true" {
 		ctx = context.WithValue(ctx, useRolesKey, devConfig.UseRoles)

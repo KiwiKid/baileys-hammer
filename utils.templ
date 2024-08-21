@@ -95,7 +95,7 @@ func isSelected(selectedIds []uint, id uint) bool {
 templ fineSuperSelect(players []PlayerWithFines, approvedPFines []PresetFine, selectedFineIds []uint, instance string) {
 	<div class="w-full mx-auto bg-gray-200 shadow-xl m-10" id={ F("fine-ss-%s", instance) } hx-get="/fines/add" hx-trigger="pageLoaded" hx-target={ F("#fine-ss-%s", instance) }>
 		<form id="ss-form" hx-post="/fines-multi" method="POST" class="flex flex-col space-y-4 bg-white shadow-md p-6 rounded-lg">
-			<p class="font-bold text-3xl">Fines</p>
+			<p class="font-bold text-3xl">Fine a player</p>
 			<div class="flex flex-row">
 				<select
  					id="select-fine"

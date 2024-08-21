@@ -98,10 +98,10 @@ func matchListHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) 
 			}
 			if resType == "select" {
 				matchComp := matchSelector(match, uint(matchId))
-				matchComp.Render(GetContext(r), w)
+				matchComp.Render(GetContext(r, db), w)
 			} else {
 				matchComp := matchListPage(match, isOpen, isFineMaster, false)
-				matchComp.Render(GetContext(r), w)
+				matchComp.Render(GetContext(r, db), w)
 			}
 
 		default:
@@ -122,25 +122,25 @@ func seasonBulkUpdateHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Re
 					err := r.ParseForm()
 					if err != nil {
 						warnComp := warning("Invalid form data")
-						warnComp.Render(GetContext(r), w)
+						warnComp.Render(GetContext(r, db), w)
 						return
 					}
 					days := r.FormValue("days")
 					daysInt, err := strconv.ParseInt(days, 10, 64)
 					if err != nil {
 						warnComp := warning("Invalid days")
-						warnComp.Render(GetContext(r), w)
+						warnComp.Render(GetContext(r, db), w)
 						return
 					}
 					finesUpdated, playersUpdated, err := SetSeasonId(db, int(daysInt))
 
 					if err != nil {
 						er := warning(fmt.Sprintf("Error parsing form data 2 %+v", err))
-						er.Render(GetContext(r), w)
+						er.Render(GetContext(r, db), w)
 					} else {
 
 						success := success(fmt.Sprintf("SetSeasonId days:%d updated %d fine and %d players", daysInt, finesUpdated, playersUpdated))
-						success.Render(GetContext(r), w)
+						success.Render(GetContext(r, db), w)
 					}
 				}
 			case "set-player-subs-outstanding-for-season":
@@ -148,14 +148,14 @@ func seasonBulkUpdateHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Re
 					activeSeason, err := GetActiveSeason(db)
 					if err != nil {
 						er := warning(fmt.Sprintf("Could not get active season %+v", err))
-						er.Render(GetContext(r), w)
+						er.Render(GetContext(r, db), w)
 						return
 					}
 					seasonSubs := r.FormValue("seasonSubs")
 					seasonSubsInt, err := strconv.ParseInt(seasonSubs, 10, 64)
 					if err != nil {
 						warnComp := warning("Invalid seasonSubs")
-						warnComp.Render(GetContext(r), w)
+						warnComp.Render(GetContext(r, db), w)
 						return
 					}
 
@@ -163,11 +163,11 @@ func seasonBulkUpdateHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Re
 
 					if err != nil {
 						er := warning(fmt.Sprintf("Error parsing form data 2 %+v", err))
-						er.Render(GetContext(r), w)
+						er.Render(GetContext(r, db), w)
 					} else {
 
 						success := success(fmt.Sprintf("SetPlayerSubsOutstandingForSeason updated %d records", recordsUpdated))
-						success.Render(GetContext(r), w)
+						success.Render(GetContext(r, db), w)
 					}
 				}
 			}
@@ -179,12 +179,12 @@ func seasonBulkUpdateHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Re
 				activeSeason, err := GetActiveSeason(db)
 				if err != nil {
 					er := warning(fmt.Sprintf("Could not get active season %+v", err))
-					er.Render(GetContext(r), w)
+					er.Render(GetContext(r, db), w)
 					return
 				}
 
 				setSeasonForm := setSeasonForm(activeSeason.Title)
-				setSeasonForm.Render(GetContext(r), w)
+				setSeasonForm.Render(GetContext(r, db), w)
 				return
 			default:
 				http.Error(w, "Method Not Allowed (updateType needed)", http.StatusMethodNotAllowed)
@@ -207,19 +207,19 @@ func seasonSpecificHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Requ
 
 			if err != nil {
 				warning := warning(fmt.Sprintf("Error parsing season ID: %v", err))
-				warning.Render(GetContext(r), w)
+				warning.Render(GetContext(r, db), w)
 				return
 			}
 
 			delErr := DeleteSeason(db, uint(seasonId))
 			if delErr != nil {
 				warning := warning(fmt.Sprintf("Error deleting season: %+v", delErr))
-				warning.Render(GetContext(r), w)
+				warning.Render(GetContext(r, db), w)
 				return
 			}
 
 			success := success(fmt.Sprintf("Deleted season: %d", seasonId))
-			success.Render(GetContext(r), w)
+			success.Render(GetContext(r, db), w)
 
 		}
 	}
@@ -238,17 +238,17 @@ func seasonHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 			switch displayType {
 			case "selector":
 				seasonSelComp := selectSeasons(seasons)
-				seasonSelComp.Render(GetContext(r), w)
+				seasonSelComp.Render(GetContext(r, db), w)
 			default:
 				activeSeason, err := GetActiveSeason(db)
 				if err != nil {
 					warnComp := warning("Failed to GetActiveSeason")
-					warnComp.Render(GetContext(r), w)
+					warnComp.Render(GetContext(r, db), w)
 					return
 				}
 
 				seasonComp := manageSeasons(seasons, activeSeason)
-				seasonComp.Render(GetContext(r), w)
+				seasonComp.Render(GetContext(r, db), w)
 			}
 
 			return
@@ -257,14 +257,14 @@ func seasonHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 			err := r.ParseForm()
 			if err != nil {
 				warnComp := warning("Invalid form data")
-				warnComp.Render(GetContext(r), w)
+				warnComp.Render(GetContext(r, db), w)
 				return
 			}
 
 			title := r.FormValue("title")
 			if title == "" {
 				warnComp := warning("Title is required")
-				warnComp.Render(GetContext(r), w)
+				warnComp.Render(GetContext(r, db), w)
 				return
 			}
 			startDate := r.FormValue("startDate")
@@ -275,7 +275,7 @@ func seasonHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 			startDateParsed, err := time.Parse("2006-01-02T15:04", startDate)
 			if err != nil {
 				warnComp := warning("Invalid start date")
-				warnComp.Render(GetContext(r), w)
+				warnComp.Render(GetContext(r, db), w)
 				return
 			}
 
@@ -285,7 +285,7 @@ func seasonHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 				seasonId, err := strconv.ParseUint(seasonIdStr, 10, 64)
 				if err != nil {
 					warnComp := warning("Invalid season ID")
-					warnComp.Render(GetContext(r), w)
+					warnComp.Render(GetContext(r, db), w)
 					return
 				}
 
@@ -293,7 +293,7 @@ func seasonHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 				season, err = GetSeasonById(db, uint(seasonId))
 				if err != nil {
 					warnComp := warning("Season not found")
-					warnComp.Render(GetContext(r), w)
+					warnComp.Render(GetContext(r, db), w)
 					return
 				}
 				// Update the season fields
@@ -314,15 +314,15 @@ func seasonHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 			savErr := SaveSeason(db, season)
 			if savErr != nil {
 				warnComp := warning("Could not save season")
-				warnComp.Render(GetContext(r), w)
+				warnComp.Render(GetContext(r, db), w)
 				return
 			}
 			if len(seasonIdStr) > 0 {
 				successComp := success("Season updated")
-				successComp.Render(GetContext(r), w)
+				successComp.Render(GetContext(r, db), w)
 			} else {
 				successComp := success("Season created")
-				successComp.Render(GetContext(r), w)
+				successComp.Render(GetContext(r, db), w)
 			}
 
 			return
@@ -348,7 +348,7 @@ func matchHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 				matches, err := GetMatches(db, 1, 0, 9999)
 				if err != nil {
 					errComp := errMsg("Could not get matches")
-					errComp.Render(GetContext(r), w)
+					errComp.Render(GetContext(r, db), w)
 				}
 
 				pwfs, err := GetPlayersWithFines(db, 0, []uint64{})
@@ -358,7 +358,7 @@ func matchHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 				}
 
 				matchComp := matchesManage(r.Header.Get("Referrer"), true, matches, pwfs)
-				matchComp.Render(GetContext(r), w)
+				matchComp.Render(GetContext(r, db), w)
 				return
 			}
 			var matchId64 uint64
@@ -385,15 +385,15 @@ func matchHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 			case "form":
 
 				matchComp := editMatch(url, *match, "")
-				matchComp.Render(GetContext(r), w)
+				matchComp.Render(GetContext(r, db), w)
 				return
 			case "list":
 				matchComp := viewMatch(*match)
-				matchComp.Render(GetContext(r), w)
+				matchComp.Render(GetContext(r, db), w)
 				return
 			default:
 				matchComp := editMatchContainer(url, *match, "")
-				matchComp.Render(GetContext(r), w)
+				matchComp.Render(GetContext(r, db), w)
 				return
 
 			}
@@ -411,7 +411,7 @@ func matchHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 				if err != nil {
 					var msg = fmt.Sprintf("Error parsing match ID: (%s) %v", matchIdStr, err)
 					errComp := errMsg(msg)
-					errComp.Render(GetContext(r), w)
+					errComp.Render(GetContext(r, db), w)
 				}
 
 				if err := r.ParseForm(); err != nil {
@@ -423,7 +423,7 @@ func matchHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 				if err := decoder.Decode(&form, r.PostForm); err != nil {
 					var msg = fmt.Sprintf("Error parsing MatchForm: %v", err.Error())
 					errComp := errMsg(msg)
-					errComp.Render(GetContext(r), w)
+					errComp.Render(GetContext(r, db), w)
 				}
 
 				/*	form = NewMatchForm{
@@ -441,7 +441,7 @@ func matchHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 					if err != nil {
 						var msg = fmt.Sprintf("Error parsing playerOfTheDay ID: \"%s\" %v", playerOfDayStr, err)
 						errComp := errMsg(msg)
-						errComp.Render(GetContext(r), w)
+						errComp.Render(GetContext(r, db), w)
 					}
 
 					form.PlayerOfTheDay = playerOfDayId
@@ -453,7 +453,7 @@ func matchHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 					if err != nil {
 						var msg = fmt.Sprintf("Error parsing dudOfTheDay ID: %v", err)
 						errComp := errMsg(msg)
-						errComp.Render(GetContext(r), w)
+						errComp.Render(GetContext(r, db), w)
 					}
 
 					form.DudOfTheDay = dudOfDayId
@@ -479,11 +479,28 @@ func matchHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 						var msg = fmt.Sprintf("Invalid start time format (%s) %v", form.StartTime, err)
 						log.Print(msg)
 						errComp := errMsg(msg)
-						errComp.Render(GetContext(r), w)
+						errComp.Render(GetContext(r, db), w)
 					} else {
 						match.StartTime = &startTime
-					}
 
+						fines, err := GetFinesByMatchId(db, uint(matchId64))
+						if err != nil {
+							var msg = fmt.Sprintf("GetFinesByMatchId failed %v", err)
+							log.Print(msg)
+							errComp := errMsg(msg)
+							errComp.Render(GetContext(r, db), w)
+						}
+
+						for _, fine := range fines {
+							err = SetFineStartTime(db, fine.ID, startTime)
+							if err != nil {
+								var msg = fmt.Sprintf("SetFineStartTime failed %v", err)
+								log.Print(msg)
+								errComp := errMsg(msg)
+								errComp.Render(GetContext(r, db), w)
+							}
+						}
+					}
 				}
 
 				if form.MatchId > 0 {
@@ -495,7 +512,7 @@ func matchHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 					var msg = fmt.Sprintf("SaveMatch 1 failed %v", err)
 					log.Print(msg)
 					errComp := errMsg(msg)
-					errComp.Render(GetContext(r), w)
+					errComp.Render(GetContext(r, db), w)
 					return
 				}
 
@@ -580,7 +597,7 @@ func matchHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 				startTimeTime, startErr := time.Parse("2006-01-02T15:04", createForm.StartTime)
 				if startErr != nil {
 					errComp := errMsg("Could not parse time string")
-					errComp.Render(GetContext(r), w)
+					errComp.Render(GetContext(r, db), w)
 					return
 				}
 				log.Printf("SaveMatch CREATE %+v", createForm)
@@ -595,7 +612,7 @@ func matchHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 					var msg = fmt.Sprintf("SaveMatch 2 failed %v", err)
 					log.Print(msg)
 					errComp := errMsg(msg)
-					errComp.Render(GetContext(r), w)
+					errComp.Render(GetContext(r, db), w)
 					return
 				}
 				successMsg = fmt.Sprintf("New match created (%d)", matchId)
@@ -608,11 +625,13 @@ func matchHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 				var msg = fmt.Sprintf("GetMatchMetaGeneral failed %v", err)
 				log.Print(msg)
 				errComp := errMsg(msg)
-				errComp.Render(GetContext(r), w)
+				errComp.Render(GetContext(r, db), w)
 			}
 
 			matchComp := editMatch(url, *genMeta, successMsg)
-			matchComp.Render(GetContext(r), w)
+			matchComp.Render(GetContext(r, db), w)
+			return
+
 		case "DELETE":
 			matchIdStr := chi.URLParam(r, "matchId")
 			matchId64, err := strconv.ParseUint(matchIdStr, 10, 64)
@@ -625,23 +644,17 @@ func matchHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 				err := DeleteMatch(db, uint(matchId64))
 				if err != nil {
 					errComp := errMsg("Could not DeleteMatch")
-					errComp.Render(GetContext(r), w)
+					errComp.Render(GetContext(r, db), w)
 				}
 
 			}
 			matchComp := success(F("deleted match: %d", matchId64))
-			matchComp.Render(GetContext(r), w)
+			matchComp.Render(GetContext(r, db), w)
 		default:
 			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 			return
 		}
 	}
-}
-
-// Mock function for rendering templates. Replace with your actual implementation.
-func RenderTemplate(w http.ResponseWriter, r *http.Request, data interface{}) {
-	// Your template rendering logic here
-	fmt.Fprintf(w, "Template rendering with data: %+v\n", data) // Placeholder implementation
 }
 
 func GetMatchAndEvents(db *gorm.DB, matchId uint64) (*MatchState, []MatchEvent, error) {

@@ -21,7 +21,7 @@ func playerNamesHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request
 				return
 			}
 			matchComp := playerNames(pwfs)
-			matchComp.Render(GetContext(r), w)
+			matchComp.Render(GetContext(r, db), w)
 		}
 	}
 }
@@ -39,7 +39,7 @@ func playerPayments(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 		case "POST":
 			log.Printf("PlayerPayments POST entry")
 			//err := warning("hmmm")
-			//err.Render(GetContext(r), w)
+			//err.Render(GetContext(r, db), w)
 
 			if err := r.ParseForm(); err != nil {
 				http.Error(w, "P - Invalid form data", http.StatusBadRequest)
@@ -77,7 +77,7 @@ func playerPayments(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 			success := success(fmt.Sprintf("%d Payment  added for $%v and %d player(s) ", totalRecords, totalAdded, len(playerIDs)))
-			success.Render(GetContext(r), w)
+			success.Render(GetContext(r, db), w)
 			return
 
 		case "GET":
@@ -91,7 +91,7 @@ func playerPayments(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 			if displayType == "button" {
 
 				btn := playerPaymentsButton("Open Player Payments", "table", activeSeason)
-				btn.Render(GetContext(r), w)
+				btn.Render(GetContext(r, db), w)
 				return
 			}
 
@@ -130,7 +130,7 @@ func playerPayments(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 			switch displayType {
 			case "table":
 				paymentsComp := viewPlayerPayments(playerTotals, players, activeSeason)
-				paymentsComp.Render(GetContext(r), w)
+				paymentsComp.Render(GetContext(r, db), w)
 				return
 			default:
 				http.Error(w, "Invalid display type", http.StatusBadRequest)

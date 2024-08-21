@@ -279,7 +279,9 @@ templ home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines
 					<h1 class="font-bold mt-4 pb-4 text-center">{ GetTitle(ctx) }</h1>
 					<div>
 						@fineAddV2(baseUrl, true, players, approvedPFines, false)
-						@fineList(fineWithPlayers, 0, 0, false, true)
+						@finesListButton("Open Court Sheet", "sheet", false)
+						@fineSummaryButton("Open Total View", "summary")
+						@fineListButton(true)
 					</div>
 					if len(approvedPFines) > 0 {
 						<div class="mx-auto bg-gray-200 shadow-xl p-2">
@@ -340,7 +342,7 @@ templ home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines
 								<li class="m-4">
 									<div
 										_="on click toggle .hidden on next &lt;section/&gt;"
-										class={ bigPri }
+										class="flex items-center justify-between bg-white px-4 py-3 shadow-lg rounded-lg cursor-pointer hover:shadow-xl transition-shadow duration-300"
 									>
 										{ p.Name }
 										- 
@@ -351,6 +353,9 @@ templ home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines
 												{ p.Role }
 											}
 										}
+										<svg class="w-5 h-5 text-gray-500 transform transition-transform duration-200" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+										</svg>
 									</div>
 									<section class="fines-info hidden">
 										<div class="p-2">
@@ -400,7 +405,6 @@ templ home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines
 						</ul>
 					</div>
 				</div>
-				@fineList(fineWithPlayers, 0, 0,false, false)
 				@adminEnter(previewPassword)
 				@pageFooter()
 			</div>

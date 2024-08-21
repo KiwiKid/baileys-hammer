@@ -108,12 +108,14 @@ templ finemaster(pass string, players []PlayerWithFines, fineWithPlayers []FineW
 			
 			@finesListButton("Open Court Sheet", "sheet", false)
 			@fineSummaryButton("Open Total View", "summary")
-			@fineList(fineWithPlayers, 0, qp.PresetFineUpdated, true, false)
+			@fineListButton(true)
 			@playersManage(secureFineMasterbaseUrl(finemasterBaseUrl, pass), players, config, qp.PlayerOpen, activeSeason)
 
 			@matchesManage(secureFineMasterbaseUrl(finemasterBaseUrl, pass), qp.MatchesOpen, matches, players)
 
 			@manageSeasonsButton()
+
+			@teamListButton(true)
 
 			@presetFines(fmt.Sprintf("%s/%s", finemasterBaseUrl, pass), pass, qp.PresetFinesOpen, pFines)
 

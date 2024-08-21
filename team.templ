@@ -1,0 +1,212 @@
+package main
+
+import (
+	"fmt"
+)
+
+
+templ teamList(teams []Team){
+    <h1>{fmt.Sprintf("Teams %d", len(teams))}</h1>
+    for _, t := range teams {
+        <details>
+            <summary>
+                {t.TeamName} - {fmt.Sprintf("[%d]", t.ID)}
+            </summary>
+            @teamEditForm(t, "")
+        </details>
+    }
+    @teamAddForm()
+}
+
+templ teamListButton(open bool){
+	<div class="flex-grow justify-center items-center mb-4">
+		<div class={ bigPri } 
+					if open {
+						hx-get="/teams" 
+					 } else { 
+						hx-get="/teams?viewMode=button"
+					}
+					hx-trigger="click" 
+					hx-swap="outerHTML"
+			>
+			if !open {
+				Close
+			}
+			Manage Teams    
+		</div>
+	</div>
+}
+
+templ teamAddForm(){
+     <form hx-post="/teams"     class="max-w-xl mx-auto bg-white p-8 shadow-md rounded-lg">
+    
+        <!-- Team Name -->
+        <div class="mb-4">
+            <label for="teamName" class="block text-gray-700 font-semibold mb-2">Team Name</label>
+            <input type="text" id="teamName" name="teamName" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required/>
+        </div>
+        
+        <!-- Team Key -->
+        <div class="mb-4">
+            <label for="teamKey" class="block text-gray-700 font-semibold mb-2">Team Key</label>
+            <input type="text" id="teamKey" name="teamKey" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required/>
+        </div>
+
+        <!-- Team Member Password -->
+        <div class="mb-4">
+            <label for="teamMemberPass" class="block text-gray-700 font-semibold mb-2">Team Member Password</label>
+            <input type="password" id="teamMemberPass" name="teamMemberPass" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required/>
+        </div>
+
+        <!-- Team Admin Password -->
+        <div class="mb-4">
+            <label for="teamAdminPass" class="block text-gray-700 font-semibold mb-2">Team Admin Password</label>
+            <input type="password" id="teamAdminPass" name="teamAdminPass" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required/>
+        </div>
+
+        <!-- Show Fine Add On Home Page -->
+        <div class="mb-4">
+            <label class="inline-flex items-center">
+
+                <span class="ml-2 text-gray-700">Show Fine Add-On Home Page</span>
+                <input type="checkbox" name="showFineAddOnHomePage" class="form-checkbox h-5 w-5 text-blue-600"/>
+            </label>
+        </div>
+
+        <!-- Show Court Totals -->
+        <div class="mb-4">
+            <label class="inline-flex items-center">
+
+                <span class="ml-2 text-gray-700">Show Court Totals</span>
+                <input type="checkbox" name="showCourtTotals" class="form-checkbox h-5 w-5 text-blue-600"/>
+            </label>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="flex justify-end">
+            <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                Submit
+            </button>
+        </div>
+    </form>
+}
+
+templ teamEditForm(team Team, msg string){
+    <form hx-put={fmt.Sprintf("/teams?teamId=%d", team.ID) } class="max-w-xl mx-auto bg-white p-8 shadow-md rounded-lg" hx-target="this">
+    if len(msg) > 0 {
+        @success(msg)
+    }
+        <div class="mb-4">
+            <label for="ID" class="block text-gray-700 font-semibold mb-2">Team ID</label>
+            <input type="text" disabled="disabled" id="ID" name="ID" value={ fmt.Sprintf("%d", team.ID) } class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+        </div>
+        <div class="mb-4">
+            <label for="teamName" class="block text-gray-700 font-semibold mb-2">Team Name</label>
+            <input type="text" id="teamName" name="teamName" value={team.TeamName} class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required/>
+        </div>
+        
+        <!-- Team Key -->
+        <div class="mb-4">
+            <label for="teamKey" class="block text-gray-700 font-semibold mb-2">Team Key</label>
+            <input type="text" id="teamKey" name="teamKey" value={team.TeamKey} class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+        </div>
+
+        <!-- Team Member Password -->
+        <div class="mb-4">
+            <label for="teamMemberPass" class="block text-gray-700 font-semibold mb-2">Team Member Password</label>
+            <input type="password" id="teamMemberPass" name="teamMemberPass" value={team.TeamMemberPass} class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required/>
+        </div>
+
+        <!-- Team Admin Password -->
+        <div class="mb-4">
+            <label for="teamAdminPass" class="block text-gray-700 font-semibold mb-2">Team Admin Password</label>
+            <input type="password" id="teamAdminPass" name="teamAdminPass" value={team.TeamAdminPass} class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required/>
+        </div>
+
+        <!-- Show Fine Add On Home Page -->
+        <div class="mb-4">
+            <label class="inline-flex items-center">
+              <span class="ml-2 text-gray-700">Show Fine Add-On Home Page</span>
+                <input type="checkbox" name="showFineAddOnHomePage" class="form-checkbox h-5 w-5 text-blue-600"
+                        if team.ShowFineAddOnHomePage {
+                            checked
+                        }
+                        />
+            </label>
+        </div>
+
+        <!-- Show Court Totals -->
+        <div class="mb-4">
+            <label class="inline-flex items-center">
+            <span class="ml-2 text-gray-700">Show Court Totals</span>
+                <input type="checkbox" name="showCourtTotals"   class="form-checkbox h-5 w-5 text-blue-600"
+                    if team.ShowCourtTotals {
+                        checked
+                    } 
+                      />
+            </label>
+        </div>
+
+        <div class="flex justify-end">
+            <button hx-delete={ fmt.Sprintf("/teams?teamId=%d", team.ID) } hx-confirm="are you sure you want to delete this team?" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                Delete
+            </button>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="flex justify-end">
+            <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                Submit
+            </button>
+        </div>
+    </form>
+
+}
+
+templ courtNotes(teamId uint){
+    <div hx-get={ fmt.Sprintf("/teams/court-session?viewMode=court-notes&teamId=%d", teamId) } hx-trigger="revealed">loading...</div>
+}
+
+templ teamCourtNotesButton(open bool){
+    <div class="flex-grow justify-center items-center mb-4">
+		<div class={ bigPri } 
+					if open {
+						hx-get="/fines" 
+					 } else { 
+						hx-get="/fines?viewMode=all-button"
+					}
+					hx-trigger="click" 
+					hx-swap="outerHTML"
+			>
+			if !open {
+				Close
+			} else {
+				Edit	
+			}
+			Court Notes
+		</div>
+	</div>
+}
+
+templ teamCourtNotesForm(team Team){
+    <form hx-put={fmt.Sprintf("/teams/court-session/%d", team.ID) } class="max-w-xl mx-auto bg-white p-8 shadow-md rounded-lg">
+        @teamCourtNotesButton(false)
+        <div class="mb-4">
+            <label for="ID" class="block text-gray-700 font-semibold mb-2">Team ID</label>
+            <input type="text" disabled="disabled" id="ID" name="ID" value={ fmt.Sprintf("%d", team.ID) } class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+        </div>
+        <div class="mb-4">
+            <label for="courtNotes" class="block text-gray-700 font-semibold mb-2">Team Name</label>
+            <input type="text" id="courtNotes" name="courtNotes" value={team.CourtNotes} class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required/>
+        </div>
+        <div class="flex justify-end">
+            <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                Submit
+            </button>
+        </div>
+    </form>
+}
+
+templ teamCourtNotes(team Team){
+    <div>{team.CourtNotes}  @teamCourtNotesButton(true)</div>
+}

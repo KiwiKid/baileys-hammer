@@ -23,7 +23,7 @@ primary_region = 'syd'
 
 [env]
   DATABASE_URL = "/mnt/volume/production.sqlite3"
-
+  
 [mounts]
   source = "sqlite3_volume"
   destination = "/mnt/volume"

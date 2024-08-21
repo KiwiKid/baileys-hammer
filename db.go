@@ -79,6 +79,18 @@ type Fine struct {
 	Images            ImageArray
 }
 
+type Team struct {
+	gorm.Model
+	ID                    uint
+	TeamName              string
+	TeamKey               string
+	TeamAdminPass         string
+	TeamMemberPass        string
+	ShowFineAddOnHomePage bool
+	ShowCourtTotals       bool
+	CourtNotes            string
+}
+
 // DBInit initializes the database and creates the tables
 func DBInit() (*gorm.DB, error) {
 
@@ -97,7 +109,7 @@ func DBInit() (*gorm.DB, error) {
 	}
 
 	// Migrate the schema
-	err = db.AutoMigrate(&Player{}, &Fine{}, &PresetFine{}, &Match{}, &MatchEvent{}, &FineImage{}, &Season{}, &PlayerPayment{})
+	err = db.AutoMigrate(&Player{}, &Fine{}, &PresetFine{}, &Match{}, &MatchEvent{}, &FineImage{}, &Season{}, &PlayerPayment{}, &Team{})
 	if err != nil {
 		return nil, err
 	}
@@ -200,6 +212,42 @@ func DBInit() (*gorm.DB, error) {
 	}
 
 	return db, nil
+}
+
+func GetTeam(db *gorm.DB, id uint) (*Team, error) {
+	var team Team
+	result := db.First(&team, id)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	return &team, nil
+}
+
+func GetTeams(db *gorm.DB, limit int, offset int) ([]Team, error) {
+	var teams []Team
+	result := db.Limit(limit).Offset(offset).Find(&teams)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	return teams, nil
+}
+
+func SaveTeam(db *gorm.DB, team *Team) (Team, error) {
+	if err := db.Save(team).Error; err != nil {
+		return Team{}, err
+	}
+	return *team, nil
+}
+
+func DeleteTeam(db *gorm.DB, id uint) error {
+	err := db.Delete(&Team{}, id)
+	if err.Error != nil {
+		return err.Error
+	}
+	if err.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
 }
 
 // PlayerWithFines represents a player along with their fines
@@ -783,8 +831,18 @@ func GetFineFromPreset(db *gorm.DB, pfIDOrReason string) (*Fine, error) {
 }
 
 func GetActiveMatch(db *gorm.DB) (*Match, error) {
+
+	activeOverrideId := os.Getenv("ACTIVE_MATCH_OVERRIDE")
+	if len(activeOverrideId) > 0 {
+		id, err := strconv.ParseUint(activeOverrideId, 10, 64)
+		if err != nil {
+			return nil, err
+		}
+		return GetMatch(db, id)
+	}
+
 	var match Match
-	now := time.Now().Add(-48 * time.Hour)
+	now := time.Now().Add(-72 * time.Hour)
 
 	// Find the nearest upcoming match where the start time is in the future
 	result := db.Where("start_time > ?", now).Order("start_time ASC").First(&match)
@@ -991,6 +1049,36 @@ func GetMatchWithEvents(db *gorm.DB, id uint) (*Match, error) {
 	}
 
 	return &match, nil
+}
+
+func GetFinesByMatchId(db *gorm.DB, matchId uint) ([]Fine, error) {
+	var fines []Fine
+	if err := db.Where("match_id = ?", matchId).Find(&fines).Error; err != nil {
+		return nil, err
+	}
+	return fines, nil
+}
+
+func SetFineStartTime(db *gorm.DB, fineID uint, fineAt time.Time) error {
+	// Create a map with the fields you want to update
+	updates := map[string]interface{}{
+		"FineAt": fineAt,
+	}
+
+	// Find the Fine by ID and update the Contest field
+	result := db.Model(&Fine{}).Where("id = ?", fineID).Updates(updates)
+
+	// Check if the update operation resulted in an error
+	if result.Error != nil {
+		return result.Error
+	}
+
+	// Optionally, check if the record was found and updated
+	if result.RowsAffected == 0 {
+		return fmt.Errorf("no fine found with ID %d", fineID)
+	}
+
+	return nil
 }
 
 func SaveSeason(db *gorm.DB, season *Season) error {
