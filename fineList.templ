@@ -384,7 +384,10 @@ templ fineListSheet(teamId uint, fines []FineWithPlayer, standAlone bool, full b
 			@finesListButton("Close Court Sheet", "sheet-button", false)
 			<a class={bigPri} target="_" href="/court">Standalone</a>
 		}
-		@courtNotes(teamId)
+		if teamId > 0 {
+			@courtNotes(teamId)
+		}
+		
 		<h2 class="text-center font-bold text-lg mb-4">Fine Sheet View</h2>
 		<div 
 			if full {
@@ -560,7 +563,7 @@ templ fineImagesAndForm(fineId uint){
 	@fineUploadForm(fineId)
 }
 
-templ fineEditForm(f FineWithPlayer, isFineMaster bool) {
+templ fineEditForm(f FineWithPlayer, isFineMaster bool, fineImagesOn bool) {
 	<form
  		hx-post={ fmt.Sprintf("/fines/edit/%d", f.Fine.ID) } 
  		hx-swap="innerHTML"
@@ -592,7 +595,9 @@ templ fineEditForm(f FineWithPlayer, isFineMaster bool) {
 					</span>
 				}
 			</div>
-			@fineUploadForm(f.Fine.ID)
+		 	if fineImagesOn {
+				@fineUploadForm(f.Fine.ID)	
+			}
 			<!-- Hidden Inputs -->
 			<input
  				type="playerId"
@@ -690,7 +695,7 @@ PlayerID: %d
 	</form>
 }
 
-templ fineEditRow(f FineWithPlayer, isFineMaster bool) {
+templ fineEditRow(f FineWithPlayer, isFineMaster bool, hideFineImageFeature bool) {
 	<tr
  		id={ fmt.Sprintf("fr-%d", f.Fine.ID) }
  		class="bg-white divide-y divide-gray-200"
@@ -698,12 +703,12 @@ templ fineEditRow(f FineWithPlayer, isFineMaster bool) {
  		hx-swap="innerHTML"
 	>
 		<td class="px-6 py-4" colspan="10">
-			@fineEditForm(f, isFineMaster)
+			@fineEditForm(f, isFineMaster, hideFineImageFeature)
 		</td>
 	</tr>
 }
 
-templ fineEditDiv(f FineWithPlayer, isFineMaster bool) {
+templ fineEditDiv(f FineWithPlayer, isFineMaster bool, hideFineImageFeature bool) {
 	<div
  		id={ fmt.Sprintf("fr-%d", f.Fine.ID) }
  		class="bg-white divide-y divide-gray-200"
@@ -711,7 +716,7 @@ templ fineEditDiv(f FineWithPlayer, isFineMaster bool) {
  		hx-swap="innerHTML"
 	>
 		<td class="px-6 py-4" colspan="10">
-			@fineEditForm(f, isFineMaster)
+			@fineEditForm(f, isFineMaster, hideFineImageFeature)
 		</td>
 	</div>
 }

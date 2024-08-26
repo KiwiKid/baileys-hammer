@@ -84,7 +84,7 @@ func matchListHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) 
 			}
 
 			log.Printf("GetMatches(season%+v, page%+v, limit: %+v)", season, page, limit)
-			match, err := GetMatches(db, season, page, limit)
+			match, err := GetMatches(db, uint(season), page, limit)
 			if err != nil {
 				http.Error(w, fmt.Sprintf("Error retrieving match: %v", err), http.StatusInternalServerError)
 				return
@@ -466,8 +466,8 @@ func matchHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 					Opponent:       form.Opponent,
 					Subtitle:       form.Subtitle,
 					SeasonId:       seasonId,
-					PlayerOfTheDay: form.PlayerOfTheDay,
-					DudOfTheDay:    form.DudOfTheDay,
+					PlayerOfTheDay: uint(form.PlayerOfTheDay),
+					DudOfTheDay:    uint(form.DudOfTheDay),
 					MatchLat:       form.MatchLat,
 					MatchLng:       form.MatchLng,
 				}
@@ -657,7 +657,7 @@ func matchHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func GetMatchAndEvents(db *gorm.DB, matchId uint64) (*MatchState, []MatchEvent, error) {
+func GetMatchAndEvents(db *gorm.DB, matchId uint) (*MatchState, []MatchEvent, error) {
 	matchEvents, getFErr := GetMatchEvents(db, matchId)
 	if getFErr != nil {
 		return nil, []MatchEvent{}, getFErr

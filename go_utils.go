@@ -164,13 +164,13 @@ func GetContext(r *http.Request, db *gorm.DB) context.Context {
 	ctx := r.Context()
 
 	// Check if team data exists in session; if not, fetch from the database
-	if teamExists {
+	if teamExists && teamID > 0 {
 		if t, ok := session.Values["team"].(Team); ok {
 			team = t
 		} else {
 			team, err := GetTeam(db, teamID)
 			if err != nil {
-				log.Printf("Error fetching team data from the database: %+v", err)
+				log.Printf("Error fetching team data %d from the database: %+v", teamID, err)
 			} else {
 				saveTeamToSession(r, *team, session)
 			}

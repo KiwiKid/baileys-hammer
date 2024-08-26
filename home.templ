@@ -265,20 +265,27 @@ templ adminEnter(previewPassword string){
 	</details>
 }
 
-templ home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines []PresetFine, fineWithPlayers []FineWithPlayer, qp HomeQueryParams, matches []Match, activeMatch *Match, warnStr string, previewPassword string) {
+templ home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines []PresetFine, fineWithPlayers []FineWithPlayer, qp HomeQueryParams, matches []Match, mst *MatchSeasonTeam, warnStr string, previewPassword string) {
 	<!DOCTYPE html>
 	<html hx-boost="true">
 		@header()
 		<body class="text-2xl p-3 flex justify-center">
-			if len(warnStr) > 0 {
-				@warning(warnStr)
-			}
+			
 			<div class="lg:max-w-screen-2xl w-full">
 				<div>
-					@activeMatchBanner(activeMatch)
+					if mst.Match != nil {
+						@activeMatchBanner(mst.Match)
+					}
 					<h1 class="font-bold mt-4 pb-4 text-center">{ GetTitle(ctx) }</h1>
+					
 					<div>
+						<div class="flex justify-center">
+							if len(warnStr) > 0 {
+								@errIcon(warnStr, fmt.Sprintf("%+v", mst))
+							}
+						</div>
 						@fineAddV2(baseUrl, true, players, approvedPFines, false)
+						
 						@finesListButton("Open Court Sheet", "sheet", false)
 						@fineSummaryButton("Open Total View", "summary")
 						@fineListButton(true)

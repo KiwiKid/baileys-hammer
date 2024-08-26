@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 	"math"
+	"github.com/dustin/go-humanize"
 )
 
 templ matchSelector(matches []Match, selectedMatchId uint) {
@@ -28,7 +29,7 @@ templ matchSelector(matches []Match, selectedMatchId uint) {
  						if selectedMatchId == m.ID {
 							selected
 						}
-					>vs { m.Opponent }</option>
+					>vs { m.Opponent } - { humanize.Time(*m.StartTime) }</option>
 				}
 			</select>
 		</label>
@@ -347,14 +348,14 @@ templ editMatch(closeLink templ.SafeURL, genMeta MatchMetaGeneral, successMsg st
 				<label for="location" class="block text-lg font-semibold text-gray-700">Location</label>
 				<input type="text" name="location" id="location" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" value={ genMeta.Match.Location }/>
 			</div>
-			<div class="mb-4">
+			<!--<div class="mb-4">
 				<label for="matchLat" class="block text-lg font-semibold text-gray-700">matchLat</label>
-				<input type="text" name="matchLat" id="matchLat" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" value={ fmt.Sprintf("%v", genMeta.Match.MatchLat) }/>
+				<input type="text" name="matchLat" id="matchLat" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" value={ fmt.Sprintf("%v", genMeta.MatchLat) }/>
 			</div>
 			<div class="mb-4">
 				<label for="matchLng" class="block text-lg font-semibold text-gray-700">matchLng</label>
-				<input type="text" name="matchLng" id="matchLng" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" value={ fmt.Sprintf("%v", genMeta.Match.MatchLng) }/>
-			</div>
+				<input type="text" name="matchLng" id="matchLng" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" value={ fmt.Sprintf("%v", genMeta.MatchLng) }/>
+			</div>-->
 			<div class="mb-4">
 				<label for="start-time" class="block text-lg font-semibold text-gray-700">Start Time</label>
 				if genMeta.Match.StartTime != nil {
@@ -425,7 +426,7 @@ templ editMatch(closeLink templ.SafeURL, genMeta MatchMetaGeneral, successMsg st
 	</div>
 }
 
-templ createNewEvent(matchId uint64) {
+templ createNewEvent(matchId uint) {
 	<form hx-post={ fmt.Sprintf("/match/%d/event", matchId) } class="mx-auto my-8 p-4 border border-gray-200 rounded-lg shadow">
 		[createNewEvent
 		: 

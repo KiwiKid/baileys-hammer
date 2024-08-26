@@ -23,7 +23,7 @@ templ finemasterNav(finemasterBaseUrl string) {
 	</nav>
 }
 
-templ finemaster(pass string, players []PlayerWithFines, fineWithPlayers []FineWithPlayer, pFines []PresetFine, matches []Match, qp FineMasterQueryParams, activeSeason *Season, activeMatch *Match, warnStr string) {
+templ finemaster(pass string, players []PlayerWithFines, fineWithPlayers []FineWithPlayer, pFines []PresetFine, matches []Match, qp FineMasterQueryParams, mst *MatchSeasonTeam, warnStr string) {
 	<!DOCTYPE html>
 	<html hx-boost="true">
 		@header()
@@ -34,19 +34,11 @@ templ finemaster(pass string, players []PlayerWithFines, fineWithPlayers []FineW
 					<a class="text-white" href="/">&lt;&lt; Home </a> Fine Master Zone 
 				</h1>
 			</div>
-			if activeMatch != nil {
-				if activeSeason != nil {
-					@success(fmt.Sprintf("Active Match: %s @ %s in season %s", activeMatch.Opponent, activeMatch.Location, activeSeason.Title)) 	
-				}else {
-					@success(fmt.Sprintf("Active Match: %s @ %s", activeMatch.Opponent, activeMatch.Location)) 	
-					@warning("no active season found")
-				}
-			} else {
-				@warning("no active match found")
-			}
+			<div hx-get="/teams/active-match?viewMode=button" hx-trigger="revealed">loading...</div>
 			if len(warnStr) > 0 {
 				@warning(warnStr)
 			}
+
 			<div class="grid grid-cols-1 gap-2">
 				@fineAddV2(secureFineMasterbaseUrl(finemasterBaseUrl, pass), true, players, pFines, true)
 			</div>
@@ -102,14 +94,17 @@ templ finemaster(pass string, players []PlayerWithFines, fineWithPlayers []FineW
 					Toggle Quick Fines
 				</div>
 			</div>
-			if activeSeason != nil {
-				@playerPaymentsButton("Open Player Payments", "table", activeSeason)  
+			if mst.Season != nil {
+				@playerPaymentsButton("Open Player Payments", "table", mst.Season)  
 			}
 			
 			@finesListButton("Open Court Sheet", "sheet", false)
 			@fineSummaryButton("Open Total View", "summary")
 			@fineListButton(true)
-			@playersManage(secureFineMasterbaseUrl(finemasterBaseUrl, pass), players, config, qp.PlayerOpen, activeSeason)
+			if mst.Season != nil {
+				@playersManage(secureFineMasterbaseUrl(finemasterBaseUrl, pass), players, config, qp.PlayerOpen, mst.Season)
+			}
+			
 
 			@matchesManage(secureFineMasterbaseUrl(finemasterBaseUrl, pass), qp.MatchesOpen, matches, players)
 

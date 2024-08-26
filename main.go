@@ -89,7 +89,7 @@ func playerHandler(db *gorm.DB) http.HandlerFunc {
 					return
 				}
 
-				playerList := playerInputSelector(players, playerId, inputType)
+				playerList := playerInputSelector(players, uint(playerId), inputType)
 				playerList.Render(GetContext(r, db), w)
 			} else {
 				warnings := warning("Playerhanlder - Method not allowed")
@@ -229,7 +229,7 @@ func fineContextHandler(db *gorm.DB) http.HandlerFunc {
 				return
 			}
 
-			match, getMatchErr := GetMatch(db, matchId)
+			match, getMatchErr := GetMatch(db, uint(matchId))
 			if getMatchErr != nil {
 				http.Error(w, fmt.Sprintf("Invalid matchId ID - %s", matchIdStr), http.StatusBadRequest)
 				return
@@ -240,19 +240,14 @@ func fineContextHandler(db *gorm.DB) http.HandlerFunc {
 
 		context := r.FormValue("context")
 
-		log.Printf("fineContextHanlder")
-
 		err = UpdateFineContextByID(db, uint(fineID), uint(matchId), context, fineAt)
 		log.Printf("fineContextHanlder-3")
 		if err != nil {
 			http.Error(w, "Invalid UpdateFineContextByID ID", http.StatusBadRequest)
 			return
 		}
-		log.Printf("fineContextHanlder-4")
 
-		log.Printf("fineContextHanlder-end")
-
-		success := contextSuccess(matchId, context, fineAt)
+		success := contextSuccess(uint(matchId), context, fineAt)
 		success.Render(GetContext(r, db), w)
 	}
 }
@@ -344,7 +339,7 @@ func fineEditHandler(db *gorm.DB) http.HandlerFunc {
 
 			match := &Match{}
 			if fine.MatchId > 0 {
-				match, err = GetMatch(db, uint64(fine.MatchId))
+				match, err = GetMatch(db, uint(fine.MatchId))
 				if err != nil {
 					http.Error(w, fmt.Sprintf("GetMatch Match not found - %d", fine.MatchId), http.StatusNotFound)
 					return
@@ -356,6 +351,8 @@ func fineEditHandler(db *gorm.DB) http.HandlerFunc {
 				}
 
 			}
+
+			hideFineImageFeature := true
 
 			// Prepare the data for rendering
 			fineWithPlayer := FineWithPlayer{
@@ -378,13 +375,13 @@ func fineEditHandler(db *gorm.DB) http.HandlerFunc {
 			}
 
 			if isEdit == "true" {
-				fineEditRow := fineEditRow(fineWithPlayer, isFineMaster)
+				fineEditRow := fineEditRow(fineWithPlayer, isFineMaster, hideFineImageFeature)
 				fineEditRow.Render(GetContext(r, db), w)
 			} else if isEdit == "fineEditDiv" {
-				fineEditRow := fineEditDiv(fineWithPlayer, isFineMaster)
+				fineEditRow := fineEditDiv(fineWithPlayer, isFineMaster, hideFineImageFeature)
 				fineEditRow.Render(GetContext(r, db), w)
 			} else if isEdit == "form" {
-				fineFormRow := fineEditForm(fineWithPlayer, isFineMaster)
+				fineFormRow := fineEditForm(fineWithPlayer, isFineMaster, hideFineImageFeature)
 				fineFormRow.Render(GetContext(r, db), w)
 			} else if isContest == "true" {
 
@@ -468,7 +465,7 @@ func fineEditHandler(db *gorm.DB) http.HandlerFunc {
 			}
 
 			if matchId != 0 {
-				match, err := GetMatch(db, matchId)
+				match, err := GetMatch(db, uint(matchId))
 				if err != nil {
 					errComp := errMsg("Cannot select get the active match?")
 					errComp.Render(GetContext(r, db), w)
@@ -478,6 +475,8 @@ func fineEditHandler(db *gorm.DB) http.HandlerFunc {
 			} else {
 				activeMatch, actMatchERr := GetActiveMatch(db)
 				if actMatchERr != nil {
+					log.Printf("fineEditHandler - Error fetching active match: %v", actMatchERr)
+
 					errComp := errMsg("Cannot select get the active match?")
 					errComp.Render(GetContext(r, db), w)
 				} else if activeMatch != nil {
@@ -486,9 +485,12 @@ func fineEditHandler(db *gorm.DB) http.HandlerFunc {
 			}
 
 			if err := SaveFine(db, &fine); err != nil {
-				http.Error(w, "Failed to update fine", http.StatusInternalServerError)
+				errComp := errMsg("Failed to update fine")
+				errComp.Render(GetContext(r, db), w)
 				return
 			} else {
+				success := success("Fine updated")
+				success.Render(GetContext(r, db), w)
 				log.Printf("\n\nSAve fine %+v\n\n", fine)
 			}
 
@@ -500,7 +502,7 @@ func fineEditHandler(db *gorm.DB) http.HandlerFunc {
 
 			match := &Match{}
 			if fine.MatchId > 0 {
-				match, _ = GetMatch(db, uint64(fine.MatchId))
+				match, _ = GetMatch(db, uint(fine.MatchId))
 			}
 
 			// Prepare the data for rendering
@@ -873,6 +875,7 @@ func fineHandler(db *gorm.DB) http.HandlerFunc {
 						var fineAt = time.Now()
 						activeMatch, actMatchERr := GetActiveMatch(db)
 						if actMatchERr != nil {
+							log.Printf("fineHandler - Error fetching active match: %v", actMatchERr)
 							errComp := errMsg("Cannot select get the active match?")
 							errComp.Render(GetContext(r, db), w)
 						} else if activeMatch != nil {
@@ -958,12 +961,13 @@ func fineHandler(db *gorm.DB) http.HandlerFunc {
 			}
 
 			if err := DeleteFineByID(db, uint(fID)); err != nil {
-				log.Printf("Error deleting preset fine: %v", err)
-				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+				warning := warning(fmt.Sprintf("Error deleting preset fine: %v", err))
+				warning.Render(GetContext(r, db), w)
 				return
 			}
-			w.Header().Set("HX-Redirect", r.Header.Get("Referrer"))
-			w.WriteHeader(http.StatusOK)
+			//w.Header().Set("HX-Redirect", r.Header.Get("Referrer"))
+			success := success("fine deleted")
+			success.Render(GetContext(r, db), w)
 			return
 
 		default:
@@ -974,6 +978,8 @@ func fineHandler(db *gorm.DB) http.HandlerFunc {
 }
 
 func adminHandler(db *gorm.DB) http.HandlerFunc {
+	DEFAULT_PASS := "pass"
+
 	return func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case "POST":
@@ -985,6 +991,10 @@ func adminHandler(db *gorm.DB) http.HandlerFunc {
 				}
 				password := r.FormValue("password")
 				pass := os.Getenv("PASS")
+				if pass == "" {
+					pass = DEFAULT_PASS
+				}
+
 				if password != pass {
 					success := warning(fmt.Sprintf("Sorry Invalid password (%v) Hint: ends with a number", password))
 					success.Render(GetContext(r, db), w)
@@ -1125,8 +1135,7 @@ func fineMultiHandler(db *gorm.DB) http.HandlerFunc {
 
 				activeMatch, err := GetActiveMatch(db)
 				if err != nil {
-					errComp := errMsg(F("Could not get active match %v", err))
-					errComp.Render(GetContext(r, db), w)
+					log.Printf("fineMultiHandler - Error fetching active match: %v", err)
 				}
 
 				if activeMatch != nil {
@@ -1137,7 +1146,8 @@ func fineMultiHandler(db *gorm.DB) http.HandlerFunc {
 						fine.FineAt = time.Now()
 					}
 				} else {
-					warnStr = "No active match"
+					warnStr = "No active match (using current time as fine time)"
+					fine.FineAt = time.Now()
 				}
 
 				activeSeason, err := GetActiveSeason(db)
@@ -1205,7 +1215,7 @@ func teamCourtHandler(db *gorm.DB) http.HandlerFunc {
 				courtNotes := r.FormValue("courtNotes")
 				team, err := GetTeam(db, 0)
 				if err != nil {
-					warning := warning(fmt.Sprintf("Error fetching team: %v", err))
+					warning := warning(fmt.Sprintf("teamCourtHandlerPOST - Error fetching team: %v", err))
 					warning.Render(GetContext(r, db), w)
 					return
 				}
@@ -1219,7 +1229,14 @@ func teamCourtHandler(db *gorm.DB) http.HandlerFunc {
 					return
 				}
 
-				success := teamEditForm(newTeam, "Court Notes updated")
+				matches, err := GetMatches(db, 0, 0, 999)
+				if err != nil {
+					warning := warning(fmt.Sprintf("teamActiveMatchHandler - Error fetching matches: %v", err))
+					warning.Render(GetContext(r, db), w)
+					return
+				}
+
+				success := teamEditForm(newTeam, matches, "Court Notes updated")
 				success.Render(GetContext(r, db), w)
 				return
 
@@ -1235,14 +1252,14 @@ func teamCourtHandler(db *gorm.DB) http.HandlerFunc {
 
 				teamIdInt, err := strconv.ParseUint(teamId, 10, 64)
 				if err != nil {
-					warning := warning(fmt.Sprintf("Error parsing team ID: %v", err))
+					warning := warning(fmt.Sprintf("TeamCourtHanlder Error parsing team ID: %v", err))
 					warning.Render(GetContext(r, db), w)
 					return
 				}
 
 				team, err := GetTeam(db, uint(teamIdInt))
 				if err != nil {
-					warning := warning(fmt.Sprintf("Error fetching team: %v", err))
+					warning := warning(fmt.Sprintf("teamCourtHandler GET - Error fetching team for id: %s: %v", teamId, err))
 					warning.Render(GetContext(r, db), w)
 					return
 				}
@@ -1262,6 +1279,173 @@ func teamCourtHandler(db *gorm.DB) http.HandlerFunc {
 					warning.Render(GetContext(r, db), w)
 
 				}
+			}
+		default:
+			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+			return
+		}
+	}
+}
+
+func teamActiveMatchHandler(db *gorm.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case "POST":
+			{
+				if err := r.ParseForm(); err != nil {
+					warning := warning("specificTeamHandler - Invalid form data")
+					warning.Render(GetContext(r, db), w)
+					return
+				}
+
+				teamId := r.FormValue("ID")
+				if len(teamId) == 0 {
+					warning := warning("No team ID provided")
+					warning.Render(GetContext(r, db), w)
+					return
+				}
+
+				teamIdInt, err := strconv.ParseUint(teamId, 10, 64)
+				if err != nil {
+					warning := warning(fmt.Sprintf("Error parsing team ID: %v", err))
+					warning.Render(GetContext(r, db), w)
+					return
+				}
+
+				activeMatchOverrideId := r.FormValue("activeMatchOverrideId")
+				team, err := GetTeam(db, uint(teamIdInt))
+				if err != nil {
+					warning := warning(fmt.Sprintf("activeMatch handler - teamCourtHandlerPOST - Error fetching team: %v", err))
+					warning.Render(GetContext(r, db), w)
+					return
+				}
+
+				activeMatchOverrideIdInt, err := strconv.ParseUint(activeMatchOverrideId, 10, 64)
+				if err != nil {
+					warning := warning(fmt.Sprintf("Error parsing activeMatchOverrideId: %v", err))
+					warning.Render(GetContext(r, db), w)
+					return
+				}
+
+				team.ActiveMatchIDOverride = uint(activeMatchOverrideIdInt)
+
+				newTeam, err := SaveTeam(db, team)
+				if err != nil {
+					warning := warning(fmt.Sprintf("Error saving team %+v", err))
+					warning.Render(GetContext(r, db), w)
+					return
+				}
+
+				matches, err := GetMatches(db, 0, 0, 999)
+				if err != nil {
+					warning := warning(fmt.Sprintf("teamActiveMatchHandler - Error fetching matches: %v", err))
+					warning.Render(GetContext(r, db), w)
+					return
+				}
+
+				success := teamEditForm(newTeam, matches, fmt.Sprintf("Active Match ID set to %s", activeMatchOverrideId))
+				success.Render(GetContext(r, db), w)
+				return
+
+			}
+		case "GET":
+			{
+				teamId := r.URL.Query().Get("teamId")
+				if len(teamId) == 0 {
+
+					teamsArr, err := GetTeams(db, 9999, 0)
+					if len(teamsArr) == 0 {
+						warning := warning("No teams exist")
+						warning.Render(GetContext(r, db), w)
+						addForm := teamListButton(true)
+
+						addForm.Render(GetContext(r, db), w)
+						return
+					} else if err != nil {
+						warning := warning(fmt.Sprintf("Error fetching teams: %v", err))
+						warning.Render(GetContext(r, db), w)
+						return
+					} else if len(teamsArr) == 1 {
+						teamId = fmt.Sprintf("%d", teamsArr[0].ID)
+					}
+				}
+				/*id, err := strconv.ParseUint(teamId, 10, 64)
+				if err != nil {
+					warning := warning(fmt.Sprintf("Error parsing team ID: %v", err))
+					warning.Render(GetContext(r, db), w)
+					return
+				}*/
+
+				matchSeasonTeam, err := GetMatchSeasonTeam(db)
+				if err != nil {
+					warning := warning(fmt.Sprintf("Error fetching GetMatchSeasonTeam: %v", err))
+					warning.Render(GetContext(r, db), w)
+					return
+				}
+
+				viewMode := r.URL.Query().Get("viewMode")
+				switch viewMode {
+				case "button":
+					teamList := teamActiveMatchButton(true, matchSeasonTeam)
+					teamList.Render(GetContext(r, db), w)
+					return
+				case "add-or-override":
+
+					/*team, err := GetTeam(db, uint(id))
+					if err != nil {
+						warning := warning(fmt.Sprintf("Error fetching team: %v", err))
+						warning.Render(GetContext(r, db), w)
+						return
+					}
+					if team == nil {
+						warning := warning(fmt.Sprintf("Error fetching team: %v", err))
+						warning.Render(GetContext(r, db), w)
+						return
+					}
+
+
+					if team.ActiveMatchIDOverride > 0 {
+						aMatch, err := GetMatch(db, team.ActiveMatchIDOverride)
+						if err != nil {
+							warning := warning(fmt.Sprintf("Error fetching active match: %v", err))
+							warning.Render(GetContext(r, db), w)
+							return
+						}
+
+						if aMatch == nil {
+							warning := warning(fmt.Sprintf("No active match found (via ActiveMatchIDOverride)"))
+							warning.Render(GetContext(r, db), w)
+							return
+						} else {
+							activeMatch = aMatch
+						}
+
+					}*/
+
+					matches, err := GetMatches(db, 0, 0, 999)
+					if err != nil {
+						warning := warning(fmt.Sprintf("Error fetching matches: %v", err))
+						warning.Render(GetContext(r, db), w)
+						return
+					}
+
+					matchSeasonTeam, err := GetMatchSeasonTeam(db)
+					if err != nil {
+						warning := warning(fmt.Sprintf("Error fetching GetMatchSeasonTeam: %v", err))
+						warning.Render(GetContext(r, db), w)
+						return
+					}
+
+					teamActiveMatchForm := teamActiveMatchAddOrOverrideForm(matchSeasonTeam.Team, matchSeasonTeam, matches, "")
+					teamActiveMatchForm.Render(GetContext(r, db), w)
+					return
+
+				default:
+					warning := warning("No viewMode provided (button needed)")
+					warning.Render(GetContext(r, db), w)
+					return
+				}
+
 			}
 		default:
 			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
@@ -1304,12 +1488,19 @@ func teamHandler(db *gorm.DB) http.HandlerFunc {
 
 					team, err := GetTeam(db, uint(teamIdInt))
 					if err != nil {
-						warning := warning(fmt.Sprintf("Error fetching team: %v", err))
+						warning := warning(fmt.Sprintf("teamHandler GET - Error fetching team: %v", err))
 						warning.Render(GetContext(r, db), w)
 						return
 					}
 
-					editTeam := teamEditForm(*team, "")
+					matches, err := GetMatches(db, 0, 0, 999)
+					if err != nil {
+						warning := warning(fmt.Sprintf("teamHandler - Error fetching matches: %v", err))
+						warning.Render(GetContext(r, db), w)
+						return
+					}
+
+					editTeam := teamEditForm(*team, matches, "")
 					editTeam.Render(GetContext(r, db), w)
 					return
 				case "list":
@@ -1320,7 +1511,14 @@ func teamHandler(db *gorm.DB) http.HandlerFunc {
 						return
 					}
 
-					teamList := teamList(teams)
+					matches, err := GetMatches(db, 0, 0, 999)
+					if err != nil {
+						warning := warning(fmt.Sprintf("teamHandler - Error fetching matches: %v", err))
+						warning.Render(GetContext(r, db), w)
+						return
+					}
+
+					teamList := teamList(teams, matches)
 					teamList.Render(GetContext(r, db), w)
 					return
 
@@ -1366,7 +1564,14 @@ func teamHandler(db *gorm.DB) http.HandlerFunc {
 						return
 					}
 
-					success := teamEditForm(newTeam, "Team updated")
+					matches, err := GetMatches(db, 0, 0, 999)
+					if err != nil {
+						warning := warning(fmt.Sprintf("teamHandler - Error fetching matches: %v", err))
+						warning.Render(GetContext(r, db), w)
+						return
+					}
+
+					success := teamEditForm(newTeam, matches, "Team updated")
 					success.Render(GetContext(r, db), w)
 					return
 				}
@@ -1403,7 +1608,14 @@ func teamHandler(db *gorm.DB) http.HandlerFunc {
 					return
 				}
 
-				success := teamEditForm(team, "Team created")
+				matches, err := GetMatches(db, 0, 0, 999)
+				if err != nil {
+					warning := warning(fmt.Sprintf("teamHandler - Error fetching matches: %v", err))
+					warning.Render(GetContext(r, db), w)
+					return
+				}
+
+				success := teamEditForm(team, matches, "Team created")
 				success.Render(GetContext(r, db), w)
 				return
 			}
@@ -1417,7 +1629,7 @@ func teamHandler(db *gorm.DB) http.HandlerFunc {
 				}
 				teamIdInt, err := strconv.ParseUint(teamId, 10, 64)
 				if err != nil {
-					warning := warning(fmt.Sprintf("Error parsing team ID: %v", err))
+					warning := warning(fmt.Sprintf("teanHandler Error parsing team ID: %v", err))
 					warning.Render(GetContext(r, db), w)
 					return
 				}
@@ -1724,26 +1936,16 @@ func presetFineMasterHandler(db *gorm.DB) http.HandlerFunc {
 			return
 		}
 
-		activeSeason, err := GetActiveSeason(db)
+		matchSeasonTeam, err := GetMatchSeasonTeam(db)
 		if err != nil {
-			log.Printf("Error fetching active season: %v", err)
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			warning := warning(fmt.Sprintf("Error fetching GetMatchSeasonTeam: %v", err))
+			warning.Render(GetContext(r, db), w)
 			return
-		} else if activeSeason == nil {
-			warnStr = warnStr + "\n\nNo active season - go to the season page to add a new season"
 		}
 
-		activeMatch, err := GetActiveMatch(db)
-		if err != nil {
-			log.Printf("Error fetching active match: %v", err)
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-			return
-		} else if activeMatch == nil {
-			warnStr = warnStr + "\n\nNo active match - go to the matches page and add the next match"
-		}
-
-		finemaster := finemaster(pass, playersWithFines, fineWithPlayers, pFines, matches, *queryParams, activeSeason, activeMatch, warnStr)
+		finemaster := finemaster(pass, playersWithFines, fineWithPlayers, pFines, matches, *queryParams, matchSeasonTeam, warnStr)
 		finemaster.Render(GetContext(r, db), w)
+		return
 	}
 }
 
@@ -1865,6 +2067,7 @@ func setupRouter(db *gorm.DB) *chi.Mux {
 
 	r.HandleFunc("/teams", teamHandler(db))
 	r.HandleFunc("/teams/court-session", teamCourtHandler(db))
+	r.HandleFunc("/teams/active-match", teamActiveMatchHandler(db))
 
 	r.HandleFunc("/season", seasonHandler(db))
 	r.HandleFunc("/season/{seasonId}", seasonSpecificHandler(db))
@@ -1912,10 +2115,11 @@ func homeHandler(db *gorm.DB) http.HandlerFunc {
 			http.Error(w, fmt.Sprintf("Error parsing limitStr %v", err), http.StatusBadRequest)
 		}
 
-		activeMatch, err := GetActiveMatch(db)
+		mst, err := GetMatchSeasonTeam(db)
 		if err != nil {
-			errComp := errMsg(F("Could not get active match %v", err))
-			errComp.Render(GetContext(r, db), w)
+			warning := warning(fmt.Sprintf("Error fetching GetMatchSeasonTeam: %v", err))
+			warning.Render(GetContext(r, db), w)
+			return
 		}
 
 		matches, err := GetMatches(db, 1, 0, 9999)
@@ -1929,7 +2133,7 @@ func homeHandler(db *gorm.DB) http.HandlerFunc {
 			previewPassword = os.Getenv("PASS")
 		}
 
-		home := home(playersWithFines, approvedPFines, pendingPFines, fineWithPlayers, *queryParams, matches, activeMatch, warnStr, previewPassword)
+		home := home(playersWithFines, approvedPFines, pendingPFines, fineWithPlayers, *queryParams, matches, mst, warnStr, previewPassword)
 		home.Render(GetContext(r, db), w)
 	}
 }

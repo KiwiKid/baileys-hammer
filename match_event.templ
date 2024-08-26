@@ -61,7 +61,7 @@ templ listMatchEvents(matchState MatchState, matchEvents []MatchEvent) {
 	}
 }
 
-templ addMatchEvent(meta MatchMeta, matchId uint64, isOpen bool) {
+templ addMatchEvent(meta MatchMeta, matchId uint, isOpen bool) {
 	[addMatchEvent: 
 	{ fmt.Sprintf("meta: %+v %t", meta, isOpen) }
 	]
@@ -135,7 +135,7 @@ templ addMatchEvent(meta MatchMeta, matchId uint64, isOpen bool) {
 	}
 }
 
-templ editMatchEvent(meta MatchMeta, event MatchEvent, isOpen bool, matchId uint64) {
+templ editMatchEvent(meta MatchMeta, event MatchEvent, isOpen bool, matchId uint) {
 	<form method="POST" hx-post={ fmt.Sprintf("/match/%d/event/%d", matchId, event.ID) } class="space-y-4">
 		editMatchEventeditMatchEventeditMatchEvent
 		<div class="text-lg font-semibold">Edit Match Event</div>

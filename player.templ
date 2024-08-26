@@ -17,7 +17,7 @@ templ playerName(player Player) {
 	<div>{ player.Name }</div>
 }
 
-templ playerInputSelector(players []Player, playerId uint64, inputType string) {
+templ playerInputSelector(players []Player, playerId uint, inputType string) {
 	switch inputType {
 		case "potd":
 			<div id="player-select-potd" class="mt-4">
@@ -399,7 +399,7 @@ templ viewPlayerPayments(playerPayments []PlayerPaymentsWithTotals, players []Pl
 	</div>
 }
 
-templ addPlayerPayment(players []Player, seasonId uint64){
+templ addPlayerPayment(players []Player, seasonId uint){
 	<div class="w-full mx-auto bg-gray-200 shadow-xl m-10">
 	<script>
 		window.emptyPlayerPayment = function(){

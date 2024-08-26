@@ -87,6 +87,7 @@ type Team struct {
 	TeamAdminPass         string
 	TeamMemberPass        string
 	ShowFineAddOnHomePage bool
+	ActiveMatchIDOverride uint
 	ShowCourtTotals       bool
 	CourtNotes            string
 }
@@ -838,7 +839,7 @@ func GetActiveMatch(db *gorm.DB) (*Match, error) {
 		if err != nil {
 			return nil, err
 		}
-		return GetMatch(db, id)
+		return GetMatch(db, uint(id))
 	}
 
 	var match Match
@@ -848,10 +849,10 @@ func GetActiveMatch(db *gorm.DB) (*Match, error) {
 	result := db.Where("start_time > ?", now).Order("start_time ASC").First(&match)
 
 	if result.Error != nil {
-		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			log.Print("No active match found - create one in the future to allow for it to be associated with a game")
-			return nil, nil
-		}
+		/*if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			log.Printf("No active match found - create one in the future to allow for it to be associated with a game ACTIVE_MATCH_OVERRIDE:%s", activeOverrideId)
+			return nil, result.Error
+		}*/
 		// Some other error occurred; return the error
 		return nil, result.Error
 	}
@@ -896,8 +897,8 @@ type Match struct {
 	Subtitle       string
 	Events         []MatchEvent `gorm:"foreignKey:MatchId"`
 	SeasonId       uint64
-	PlayerOfTheDay uint64
-	DudOfTheDay    uint64
+	PlayerOfTheDay uint
+	DudOfTheDay    uint
 	MatchLat       float64
 	MatchLng       float64
 	MatchPointList LatLngArray `json:"coords"`
@@ -923,7 +924,7 @@ type PlayerState struct {
 
 type MatchState struct {
 	PlayersOn            []PlayerState
-	MatchID              uint64
+	MatchID              uint
 	ScoreAgainst         int
 	TrainingTotalNumbers int
 	ScoreFor             int
@@ -931,7 +932,7 @@ type MatchState struct {
 }
 
 // FetchLatestFines fetches a paginated list of the latest fines.
-func GetMatches(db *gorm.DB, season uint64, page int, pageSize int) ([]Match, error) {
+func GetMatches(db *gorm.DB, season uint, page int, pageSize int) ([]Match, error) {
 	var matches []Match
 	offset := (page - 1) * pageSize
 	//.Where("season_id = ?", season)
@@ -943,7 +944,7 @@ func GetMatches(db *gorm.DB, season uint64, page int, pageSize int) ([]Match, er
 	return matches, nil
 }
 
-func GetMatch(db *gorm.DB, id uint64) (*Match, error) {
+func GetMatch(db *gorm.DB, id uint) (*Match, error) {
 	var match Match
 	if err := db.Where("id = ?", id).First(&match).Error; err != nil {
 		return nil, err
@@ -985,6 +986,71 @@ func DeleteSeason(db *gorm.DB, seasonId uint) error {
 	return nil
 }
 
+type MatchSeasonTeam struct {
+	Season *Season
+	Team   *Team
+	Match  *Match
+}
+
+func GetMatchSeasonTeam(db *gorm.DB) (*MatchSeasonTeam, error) {
+	season, err := GetActiveSeason(db)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return &MatchSeasonTeam{
+				Season: nil,
+				Team:   nil,
+				Match:  nil,
+			}, nil
+		} else {
+			return nil, err
+		}
+	}
+
+	team, err := GetActiveTeam(db)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return &MatchSeasonTeam{
+				Season: season,
+				Team:   nil,
+				Match:  nil,
+			}, nil
+		} else {
+			return nil, err
+		}
+	}
+
+	/*var match *MatchMetaGeneral
+	if team != nil {
+		if team.ActiveMatchIDOverride > 0 {
+			match, err = GetMatchMetaGeneral(db, uint(team.ActiveMatchIDOverride))
+			if err != nil {
+				return nil, err
+			}
+
+		}
+	}*/
+
+	match, err := GetActiveMatch(db)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return &MatchSeasonTeam{
+				Season: season,
+				Team:   team,
+				Match:  nil,
+			}, nil
+		} else {
+			return nil, err
+		}
+	}
+
+	return &MatchSeasonTeam{
+		Season: season,
+		Team:   team,
+		Match:  match,
+	}, nil
+
+}
+
 func GetActiveSeason(db *gorm.DB) (*Season, error) {
 	var season Season
 	if err := db.Where("is_active = ?", true).Order("start_date desc").First(&season).Error; err != nil {
@@ -994,6 +1060,17 @@ func GetActiveSeason(db *gorm.DB) (*Season, error) {
 		return nil, err // Other errors should be returned
 	}
 	return &season, nil
+}
+
+func GetActiveTeam(db *gorm.DB) (*Team, error) {
+	var team Team
+	if err := db.First(&team).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil // No active team, return nil instead of an error
+		}
+		return nil, err // Other errors should be returned
+	}
+	return &team, nil
 }
 
 func WrapMatchWithMeta(db *gorm.DB, match Match) (*MatchMetaGeneral, error) {
@@ -1095,7 +1172,7 @@ func SaveMatch(db *gorm.DB, match *Match) (uint, error) {
 	return match.ID, nil // Return the new ID which should now be populated
 }
 
-func GetMatchEvents(db *gorm.DB, id uint64) ([]MatchEvent, error) {
+func GetMatchEvents(db *gorm.DB, id uint) ([]MatchEvent, error) {
 	var events []MatchEvent
 	if err := db.Where("match_id = ?", id).Find(&events).Error; err != nil {
 		return nil, err
@@ -1103,7 +1180,7 @@ func GetMatchEvents(db *gorm.DB, id uint64) ([]MatchEvent, error) {
 	return events, nil
 }
 
-func GetMatchEvent(db *gorm.DB, id uint64) (*MatchEvent, error) {
+func GetMatchEvent(db *gorm.DB, id uint) (*MatchEvent, error) {
 	var event MatchEvent
 	if err := db.Where("id = ?", id).First(&event).Error; err != nil {
 		return nil, err

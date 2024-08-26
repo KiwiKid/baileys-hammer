@@ -60,11 +60,12 @@ func matchEventHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request)
 		eventIdStr := chi.URLParam(r, "eventId")
 		var isOpen bool = false
 
-		matchId, err := strconv.ParseUint(matchIdStr, 10, 64)
+		matchId64, err := strconv.ParseUint(matchIdStr, 10, 0)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("matchEventHandler - Error parsing match ID: %v", err), http.StatusBadRequest)
 			return
 		}
+		matchId := uint(matchId64)
 
 		players, err := FetchActivePlayers(db)
 		if err != nil {
@@ -293,19 +294,19 @@ func matchEventListHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Requ
 
 				log.Printf("matchEventListHandler - %s", matchIdStr)
 
-				var matchId uint64
-				var err error
+				var matchId uint
 				if len(matchIdStr) == 0 {
 					errComp := errMsg(fmt.Sprintf("Error parsing matchIdStr %v", matchIdStr))
 					errComp.Render(GetContext(r, db), w)
 					return
 				} else {
-					matchId, err = strconv.ParseUint(matchIdStr, 10, 64)
-					if err != nil || matchId == 0 {
+					matchId64, err := strconv.ParseUint(matchIdStr, 10, 64)
+					if err != nil || matchId64 == 0 {
 						errComp := errMsg(fmt.Sprintf("Error parsing matchIdStr %v", matchIdStr))
 						errComp.Render(GetContext(r, db), w)
 						return
 					}
+					matchId = uint(matchId)
 				}
 
 				log.Printf("matchEventListHandler - GetMatchEvents(%d)", matchId)
