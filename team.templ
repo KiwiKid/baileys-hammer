@@ -189,7 +189,7 @@ templ teamEditForm(team Team, matches []Match, msg string){
 }
 
 templ courtNotes(teamId uint){
-    <div hx-get={ fmt.Sprintf("/teams/court-session?viewMode=court-notes&teamId=%d", teamId) } hx-trigger="revealed">loading...</div>
+    <div hx-get={ fmt.Sprintf("/teams/court-session?viewMode=court-notes&teamId=%d", teamId) } hx-trigger="revealed" hx-swap="innerHTML" hx-target="this">loading...</div>
 }
 
 templ teamActiveMatchAddOrOverrideForm(team *Team, mst *MatchSeasonTeam, matches []Match, msg string){
@@ -278,33 +278,30 @@ templ teamCourtNotesButton(open bool){
     <div class="flex-grow justify-center items-center mb-4">
 		<div class={ bigPri } 
 					if open {
-						hx-get="/fines" 
+						hx-get="/teams/court-session?viewMode=court-notes-form" 
 					 } else { 
-						hx-get="/fines?viewMode=all-button"
+						hx-get="/teams/court-session?viewMode=court-notes-form-button"
 					}
 					hx-trigger="click" 
-					hx-swap="outerHTML"
+                    hx-swap="outerHTML"
 			>
 			if !open {
 				Close
 			} else {
 				Edit	
 			}
-			Court Notes
+			Global Court Note
 		</div>
 	</div>
 }
 
 templ teamCourtNotesForm(team Team){
-    <form hx-put={fmt.Sprintf("/teams/court-session/%d", team.ID) } class="max-w-xl mx-auto bg-white p-8 shadow-md rounded-lg">
+    <form hx-post="/teams/court-session" class="max-w-xl mx-auto bg-white p-8 shadow-md rounded-lg" hx-target="this">
         @teamCourtNotesButton(false)
+        <input type="hidden" id="ID" name="ID" value={ fmt.Sprintf("%d", team.ID) } class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"/>
         <div class="mb-4">
-            <label for="ID" class="block text-gray-700 font-semibold mb-2">Team ID</label>
-            <input type="text" disabled="disabled" id="ID" name="ID" value={ fmt.Sprintf("%d", team.ID) } class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"/>
-        </div>
-        <div class="mb-4">
-            <label for="courtNotes" class="block text-gray-700 font-semibold mb-2">Team Name</label>
-            <input type="text" id="courtNotes" name="courtNotes" value={team.CourtNotes} class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required/>
+            <label for="courtNotes" class="block text-gray-700 font-semibold mb-2">Notes</label>
+            <textarea type="text" id="courtNotes" name="courtNotes"  rows="30" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>{ team.CourtNotes }</textarea>
         </div>
         <div class="flex justify-end">
             <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
@@ -314,6 +311,11 @@ templ teamCourtNotesForm(team Team){
     </form>
 }
 
-templ teamCourtNotes(team Team){
-    <div>{team.CourtNotes}  @teamCourtNotesButton(true)</div>
+templ teamCourtNotes(team Team, msg string){
+
+    <div hx-target="this" hx-swap="outerHTML">
+    if len(msg) > 0 {
+        @success(msg)
+    }
+    {team.CourtNotes}  @teamCourtNotesButton(true)</div>
 }

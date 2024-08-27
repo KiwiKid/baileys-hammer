@@ -86,7 +86,6 @@ templ matchListPage(matches []Match, isOpen bool, isFineMaster bool, noHeader bo
 				if len(matches) > 0 {
 					<div class="grid grid-cols-1 gap-4">
 						for _, match := range matches {
-
 							<div class="p-4 border-b md:border-b-0 md:border-r last:border-r-0" id={ F("mlp-%d", match.ID) }>
 								<div class="flex justify-between items-center">
 									<div>

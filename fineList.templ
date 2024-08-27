@@ -378,17 +378,28 @@ templ fineTotals(totals []PlayerFinesTotal, grandTotal float64) {
 	</div>
 }
 
-templ fineListSheet(teamId uint, fines []FineWithPlayer, standAlone bool, full bool) {
+templ fineListSheet(team *Team, fines []FineWithPlayer, standAlone bool, full bool) {
 	<div class="m-2 bg-white shadow p-4 mt-10"  hx-target="this">
 		if !standAlone {
 			@finesListButton("Close Court Sheet", "sheet-button", false)
-			<a class={bigPri} target="_" href="/court">Standalone</a>
-		}
-		if teamId > 0 {
-			@courtNotes(teamId)
+			<div class=" pt-10">
+				<a class={ bigPri } target="_" href="/court">Standalone</a>
+			</div>
 		}
 		
+		if team != nil {
+			<div class=" pt-10">
+			if full {
+			@courtNotes(team.ID)
+			} else {
+			{ team.CourtNotes }
+			}
+			</div>
+		}
+
+		
 		<h2 class="text-center font-bold text-lg mb-4">Fine Sheet View</h2>
+		
 		<div 
 			if full {
 				class="grid grid-cols-5 bg-gray-100 border border-gray-300"
@@ -410,7 +421,8 @@ templ fineListSheet(teamId uint, fines []FineWithPlayer, standAlone bool, full b
 				class="grid grid-cols-5 border border-gray-300"
 			}else {
 				class="grid grid-cols-3 border border-gray-300"
-			}
+			} 
+			 
 			>
 			<div class="border border-gray-300 p-2">{ f.Player.Name } ({ fmt.Sprintf("$%v", f.Fine.Amount) })</div>
 				<div class="border border-gray-300 p-2">{ f.Fine.Reason } - { f.Fine.Context } { f.Fine.FineAt.Format("Jan 2, 2006") } - { fmt.Sprintf("%s", f.Fine.Contest) } [					{ fmt.Sprintf("%s - %s ",  f.Match.Location, f.Match.Opponent ) }
@@ -418,7 +430,7 @@ templ fineListSheet(teamId uint, fines []FineWithPlayer, standAlone bool, full b
 				<div class="border border-gray-300 p-2">{ fmt.Sprintf("%d %s", f.Fine.CourtSessionOrder, f.Fine.CourtSessionNote) }</div>
 
 				if full {
-					<div class="border col-span-2 border-gray-300 p-2">
+					<div class="border col-span-2 border-gray-300 p-2" hx-target="this">
 						<form hx-post="/fines/court-display-order" hx-target="#court-note-result" class="max-w-md mx-auto bg-white p-6 rounded-lg shadow-md">
 							<div class="mb-4">
 								<input type="hidden" id="fid" name="fid" required value={ fmt.Sprintf("%v", f.Fine.ID) } class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"/>
@@ -436,7 +448,13 @@ templ fineListSheet(teamId uint, fines []FineWithPlayer, standAlone bool, full b
 							</button>
 						</form>
 						<div id="court-note-result"></div>
-						<details><summary>debug</summary>{ fmt.Sprintf("%+v", f)}</details>
+						<button
+							class={ del }
+							hx-confirm={ fmt.Sprintf("Are you sure you want to delete the fine by this player? (%s for %s)", f.Fine.Reason, f.Player.Name) }
+							hx-delete={ fmt.Sprintf("/fines?fid=%d", f.Fine.ID) }
+							
+						>Delete</button>
+						<details><summary></summary>{ fmt.Sprintf("%+v", f)}</details>
 					</div>
 				}
 			</div>
@@ -505,7 +523,7 @@ templ fineContextRow(f FineWithPlayer, matches []Match) {
 				Save
 			</button>
 			<!--<div>
-				@fineImagesAndForm(f.Fine.ID)
+				@fineImagesAndForm(f.Fine.ID, false)
 			</div>-->
 			<div class="w-full text-center mt-4">
 				<a
@@ -556,14 +574,16 @@ templ fineContestRow(f FineWithPlayer) {
 	</div>
 }
 
-templ fineImagesAndForm(fineId uint){
+templ fineImagesAndForm(fineId uint, fineImagesOn bool){
 	<div hx-get={ fmt.Sprintf("/fines/edit/%d/image?displayType=fineImage", fineId) } hx-trigger="revealed" >
 		Images Loading...
 	</div>
-	@fineUploadForm(fineId)
+	if fineImagesOn {
+		@fineUploadForm(fineId)
+	}
 }
 
-templ fineEditForm(f FineWithPlayer, isFineMaster bool, fineImagesOn bool) {
+templ fineEditForm(f FineWithPlayer, isFineMaster bool, hideFineImages bool) {
 	<form
  		hx-post={ fmt.Sprintf("/fines/edit/%d", f.Fine.ID) } 
  		hx-swap="innerHTML"
@@ -595,7 +615,7 @@ templ fineEditForm(f FineWithPlayer, isFineMaster bool, fineImagesOn bool) {
 					</span>
 				}
 			</div>
-		 	if fineImagesOn {
+		 	if !hideFineImages {
 				@fineUploadForm(f.Fine.ID)	
 			}
 			<!-- Hidden Inputs -->
@@ -665,7 +685,7 @@ templ fineEditForm(f FineWithPlayer, isFineMaster bool, fineImagesOn bool) {
 			</button>
 			<button
  				class={ del }
- 				hx-confirm="Are you sure you want to delete the fine by this player?"
+ 				hx-confirm={ fmt.Sprintf("Are you sure you want to delete the fine by this player? (%s for %s)", f.Fine.Reason, f.Player.Name) }
  				hx-delete={ fmt.Sprintf("/fines?fid=%d", f.Fine.ID) }
 			>Delete</button>
 		</div>

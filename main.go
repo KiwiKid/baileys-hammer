@@ -764,9 +764,18 @@ func fineHandler(db *gorm.DB) http.HandlerFunc {
 					log.Printf("fineHandler - fineListSheet %+v", fineWithPlayers)
 
 					ctx := GetContext(r, db)
-					teamId := getTeamId(ctx)
+					mst, err := GetMatchSeasonTeam(db)
+					if err != nil {
+						warning := warning(fmt.Sprintf("Error fetching match season team: %v", err))
+						warning.Render(ctx, w)
+						return
+					} else if mst.Team == nil {
+						warning := warning(fmt.Sprintf("No active team"))
+						warning.Render(ctx, w)
+						return
+					}
 
-					fineListSheet := fineListSheet(teamId, fineWithPlayers, standAlone, full)
+					fineListSheet := fineListSheet(mst.Team, fineWithPlayers, standAlone, full)
 					fineListSheet.Render(ctx, w)
 					return
 				default:
@@ -1212,8 +1221,15 @@ func teamCourtHandler(db *gorm.DB) http.HandlerFunc {
 					return
 				}
 
+				teamIdInt, err := strconv.ParseUint(teamId, 10, 64)
+				if err != nil {
+					warning := warning(fmt.Sprintf("Error parsing team ID: %v", err))
+					warning.Render(GetContext(r, db), w)
+					return
+				}
+
 				courtNotes := r.FormValue("courtNotes")
-				team, err := GetTeam(db, 0)
+				team, err := GetTeam(db, uint(teamIdInt))
 				if err != nil {
 					warning := warning(fmt.Sprintf("teamCourtHandlerPOST - Error fetching team: %v", err))
 					warning.Render(GetContext(r, db), w)
@@ -1229,37 +1245,16 @@ func teamCourtHandler(db *gorm.DB) http.HandlerFunc {
 					return
 				}
 
-				matches, err := GetMatches(db, 0, 0, 999)
-				if err != nil {
-					warning := warning(fmt.Sprintf("teamActiveMatchHandler - Error fetching matches: %v", err))
-					warning.Render(GetContext(r, db), w)
-					return
-				}
-
-				success := teamEditForm(newTeam, matches, "Court Notes updated")
-				success.Render(GetContext(r, db), w)
+				teamCourtNotes := teamCourtNotes(newTeam, "Updated court notes")
+				teamCourtNotes.Render(GetContext(r, db), w)
 				return
 
 			}
 		case "GET":
 			{
-				teamId := r.URL.Query().Get("teamId")
-				if len(teamId) == 0 {
-					warning := warning("No team ID provided")
-					warning.Render(GetContext(r, db), w)
-					return
-				}
-
-				teamIdInt, err := strconv.ParseUint(teamId, 10, 64)
+				mst, err := GetMatchSeasonTeam(db)
 				if err != nil {
-					warning := warning(fmt.Sprintf("TeamCourtHanlder Error parsing team ID: %v", err))
-					warning.Render(GetContext(r, db), w)
-					return
-				}
-
-				team, err := GetTeam(db, uint(teamIdInt))
-				if err != nil {
-					warning := warning(fmt.Sprintf("teamCourtHandler GET - Error fetching team for id: %s: %v", teamId, err))
+					warning := warning(fmt.Sprintf("teamCourtHandler GET - Error fetching GetMatchSeasonTeam: %v", err))
 					warning.Render(GetContext(r, db), w)
 					return
 				}
@@ -1267,13 +1262,18 @@ func teamCourtHandler(db *gorm.DB) http.HandlerFunc {
 				viewMode := r.URL.Query().Get("viewMode")
 				switch viewMode {
 				case "court-notes-form":
-					teamForm := teamCourtNotesForm(*team)
+					teamForm := teamCourtNotesForm(*mst.Team)
 					teamForm.Render(GetContext(r, db), w)
 					return
 				case "court-notes":
-					teamCourtNotes := teamCourtNotes(*team)
+					teamCourtNotes := teamCourtNotes(*mst.Team, "")
 					teamCourtNotes.Render(GetContext(r, db), w)
 					return
+				case "court-notes-form-button":
+					noteButton := teamCourtNotesButton(true)
+					noteButton.Render(GetContext(r, db), w)
+					return
+
 				default:
 					warning := warning("No viewMode provided (court-notes-form or court-notes needed)")
 					warning.Render(GetContext(r, db), w)
@@ -1315,7 +1315,7 @@ func teamActiveMatchHandler(db *gorm.DB) http.HandlerFunc {
 				activeMatchOverrideId := r.FormValue("activeMatchOverrideId")
 				team, err := GetTeam(db, uint(teamIdInt))
 				if err != nil {
-					warning := warning(fmt.Sprintf("activeMatch handler - teamCourtHandlerPOST - Error fetching team: %v", err))
+					warning := warning(fmt.Sprintf("activeMatch handler - teamCourtHandlerPOST - Error fetching team: for teamId input:[%s] %v", teamId, err))
 					warning.Render(GetContext(r, db), w)
 					return
 				}
