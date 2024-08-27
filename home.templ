@@ -403,6 +403,11 @@ templ home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines
 															{ f.Contest }
 														</div>
 													}
+													<button
+														hx-get={ fmt.Sprintf("/fines/edit/%d?isContest=true&isFineMaster=%t", f.ID, false) }
+														hx-swap="outerHTML"
+														class={ smPri }
+													>I Contest This Fine -({ f.Contest })</button>
 												</div>
 											}
 										</div>

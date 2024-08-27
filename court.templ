@@ -13,6 +13,7 @@ templ courtManage(full bool) {
 		@globalStyles()
     </head>
     <body>
+        @fineSummaryButton("Open Total View", "summary")
         <div class={ bigSec } hx-get={ fmt.Sprintf("/fines?viewMode=sheet&standAlone=true&full=%t", full)} hx-trigger="revealed" hx-swap="outerHTML" >loading.. (court)</div>
     </body>
 }

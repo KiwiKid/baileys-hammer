@@ -427,7 +427,7 @@ templ fineListSheet(team *Team, fines []FineWithPlayer, standAlone bool, full bo
 			<div class="border border-gray-300 p-2">{ f.Player.Name } ({ fmt.Sprintf("$%v", f.Fine.Amount) })</div>
 				<div class="border border-gray-300 p-2">{ f.Fine.Reason } - { f.Fine.Context } { f.Fine.FineAt.Format("Jan 2, 2006") } - { fmt.Sprintf("%s", f.Fine.Contest) } [					{ fmt.Sprintf("%s - %s ",  f.Match.Location, f.Match.Opponent ) }
 ] </div>
-				<div class="border border-gray-300 p-2">{ fmt.Sprintf("%d %s", f.Fine.CourtSessionOrder, f.Fine.CourtSessionNote) }</div>
+				<div class="border border-gray-300 p-2">{ fmt.Sprintf("#%d %s", f.Fine.CourtSessionOrder, f.Fine.CourtSessionNote) }</div>
 
 				if full {
 					<div class="border col-span-2 border-gray-300 p-2" hx-target="this">
@@ -437,7 +437,7 @@ templ fineListSheet(team *Team, fines []FineWithPlayer, standAlone bool, full bo
 							</div>
 							<div class="mb-4">
 								<label for="courtSessionOrder" class="block text-gray-700 font-medium mb-2">Court Session Order</label>
-								<input type="number" id="courtSessionOrder" name="courtSessionOrder" value={ fmt.Sprint("%d", f.Fine.CourtSessionOrder) } required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+								<input type="number" id="courtSessionOrder" name="courtSessionOrder" value={ fmt.Sprint("#%d", f.Fine.CourtSessionOrder) } required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"/>
 							</div>
 							<div class="mb-4">
 								<label for="courtSessionNote" class="block text-gray-700 font-medium mb-2">Court Session Note</label>
@@ -454,7 +454,6 @@ templ fineListSheet(team *Team, fines []FineWithPlayer, standAlone bool, full bo
 							hx-delete={ fmt.Sprintf("/fines?fid=%d", f.Fine.ID) }
 							
 						>Delete</button>
-						<details><summary></summary>{ fmt.Sprintf("%+v", f)}</details>
 					</div>
 				}
 			</div>
@@ -538,39 +537,44 @@ templ fineContextRow(f FineWithPlayer, matches []Match) {
 }
 
 templ fineContestRow(f FineWithPlayer) {
-	<div class="border rounded-lg flex flex-col items-center p-4 space-y-4" id="contest-form">
-		<p class="text-lg font-semibold w-full text-gray-700">Contest fine:</p>
-		<div class="w-full">
-			<input
- 				type="text"
- 				name="contest"
- 				value={ f.Fine.Contest }
- 				class="px-4 py-2 border border-gray-300 rounded-lg w-full focus:ring-blue-500 focus:border-blue-500"
- 				placeholder="Why do you contest this fine?"
-			/>
+	<div class="border rounded-lg flex items-center p-4 space-y-4 w-full" id="contest-form">
+		<div class="flex flex-col space-y-4  w-full">
+			<p class="text-lg font-semibold w-full text-gray-700">Contest fine:</p>
+			<div class="w-full">
+				<input
+					type="text"
+					name="contest"
+					value={ f.Fine.Contest }
+					class="px-4 py-2 border border-gray-300 rounded-lg w-full focus:ring-blue-500 focus:border-blue-500"
+					placeholder="Why do you contest this fine?"
+				/>
+			</div>
+			<div class="w-full flex flex-col space-y-2">
+				<input
+					type="hidden"
+					name="fid"
+					value={ fmt.Sprintf("%d", f.Fine.ID) }
+				/>
+				<button
+					class={ add }
+					hx-post={ fmt.Sprintf("/fines/contest", ) }
+					hx-swap="outerHTML"
+					hx-include="closest #contest-form"
+					type="submit"
+					class="bg-blue-500 text-white px-4 py-2 rounded-lg w-full hover:bg-blue-600"
+				>
+					Save
+				</button>
+				<div class="w-full text-center mt-4">
+					<div hx-get="/#fine-list-container" hx-target="body"
+						class={ bigSec }
+					>
+						Cancel
+					</div>
+				</div>
+			</div>
 		</div>
-		<input
- 			type="hidden"
- 			name="fid"
- 			value={ fmt.Sprintf("%d", f.Fine.ID) }
-		/>
-		<button
- 			class={ add }
- 			hx-post={ fmt.Sprintf("/fines/contest", ) }
- 			hx-swap="outerHTML"
- 			hx-include="closest #contest-form"
- 			type="submit"
-		>
-			Save
-		</button>
-		<div class="w-full text-center">
-			<a
- 				href={ templ.SafeURL("/#fine-list-container") }
- 				class={ sec }
-			>
-				Cancel
-			</a>
-		</div>
+
 	</div>
 }
 
