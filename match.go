@@ -239,6 +239,11 @@ func seasonHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 			case "selector":
 				seasonSelComp := selectSeasons(seasons)
 				seasonSelComp.Render(GetContext(r, db), w)
+				return
+			case "button":
+				seasonComp := manageSeasonsButton(false)
+				seasonComp.Render(GetContext(r, db), w)
+				return
 			default:
 				activeSeason, err := GetActiveSeason(db)
 				if err != nil {

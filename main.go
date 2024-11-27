@@ -619,7 +619,7 @@ func fineSummaryHandler(db *gorm.DB) http.HandlerFunc {
 			{
 				viewMode := r.URL.Query().Get("viewMode")
 				if viewMode == "button" {
-					fineList := fineSummaryButton("Open Total View", "summary")
+					fineList := fineSummaryButton("Open Total View", "summary", false)
 					fineList.Render(GetContext(r, db), w)
 					return
 				}
@@ -703,11 +703,11 @@ func fineHandler(db *gorm.DB) http.HandlerFunc {
 			{
 				viewMode := r.URL.Query().Get("viewMode")
 				if viewMode == "list-button" {
-					fineList := finesListButton("Open Fine List", "list", false)
+					fineList := finesListButton("Open Fine List", "list", false, false)
 					fineList.Render(GetContext(r, db), w)
 					return
 				} else if viewMode == "sheet-button" {
-					fineList := finesListButton("Open Court Sheet", "sheet", false)
+					fineList := finesListButton("Open Court Sheet", "sheet", false, false)
 					fineList.Render(GetContext(r, db), w)
 					return
 				} else if viewMode == "all-button" {
@@ -1470,7 +1470,31 @@ func teamHandler(db *gorm.DB) http.HandlerFunc {
 					team := teamAddForm()
 					team.Render(GetContext(r, db), w)
 					return
+				case "edit-button":
+					teamId := r.URL.Query().Get("teamId")
+					if len(teamId) == 0 {
+						warning := warning("No team ID provided")
+						warning.Render(GetContext(r, db), w)
+						return
+					}
 
+					teamIdInt, err := strconv.ParseUint(teamId, 10, 64)
+					if err != nil {
+						warning := warning(fmt.Sprintf("Error parsing team ID: %v", err))
+						warning.Render(GetContext(r, db), w)
+						return
+					}
+
+					team, err := GetTeam(db, uint(teamIdInt))
+					if err != nil {
+						warning := warning(fmt.Sprintf("teamHandler GET - Error fetching team: %v", err))
+						warning.Render(GetContext(r, db), w)
+						return
+					}
+
+					teamEditFormButton := teamEditFormButton(*team, false)
+					teamEditFormButton.Render(GetContext(r, db), w)
+					return
 				case "edit":
 					teamId := r.URL.Query().Get("teamId")
 					if len(teamId) == 0 {
@@ -1532,7 +1556,7 @@ func teamHandler(db *gorm.DB) http.HandlerFunc {
 					return
 				}
 
-				if ID := r.FormValue("id"); len(ID) > 0 {
+				if ID := r.FormValue("ID"); len(ID) > 0 {
 					id, err := strconv.ParseUint(ID, 10, 64)
 					if err != nil {
 						waring := warning(fmt.Sprintf("Error parsing team ID: %v", err))

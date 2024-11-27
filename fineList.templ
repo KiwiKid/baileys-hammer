@@ -18,13 +18,13 @@ func getFinesTotal(fines []FineWithPlayer) float64 {
 }
 
 
-templ fineSummaryButton(title string, viewMode string){
+templ fineSummaryButton(title string, viewMode string, openOnLoad bool){
 	<div class="mt-10">
 		switch viewMode {
 			case "button": 
 				<div class="flex-grow justify-center items-center mb-4">
-					<div class={ bigPri } 
-								hx-get={ "/fines/summary?viewMode=button" } 
+					<div class={ bigSec } 
+							 	hx-get={ "/fines/summary?viewMode=button" } 
 								hx-trigger="click" 
 								hx-swap="outerHTML"
 						>{ title }
@@ -34,7 +34,12 @@ templ fineSummaryButton(title string, viewMode string){
 				<div class="flex-grow justify-center items-center mb-4">
 					<div class={ bigPri } 
 								hx-get={ "/fines/summary" } 
-								hx-trigger="click" 
+								if openOnLoad {
+									hx-trigger="revealed" 
+								} else {
+									hx-trigger="click" 
+								}
+								
 								hx-swap="outerHTML"
 						>{ title }
 					</div>
@@ -300,8 +305,8 @@ templ fineRow(isFineMaster bool, f FineWithPlayer) {
 	</tr>
 }
 
-templ finesListButton(title string, toViewMode string, external bool){
-	<div class="mt-10">
+templ finesListButton(title string, toViewMode string, external bool, openOnLoad bool){
+	<div class="">
 		switch toViewMode {
 			case "sheet-button":
 				if external {
@@ -309,7 +314,8 @@ templ finesListButton(title string, toViewMode string, external bool){
 				} else {	
 					<div class={ bigSec } 
 						hx-get={ fmt.Sprintf("/fines?viewMode=%s", toViewMode) } 
-						hx-trigger="click" 
+						hx-trigger="click"
+						
 						hx-swap="outerHTML" 
 					>{ title }</div>
 				}
@@ -320,7 +326,7 @@ templ finesListButton(title string, toViewMode string, external bool){
 						target="_"
 					} else {
 						hx-get={ fmt.Sprintf("/fines?viewMode=%s", toViewMode) } 
-						hx-trigger="click" 
+						hx-trigger="click"
 						hx-swap="outerHTML" 
 					}
 				>{ title }</div>
@@ -330,8 +336,8 @@ templ finesListButton(title string, toViewMode string, external bool){
 							hx-get={ "/fines/summary" } 
 							target="_"
 						} else {
-							hx-get={ "/fines/summary" } 
-							hx-trigger="click" 
+							hx-get={ "/fines/summary" }
+							hx-trigger="click"
 							hx-swap="outerHTML"
 						}
 					>{ title }
@@ -344,7 +350,7 @@ templ finesListButton(title string, toViewMode string, external bool){
 
 templ fineTotals(totals []PlayerFinesTotal, grandTotal float64) {
 	<div class="m-2 bg-white shadow p-4 mt-10" hx-target="this">
-		@fineSummaryButton("Close Total View", "button")
+		@fineSummaryButton("Close Total View", "button", false)
 		<h2 class="text-center font-bold text-lg mb-4">Fine Totals: { fmt.Sprintf("$%v", grandTotal)} </h2>
 		<table class="min-w-full table-auto border-collapse">
 			<thead>
@@ -374,14 +380,14 @@ templ fineTotals(totals []PlayerFinesTotal, grandTotal float64) {
 				}
 			</tbody>
 		</table>
-		@fineSummaryButton("Close Total View", "button")
+		@fineSummaryButton("Close Total View", "button", false)
 	</div>
 }
 
 templ fineListSheet(team *Team, fines []FineWithPlayer, standAlone bool, full bool) {
 	<div class="m-2 bg-white shadow p-4 mt-10"  hx-target="this">
 		if !standAlone {
-			@finesListButton("Close Court Sheet", "sheet-button", false)
+			@finesListButton("Close Court Sheet", "sheet-button", false, full)
 			<div class=" pt-10">
 				<a class={ bigPri } target="_" href="/court">Standalone</a>
 			</div>

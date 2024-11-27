@@ -98,19 +98,20 @@ templ finemaster(pass string, players []PlayerWithFines, fineWithPlayers []FineW
 				@playerPaymentsButton("Open Player Payments", "table", mst.Season)  
 			}
 			
-			@finesListButton("Open Court Sheet", "sheet", false)
-			@fineSummaryButton("Open Total View", "summary")
+			@finesListButton("Open Court Sheet", "sheet", false, false)
+			@fineSummaryButton("Open Total View", "summary", false)
 			@fineListButton(true)
+
+			
+
+
+			@manageSeasonsButton(false)
+
+			@teamListButton(true)
 			if mst.Season != nil {
 				@playersManage(secureFineMasterbaseUrl(finemasterBaseUrl, pass), players, config, qp.PlayerOpen, mst.Season)
 			}
-			
-
 			@matchesManage(secureFineMasterbaseUrl(finemasterBaseUrl, pass), qp.MatchesOpen, matches, players)
-
-			@manageSeasonsButton()
-
-			@teamListButton(true)
 
 			@presetFines(fmt.Sprintf("%s/%s", finemasterBaseUrl, pass), pass, qp.PresetFinesOpen, pFines)
 
@@ -342,14 +343,29 @@ templ matchesManage(baseUrl string, isOpen bool, matches []Match, pwfs []PlayerW
 	</div>
 }
 
-templ manageSeasonsButton(){
-	<div  class={ bigPri } hx-get="/season" hx-trigger="click" hx-swap="outerHTML">
-		Open Seasons
+templ manageSeasonsButton(open bool){
+	<div 
+		if open {
+			hx-get="/season?type=button"
+			class={ bigSec }
+		} else {
+			hx-get="/season"
+			class={ bigPri }
+		}
+	 hx-trigger="click" hx-swap="outerHTML">
+		if open {
+			Close
+		 } else {
+			Open
+		 } 
+		 Seasons
 	</div>
 }
 
 templ manageSeasons(seasons []Season, activeSeason *Season) {
-	<div>
+	<div hx-target="this">
+		@manageSeasonsButton(true)
+
 		Manage Seasons - 
 		if activeSeason != nil {
 			@success(fmt.Sprintf("%s is currently active", activeSeason.Title))
@@ -360,6 +376,7 @@ templ manageSeasons(seasons []Season, activeSeason *Season) {
 			@updateSeason(season)
 		}
 		@createSeason()
+		@manageSeasonsButton(true)
 	</div>
 }
 

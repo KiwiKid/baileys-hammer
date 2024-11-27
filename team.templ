@@ -7,25 +7,31 @@ import (
 
 
 templ teamList(teams []Team, matches []Match){
-    <h1>{fmt.Sprintf("Teams %d", len(teams))}</h1>
-    for _, t := range teams {
-        <details>
-            <summary>
-                {t.TeamName} - {fmt.Sprintf("[%d]", t.ID)}
-            </summary>
-            @teamEditForm(t, matches, "")
-        </details>
-    }
-    @teamAddForm()
+    <div hx-target="this">
+        <h1>{fmt.Sprintf("Teams %d", len(teams))}</h1>
+        @teamListButton(false)
+        for _, t := range teams {
+            <details>
+                <summary>
+                    {t.TeamName} - {fmt.Sprintf("[%d]", t.ID)}
+                </summary>
+                @teamEditForm(t, matches, "")
+            </details>
+        }
+        @teamAddForm()
+        @teamListButton(false)
+    </div>
 }
 
 templ teamListButton(open bool){
 	<div class="flex-grow justify-center items-center mb-4">
-		<div class={ bigPri } 
+		<div 
 					if open {
 						hx-get="/teams" 
+                        class={ bigPri }
 					 } else { 
 						hx-get="/teams?viewMode=button"
+                        class={ bigSec }
 					}
 					hx-trigger="click" 
 					hx-swap="outerHTML"
@@ -99,7 +105,9 @@ templ teamEditForm(team Team, matches []Match, msg string){
     }
         <div class="mb-4">
             <label for="ID" class="block text-gray-700 font-semibold mb-2">Team ID</label>
-            <input type="text" disabled="disabled" id="ID" name="ID" value={ fmt.Sprintf("%d", team.ID) } class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+            <input type="text" disabled="disabled" id="ID" value={ fmt.Sprintf("%d", team.ID) } class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+            <input type="hidden" id="ID" name="ID" value={ fmt.Sprintf("%d", team.ID) } />
+
         </div>
         <div class="mb-4">
             <label for="teamName" class="block text-gray-700 font-semibold mb-2">Team Name</label>
@@ -188,6 +196,16 @@ templ teamEditForm(team Team, matches []Match, msg string){
 
 }
 
+
+templ teamEditFormButton(team Team, open bool){
+    if open {
+        
+    } else {
+        <button hx-get={ fmt.Sprintf("/teams?teamId=%d", team.ID)}>Edit Team</button>
+    }
+    
+}
+
 templ courtNotes(teamId uint){
     <div hx-get={ fmt.Sprintf("/teams/court-session?viewMode=court-notes&teamId=%d", teamId) } hx-trigger="revealed" hx-swap="innerHTML" hx-target="this">loading...</div>
 }
@@ -262,7 +280,7 @@ templ teamActiveMatchButton(open bool, matchSeasonTeam *MatchSeasonTeam){
         if matchSeasonTeam.Team != nil {
             @success(fmt.Sprintf("Team:%s", matchSeasonTeam.Team.TeamName))
         }else{
-            @warning("no active team?")
+            @teamListButton(true)
         }
         
         if matchSeasonTeam.Match != nil {
