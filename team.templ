@@ -5,6 +5,28 @@ import (
     "github.com/dustin/go-humanize"
 )
 
+templ teamListFrame(teams []Team, matches []Match){
+   <head>
+        @headLinks()
+        @globalStyles()
+    </head>
+    <body>
+        <div hx-target="this">
+            <h1>{fmt.Sprintf("Teams %d", len(teams))}</h1>
+            @teamListButton(false)
+            for _, t := range teams {
+                <details>
+                    <summary>
+                        {t.TeamName} - {fmt.Sprintf("[%d]", t.ID)}
+                    </summary>
+                    @teamEditForm(t, matches, "")
+                </details>
+            }
+            @teamAddForm()
+            @teamListButton(false)
+        </div>
+    </body>
+}
 
 templ teamList(teams []Team, matches []Match){
     <div hx-target="this">

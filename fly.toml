@@ -23,7 +23,7 @@ primary_region = 'syd'
 
 [env]
   DATABASE_URL = "/mnt/volume/production.sqlite3"
-  DB_REPLICA_URL = ${DB_REPLICA_URL}
+  DB_REPLICA_URL = "${DB_REPLICA_URL}"
 
   
 [mounts]

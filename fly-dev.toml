@@ -25,6 +25,7 @@ primary_region = 'syd'
   DATABASE_URL = "/mnt/volume/development.sqlite3"
   PREVIEW_ENV = "true"
   TITLE = "🔨 [INSERT-YOUR-TEAMS-NAME]'s fines 🔨"
+  DB_REPLICA_URL = ${DB_REPLICA_URL}
 
 
 [mounts]

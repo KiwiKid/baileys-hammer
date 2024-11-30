@@ -27,8 +27,6 @@
           ];
           shellHook = ''
             echo "Building the Go project..."
-            git config user.name $GIT_AUTHOR_USER
-            git config user.email $GIT_AUTHOR_EMAIL
             export DATABASE_URL=./tmp/data/dev.db
             templ generate && go build -o ./tmp/main .
           '';
@@ -42,8 +40,6 @@
           ];
           shellHook = ''
             echo "Building the Go project..."
-            git config user.name $GIT_AUTHOR_USER
-            git config user.email $GIT_AUTHOR_EMAIL
             export DATABASE_URL=./tmp/data/dev.db
             templ generate
             echo "Deploying the application..."
@@ -59,8 +55,6 @@
           ];
           shellHook = ''
             echo "Building the Go project..."
-            git config user.name $GIT_AUTHOR_USER
-            git config user.email $GIT_AUTHOR_EMAIL
             export DATABASE_URL=./tmp/data/dev.db
             templ generate
             echo "Deploying the application..."
@@ -77,9 +71,7 @@
             flyctl
           ];
           shellHook = ''
-            git config user.name $GIT_AUTHOR_USER
-            git config user.email $GIT_AUTHOR_EMAIL
-            export DATABASE_URL=./tmp/data/dev.db
+            export DATABASE_URL=./tmp/data/devTEST.db
             export PASS=pass
             code .
             tmux kill-session -t devSession
@@ -91,6 +83,20 @@
           '';
           shellExit = ''
             tmux kill-session -t devSession
+          '';
+        };
+
+        shell = pkgs.mkShell {
+          buildInputs = [ 
+            air
+            templ
+            go
+            pkgs.tmux
+            flyctl
+          ];
+          shellHook = ''
+            export DATABASE_URL=./tmp/data/dev.db
+            export PASS=pass
           '';
         };
 

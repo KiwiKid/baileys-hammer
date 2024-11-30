@@ -1542,9 +1542,17 @@ func teamHandler(db *gorm.DB) http.HandlerFunc {
 						return
 					}
 
+					includeFrame := r.URL.Query().Get("includeFrame") == "true"
+
+					if(includeFrame){
+						teamList := teamListFrame(teams, matches)
+						teamList.Render(GetContext(r, db), w)
+						return
+					}
 					teamList := teamList(teams, matches)
 					teamList.Render(GetContext(r, db), w)
 					return
+					
 
 				}
 			}
@@ -2101,6 +2109,8 @@ func setupRouter(db *gorm.DB) *chi.Mux {
 
 func homeHandler(db *gorm.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("homeHandler")
+
 		decoder := schema.NewDecoder()
 		queryParams := new(HomeQueryParams)
 		warnStr := ""
@@ -2146,6 +2156,11 @@ func homeHandler(db *gorm.DB) http.HandlerFunc {
 			return
 		}
 
+		if(mst.Team == nil){
+			http.Redirect(w, r, "/teams?includeFrame=true", http.StatusSeeOther)
+			return
+		}
+
 		matches, err := GetMatches(db, 1, 0, 9999)
 		if err != nil {
 			log.Printf("Error retrieving preset fines: %v", err)
@@ -2156,6 +2171,7 @@ func homeHandler(db *gorm.DB) http.HandlerFunc {
 		if config.UsePreviewPassword {
 			previewPassword = os.Getenv("PASS")
 		}
+
 
 		home := home(playersWithFines, approvedPFines, pendingPFines, fineWithPlayers, *queryParams, matches, mst, warnStr, previewPassword)
 		home.Render(GetContext(r, db), w)

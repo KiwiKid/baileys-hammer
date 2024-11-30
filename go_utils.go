@@ -184,9 +184,13 @@ func GetContext(r *http.Request, db *gorm.DB) context.Context {
 			log.Printf("Error fetching team data from the database: %+v", err)
 		}
 		if len(teams) == 1 {
+			log.Printf("(One team found) %+v", teams)
+
 			team = teams[0]
 			saveTeamToSession(r, team, session)
 		} else {
+			log.Printf("(no teams found)")
+
 			// Handle the case when no or multiple teams exist
 			// You may want to redirect to a team selection page
 		}
