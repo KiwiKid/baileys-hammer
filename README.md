@@ -22,6 +22,9 @@ nix develop .#devShells.build
 # deploy
 nix develop .#devShells.deploy
 
+# or build docker via nix flake:
+nix develop .#devShells.dockerBuild
+
 
 
 # or via dockerFines<

@@ -1,0 +1,8 @@
+dbs:
+  - path: ${DATABASE_URL}
+    replicas:
+      - url: ${DB_REPLICA_URL}
+        type: s3
+        region: us-east-1
+        bucket: backerbucket
+        path: baileys-hammer/bailies

@@ -21,8 +21,23 @@ RUN apt-get update && \
 
 WORKDIR /root/
 
-# Copy the Pre-built binary file from the previous stage
-COPY --from=builder /app/main .
+# ==== litestream ====
+
+# Install wget to download Litestream
+RUN apt-get update && apt-get install -y wget && rm -rf /var/lib/apt/lists/*
+
+# Download and install Litestream
+ARG LITESTREAM_VERSION=v0.3.9
+RUN wget https://github.com/benbjohnson/litestream/releases/download/${LITESTREAM_VERSION}/litestream-${LITESTREAM_VERSION}-linux-amd64.tar.gz && \
+    tar -C /usr/local/bin -xzf litestream-${LITESTREAM_VERSION}-linux-amd64.tar.gz && \
+    rm litestream-${LITESTREAM_VERSION}-linux-amd64.tar.gz
+
+
+COPY litestream.yml /etc/litestream.yml
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+COPY --from=builder /app/main /usr/local/bin/
 
 # Command to run the executable
-CMD ["./main"]
+ENTRYPOINT ["/entrypoint.sh"]
