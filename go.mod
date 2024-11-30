@@ -5,7 +5,7 @@ go 1.21
 toolchain go1.21.0
 
 require (
-	github.com/a-h/templ v0.2.598
+	github.com/a-h/templ v0.2.793
 	github.com/chromedp/chromedp v0.9.5
 	github.com/dustin/go-humanize v1.0.1
 	github.com/go-chi/chi v1.5.5
@@ -31,6 +31,6 @@ require (
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-sqlite3 v1.14.22 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	golang.org/x/sys v0.16.0 // indirect
+	golang.org/x/sys v0.23.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
