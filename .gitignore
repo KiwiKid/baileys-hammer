@@ -4,3 +4,8 @@ dbdb
 .env
 tmp/build-errors.log
 test/tmp/*
+*.db
+*.db-shm
+*.db-wal
+tmp/main
+tmp/build-errors.log

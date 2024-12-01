@@ -53,11 +53,15 @@ templ fineSummaryButton(title string, viewMode string, openOnLoad bool){
 
 templ fineListButton(open bool){
 	<div class="flex-grow justify-center items-center mb-4">
-		<div class={ bigPri } 
+		<div 
 					if open {
 						hx-get="/fines" 
+						class={ bigPri }
 					 } else { 
 						hx-get="/fines?viewMode=all-button"
+						class={ bigSec }
+
+
 					}
 					hx-trigger="click" 
 					hx-swap="outerHTML"
