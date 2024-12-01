@@ -1,5 +1,8 @@
 # baileys-hammer 
 
+## [Live Demo)[https://sports-team-fines.fly.dev/]
+
+
 ## a simple application for tracking games and season fines for a sports team, it can be self-hosted via docker and includes configuration for a fly.io deployment.
 
 ![alt text](docs/Kooha-2024-06-27-10-24-42.gif)

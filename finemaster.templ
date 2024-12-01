@@ -404,33 +404,39 @@ templ selectSeasons(seasons []Season) {
 
 templ playersManage(baseUrl string, players []PlayerWithFines, config *Config, isOpen bool, activeSeason *Season) {
 	if isOpen {
-		<div class="flex items-center justify-center bg-gray-100  p-3" id="players-manage">
-			<div class="w-full px-8 py-6 text-left bg-white shadow-xl m-10">
-				<!-- Section for Adding New Player -->
-				<h3 class="text-2xl font-bold text-center" title={ fmt.Sprintf("%+v", config) }>Add New Player ({ fmt.Sprintf("%d", len(players)) })</h3>
-				<form hx-post="/players" method="POST" class="mt-4">
-					<div>
-						<label for="name" class="block">Name</label>
-						<input required type="text" name="name" id="name" placeholder="Name" class="w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600"/>
-					</div>
-					<div class="flex items-center w-full">
-						<button type="submit" class={ bigAdd } id="add-player">Add Player</button>
-					</div>
-				</form>
-				<div class="p-6">
-					<div class="flex justify-center w-full p-3">
-						<a href={ makeSafeUrl(baseUrl, false, false, false, false, false) } hx-transition="true" class={ bigSec }>Close</a>
-					</div>
-					<h3 class="text-2xl font-bold text-center mt-8">Manage Players</h3>
-					for _, p := range players {
-						@playerRoleSelector(p, config, "")
-					}
-				</div>
-
+		<div>
+			<div class="flex justify-center w-full p-3">
+				<a href={ makeSafeUrl(baseUrl, false, false, false, false, false) } hx-transition="true" class={ bigSec }>Close Manage Players</a>
+			</div>
+			<div class="flex items-center justify-center bg-gray-100  p-3" id="players-manage">
 				
-				<div class="flex justify-center w-full p-3">
-					<a href={ makeSafeUrl(baseUrl, false, false, false, false, false) } hx-transition="true" class={ bigSec }>Close</a>
+
+				<div class="w-full px-8 py-6 text-left bg-white shadow-xl m-10">
+					<!-- Section for Adding New Player -->
+					<p class="text-xl">({ fmt.Sprintf("%d existing players", len(players)) })</p>
+				
+					<div class="p-6">
+						<h3 class="text-2xl font-bold text-center mt-8">Manage Players</h3>
+						for _, p := range players {
+							<details>
+								<summary>
+									<h4 class="text-2xl font-bold"> {p.Name}</h4>
+								</summary>
+								@playerRoleSelector(p, config, "")
+							</details>
+							
+						}
+						<div class="mt-20">
+						<h3 class="text-2xl font-bold text-center" title={ fmt.Sprintf("%+v", config) }>Add a new Player</h3>
+
+						@addPlayer()
+						</div>
+					</div>
 				</div>
+			</div>
+
+			<div class="flex justify-center w-full p-3">
+				<a href={ makeSafeUrl(baseUrl, false, false, false, false, false) } hx-transition="true" class={ bigSec }>Close Manage Players</a>
 			</div>
 		</div>
 	} else {
@@ -440,3 +446,15 @@ templ playersManage(baseUrl string, players []PlayerWithFines, config *Config, i
 	}
 }
 
+
+templ addPlayer(){
+	<form hx-post="/players" method="POST" class="mt-4">
+		<div>
+			<label for="name" class="block">Name</label>
+			<input required type="text" name="name" id="name" placeholder="Name" class="w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600"/>
+		</div>
+		<div class="flex items-center w-full">
+			<button type="submit" class={ bigAdd } id="add-player">Add Player</button>
+		</div>
+	</form>
+}

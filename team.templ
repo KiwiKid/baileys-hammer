@@ -15,12 +15,7 @@ templ teamListFrame(teams []Team, matches []Match){
             <h1>{fmt.Sprintf("Teams %d", len(teams))}</h1>
             @teamListButton(false)
             for _, t := range teams {
-                <details>
-                    <summary>
-                        {t.TeamName} - {fmt.Sprintf("[%d]", t.ID)}
-                    </summary>
-                    @teamEditForm(t, matches, "")
-                </details>
+                @teamEditForm(t, matches, "")
             }
             @teamAddForm()
             @teamListButton(false)
