@@ -145,12 +145,11 @@ templ teamEditForm(team Team, matches []Match, msg string){
         <!-- Team Member Password -->
         <div class="mb-4">
             <label for="teamMemberPass" class="block text-gray-700 font-semibold mb-2">Team Member Password</label>
-            <input type="password" id="teamMemberPass" name="teamMemberPass" value={team.TeamMemberPass} class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required/>
+            <input type="password" id="teamMemberPass" name="teamMemberPass" value={team.TeamMemberPass} class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"/>
         </div>
 
         <select
             name="activeMatchOverrideId"
-            required
             class="mt-3 w-full border-gray-300  bg-white rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
         > 
             <option value="">N/A</option>

@@ -112,7 +112,6 @@
             echo "Building Docker image..."
             docker build -t baileys-hammer . --load
             echo "Built Docker image..."
-            docker images
             docker run -p 8080:8080 \
               -e DATABASE_URL="$DATABASE_URL" \
               -e PASS="$PASS" \

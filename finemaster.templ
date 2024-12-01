@@ -94,16 +94,24 @@ templ finemaster(pass string, players []PlayerWithFines, fineWithPlayers []FineW
 					Toggle Quick Fines
 				</div>
 			</div>
-			if mst.Season != nil {
-				@playerPaymentsButton("Open Player Payments", "table", mst.Season)  
-			}
+
 			
 			@finesListButton("Open Court Sheet", "sheet", false, false)
 			@fineSummaryButton("Open Total View", "summary", false)
 			@fineListButton(true)
 
-			
+			<div class="p-4 bg-gray-100 shadow-md flex justify-center">
+				<h1 class="text-2xl font-bold text-gray-800">Manage Main Configuration Data</h1>
+			</div>
+	
 
+
+
+			if mst.Season != nil {
+				@playerPaymentsButton("Open Player Payments", "table", mst.Season)  
+			}else {
+				@warning("no payments as no season is set")
+			}
 
 			@manageSeasonsButton(false)
 
@@ -265,7 +273,7 @@ templ presetFines(baseUrl string, passCode string, isOpen bool, presetFines []Pr
 			</div>
 			<h1 class="font-bold text-center">Manage Listed Fines { fmt.Sprintf("(%d)", len(presetFines)) }</h1>
 			<p>
-				Deleting these fines will NOT delete any player specific fines, just the selection options.
+				Deleting these fines will NOT delete any player specific fines, These are the options in the "Create Fine" list
 			</p>
 			<div class="grid md:grid-cols-2 grid-cols-1 gap-4">
 				for _, pfine := range presetFines {

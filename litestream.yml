@@ -1,8 +1,15 @@
 dbs:
-  - path: ${DATABASE_URL}
+  - path: /mnt/volume/development.sqlite3
     replicas:
-      - url: ${DB_REPLICA_URL}
-        type: s3
-        region: us-east-1
-        bucket: backerbucket
-        path: baileys-hammer/bailies
+      - type: s3 
+        endpoint: ${DB_REPLICA_URL}
+        bucket: ${R2_BUCKET}
+        access-key-id: ${R2_ACCESS_KEY_ID}
+        secret-access-key: ${R2_SECRET_ACCESS_KEY}
+  - path: /mnt/volume/production.sqlite3
+    replicas:
+      - type: s3 
+        endpoint: ${DB_REPLICA_URL}
+        bucket: ${R2_BUCKET}
+        access-key-id: ${R2_ACCESS_KEY_ID}
+        secret-access-key: ${R2_SECRET_ACCESS_KEY}

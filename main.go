@@ -1544,7 +1544,7 @@ func teamHandler(db *gorm.DB) http.HandlerFunc {
 
 					includeFrame := r.URL.Query().Get("includeFrame") == "true"
 
-					if(includeFrame){
+					if includeFrame {
 						teamList := teamListFrame(teams, matches)
 						teamList.Render(GetContext(r, db), w)
 						return
@@ -1552,7 +1552,6 @@ func teamHandler(db *gorm.DB) http.HandlerFunc {
 					teamList := teamList(teams, matches)
 					teamList.Render(GetContext(r, db), w)
 					return
-					
 
 				}
 			}
@@ -1923,6 +1922,7 @@ type FineMasterQueryParams struct {
 
 func presetFineMasterHandler(db *gorm.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		log.Print("presetFineMasterHandler")
 		pass := chi.URLParam(r, "pass")
 		warnStr := ""
 
@@ -1936,46 +1936,61 @@ func presetFineMasterHandler(db *gorm.DB) http.HandlerFunc {
 		decoder := schema.NewDecoder()
 		queryParams := new(FineMasterQueryParams)
 		if err := decoder.Decode(queryParams, r.URL.Query()); err != nil {
-			log.Printf("presetFineMasterHandler - Error decoding query params: %v", err)
-			http.Error(w, "Bad Request presetFineMasterHandler", http.StatusBadRequest)
+			warn := warning(fmt.Sprintf("presetFineMasterHandler - Error decoding query params: %v", err))
+			warn.Render(GetContext(r, db), w)
 			return
 		}
 
 		playersWithFines, err := GetPlayersWithFines(db, 0, []uint64{})
 		if err != nil {
-			log.Printf("Error fetching players with fines: %v", err)
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			msg := fmt.Sprintf("Error fetching players with fines: %v", err)
+			log.Print(msg)
+			warn := warning(msg)
+			warn.Render(GetContext(r, db), w)
 			return
 		}
 
 		pFines, err := GetPresetFines(db, true)
 		if err != nil {
-			log.Printf("Error retrieving preset fines: %v", err)
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			msg := fmt.Sprintf("Error retrieving preset fines: %v", err)
+			log.Print(msg)
+			warn := warning(msg)
+			warn.Render(GetContext(r, db), w)
 			return
 		}
 
 		matches, err := GetMatches(db, 1, 0, 9999)
 		if err != nil {
-			log.Printf("Error retrieving preset fines: %v", err)
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			msg := fmt.Sprintf("Error retrieving preset fines: %v", err)
+			log.Print(msg)
+			warn := warning(msg)
+			warn.Render(GetContext(r, db), w)
 			return
 		}
 
 		fineWithPlayers, err := GetFineWithPlayers(db, 0, 999999)
 		if err != nil {
-			http.Error(w, fmt.Sprintf("Error parsing limitStr %v", err), http.StatusBadRequest)
+			msg := fmt.Sprintf("Error retrieving GetFineWithPlayers: %v", err)
+			log.Print(msg)
+			warn := warning(msg)
+			warn.Render(GetContext(r, db), w)
 			return
 		}
 
 		matchSeasonTeam, err := GetMatchSeasonTeam(db)
 		if err != nil {
-			warning := warning(fmt.Sprintf("Error fetching GetMatchSeasonTeam: %v", err))
-			warning.Render(GetContext(r, db), w)
+			msg := fmt.Sprintf("Error retrieving GetFineWithPlayers: %v", err)
+			log.Print(msg)
+			warn := warning(msg)
+			warn.Render(GetContext(r, db), w)
 			return
 		}
 
+		log.Print("presetFineMasterHandler - Rendering")
+
 		finemaster := finemaster(pass, playersWithFines, fineWithPlayers, pFines, matches, *queryParams, matchSeasonTeam, warnStr)
+		log.Print("presetFineMasterHandler - Rendered")
+
 		finemaster.Render(GetContext(r, db), w)
 		return
 	}
@@ -2156,7 +2171,7 @@ func homeHandler(db *gorm.DB) http.HandlerFunc {
 			return
 		}
 
-		if(mst.Team == nil){
+		if mst.Team == nil {
 			http.Redirect(w, r, "/teams?includeFrame=true", http.StatusSeeOther)
 			return
 		}
@@ -2171,7 +2186,6 @@ func homeHandler(db *gorm.DB) http.HandlerFunc {
 		if config.UsePreviewPassword {
 			previewPassword = os.Getenv("PASS")
 		}
-
 
 		home := home(playersWithFines, approvedPFines, pendingPFines, fineWithPlayers, *queryParams, matches, mst, warnStr, previewPassword)
 		home.Render(GetContext(r, db), w)
