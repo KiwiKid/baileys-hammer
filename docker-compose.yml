@@ -1,0 +1,20 @@
+services:
+  app:
+    build:
+      context: .
+    # The Dockerfile ENTRYPOINT runs Litestream (requires S3 env). For local dev,
+    # run the app directly and just persist the sqlite file locally.
+    entrypoint: ["/usr/local/bin/main"]
+    ports:
+      - "${PORT:-8080}:8080"
+    environment:
+      # App defaults:
+      PORT: "${PORT:-8080}"
+      PASS: "${PASS:-pass}"
+      # sqlite file inside container (persisted via volume below)
+      # NOTE: intentionally NOT using ${DATABASE_URL:-...} here to avoid accidentally
+      # inheriting an unrelated host DATABASE_URL (e.g. a postgres:// URL).
+      DATABASE_URL: "/tmp/data/dev.db"
+    volumes:
+      - ./tmp/data:/tmp/data
+

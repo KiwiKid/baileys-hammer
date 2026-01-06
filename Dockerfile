@@ -1,5 +1,5 @@
 # Start from a specific golang base image
-FROM golang:1.21.1 AS builder
+FROM golang:1.23.4 AS builder
 
 WORKDIR /app
 
@@ -12,7 +12,7 @@ COPY . .
 RUN CGO_ENABLED=1 GOOS=linux go build -o main .
 
 # Start a new stage from a specific debian slim version for consistency
-FROM golang:1.21.1
+FROM golang:1.23.4
 
 # Install ca-certificates in one layer to reduce size
 RUN apt-get update && \
