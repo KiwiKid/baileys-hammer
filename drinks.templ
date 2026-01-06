@@ -1,0 +1,41 @@
+
+package main
+
+import (
+	"fmt"
+)
+
+templ DrinkTypes(drinkTypes []DrinkType) {
+	<div>
+		<h1>Drink Types</h1>
+
+        for _, drinkType := range drinkTypes {
+            <div>
+                <h2>{ drinkType.Name }</h2>
+                <p>{ fmt.Sprintf("%.2f", drinkType.Price) }</p>
+            </div>
+        }
+	</div>
+}
+
+templ AddDrink(drinkTypes []DrinkType) {
+	<div>
+		<h1>Add Drink</h1>
+	</div>
+}
+
+
+templ DrinkPurchases(playersWithDrinks []PlayerWithDrinks, drinkTypes []DrinkType) {
+	<div>
+		<h1>Drink Purchases</h1>
+
+        for _, playerWithDrinks := range playersWithDrinks {
+            <div>
+                <h2>{ playerWithDrinks.Player.Name }</h2>
+                <p>{ fmt.Sprintf("%.2f", playerWithDrinks.TotalCurrent) }</p>
+            </div>
+        }
+
+        @AddDrink(drinkTypes)
+	</div>
+}

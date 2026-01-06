@@ -302,7 +302,7 @@ templ teamActiveMatchButton(open bool, matchSeasonTeam *MatchSeasonTeam){
         if matchSeasonTeam.Match != nil {
             @success(fmt.Sprintf("Match: %s", matchSeasonTeam.Match.Opponent))
         }else{
-            @warning("no active match?")
+            @warning("no active match? Navigate to 'Matches' to create an upcoming match")
         }
 
     }
@@ -352,4 +352,67 @@ templ teamCourtNotes(team Team, msg string){
         @success(msg)
     }
     {team.CourtNotes}  @teamCourtNotesButton(true)</div>
+}
+
+templ teamAuthForm() {
+    <div class="max-w-md mx-auto bg-white p-8 shadow-md rounded-lg">
+        <h2 class="text-2xl font-bold text-center mb-6">Team Admin Access</h2>
+        <form hx-post="/finemaster/auth" hx-target="this" hx-swap="outerHTML" class="space-y-4">
+            <div>
+                <label for="teamKey" class="block text-gray-700 font-semibold mb-2">Team Key</label>
+                <input type="text" id="teamKey" name="teamKey" required 
+                       class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                       placeholder="Enter your team key"/>
+            </div>
+            <div>
+                <label for="teamAdminPass" class="block text-gray-700 font-semibold mb-2">Team Admin Password</label>
+                <input type="password" id="teamAdminPass" name="teamAdminPass" required 
+                       class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                       placeholder="Enter your admin password"/>
+            </div>
+            <div class="flex justify-center">
+                <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-6 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    Access Fine Master
+                </button>
+            </div>
+        </form>
+    </div>
+}
+
+templ bootstrapForm() {
+    <div class="max-w-md mx-auto bg-white p-8 shadow-md rounded-lg">
+        <h2 class="text-2xl font-bold text-center mb-6">Setup Your Team</h2>
+        <p class="text-gray-600 text-center mb-6">No teams found. Create your first team to get started.</p>
+        <form hx-post="/teams" hx-target="this" hx-swap="outerHTML" class="space-y-4">
+            <div>
+                <label for="teamName" class="block text-gray-700 font-semibold mb-2">Team Name</label>
+                <input type="text" id="teamName" name="teamName" required 
+                       class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                       placeholder="Enter your team name"/>
+            </div>
+            <div>
+                <label for="teamKey" class="block text-gray-700 font-semibold mb-2">Team Key</label>
+                <input type="text" id="teamKey" name="teamKey" 
+                       class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                       placeholder="Enter a team key (optional)"/>
+            </div>
+            <div>
+                <label for="teamAdminPass" class="block text-gray-700 font-semibold mb-2">Team Admin Password</label>
+                <input type="password" id="teamAdminPass" name="teamAdminPass" required 
+                       class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                       placeholder="Set your admin password"/>
+            </div>
+            <div>
+                <label for="teamMemberPass" class="block text-gray-700 font-semibold mb-2">Team Member Password</label>
+                <input type="password" id="teamMemberPass" name="teamMemberPass" 
+                       class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                       placeholder="Set member password (optional)"/>
+            </div>
+            <div class="flex justify-center">
+                <button type="submit" class="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-6 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
+                    Create Team
+                </button>
+            </div>
+        </form>
+    </div>
 }

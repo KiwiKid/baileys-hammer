@@ -317,7 +317,7 @@ templ finesListButton(title string, toViewMode string, external bool, openOnLoad
 					<a href={ templ.SafeURL(fmt.Sprintf("/fines?viewMode=%s", toViewMode)) } target="_">{ title }</a>
 				} else {	
 					<div class={ bigSec } 
-						hx-get={ fmt.Sprintf("/fines?viewMode=%s", toViewMode) } 
+						hx-get={ templ.SafeURL(fmt.Sprintf("/fines?viewMode=%s", toViewMode)) } 
 						hx-trigger="click"
 						
 						hx-swap="outerHTML" 
@@ -326,10 +326,10 @@ templ finesListButton(title string, toViewMode string, external bool, openOnLoad
 			case "sheet":
 				<div class={ bigPri } 
 					if external {
-						hx-get={ fmt.Sprintf("/fines?viewMode=%s", toViewMode) } 
+						hx-get={ templ.SafeURL(fmt.Sprintf("/fines?viewMode=%s", toViewMode)) } 
 						target="_"
 					} else {
-						hx-get={ fmt.Sprintf("/fines?viewMode=%s", toViewMode) } 
+						hx-get={ templ.SafeURL(fmt.Sprintf("/fines?viewMode=%s", toViewMode)) } 
 						hx-trigger="click"
 						hx-swap="outerHTML" 
 					}
@@ -366,7 +366,7 @@ templ fineTotals(totals []PlayerFinesTotal, grandTotal float64) {
 				</tr>
 			</thead>
 			<tbody class="divide-y divide-gray-200">
-			<tr>{}
+			<tr>
 			</tr>
 				for _, t := range totals {
 					<tr>
@@ -375,7 +375,7 @@ templ fineTotals(totals []PlayerFinesTotal, grandTotal float64) {
 						<td class="p-2 border border-gray-300">{ fmt.Sprintf("$%v", t.TotalPayments) }</td>
 						if (t.PaymentDifference > 0) {
 							<td class="p-2 border border-gray-300 bg-red">@warning(fmt.Sprintf("$%v", t.PaymentDifference))</td>
-						}else {
+						} else {
 							<td class="p-2 border border-gray-300 bg-green">@success(fmt.Sprintf("$%v", t.PaymentDifference))</td>
 						} 
 						
@@ -699,8 +699,8 @@ templ fineEditForm(f FineWithPlayer, isFineMaster bool, hideFineImages bool) {
 			</button>
 			<button
  				class={ del }
- 				hx-confirm={ fmt.Sprintf("Are you sure you want to delete the fine by this player? (%s for %s)", f.Fine.Reason, f.Player.Name) }
- 				hx-delete={ fmt.Sprintf("/fines?fid=%d", f.Fine.ID) }
+ 				hx-confirm={ templ.SafeURL(fmt.Sprintf("Are you sure you want to delete the fine by this player? (%s for %s)", f.Fine.Reason, f.Player.Name)) }
+ 				hx-delete={ templ.SafeURL(fmt.Sprintf("/fines?fid=%d", f.Fine.ID)) }
 			>Delete</button>
 		</div>
 		<pre>

@@ -986,6 +986,125 @@ func fineHandler(db *gorm.DB) http.HandlerFunc {
 	}
 }
 
+type PlayerWithDrinks struct {
+	TotalCurrent   float64
+	TotalPaid      float64
+	TotalDrinks    float64
+	Player         Player
+	DrinkPurchases []DrinkPurchase
+	DrinkPayments  []DrinkPayment
+}
+
+func drinkHandler(db *gorm.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case "GET":
+			{
+
+				players, err := GetPlayers(db, 0, 999999)
+				if err != nil {
+					http.Error(w, "Error fetching players", http.StatusInternalServerError)
+					return
+				}
+
+				drinkPayments, err := GetDrinkPayments(db)
+				if err != nil {
+					err := errMsg(fmt.Sprintf("Error fetching drink payments: %v", err))
+					err.Render(GetContext(r, db), w)
+					return
+				}
+
+				drinkTypes, err := GetDrinkTypes(db)
+				if err != nil {
+					err := errMsg(fmt.Sprintf("Error fetching drink types: %v", err))
+					err.Render(GetContext(r, db), w)
+					return
+				}
+
+				drinkPurchases, err := GetDrinkPurchases(db)
+				if err != nil {
+					http.Error(w, "Error fetching drink purchases", http.StatusInternalServerError)
+					return
+				}
+
+				playersWithDrinks := []PlayerWithDrinks{}
+				for _, player := range players {
+					playerWithDrinks := PlayerWithDrinks{
+						Player:       player,
+						TotalCurrent: 0,
+						TotalPaid:    0,
+						TotalDrinks:  0,
+					}
+					for _, drinkPurchase := range drinkPurchases {
+						if drinkPurchase.PlayerId == player.ID {
+							playerWithDrinks.TotalCurrent += drinkPurchase.Amount
+							playerWithDrinks.TotalDrinks += 1
+						}
+					}
+					for _, drinkPayment := range drinkPayments {
+						if drinkPayment.PlayerId == player.ID {
+							playerWithDrinks.TotalPaid += drinkPayment.Amount
+							playerWithDrinks.TotalCurrent -= drinkPayment.Amount
+						}
+					}
+					playersWithDrinks = append(playersWithDrinks, playerWithDrinks)
+				}
+
+				drinkPurchasesComp := DrinkPurchases(playersWithDrinks, drinkTypes)
+				drinkPurchasesComp.Render(GetContext(r, db), w)
+				return
+
+			}
+		case "POST":
+			{
+				drinkType := DrinkType{
+					Name: "Water",
+				}
+
+				if err := AddDrinkType(db, &drinkType); err != nil {
+					http.Error(w, "Error adding drink type", http.StatusInternalServerError)
+					return
+				}
+
+				success := success("Drink type added")
+				success.Render(GetContext(r, db), w)
+			}
+		}
+	}
+}
+
+func drinkTypeHandler(db *gorm.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case "GET":
+			{
+				drinkTypes, err := GetDrinkTypes(db)
+				if err != nil {
+					http.Error(w, "Error fetching drink types", http.StatusInternalServerError)
+					return
+				}
+
+				drinkTypesComp := DrinkTypes(drinkTypes)
+				drinkTypesComp.Render(GetContext(r, db), w)
+			}
+		case "POST":
+			{
+				drinkType := DrinkType{
+					Name: "Water",
+				}
+
+				if err := AddDrinkType(db, &drinkType); err != nil {
+					http.Error(w, "Error adding drink type", http.StatusInternalServerError)
+					return
+				}
+
+				success := success("Drink type added")
+				success.Render(GetContext(r, db), w)
+			}
+		}
+	}
+}
+
 func adminHandler(db *gorm.DB) http.HandlerFunc {
 	DEFAULT_PASS := "pass"
 
@@ -1920,18 +2039,107 @@ type FineMasterQueryParams struct {
 	MatchesOpen       bool `schema:"m"`
 }
 
+func finemasterAuthHandler(db *gorm.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case "GET":
+			// Check if user is already authenticated
+			if _, err := r.Cookie("admin-user"); err == nil {
+				// User is authenticated, redirect to finemaster
+				w.Header().Set("HX-Redirect", "/finemaster")
+				return
+			}
+
+			// Check if any teams exist
+			teams, err := GetTeams(db, 1, 0)
+			if err != nil {
+				log.Printf("Error checking teams: %v", err)
+				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+				return
+			}
+
+			if len(teams) == 0 {
+				// No teams exist, show bootstrap form
+				bootstrap := bootstrapForm()
+				bootstrap.Render(GetContext(r, db), w)
+				return
+			}
+
+			// Show authentication form
+			authForm := teamAuthForm()
+			authForm.Render(GetContext(r, db), w)
+
+		case "POST":
+			if err := r.ParseForm(); err != nil {
+				http.Error(w, "Invalid form data", http.StatusBadRequest)
+				return
+			}
+
+			teamKey := r.FormValue("teamKey")
+			adminPassword := r.FormValue("teamAdminPass")
+
+			// Authenticate team
+			team, err := GetTeamByKeyAndPassword(db, teamKey, adminPassword)
+			if err != nil {
+				log.Printf("Authentication failed for team key %s: %v", teamKey, err)
+				// Show error message
+				authForm := teamAuthForm()
+				authForm.Render(GetContext(r, db), w)
+				return
+			}
+
+			// Set authentication cookie
+			http.SetCookie(w, &http.Cookie{
+				Name:     "admin-user",
+				Value:    fmt.Sprintf("%d", team.ID),
+				Path:     "/",
+				HttpOnly: true,
+				Secure:   false, // Set to true in production with HTTPS
+				SameSite: http.SameSiteStrictMode,
+			})
+
+			// Redirect to finemaster
+			w.Header().Set("HX-Redirect", "/finemaster")
+			return
+
+		default:
+			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+			return
+		}
+	}
+}
+
 func presetFineMasterHandler(db *gorm.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		log.Print("presetFineMasterHandler")
-		pass := chi.URLParam(r, "pass")
 		warnStr := ""
 
-		/*realPass := os.Getenv("PASS")
-		if(pass != realPass) {
-			log.Printf("Error fetching presetFineMasterHandler - key miss match %s %s", pass, r.Referer())
-			http.Error(w, "Not this time mate.", http.StatusInternalServerError)
+		// Check authentication cookie
+		adminCookie, err := r.Cookie("admin-user")
+		if err != nil {
+			log.Printf("No admin-user cookie found, redirecting to auth")
+			w.Header().Set("HX-Redirect", "/finemaster/auth")
 			return
-		}*/
+		}
+
+		// Get team ID from cookie
+		teamIDStr := adminCookie.Value
+		teamID, err := strconv.ParseUint(teamIDStr, 10, 64)
+		if err != nil {
+			log.Printf("Invalid team ID in cookie: %v", err)
+			w.Header().Set("HX-Redirect", "/finemaster/auth")
+			return
+		}
+
+		// Get team to use as pass (for backward compatibility)
+		team, err := GetTeam(db, uint(teamID))
+		if err != nil {
+			log.Printf("Team not found: %v", err)
+			w.Header().Set("HX-Redirect", "/finemaster/auth")
+			return
+		}
+
+		pass := team.TeamKey // Use team key as pass for backward compatibility
 
 		decoder := schema.NewDecoder()
 		queryParams := new(FineMasterQueryParams)
@@ -2098,7 +2306,9 @@ func setupRouter(db *gorm.DB) *chi.Mux {
 	r.HandleFunc("/preset-fines", presetFineHandler(db))
 	r.HandleFunc("/preset-fines/approve", presetFineApproveHandler(db))
 	r.HandleFunc("/preset-fines/{showOrHide}", fineQuickHideHandler(db))
-	r.HandleFunc("/finemaster/{pass}", presetFineMasterHandler(db))
+	r.HandleFunc("/finemaster/auth", finemasterAuthHandler(db))
+	r.HandleFunc("/finemaster", presetFineMasterHandler(db))
+	r.HandleFunc("/finemaster/{pass}", presetFineMasterHandler(db)) // Keep for backward compatibility
 	r.HandleFunc("/", homeHandler(db))
 	r.HandleFunc("/match-list", matchListHandler(db))
 	r.HandleFunc("/match/{matchId}", matchHandler(db))

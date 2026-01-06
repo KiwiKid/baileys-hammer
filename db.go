@@ -97,13 +97,13 @@ func DBInit() (*gorm.DB, error) {
 
 	dbUrl := os.Getenv("DATABASE_URL")
 	if len(dbUrl) == 0 {
-		log.Panic("No DATABASE_URL set")
+		//log.Panic("No DATABASE_URL set")
 	}
 
 	log.Printf("connecting to db: %s", dbUrl)
 	db, err := gorm.Open(sqlite.Open(dbUrl), &gorm.Config{})
 	if err != nil {
-		log.Printf("Could not access dbUrl:%s - %v", dbUrl, err)
+		log.Printf("Could not access :%s - %v", dbUrl, err)
 		return nil, err
 	} else {
 		log.Printf("Connected to db at \"%s\"", dbUrl)
@@ -249,6 +249,16 @@ func DeleteTeam(db *gorm.DB, id uint) error {
 		return gorm.ErrRecordNotFound
 	}
 	return nil
+}
+
+// GetTeamByKeyAndPassword authenticates a team by key and admin password
+func GetTeamByKeyAndPassword(db *gorm.DB, teamKey, adminPassword string) (*Team, error) {
+	var team Team
+	result := db.Where("team_key = ? AND team_admin_pass = ?", teamKey, adminPassword).First(&team)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	return &team, nil
 }
 
 // PlayerWithFines represents a player along with their fines
@@ -904,6 +914,25 @@ type Match struct {
 	MatchPointList LatLngArray `json:"coords"`
 }
 
+type DrinkPayment struct {
+	gorm.Model
+	PlayerId uint
+	Amount   float64
+}
+
+type DrinkPurchase struct {
+	gorm.Model
+	DrinkTypeId uint
+	PlayerId    uint
+	Amount      float64
+}
+
+type DrinkType struct {
+	gorm.Model
+	Name  string
+	Price float64
+}
+
 type MatchEvent struct {
 	gorm.Model
 	MatchId     uint64
@@ -1213,6 +1242,51 @@ func DeleteMatch(db *gorm.DB, matchId uint) error {
 	}
 	if result.RowsAffected == 0 {
 		return gorm.ErrRecordNotFound
+	}
+	return nil
+}
+
+func GetDrinkTypes(db *gorm.DB) ([]DrinkType, error) {
+	var drinkTypes []DrinkType
+	if err := db.Find(&drinkTypes).Error; err != nil {
+		return nil, err
+	}
+	return drinkTypes, nil
+}
+
+func GetDrinkPayments(db *gorm.DB) ([]DrinkPayment, error) {
+	var drinkPayments []DrinkPayment
+	if err := db.Find(&drinkPayments).Error; err != nil {
+		return nil, err
+	}
+	return drinkPayments, nil
+}
+
+func AddDrinkPayment(db *gorm.DB, drinkPayment *DrinkPayment) error {
+	if err := db.Create(drinkPayment).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func GetDrinkPurchases(db *gorm.DB) ([]DrinkPurchase, error) {
+	var drinkPurchases []DrinkPurchase
+	if err := db.Find(&drinkPurchases).Error; err != nil {
+		return nil, err
+	}
+	return drinkPurchases, nil
+}
+
+func AddDrinkPurchase(db *gorm.DB, drinkPurchase *DrinkPurchase) error {
+	if err := db.Create(drinkPurchase).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func AddDrinkType(db *gorm.DB, drinkType *DrinkType) error {
+	if err := db.Create(drinkType).Error; err != nil {
+		return err
 	}
 	return nil
 }
