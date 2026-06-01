@@ -394,6 +394,16 @@ templ editMatch(closeLink templ.SafeURL, genMeta MatchMetaGeneral, successMsg st
 				<label for="subtitle" class="block text-lg font-semibold text-gray-700 ">Notes: (optional)</label>
 				<input type="text" name="subtitle" id="subtitle" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" value={ genMeta.Match.Subtitle }/>
 			</div>
+			if publicMatchURLPath(genMeta.Match) != "" {
+				<div class="mb-4 rounded-lg border border-emerald-300 bg-emerald-50 p-4">
+					<div class="text-lg font-semibold text-emerald-950">Supporter match URL</div>
+					<div class="mt-1 text-sm text-emerald-900">Read-only match day view with match feedback.</div>
+					<div class="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
+						<input readonly value={ publicMatchURLPath(genMeta.Match) } class="min-w-0 rounded-md border border-emerald-200 bg-white px-3 py-2 text-base text-gray-900"/>
+						<a href={ publicMatchURLPath(genMeta.Match) } hx-boost="false" class={ bigPri }>Open</a>
+					</div>
+				</div>
+			}
 			<div class="mb-4 rounded-lg border border-gray-300 bg-white/70 p-4">
 				<div class="text-lg font-semibold text-gray-700">Line-up used</div>
 				if genMeta.Lineup != nil {

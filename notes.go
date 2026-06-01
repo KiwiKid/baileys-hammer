@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -58,10 +59,12 @@ type NotesPageData struct {
 }
 
 type FeedbackPageData struct {
-	Matches  []NoteTargetOption
-	Selected MLNote
-	Message  string
-	IsError  bool
+	Matches   []NoteTargetOption
+	Selected  MLNote
+	Message   string
+	IsError   bool
+	ActionURL string
+	LockMatch bool
 }
 
 func noteTargetKindLabel(kind string) string {
@@ -718,6 +721,75 @@ func feedbackHandler(db *gorm.DB) http.HandlerFunc {
 				return
 			}
 			renderPage(MLNote{Channel: noteChannelFeedback, TargetKind: "general", TargetLabel: "General", Type: "general"}, "Thanks, feedback saved.", false)
+		default:
+			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		}
+	}
+}
+
+func publicMatchFeedbackHandler(db *gorm.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		slug := strings.TrimSpace(chi.URLParam(r, "matchURLSlug"))
+		match, err := GetMatchByURLSlug(db, slug)
+		if err != nil {
+			http.Error(w, "Match not found", http.StatusNotFound)
+			return
+		}
+		team, err := GetTeam(db, match.TeamID)
+		if err != nil || team == nil {
+			http.Error(w, "Team not found", http.StatusNotFound)
+			return
+		}
+		if !team.EnablePublicFeedbackForm {
+			http.Error(w, "Feedback form is disabled", http.StatusForbidden)
+			return
+		}
+
+		matchLabel := feedbackMatchLabel(*match, time.Now())
+		selected := MLNote{
+			TeamID:      match.TeamID,
+			Channel:     noteChannelFeedback,
+			TargetKind:  noteTargetMatch,
+			TargetID:    match.ID,
+			TargetLabel: matchLabel,
+			Type:        "general",
+		}
+		actionURL := publicMatchFeedbackURLPath(*match)
+		renderPage := func(selected MLNote, msg string, isError bool) {
+			ctx := context.WithValue(GetContext(r, db), "team_id", match.TeamID)
+			ctx = context.WithValue(ctx, teamKey, *team)
+			feedbackPage(FeedbackPageData{
+				Matches:   []NoteTargetOption{{Kind: noteTargetMatch, ID: match.ID, Label: matchLabel}},
+				Selected:  selected,
+				Message:   msg,
+				IsError:   isError,
+				ActionURL: actionURL,
+				LockMatch: true,
+			}).Render(ctx, w)
+		}
+
+		switch r.Method {
+		case http.MethodGet:
+			renderPage(selected, "", false)
+		case http.MethodPost:
+			if err := r.ParseForm(); err != nil {
+				renderPage(selected, "Invalid form data", true)
+				return
+			}
+			feedback, err := feedbackFromForm(db, r, match.TeamID)
+			if err != nil {
+				renderPage(feedback, err.Error(), true)
+				return
+			}
+			if feedback.TargetKind != noteTargetMatch || feedback.TargetID != match.ID {
+				renderPage(feedback, "match is required", true)
+				return
+			}
+			if err := db.Create(&feedback).Error; err != nil {
+				renderPage(feedback, fmt.Sprintf("Could not save feedback: %v", err), true)
+				return
+			}
+			renderPage(selected, "Thanks, feedback saved.", false)
 		default:
 			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 		}

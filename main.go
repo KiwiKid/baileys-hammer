@@ -3199,6 +3199,8 @@ func setupRouter(db *gorm.DB) *chi.Mux {
 	r.HandleFunc("/match/{matchId}", requireTeamFeature(db, "Matches", matchesEnabled, matchHandler(db)))
 	r.HandleFunc("/match", requireTeamFeature(db, "Matches", matchesEnabled, matchHandler(db)))
 	r.HandleFunc("/feedback", feedbackHandler(db))
+	r.HandleFunc("/match-url/{matchURLSlug}", publicMatchURLHandler(db))
+	r.HandleFunc("/match-url/{matchURLSlug}/feedback", publicMatchFeedbackHandler(db))
 	r.HandleFunc("/notes", notesHandler(db))
 	r.HandleFunc("/notes/context", notesContextHandler(db))
 	r.HandleFunc("/notes/{noteId}", noteDetailHandler(db))

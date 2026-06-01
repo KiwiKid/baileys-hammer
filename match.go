@@ -36,6 +36,20 @@ type MatchForm struct {
 	EventTypeConcededGoal []string `schema:"eventTypeConceded-Goal"`
 }
 
+func publicMatchURLPath(match Match) string {
+	if strings.TrimSpace(match.MatchURLSlug) == "" {
+		return ""
+	}
+	return fmt.Sprintf("/match-url/%s", match.MatchURLSlug)
+}
+
+func publicMatchFeedbackURLPath(match Match) string {
+	if strings.TrimSpace(match.MatchURLSlug) == "" {
+		return ""
+	}
+	return fmt.Sprintf("/match-url/%s/feedback", match.MatchURLSlug)
+}
+
 func historicMatchTotalPages(total int, limit int) int {
 	if limit < 1 {
 		limit = 20

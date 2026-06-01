@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
@@ -1795,7 +1796,56 @@ func matchDayHandler(db *gorm.DB) http.HandlerFunc {
 				return
 			}
 		}
-		matchDayPage(lineups, selected, playerTimes, players, unavailablePlayerIDs, problems, matches, activeMatch, adjacentLineups, isHistoricalMatch, actor.IsAdmin, r.URL.Query().Get("msg"), pageErrorMsg, activeMatch != nil, matchDayLineupID, matchDayRedoEventFromQuery(r.URL.Query()), focusPointsData).Render(GetContext(r, db), w)
+		matchDayPage(lineups, selected, playerTimes, players, unavailablePlayerIDs, problems, matches, activeMatch, adjacentLineups, isHistoricalMatch, actor.IsAdmin, r.URL.Query().Get("msg"), pageErrorMsg, activeMatch != nil, matchDayLineupID, matchDayRedoEventFromQuery(r.URL.Query()), focusPointsData, "", r.URL.Query().Get("resetPreview") == "true").Render(GetContext(r, db), w)
+	}
+}
+
+func publicMatchURLHandler(db *gorm.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		slug := strings.TrimSpace(chi.URLParam(r, "matchURLSlug"))
+		if slug == "" {
+			http.Error(w, "Match not found", http.StatusNotFound)
+			return
+		}
+		match, err := GetMatchByURLSlug(db, slug)
+		if err != nil {
+			http.Error(w, "Match not found", http.StatusNotFound)
+			return
+		}
+		team, err := GetTeam(db, match.TeamID)
+		if err != nil || team == nil || !team.EnableLineupsModule {
+			http.Error(w, "Match not found", http.StatusNotFound)
+			return
+		}
+		selected, err := lineupForMatch(db, *match)
+		if err != nil {
+			http.Error(w, "Match does not have a public line-up yet", http.StatusNotFound)
+			return
+		}
+		if selected.TeamID != match.TeamID || !matchDayLineupSelectable(*selected) {
+			http.Error(w, "Match does not have a public line-up yet", http.StatusNotFound)
+			return
+		}
+		applyMatchDayInitSnapshot(selected)
+		unavailablePlayerIDs, _ := GetUnavailablePlayerIDsForMatch(db, selected.TeamID, match.ID)
+		playerTimes := matchDayPlayerTimesWithEvents(selected)
+		problems, err := matchDayErrors(db, selected, playerTimes, unavailablePlayerIDs)
+		if err != nil {
+			warning(fmt.Sprintf("Could not check match day: %v", err)).Render(GetContext(r, db), w)
+			return
+		}
+		focusPointsData, err := matchDayFocusPointsData(db, match.TeamID, selected.Match, publicMatchURLPath(*match), false)
+		if err != nil {
+			warning(fmt.Sprintf("Could not load focus points: %v", err)).Render(GetContext(r, db), w)
+			return
+		}
+		ctx := context.WithValue(GetContext(r, db), "team_id", match.TeamID)
+		ctx = context.WithValue(ctx, teamKey, *team)
+		matchDayPage(nil, selected, playerTimes, nil, unavailablePlayerIDs, problems, nil, nil, MatchDayAdjacentLineups{}, matchDayIsHistorical(selected, time.Now()), false, r.URL.Query().Get("msg"), r.URL.Query().Get("errorMsg"), false, 0, nil, focusPointsData, publicMatchFeedbackURLPath(*match), false).Render(ctx, w)
 	}
 }
 
@@ -1850,6 +1900,8 @@ func matchDayActionHandler(db *gorm.DB) http.HandlerFunc {
 			"custom-event":              true,
 			"undo-event":                true,
 			"redo-event":                true,
+			"preview-reset-match":       true,
+			"reset-match":               true,
 			matchDayEventHalfTime:       true,
 			matchDayEventFinished:       true,
 			matchDayEventExtraTimeStart: true,
@@ -1975,6 +2027,19 @@ func matchDayActionHandler(db *gorm.DB) http.HandlerFunc {
 				return
 			}
 			redirectWithRedoEvent("Match event undone.", event)
+		case "preview-reset-match":
+			http.Redirect(w, r, fmt.Sprintf("/match-day/%d?resetPreview=true", lineup.ID), http.StatusSeeOther)
+		case "reset-match":
+			if r.FormValue("confirmReset") != "delete-events" {
+				http.Redirect(w, r, fmt.Sprintf("/match-day/%d?resetPreview=true&errorMsg=%s", lineup.ID, url.QueryEscape("Confirm the reset before deleting match events.")), http.StatusSeeOther)
+				return
+			}
+			result := db.Where("match_id = ?", matchID).Delete(&MatchEvent{})
+			if result.Error != nil {
+				http.Error(w, "Could not reset match", http.StatusInternalServerError)
+				return
+			}
+			redirectWithMessage(fmt.Sprintf("Match reset. Deleted %d events.", result.RowsAffected))
 		case "redo-event":
 			eventType := strings.TrimSpace(r.FormValue("eventType"))
 			if eventType == "" {

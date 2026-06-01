@@ -3,6 +3,7 @@ package main
 import (
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 	"time"
@@ -32,6 +33,118 @@ func TestMatchDaySelectableMatchesIncludesUpcomingOutsideActiveSeason(t *testing
 	}
 	if len(matches) != 1 || matches[0].ID != match.ID {
 		t.Fatalf("expected upcoming match outside active season, got %#v", matches)
+	}
+}
+
+func TestSaveMatchGeneratesStableMatchURLSlug(t *testing.T) {
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	if err != nil {
+		t.Fatalf("open db: %v", err)
+	}
+	if err := db.AutoMigrate(&Match{}); err != nil {
+		t.Fatalf("migrate db: %v", err)
+	}
+
+	matchID, err := SaveMatch(db, &Match{Opponent: "Rovers"})
+	if err != nil {
+		t.Fatalf("save match: %v", err)
+	}
+	match, err := GetMatch(db, matchID)
+	if err != nil {
+		t.Fatalf("get match: %v", err)
+	}
+	if match.MatchURLSlug == "" {
+		t.Fatal("expected match URL slug")
+	}
+	originalSlug := match.MatchURLSlug
+	match.Location = "Home"
+	if _, err := SaveMatch(db, match); err != nil {
+		t.Fatalf("save match again: %v", err)
+	}
+	updated, err := GetMatch(db, matchID)
+	if err != nil {
+		t.Fatalf("get updated match: %v", err)
+	}
+	if updated.MatchURLSlug != originalSlug {
+		t.Fatalf("expected stable slug %q, got %q", originalSlug, updated.MatchURLSlug)
+	}
+}
+
+func TestPublicMatchURLRendersReadOnlyMatchDayAndFeedback(t *testing.T) {
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	if err != nil {
+		t.Fatalf("open db: %v", err)
+	}
+	if err := db.AutoMigrate(&Team{}, &Match{}, &MatchEvent{}, &Lineup{}, &LineupPlayer{}, &Formation{}, &FormationPosition{}, &Player{}, &LineupUser{}, &MLNote{}, &PlayerMatchUnavailability{}); err != nil {
+		t.Fatalf("migrate db: %v", err)
+	}
+	team := Team{TeamName: "Test team", EnableLineupsModule: true, EnablePublicFeedbackForm: true}
+	if err := db.Create(&team).Error; err != nil {
+		t.Fatalf("create team: %v", err)
+	}
+	formation := Formation{TeamID: team.ID, Name: "Formation", Status: formationStatusLive}
+	if err := db.Create(&formation).Error; err != nil {
+		t.Fatalf("create formation: %v", err)
+	}
+	if err := db.Create(&FormationPosition{FormationID: formation.ID, IndexNumber: 1, PositionName: "ST", X: 50, Y: 50}).Error; err != nil {
+		t.Fatalf("create position: %v", err)
+	}
+	lineup := Lineup{TeamID: team.ID, FormationID: formation.ID, Status: lineupStatusSelected, Name: "Line-up"}
+	if err := db.Create(&lineup).Error; err != nil {
+		t.Fatalf("create line-up: %v", err)
+	}
+	player := Player{Name: "Sam", Active: true}
+	if err := db.Create(&player).Error; err != nil {
+		t.Fatalf("create player: %v", err)
+	}
+	if err := db.Create(&LineupPlayer{LineupID: lineup.ID, IndexNumber: 1, SlotOrder: 0, PlayerID: player.ID}).Error; err != nil {
+		t.Fatalf("create lineup player: %v", err)
+	}
+	start := time.Now().Add(2 * time.Hour)
+	match := Match{TeamID: team.ID, LineupID: lineup.ID, Opponent: "Rovers", Location: "Home", StartTime: &start}
+	if _, err := SaveMatch(db, &match); err != nil {
+		t.Fatalf("save match: %v", err)
+	}
+
+	router := chi.NewRouter()
+	router.HandleFunc("/match-url/{matchURLSlug}", publicMatchURLHandler(db))
+	router.HandleFunc("/match-url/{matchURLSlug}/feedback", publicMatchFeedbackHandler(db))
+
+	response := httptest.NewRecorder()
+	router.ServeHTTP(response, httptest.NewRequest(http.MethodGet, "/match-url/"+match.MatchURLSlug, nil))
+	body := response.Body.String()
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected OK, got %d: %s", response.Code, body)
+	}
+	if !strings.Contains(body, "Line-up") || !strings.Contains(body, "Rovers") {
+		t.Fatalf("expected public match day content, got %s", body)
+	}
+	if strings.Contains(body, "Start match now") || strings.Contains(body, "Edit line-up") {
+		t.Fatalf("expected read-only supporter view, got %s", body)
+	}
+	if !strings.Contains(body, "/match-url/"+match.MatchURLSlug+"/feedback") {
+		t.Fatalf("expected match-scoped feedback link, got %s", body)
+	}
+
+	form := url.Values{}
+	form.Set("scope", noteTargetMatch)
+	form.Set("matchId", S(match.ID))
+	form.Set("type", "specific")
+	form.Set("creator", "Sideline")
+	form.Set("note", "Great pressure")
+	feedbackResponse := httptest.NewRecorder()
+	feedbackRequest := httptest.NewRequest(http.MethodPost, "/match-url/"+match.MatchURLSlug+"/feedback", strings.NewReader(form.Encode()))
+	feedbackRequest.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	router.ServeHTTP(feedbackResponse, feedbackRequest)
+	if feedbackResponse.Code != http.StatusOK {
+		t.Fatalf("expected feedback OK, got %d: %s", feedbackResponse.Code, feedbackResponse.Body.String())
+	}
+	var feedback MLNote
+	if err := db.Where("channel = ? AND target_kind = ? AND target_id = ?", noteChannelFeedback, noteTargetMatch, match.ID).First(&feedback).Error; err != nil {
+		t.Fatalf("expected feedback note: %v", err)
+	}
+	if feedback.TeamID != team.ID || feedback.Creator != "Sideline" || feedback.Note != "Great pressure" {
+		t.Fatalf("unexpected feedback: %+v", feedback)
 	}
 }
 

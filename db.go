@@ -1,7 +1,9 @@
 package main
 
 import (
+	"crypto/rand"
 	"database/sql/driver"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -920,6 +922,9 @@ func GetMatchMetaGeneral(db *gorm.DB, matchId uint) (*MatchMetaGeneral, error) {
 	if err != nil {
 		return nil, err
 	}
+	if err := ensureMatchURLSlug(db, match); err != nil {
+		return nil, err
+	}
 
 	genMeta, err := WrapMatchWithMeta(db, *match)
 	if err != nil {
@@ -1320,6 +1325,7 @@ type Match struct {
 	gorm.Model
 	TeamID               uint
 	LineupID             uint
+	MatchURLSlug         string `gorm:"index"`
 	Location             string
 	StartTime            *time.Time `json:"timestamp" gorm:"type:datetime"`
 	Opponent             string
@@ -1479,6 +1485,14 @@ func enrichMatchAvailabilityCounts(db *gorm.DB, matches []Match) error {
 func GetMatch(db *gorm.DB, id uint) (*Match, error) {
 	var match Match
 	if err := db.Where("id = ?", id).First(&match).Error; err != nil {
+		return nil, err
+	}
+	return &match, nil
+}
+
+func GetMatchByURLSlug(db *gorm.DB, slug string) (*Match, error) {
+	var match Match
+	if err := db.Preload("Events").Where("match_url_slug = ?", strings.TrimSpace(slug)).First(&match).Error; err != nil {
 		return nil, err
 	}
 	return &match, nil
@@ -1716,10 +1730,46 @@ func SaveSeason(db *gorm.DB, season *Season) error {
 }
 
 func SaveMatch(db *gorm.DB, match *Match) (uint, error) {
+	if err := ensureMatchURLSlug(db, match); err != nil {
+		return 0, err
+	}
 	if err := db.Save(match).Error; err != nil {
 		return 0, err // Return 0 as the ID in case of error
 	}
 	return match.ID, nil // Return the new ID which should now be populated
+}
+
+func ensureMatchURLSlug(db *gorm.DB, match *Match) error {
+	if match == nil || strings.TrimSpace(match.MatchURLSlug) != "" {
+		return nil
+	}
+	for i := 0; i < 5; i++ {
+		slug, err := generateMatchURLSlug()
+		if err != nil {
+			return err
+		}
+		var count int64
+		if err := db.Model(&Match{}).Where("match_url_slug = ?", slug).Count(&count).Error; err != nil {
+			return err
+		}
+		if count > 0 {
+			continue
+		}
+		match.MatchURLSlug = slug
+		if match.ID > 0 {
+			return db.Model(match).Update("match_url_slug", slug).Error
+		}
+		return nil
+	}
+	return errors.New("could not generate a unique match URL")
+}
+
+func generateMatchURLSlug() (string, error) {
+	bytes := make([]byte, 12)
+	if _, err := rand.Read(bytes); err != nil {
+		return "", err
+	}
+	return strings.TrimRight(base64.URLEncoding.EncodeToString(bytes), "="), nil
 }
 
 func GetMatchEvents(db *gorm.DB, id uint) ([]MatchEvent, error) {

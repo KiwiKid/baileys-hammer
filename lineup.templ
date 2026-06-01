@@ -2328,7 +2328,7 @@ templ matchDayPitch(lineup *Lineup, playerTimes []MatchDayPlayerTime, players []
 									</select>
 									<button type="submit" class="match-day-action-button primary hidden" data-match-day-swap-button>Swap</button>
 								</form>
-							</div>
+								</div>
 								if !lineup.Locked {
 									<div class="match-day-step-panel" data-match-day-step-panel="sub">
 										{{ quickSubCandidateIDs := matchDayQuickSubCandidateIDs(pp.Players, currentPlayer.Player.ID, playerTimes, unavailablePlayerIDs) }}
@@ -2362,7 +2362,7 @@ templ matchDayPitch(lineup *Lineup, playerTimes []MatchDayPlayerTime, players []
 										</form>
 									</div>
 								}
-						</div>
+							</div>
 					}
 				</div>
 			}
@@ -2552,7 +2552,7 @@ templ modeBadge(isAdmin bool) {
 }
 
 templ drawerChrome(title string, active string, matchDayLineupID uint) {
-	<div class="drawer-handle" onclick="window.openDrawer()"></div>
+	<div class="drawer-handle" onclick="window.toggleDrawer(this)"></div>
 	<div class="px-4 pb-3 border-b bg-white sticky top-0 z-10 cursor-pointer" onclick="window.openDrawer()">
 		@drawerTopNav(active, matchDayLineupID)
 		<div class="flex items-center justify-between">
@@ -2566,7 +2566,7 @@ templ drawerChrome(title string, active string, matchDayLineupID uint) {
 }
 
 templ formationDrawerChrome(title string, showCoordinateToggle bool, active string, matchDayLineupID uint) {
-	<div class="drawer-handle" onclick="window.openDrawer()"></div>
+	<div class="drawer-handle" onclick="window.toggleDrawer(this)"></div>
 	<div class="px-4 pb-3 border-b bg-white sticky top-0 z-10 cursor-pointer" onclick="window.openDrawer()">
 		@drawerTopNav(active, matchDayLineupID)
 		<div class="flex items-center justify-between">
@@ -2933,10 +2933,10 @@ templ lineupEditPage(lineup *Lineup, players []Player, formations []Formation, m
 															}
 														>Add sub</button>
 													}
+													</div>
 												</div>
-											</div>
-										}
-									</div>
+											}
+										</div>
 								}
 								@statusActionButtonRow(lineup, nil, isAdmin, activeMatch, hasActiveMatchLineup)
 								<button type="submit" class={ bigAdd }>Save this line-up</button>
@@ -3181,7 +3181,34 @@ templ matchDayCustomEventForm(lineup *Lineup, players []Player) {
 	}
 }
 
-templ matchDayPage(lineups []Lineup, selected *Lineup, playerTimes []MatchDayPlayerTime, players []Player, unavailablePlayerIDs map[uint]bool, problems []LineupProblem, matches []Match, activeMatch *Match, adjacentLineups MatchDayAdjacentLineups, isHistoricalMatch bool, isAdmin bool, msg string, errorMsg string, hasUpcomingMatch bool, matchDayLineupID uint, redoEvent *MatchEvent, focusPointsData NotesPageData) {
+templ matchDayResetPreview(lineup *Lineup, events []MatchEvent) {
+	if lineup != nil {
+		<div class="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-950">
+			<div class="font-bold">Reset match?</div>
+			<div class="mt-1">This will delete { fmt.Sprintf("%d", len(events)) } match events.</div>
+			if len(events) > 0 {
+				<div class="mt-3 space-y-2">
+					for _, event := range events {
+						<div class="rounded-md border border-red-100 bg-white px-3 py-2">
+							<div class="font-semibold">{ matchDayEventLabel(event) }</div>
+							<div class="text-red-800">{ event.EventType } - { matchDayEventWhenLabel(event) }</div>
+						</div>
+					}
+				</div>
+			}
+			<div class="mt-3 grid grid-cols-2 gap-2">
+				<a href={ fmt.Sprintf("/match-day/%d", lineup.ID) } class="rounded-lg bg-white px-3 py-2 text-center font-bold text-gray-800 ring-1 ring-gray-200">Cancel</a>
+				<form method="POST" action={ fmt.Sprintf("/match-day/%d/action", lineup.ID) }>
+					<input type="hidden" name="action" value="reset-match"/>
+					<input type="hidden" name="confirmReset" value="delete-events"/>
+					<button type="submit" class="w-full rounded-lg bg-red-700 px-3 py-2 font-bold text-white">Delete events</button>
+				</form>
+			</div>
+		</div>
+	}
+}
+
+templ matchDayPage(lineups []Lineup, selected *Lineup, playerTimes []MatchDayPlayerTime, players []Player, unavailablePlayerIDs map[uint]bool, problems []LineupProblem, matches []Match, activeMatch *Match, adjacentLineups MatchDayAdjacentLineups, isHistoricalMatch bool, isAdmin bool, msg string, errorMsg string, hasUpcomingMatch bool, matchDayLineupID uint, redoEvent *MatchEvent, focusPointsData NotesPageData, publicFeedbackURL string, resetPreview bool) {
 	<!DOCTYPE html>
 	<html>
 		@headLinks()
@@ -3441,12 +3468,31 @@ templ matchDayPage(lineups []Lineup, selected *Lineup, playerTimes []MatchDayPla
 									<button
 										type="button"
 										class="match-day-action-button"
-										aria-expanded="false"
+										if resetPreview {
+											aria-expanded="true"
+										} else {
+											aria-expanded="false"
+										}
 										onclick="window.toggleMatchDayEvents(this)"
 									>{ fmt.Sprintf("Match events (%d)", len(matchEvents)) }</button>
-									<div class="hidden space-y-2" data-match-day-events>
+									<div
+										if resetPreview {
+											class="space-y-2"
+										} else {
+											class="hidden space-y-2"
+										}
+										data-match-day-events
+									>
 										if isAdmin {
 											@matchDayCustomEventForm(selected, players)
+											if resetPreview {
+												@matchDayResetPreview(selected, matchEvents)
+											} else {
+												<form method="POST" action={ fmt.Sprintf("/match-day/%d/action", selected.ID) }>
+													<input type="hidden" name="action" value="preview-reset-match"/>
+													<button type="submit" class="match-day-action-button warning">Reset match</button>
+												</form>
+											}
 										}
 										if len(matchEvents) == 0 {
 											@infoBox("No match events yet.")
@@ -3523,15 +3569,17 @@ templ matchDayPage(lineups []Lineup, selected *Lineup, playerTimes []MatchDayPla
 									</div>
 								}
 							</div>
-							<div class="pt-4 border-t space-y-2">
-								<button type="button" class="match-day-action-button" aria-expanded="false" onclick="window.toggleMatchDayLineupOptions(this)">Change selected line-up</button>
-								<div class="hidden space-y-2" data-match-day-lineup-options>
-									for _, lineup := range lineups {
-										@matchDayLineupChoice(lineup)
-									}
-								</div>
-							</div>
-							if !matchDayClockStarted(selected.Match) {
+							if isAdmin {
+								<div class="pt-4 border-t space-y-2">
+									<button type="button" class="match-day-action-button" aria-expanded="false" onclick="window.toggleMatchDayLineupOptions(this)">Change selected line-up</button>
+										<div class="hidden space-y-2" data-match-day-lineup-options>
+											for _, lineup := range lineups {
+												@matchDayLineupChoice(lineup)
+											}
+										</div>
+									</div>
+							}
+							if isAdmin && !matchDayClockStarted(selected.Match) {
 								<div class="drawer-list-footer space-y-2" data-match-day-edit-lineup-target>
 									<div class="match-day-edit-lineup-message">Edit line up to change players</div>
 									<a href={ fmt.Sprintf("/lineups/%d", selected.ID) } class={ bigPri } data-match-day-edit-lineup onclick="window.setDrawerState('collapsed')">Edit line-up</a>
@@ -3540,7 +3588,11 @@ templ matchDayPage(lineups []Lineup, selected *Lineup, playerTimes []MatchDayPla
 						}
 						if FooterTeam(ctx).EnablePublicFeedbackForm {
 							<div class="drawer-list-footer">
-								<a href="/feedback" class={ bigPri }>Feedback</a>
+								if publicFeedbackURL != "" {
+									<a href={ publicFeedbackURL } class={ bigPri }>Feedback</a>
+								} else {
+									<a href="/feedback" class={ bigPri }>Feedback</a>
+								}
 							</div>
 						}
 					</div>

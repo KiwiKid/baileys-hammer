@@ -56,7 +56,11 @@ templ feedbackPage(data FeedbackPageData) {
 				<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
 					<div>
 						<h1 class="text-3xl font-bold">Feedback</h1>
-						<p class="text-sm text-gray-600">Send general feedback or attach it to a match.</p>
+						if data.LockMatch {
+							<p class="text-sm text-gray-600">{ noteTargetLabel(data.Selected) }</p>
+						} else {
+							<p class="text-sm text-gray-600">Send general feedback or attach it to a match.</p>
+						}
 					</div>
 					<a href="/" class={ bigPri }>Home</a>
 				</div>
@@ -89,21 +93,38 @@ templ feedbackPage(data FeedbackPageData) {
 
 templ feedbackForm(data FeedbackPageData) {
 	<div class="bg-white rounded-lg shadow p-4">
-		<form method="POST" action="/feedback" class="space-y-4">
-			<label class="block text-sm font-semibold text-gray-700">Scope
-				<select name="scope" data-feedback-scope onchange="window.selectFeedbackScope(this)" class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 bg-white">
-					<option value="general" if data.Selected.TargetKind != noteTargetMatch { selected }>General</option>
-					<option value={ noteTargetMatch } if data.Selected.TargetKind == noteTargetMatch { selected }>Specific match</option>
-				</select>
-			</label>
-			<div
-				data-feedback-match
-				if data.Selected.TargetKind != noteTargetMatch {
-					class="hidden"
-				}
-			>
-				@noteIDSelect("matchId", "Match", data.Matches, data.Selected.TargetID)
-			</div>
+		<form
+			method="POST"
+			if data.ActionURL != "" {
+				action={ data.ActionURL }
+			} else {
+				action="/feedback"
+			}
+			class="space-y-4"
+		>
+			if data.LockMatch {
+				<input type="hidden" name="scope" value={ noteTargetMatch }/>
+				<input type="hidden" name="matchId" value={ fmt.Sprintf("%d", data.Selected.TargetID) }/>
+				<div class="rounded-md bg-gray-50 border border-gray-200 p-3 text-sm">
+					<div class="font-semibold text-gray-700">Match</div>
+					<div class="text-gray-900">{ noteTargetLabel(data.Selected) }</div>
+				</div>
+			} else {
+				<label class="block text-sm font-semibold text-gray-700">Scope
+					<select name="scope" data-feedback-scope onchange="window.selectFeedbackScope(this)" class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 bg-white">
+						<option value="general" if data.Selected.TargetKind != noteTargetMatch { selected }>General</option>
+						<option value={ noteTargetMatch } if data.Selected.TargetKind == noteTargetMatch { selected }>Specific match</option>
+					</select>
+				</label>
+				<div
+					data-feedback-match
+					if data.Selected.TargetKind != noteTargetMatch {
+						class="hidden"
+					}
+				>
+					@noteIDSelect("matchId", "Match", data.Matches, data.Selected.TargetID)
+				</div>
+			}
 			<label class="block text-sm font-semibold text-gray-700">Feedback type
 				<select name="type" class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 bg-white">
 					<option value="general" if data.Selected.Type != "specific" { selected }>General</option>
