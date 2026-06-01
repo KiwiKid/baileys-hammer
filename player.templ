@@ -247,7 +247,7 @@ templ playerEventInputSelector(players []Player, events []MatchEvent, eventType 
 	}
 }
 
-templ playerRoleSelector(player PlayerWithFines, config *Config, msg string) {
+templ playerRoleSelector(player PlayerWithFines, config *Config, msg templ.Component) {
 	<div class="w-full" id="players-ss">
 		<form class="todo" hx-post={ fmt.Sprintf("/players?playerId=%d", player.ID) } hx-swap="outerHTML">
 			<div class="p-2">
@@ -256,6 +256,18 @@ templ playerRoleSelector(player PlayerWithFines, config *Config, msg string) {
  					name="ID"
  					value={ fmt.Sprintf("%d", player.ID) }
 				/>
+				<input
+					type="hidden"
+					name="Active"
+					value={ fmt.Sprintf("%t", player.Active) }
+				/>
+				<div class="mt-2">
+					if player.Active {
+						<span class="rounded bg-green-100 px-2 py-1 text-sm font-semibold text-green-700">Active player</span>
+					} else {
+						<span class="rounded bg-red-100 px-2 py-1 text-sm font-semibold text-red-700">Inactive player</span>
+					}
+				</div>
 				<label for="role" class="block mt-2">
 					Name      
 					<input
@@ -316,17 +328,31 @@ templ playerRoleSelector(player PlayerWithFines, config *Config, msg string) {
 						class="w-full text-3xl px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600"
 					/>
 				</label>-->
-				if len(msg) > 0 {
-					@success(msg)
+				if msg != nil {
+					@msg
 				}
 				<div class="flex flex-row mt-2">
 					<button type="submit" class={ bigPri }>Update Player</button>
+				</div>
+				<div class="flex flex-row mt-2">
+					if player.Active {
+						<button type="submit" name="playerAction" value="deactivate" hx-confirm={ fmt.Sprintf("Are you sure you want to deactivate %s?", player.Name) } class={ bigSec }>Deactivate { player.Name }</button>
+					} else {
+						<button type="submit" name="playerAction" value="activate" hx-confirm={ fmt.Sprintf("Are you sure you want to activate %s?", player.Name) } class={ bigAdd }>Activate { player.Name }</button>
+					}
 				</div>
 				<div class="flex flex-row mt-2">
 					<button type="submit" hx-delete={ fmt.Sprintf("/players?playerId=%d", player.ID) } hx-confirm={ fmt.Sprintf("Are you sure you want to delete %s?", player.Name) } class={ bigDel }>Delete { player.Name }</button>
 				</div>
 			</div>
 		</form>
+		<div
+			hx-get={ noteContextURL(noteTargetPlayer, player.ID, player.Name, "/finemaster#players-manage") }
+			hx-trigger="load"
+			hx-swap="innerHTML"
+		>
+			@infoBox("Loading model notes...")
+		</div>
 	</div>
 }
 
@@ -351,7 +377,9 @@ templ playerPaymentsButton(title string, displayType string, activeSeason *Seaso
 templ viewPlayerPayments(playerPayments []PlayerPaymentsWithTotals, players []Player, activeSeason *Season) {
 	<div hx-target="this">
 		@playerPaymentsButton("Close Payments", "button", activeSeason)
-		@addPlayerPayment(players, seasonId)
+		if activeSeason != nil {
+			@addPlayerPayment(players, activeSeason.ID)
+		}
 		<div class="flex flex-row w-full" >
 			<div class="flex flex-col space-y-4">
 				<div class="flex flex-row bg-gray-800 text-white p-4 rounded-t-lg">

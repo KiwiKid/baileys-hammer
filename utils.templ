@@ -7,6 +7,7 @@ import (
 )
 
 templ headLinks(){
+	<meta name="viewport" content="width=device-width, initial-scale=1"/>
 	<script src="https://unpkg.com/htmx.org"></script>
 	<link href="https://unpkg.com/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet"/>
     <link href="https://cdn.jsdelivr.net/npm/tom-select@latest/dist/css/tom-select.css" rel="stylesheet" />
@@ -57,6 +58,20 @@ templ successComp() {
 	</div>
 }
 
+templ successWithReload(msg string) {
+	<div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-lg">
+		<p class="text-lg font-semibold">{ msg }</p>
+		<a  onclick="window.location.reload();" class="text-blue-500 hover:text-blue-700">Refresh</a>
+	</div>
+}
+
+templ successWithHomepageLink(msg string) {
+	<div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-lg">
+		<p class="text-lg font-semibold">{ msg }</p>
+		<a href="/" class="text-blue-500 hover:text-blue-700">Home</a>
+	</div>
+}
+
 templ success(msg string) {
 	if len(msg) > 0 {
 		<div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-lg">
@@ -75,9 +90,11 @@ templ warning(msg string) {
 
 
 templ errMsg(msg string) {
-	<div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-lg">
-		<p class="text-lg font-semibold">{ msg }</p>
-	</div>
+	if (len(msg) > 0){
+		<div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-lg">
+			<p class="text-lg font-semibold">{ msg }</p>
+		</div>
+	}
 }
 
 templ infoBox(msg string){
@@ -185,7 +202,7 @@ templ fineSuperSelect(players []PlayerWithFines, approvedPFines []PresetFine, se
 
 				</select>
 				if len(players) == 0 {
-						@warning("Create some players to add a fine")
+						@warning("No players found. Create some players to add a fine")
 				}
 			</div>
 			<div class="flex flex-row">
@@ -261,4 +278,3 @@ templ fineSuperSelectResults(players []PlayerWithFines, approvedPFines []PresetF
 		</div>
 	}
 }
-

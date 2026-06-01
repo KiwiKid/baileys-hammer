@@ -91,6 +91,9 @@ templ matchListPage(matches []Match, isOpen bool, isFineMaster bool, noHeader bo
 									<div>
 										<div class="text-lg font-medium">{ match.Opponent }</div>
 										<div class="text-sm text-gray-600">{ match.Location }</div>
+										if match.TotalPlayerCount > 0 {
+											<div class="text-sm text-gray-600">{ fmt.Sprintf("%d/%d available", match.AvailablePlayerCount, match.TotalPlayerCount) }</div>
+										}
 									</div>
 									if isFineMaster {
 										<div class="flex-shrink-0">
@@ -130,7 +133,7 @@ templ matchListPage(matches []Match, isOpen bool, isFineMaster bool, noHeader bo
 					>Add New Match</div>
 				}
 			</div>
-			@pageFooter()
+			@pageFooter(FooterTeam(ctx))
 		</body>
 	</html>
 }
@@ -162,7 +165,7 @@ templ matchPage(data MatchPageData) {
 					</div>
 				</div>
 			</div>
-			@pageFooter()
+			@pageFooter(FooterTeam(ctx))
 		</body>
 	</html>
 }
@@ -222,19 +225,19 @@ templ createMatch(closeLink templ.SafeURL, players []PlayerWithFines) {
 				<button type="submit" class={ bigAdd }>Create Match</button>
 			</div>
 			<div class="flex items-center justify-between mt-4">
-				<a href={ closeLink } class={ bigSec }>Close</a>
+				<a href={ closeLink } class={ bigPri }>Close</a>
 			</div>
 		</form>
 	</div>
 }
 
-templ editMatchContainer(closeLink templ.SafeURL, genMeta MatchMetaGeneral, successMsg string) {
+templ editMatchContainer(closeLink templ.SafeURL, genMeta MatchMetaGeneral, successMsg string, notesData NotesPageData) {
 	<!DOCTYPE html>
 	<html hx-boost="true">
 		@header()
 		<body class="text-2xl p-1">
-			@editMatch(closeLink, genMeta, successMsg)
-			@pageFooter()
+			@editMatch(closeLink, genMeta, successMsg, notesData)
+			@pageFooter(FooterTeam(ctx))
 		</body>
 	</html>
 }
@@ -330,7 +333,7 @@ templ matchMetaDebug(genMeta MatchMetaGeneral) {
 	</div>
 } 
 
-templ editMatch(closeLink templ.SafeURL, genMeta MatchMetaGeneral, successMsg string) {
+templ editMatch(closeLink templ.SafeURL, genMeta MatchMetaGeneral, successMsg string, notesData NotesPageData) {
 	<div class="w-full mx-auto bg-gray-200 shadow-xl m-10" id={ fmt.Sprintf("edit-match-%d", genMeta.Match.ID) }>
 		<form hx-post={ fmt.Sprintf("/match/%v", genMeta.Match.ID) } hx-trigger="submit" hx-swap="outerHTML" hx-target={ fmt.Sprintf("#edit-match-%d", genMeta.Match.ID) } class="mx-auto my-8 p-4 border border-gray-200 rounded-lg shadow">
 			<div hx-get={ fmt.Sprintf("/match/%d?type=form", genMeta.Match.ID) }  class="text-lg underline font-semibold mb-4" >Edit Match - vs { genMeta.Match.Opponent }</div>
@@ -339,6 +342,23 @@ templ editMatch(closeLink templ.SafeURL, genMeta MatchMetaGeneral, successMsg st
  				name="matchId"
  				value={ fmt.Sprintf("%d", genMeta.Match.ID) }
 			/>
+			if genMeta.Match.SeasonId == 0 || genMeta.Match.TeamID == 0 {
+				<div class="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-4 text-amber-900">
+					<div class="font-bold">This match is missing required ownership data.</div>
+					<div class="mt-1 text-sm">
+						Season ID: { fmt.Sprintf("%d", genMeta.Match.SeasonId) } - Team ID: { fmt.Sprintf("%d", genMeta.Match.TeamID) }
+					</div>
+					<button
+						type="submit"
+						name="matchAction"
+						value="quick-fix-season-team"
+						formnovalidate
+						class="mt-3 rounded bg-amber-600 px-4 py-2 text-sm font-bold text-white hover:bg-amber-700"
+					>
+						Set to current season and team
+					</button>
+				</div>
+			}
 			<div class="mb-4">
 				<label for="opponent" class="block text-lg font-semibold text-gray-700">Opponent</label>
 				<input type="text" name="opponent" id="opponent" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" value={ genMeta.Match.Opponent }/>
@@ -374,6 +394,74 @@ templ editMatch(closeLink templ.SafeURL, genMeta MatchMetaGeneral, successMsg st
 				<label for="subtitle" class="block text-lg font-semibold text-gray-700 ">Notes: (optional)</label>
 				<input type="text" name="subtitle" id="subtitle" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" value={ genMeta.Match.Subtitle }/>
 			</div>
+			<div class="mb-4 rounded-lg border border-gray-300 bg-white/70 p-4">
+				<div class="text-lg font-semibold text-gray-700">Line-up used</div>
+				if genMeta.Lineup != nil {
+					<div class="mt-1 text-base text-gray-800">{ genMeta.Lineup.Name }</div>
+					<div class="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+						<a href={ fmt.Sprintf("/lineups/%d", genMeta.Lineup.ID) } hx-boost="false" class={ bigPri }>Open line-up</a>
+						<a href={ fmt.Sprintf("/match-day/%d", genMeta.Lineup.ID) } hx-boost="false" class={ bigSec }>Open match day</a>
+					</div>
+				} else {
+					<div class="mt-1 text-base text-gray-600">No line-up linked to this match yet.</div>
+					if len(genMeta.LiveLineups) > 0 {
+						<label for="lineup-id" class="mt-3 block text-base font-semibold text-gray-700">Link a live line-up</label>
+						<select
+							id="lineup-id"
+							name="lineupId"
+							class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md bg-white shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+						>
+							<option value="">Select a live line-up...</option>
+							for _, lineup := range genMeta.LiveLineups {
+								<option value={ fmt.Sprintf("%d", lineup.ID) }>
+									{ lineup.Name }
+									if lineup.Formation.Name != "" {
+										{ " - " }
+										{ lineup.Formation.Name }
+									}
+								</option>
+							}
+						</select>
+						<button type="submit" class={ bigAdd + " mt-3" }>Link line-up</button>
+					} else {
+						<a href="/lineups" hx-boost="false" class={ bigPri + " mt-3" }>Create a live line-up</a>
+					}
+				}
+			</div>
+			<div class="mb-4 rounded-lg border border-gray-300 bg-white/70 p-4">
+				<div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+					<div>
+						<label class="block text-lg font-semibold text-gray-700">Player availability</label>
+						<div class="text-sm text-gray-600">{ fmt.Sprintf("%d of %d active players available", genMeta.AvailablePlayerCount, genMeta.TotalPlayerCount) }</div>
+					</div>
+					<div class="text-sm font-semibold text-gray-500">Select players who are unavailable</div>
+				</div>
+				<select
+					hx-ext="tomselect"
+					ts-debug="true"
+					tx-max-items="99"
+					tx-close-after-select="true"
+					ts-item-class="text-3xl py-3"
+					ts-option-class="text-3xl py-3"
+					name="unavailablePlayerIds[]"
+					multiple
+					placeholder="Unavailable players"
+					class="mt-3 w-full border-gray-300 bg-white rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+				>
+					<option value="">Select players...</option>
+					for _, p := range genMeta.Players {
+						<option value={ fmt.Sprintf("%d", p.ID) } selected?={ playerUnavailableForMatch(genMeta.UnavailablePlayerIDs, p.ID) }>
+							{ p.Name }
+							if !p.Active {
+								{ " (inactive)" }
+							}
+						</option>
+					}
+				</select>
+				if len(genMeta.Players) == 0 {
+					@warning("No players are available to select.")
+				}
+			</div>
 			<span>[game start]</span>
 			if UseShowGoalScorerMatchList(ctx) {
 				@playerEventInputSelector(genMeta.Players, genMeta.Match.Events, "goal")
@@ -403,7 +491,7 @@ templ editMatch(closeLink templ.SafeURL, genMeta MatchMetaGeneral, successMsg st
 				<button type="submit" class={ bigAdd }>Update Match</button>
 			</div>
 			<div class="flex items-center justify-between mt-4">
-				<a href={ closeLink } class={ bigSec }>Close</a>
+				<a href={ closeLink } class={ bigPri }>Close</a>
 			</div> 
 			if UseMatchEventTracker(ctx) {
 				<div class={ bigPri } hx-get={ fmt.Sprintf("/match/%v/events", genMeta.Match.ID) } hx-trigger="click" hx-target="#event-place" hx-swap="innerHTML">
@@ -422,6 +510,9 @@ templ editMatch(closeLink templ.SafeURL, genMeta MatchMetaGeneral, successMsg st
 			</details>
 			@matchMetaDebug(genMeta)
 		</form>
+		<div class="mx-auto my-8 p-4">
+			@contextualNotes(notesData)
+		</div>
 	</div>
 }
 
@@ -462,4 +553,3 @@ templ createNewEvent(matchId uint) {
 		</button>
 	</form>
 }
-

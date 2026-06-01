@@ -1,0 +1,404 @@
+package main
+
+import (
+	"fmt"
+	"strings"
+)
+
+templ notesPage(data NotesPageData) {
+	<!DOCTYPE html>
+	<html hx-boost="true">
+		@header()
+		<body class="text-xl p-3 bg-gray-100">
+			<div class="max-w-6xl mx-auto">
+				<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+					<div>
+						<h1 class="text-3xl font-bold">Model notes</h1>
+						<p class="text-sm text-gray-600">Structured inputs for match, opposition, field, player, formation, and line-up advice.</p>
+					</div>
+					<a href="/" class={ bigPri }>Home</a>
+				</div>
+				@warning(data.Message)
+				<div class="grid grid-cols-1 lg:grid-cols-[380px_minmax(0,1fr)] gap-4">
+					@noteForm(data)
+					<div class="space-y-4">
+						@notesList(data.Notes)
+						@feedbackList(data.Feedback)
+					</div>
+				</div>
+			</div>
+			<script>
+				window.selectNoteTargetKind = function(select) {
+					var form = select.closest("form");
+					if (!form) return;
+					form.querySelectorAll("[data-note-target-panel]").forEach(function(panel) {
+						panel.classList.toggle("hidden", panel.dataset.noteTargetPanel !== select.value);
+					});
+				};
+				document.addEventListener("DOMContentLoaded", function() {
+					document.querySelectorAll("[data-note-target-kind]").forEach(window.selectNoteTargetKind);
+				});
+				document.addEventListener("htmx:afterSettle", function(event) {
+					(event.target || document).querySelectorAll("[data-note-target-kind]").forEach(window.selectNoteTargetKind);
+				});
+			</script>
+			@pageFooter(FooterTeam(ctx))
+		</body>
+	</html>
+}
+
+templ feedbackPage(data FeedbackPageData) {
+	<!DOCTYPE html>
+	<html hx-boost="true">
+		@header()
+		<body class="text-xl p-3 bg-gray-100">
+			<div class="max-w-3xl mx-auto">
+				<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+					<div>
+						<h1 class="text-3xl font-bold">Feedback</h1>
+						<p class="text-sm text-gray-600">Send general feedback or attach it to a match.</p>
+					</div>
+					<a href="/" class={ bigPri }>Home</a>
+				</div>
+				if data.IsError {
+					@warning(data.Message)
+				} else {
+					@success(data.Message)
+				}
+				@feedbackForm(data)
+			</div>
+			<script>
+				window.selectFeedbackScope = function(select) {
+					var form = select.closest("form");
+					if (!form) return;
+					form.querySelectorAll("[data-feedback-match]").forEach(function(panel) {
+						panel.classList.toggle("hidden", select.value !== "match");
+					});
+				};
+				document.addEventListener("DOMContentLoaded", function() {
+					document.querySelectorAll("[data-feedback-scope]").forEach(window.selectFeedbackScope);
+				});
+				document.addEventListener("htmx:afterSettle", function(event) {
+					(event.target || document).querySelectorAll("[data-feedback-scope]").forEach(window.selectFeedbackScope);
+				});
+			</script>
+			@pageFooter(FooterTeam(ctx))
+		</body>
+	</html>
+}
+
+templ feedbackForm(data FeedbackPageData) {
+	<div class="bg-white rounded-lg shadow p-4">
+		<form method="POST" action="/feedback" class="space-y-4">
+			<label class="block text-sm font-semibold text-gray-700">Scope
+				<select name="scope" data-feedback-scope onchange="window.selectFeedbackScope(this)" class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 bg-white">
+					<option value="general" if data.Selected.TargetKind != noteTargetMatch { selected }>General</option>
+					<option value={ noteTargetMatch } if data.Selected.TargetKind == noteTargetMatch { selected }>Specific match</option>
+				</select>
+			</label>
+			<div
+				data-feedback-match
+				if data.Selected.TargetKind != noteTargetMatch {
+					class="hidden"
+				}
+			>
+				@noteIDSelect("matchId", "Match", data.Matches, data.Selected.TargetID)
+			</div>
+			<label class="block text-sm font-semibold text-gray-700">Feedback type
+				<select name="type" class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 bg-white">
+					<option value="general" if data.Selected.Type != "specific" { selected }>General</option>
+					<option value="specific" if data.Selected.Type == "specific" { selected }>Specific</option>
+				</select>
+			</label>
+			<label class="block text-sm font-semibold text-gray-700">Name
+				<input type="text" name="creator" value={ data.Selected.Creator } placeholder="Optional" class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"/>
+			</label>
+			<label class="inline-flex items-center gap-2 text-sm font-semibold text-gray-700">
+				<input type="checkbox" name="anonymous" class="h-5 w-5 rounded border-gray-300"/>
+				Submit anonymously
+			</label>
+			<label class="block text-sm font-semibold text-gray-700">Feedback
+				<textarea name="note" rows="6" required class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2">{ data.Selected.Note }</textarea>
+			</label>
+			<button type="submit" class={ bigAdd }>Send feedback</button>
+		</form>
+	</div>
+}
+
+templ noteForm(data NotesPageData) {
+	<div class="bg-white rounded-lg shadow p-4">
+		if data.IsEditing {
+			<h2 class="text-2xl font-bold mb-3">Edit note</h2>
+		} else {
+			<h2 class="text-2xl font-bold mb-3">Add note</h2>
+		}
+		<form
+			method="POST"
+			if data.IsEditing {
+				action={ noteActionURL(fmt.Sprintf("/notes/%d", data.Selected.ID), data.ReturnTo) }
+			} else {
+				action={ noteActionURL("/notes", data.ReturnTo) }
+			}
+			class="space-y-4"
+		>
+			if data.LockedTargetKind != "" {
+				@noteHiddenTarget(data.Selected)
+				<div class="rounded-md bg-gray-50 border border-gray-200 p-3 text-sm">
+					<div class="font-semibold text-gray-700">{ noteTargetKindLabel(data.Selected.TargetKind) }</div>
+					<div class="text-gray-900">{ noteTargetLabel(data.Selected) }</div>
+				</div>
+			} else {
+				<label class="block text-sm font-semibold text-gray-700">Target type
+					<select name="targetKind" data-note-target-kind onchange="window.selectNoteTargetKind(this)" class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 bg-white">
+						for _, kind := range noteTargetKinds {
+							<option
+								value={ kind }
+								if data.Selected.TargetKind == kind {
+									selected
+								}
+							>{ noteTargetKindLabel(kind) }</option>
+						}
+					</select>
+				</label>
+				for _, kind := range noteTargetKinds {
+					<div
+						data-note-target-panel={ kind }
+						if data.Selected.TargetKind != kind {
+							class="hidden"
+						}
+					>
+						@noteTargetInput(kind, data.Targets[kind], data.Selected)
+					</div>
+				}
+			}
+			<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+				<label class="block text-sm font-semibold text-gray-700">Priority
+					<input type="number" min="0" max="10" name="priority" value={ fmt.Sprintf("%d", data.Selected.Priority) } class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"/>
+				</label>
+				<label class="block text-sm font-semibold text-gray-700">Type
+					<select name="type" class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 bg-white">
+						@noteTypeOption(data.Selected.Type, "selection", "Selection")
+						@noteTypeOption(data.Selected.Type, noteTypeFocus, "Focus")
+						@noteTypeOption(data.Selected.Type, "formation", "Formation")
+						@noteTypeOption(data.Selected.Type, "opposition", "Opposition")
+						@noteTypeOption(data.Selected.Type, "field", "Field")
+						@noteTypeOption(data.Selected.Type, "availability", "Availability")
+						@noteTypeOption(data.Selected.Type, "tactic", "Tactic")
+						@noteTypeOption(data.Selected.Type, "risk", "Risk")
+						@noteTypeOption(data.Selected.Type, "observation", "Observation")
+					</select>
+				</label>
+			</div>
+			<label class="block text-sm font-semibold text-gray-700">Creator
+				<input type="text" name="creator" value={ data.Selected.Creator } placeholder="Name" class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"/>
+			</label>
+			<label class="block text-sm font-semibold text-gray-700">Note
+				<textarea name="note" rows="5" required class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2">{ data.Selected.Note }</textarea>
+			</label>
+			<button type="submit" class={ bigAdd }>
+				if data.IsEditing {
+					Save note
+				} else {
+					Add note
+				}
+			</button>
+			if data.IsEditing {
+				<a href="/notes" class={ bigPri }>Cancel edit</a>
+			}
+		</form>
+	</div>
+}
+
+templ contextualNotes(data NotesPageData) {
+	if data.ShowAdminNotes {
+		<div class="mt-6 space-y-4">
+			<h2 class="text-2xl font-bold">Model notes</h2>
+			@warning(data.Message)
+			@noteForm(data)
+			@contextualNotesList(data)
+		</div>
+	}
+}
+
+templ noteTypeOption(selectedType string, value string, label string) {
+	<option
+		value={ value }
+		if selectedType == value {
+			selected
+		}
+	>{ label }</option>
+}
+
+templ noteTargetInput(kind string, options []NoteTargetOption, selected MLNote) {
+	switch kind {
+	case noteTargetMatch:
+		@noteIDSelect("matchId", "Match", options, selected.TargetID)
+	case noteTargetPlayer:
+		@noteIDSelect("playerId", "Player", options, selected.TargetID)
+	case noteTargetFormation:
+		@noteIDSelect("formationId", "Formation", options, selected.TargetID)
+	case noteTargetLineup:
+		@noteIDSelect("lineupId", "Line-up", options, selected.TargetID)
+	case noteTargetOpposition:
+		@noteLabelInput("oppositionLabel", "Opposition", options, selected.TargetLabel)
+	case noteTargetField:
+		@noteLabelInput("fieldLabel", "Field", options, selected.TargetLabel)
+	}
+}
+
+templ noteIDSelect(name string, label string, options []NoteTargetOption, selectedID uint) {
+	<label class="block text-sm font-semibold text-gray-700">{ label }
+		<select name={ name } class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 bg-white">
+			<option value="">Select { label }</option>
+			for _, option := range options {
+				<option
+					value={ fmt.Sprintf("%d", option.ID) }
+					if selectedID == option.ID {
+						selected
+					}
+				>{ option.Label }</option>
+			}
+		</select>
+	</label>
+	for _, option := range options {
+		<input type="hidden" name={ fmt.Sprintf("%sLabel_%d", strings.TrimSuffix(name, "Id"), option.ID) } value={ option.Label }/>
+	}
+}
+
+templ noteLabelInput(name string, label string, options []NoteTargetOption, selectedLabel string) {
+	<label class="block text-sm font-semibold text-gray-700">{ label }
+		<input list={ name + "-options" } name={ name } value={ selectedLabel } class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"/>
+		<datalist id={ name + "-options" }>
+			for _, option := range options {
+				<option value={ option.Label }></option>
+			}
+		</datalist>
+	</label>
+}
+
+templ noteHiddenTarget(note MLNote) {
+	<input type="hidden" name="targetKind" value={ note.TargetKind }/>
+	switch note.TargetKind {
+	case noteTargetMatch:
+		<input type="hidden" name="matchId" value={ fmt.Sprintf("%d", note.TargetID) }/>
+		<input type="hidden" name={ fmt.Sprintf("matchLabel_%d", note.TargetID) } value={ noteTargetLabel(note) }/>
+	case noteTargetPlayer:
+		<input type="hidden" name="playerId" value={ fmt.Sprintf("%d", note.TargetID) }/>
+		<input type="hidden" name={ fmt.Sprintf("playerLabel_%d", note.TargetID) } value={ noteTargetLabel(note) }/>
+	case noteTargetFormation:
+		<input type="hidden" name="formationId" value={ fmt.Sprintf("%d", note.TargetID) }/>
+		<input type="hidden" name={ fmt.Sprintf("formationLabel_%d", note.TargetID) } value={ noteTargetLabel(note) }/>
+	case noteTargetLineup:
+		<input type="hidden" name="lineupId" value={ fmt.Sprintf("%d", note.TargetID) }/>
+		<input type="hidden" name={ fmt.Sprintf("lineupLabel_%d", note.TargetID) } value={ noteTargetLabel(note) }/>
+	case noteTargetOpposition:
+		<input type="hidden" name="oppositionLabel" value={ note.TargetLabel }/>
+	case noteTargetField:
+		<input type="hidden" name="fieldLabel" value={ note.TargetLabel }/>
+	}
+}
+
+templ contextualNotesList(data NotesPageData) {
+	<div class="bg-white rounded-lg shadow p-4">
+		<h3 class="text-xl font-bold mb-3">Existing notes</h3>
+		if len(data.Notes) == 0 {
+			<div class="text-gray-600">No model notes for this { strings.ToLower(noteTargetKindLabel(data.LockedTargetKind)) } yet.</div>
+		} else {
+			<div class="space-y-3">
+				for _, note := range data.Notes {
+					<div class="border border-gray-200 rounded-lg p-3">
+						<div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+							<div>
+								<div class="font-bold">{ note.Type }</div>
+								<div class="text-sm text-gray-600">Priority { fmt.Sprintf("%d", note.Priority) } - { note.Creator }</div>
+							</div>
+							<button type="button" hx-delete={ noteActionURL(fmt.Sprintf("/notes/%d", note.ID), data.ReturnTo) } hx-confirm="Delete this note?" class="text-sm bg-red-100 text-red-800 rounded-md px-3 py-2 font-bold">Delete</button>
+						</div>
+						<div class="mt-2 whitespace-pre-wrap text-base">{ note.Note }</div>
+						<details class="mt-3">
+							<summary class="cursor-pointer text-sm font-bold text-blue-700">Edit</summary>
+							<form method="POST" action={ noteActionURL(fmt.Sprintf("/notes/%d", note.ID), data.ReturnTo) } class="mt-3 space-y-3">
+								@noteHiddenTarget(note)
+								<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+									<label class="block text-sm font-semibold text-gray-700">Priority
+										<input type="number" min="0" max="10" name="priority" value={ fmt.Sprintf("%d", note.Priority) } class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"/>
+									</label>
+									<label class="block text-sm font-semibold text-gray-700">Type
+										<select name="type" class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 bg-white">
+											@noteTypeOption(note.Type, "selection", "Selection")
+											@noteTypeOption(note.Type, noteTypeFocus, "Focus")
+											@noteTypeOption(note.Type, "formation", "Formation")
+											@noteTypeOption(note.Type, "opposition", "Opposition")
+											@noteTypeOption(note.Type, "field", "Field")
+											@noteTypeOption(note.Type, "availability", "Availability")
+											@noteTypeOption(note.Type, "tactic", "Tactic")
+											@noteTypeOption(note.Type, "risk", "Risk")
+											@noteTypeOption(note.Type, "observation", "Observation")
+										</select>
+									</label>
+								</div>
+								<label class="block text-sm font-semibold text-gray-700">Creator
+									<input type="text" name="creator" value={ note.Creator } placeholder="Name" class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"/>
+								</label>
+								<label class="block text-sm font-semibold text-gray-700">Note
+									<textarea name="note" rows="4" required class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2">{ note.Note }</textarea>
+								</label>
+								<button type="submit" class={ bigAdd }>Save note</button>
+							</form>
+						</details>
+					</div>
+				}
+			</div>
+		}
+	</div>
+}
+
+templ notesList(notes []MLNote) {
+	<div class="bg-white rounded-lg shadow p-4">
+		<h2 class="text-2xl font-bold mb-3">Configured notes</h2>
+		if len(notes) == 0 {
+			<div class="text-gray-600">No model notes yet.</div>
+		} else {
+			<div class="space-y-3">
+				for _, note := range notes {
+					<div class="border border-gray-200 rounded-lg p-3">
+						<div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+							<div>
+								<div class="font-bold">{ noteTargetKindLabel(note.TargetKind) } - { noteTargetLabel(note) }</div>
+								<div class="text-sm text-gray-600">Priority { fmt.Sprintf("%d", note.Priority) } - { note.Type } - { note.Creator }</div>
+							</div>
+							<div class="flex gap-2">
+								<a href={ fmt.Sprintf("/notes/%d", note.ID) } class="text-sm bg-blue-100 text-blue-800 rounded-md px-3 py-2 font-bold">Edit</a>
+								<button type="button" hx-delete={ fmt.Sprintf("/notes/%d", note.ID) } hx-confirm="Delete this note?" class="text-sm bg-red-100 text-red-800 rounded-md px-3 py-2 font-bold">Delete</button>
+							</div>
+						</div>
+						<div class="mt-2 whitespace-pre-wrap text-base">{ note.Note }</div>
+					</div>
+				}
+			</div>
+		}
+	</div>
+}
+
+templ feedbackList(feedback []MLNote) {
+	<div class="bg-white rounded-lg shadow p-4">
+		<h2 class="text-2xl font-bold mb-3">Public feedback</h2>
+		if len(feedback) == 0 {
+			<div class="text-gray-600">No feedback yet.</div>
+		} else {
+			<div class="space-y-3">
+				for _, item := range feedback {
+					<div class="border border-gray-200 rounded-lg p-3">
+						<div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+							<div>
+								<div class="font-bold">{ noteTargetKindLabel(item.TargetKind) } - { noteTargetLabel(item) }</div>
+								<div class="text-sm text-gray-600">{ item.Type } - { item.Creator }</div>
+							</div>
+						</div>
+						<div class="mt-2 whitespace-pre-wrap text-base">{ item.Note }</div>
+					</div>
+				}
+			</div>
+		}
+	</div>
+}

@@ -14,6 +14,26 @@ Features
 - "FineMaster" page for high-level fine/match/season management
 
 Written in go, using templ, a-h/templ and TomSelect (via [hx-tomselect](https://github.com/kiwikid/hx-tomselect))
+
+## Google admin auth
+
+Admin auth can run in two modes:
+
+- Without `GOOGLE_CLIENT_ID`, the existing `PASS`/team admin password flow is used.
+- With `GOOGLE_CLIENT_ID`, Google sign-in is required for admin access and password admin login is disabled.
+
+Setup:
+
+1. Create a Google OAuth Web client ID in Google Cloud Console.
+2. Add the app origin to the OAuth client, for example `http://localhost:8080` for local dev and the deployed `https://...` origin for production.
+3. Set `GOOGLE_CLIENT_ID` to the Web client ID.
+4. Set `GOOGLE_CLIENT_SECRET` to a separate Google/admin session secret. Do not reuse `PASS`.
+5. Start the app and sign in through the admin entry form.
+
+The first Google admin user created becomes `super-admin`. After that, new admin sign-up is controlled per team by the `Allow admin registration` team flag. Users who sign up through a team get `team-admin` for that team, and users who create a team get `team-admin` for the new team.
+
+To promote an existing Google admin account on startup, set `ADD_SUPER_ADMIN_TO_EMAIL_ON_STARTUP` to that user's email address. This is useful for recovery or first production rollout after users already exist.
+
 ## Development
 ```
 (using vscode by default)

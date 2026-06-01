@@ -5,10 +5,11 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/a-h/templ"
-	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/v5"
 	"gorm.io/gorm"
 )
 
@@ -27,6 +28,7 @@ type MatchForm struct {
 	PlayerOfTheDay        uint64   `schema:"playerOfTheDay"`
 	MatchLng              float64  `schema:"matchLng"`
 	MatchLat              float64  `schema:"matchLat"`
+	LineupID              string   `schema:"lineupId"`
 	DudOfTheDay           uint64   `schema:"dudOfTheDay"`
 	EventTypeInjury       []uint64 `schema:"eventTypeInjury"`
 	EventTypeGoal         []uint64 `schema:"eventTypeGoal"`
@@ -34,7 +36,53 @@ type MatchForm struct {
 	EventTypeConcededGoal []string `schema:"eventTypeConceded-Goal"`
 }
 
-const seasonId = 2024
+func historicMatchTotalPages(total int, limit int) int {
+	if limit < 1 {
+		limit = 20
+	}
+	totalPages := (total + limit - 1) / limit
+	if totalPages < 1 {
+		return 1
+	}
+	return totalPages
+}
+
+func renderMatchesManage(db *gorm.DB, w http.ResponseWriter, r *http.Request, baseUrl string, msg string) {
+	ctx := GetContext(r, db)
+	seasonId := activeSeasonID(db)
+	teamId := getTeamId(ctx)
+
+	matches, err := GetManageMatches(db, teamId, seasonId, 0, 9999)
+	if err != nil {
+		errMsg("Could not get matches").Render(ctx, w)
+		return
+	}
+
+	pwfs, err := GetPlayersWithFines(db, seasonId, teamId, []uint64{})
+	if err != nil {
+		http.Error(w, "Could not get matches", http.StatusNotFound)
+		return
+	}
+
+	var team *Team
+	if teamId > 0 {
+		team, err = GetTeam(db, teamId)
+		if err != nil {
+			warning(fmt.Sprintf("Could not load active team: %v", err)).Render(ctx, w)
+			return
+		}
+	}
+
+	matchesManage(baseUrl, true, matches, pwfs, team, msg).Render(ctx, w)
+}
+
+func activeSeasonID(db *gorm.DB) uint {
+	activeSeason, err := GetActiveSeason(db)
+	if err != nil || activeSeason == nil {
+		return 0
+	}
+	return activeSeason.ID
+}
 
 func matchListHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 
@@ -44,18 +92,19 @@ func matchListHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) 
 		switch r.Method {
 		case "GET":
 			isOpen = r.URL.Query().Get("isOpen") == "true"
+			logAutoSportySync(db, getTeamId(GetContext(r, db)))
 
-			var season uint64
+			var season uint
 			seasonStr := r.URL.Query().Get("season")
 			if len(seasonStr) == 0 {
-				season = 0
+				season = activeSeasonID(db)
 			} else {
 				seasonUint, err := strconv.ParseInt(seasonStr, 10, 64)
 				if err != nil {
 					http.Error(w, fmt.Sprintf("Error parsing page %v", err), http.StatusBadRequest)
 					return
 				}
-				season = uint64(seasonUint)
+				season = uint(seasonUint)
 			}
 
 			var page = 0
@@ -84,7 +133,7 @@ func matchListHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) 
 			}
 
 			log.Printf("GetMatches(season%+v, page%+v, limit: %+v)", season, page, limit)
-			match, err := GetMatches(db, uint(season), page, limit)
+			match, err := GetMatches(db, season, page, limit)
 			if err != nil {
 				http.Error(w, fmt.Sprintf("Error retrieving match: %v", err), http.StatusInternalServerError)
 				return
@@ -107,6 +156,55 @@ func matchListHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) 
 		default:
 			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 		}
+	}
+}
+
+func matchHistoryHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		ctx := GetContext(r, db)
+		teamID := getTeamId(ctx)
+		if teamID == 0 {
+			warning("No active team").Render(ctx, w)
+			return
+		}
+
+		page := 1
+		if pageStr := r.URL.Query().Get("page"); pageStr != "" {
+			parsedPage, err := strconv.Atoi(pageStr)
+			if err != nil {
+				http.Error(w, fmt.Sprintf("Error parsing page %v", err), http.StatusBadRequest)
+				return
+			}
+			page = parsedPage
+		}
+		if page < 1 {
+			page = 1
+		}
+
+		limit := 20
+		if limitStr := r.URL.Query().Get("limit"); limitStr != "" {
+			parsedLimit, err := strconv.Atoi(limitStr)
+			if err != nil || parsedLimit < 1 {
+				http.Error(w, fmt.Sprintf("Error parsing limit %v", err), http.StatusBadRequest)
+				return
+			}
+			limit = parsedLimit
+		}
+
+		matches, total, err := GetHistoricMatches(db, teamID, page, limit, time.Now())
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Error retrieving historic matches: %v", err), http.StatusInternalServerError)
+			return
+		}
+		if page <= 1 {
+			historicMatchesPanelContent(matches, page, limit, int(total)).Render(ctx, w)
+			return
+		}
+		historicMatchesPage(matches, page, limit, int(total)).Render(ctx, w)
 	}
 }
 
@@ -326,7 +424,7 @@ func seasonHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 				successComp := success("Season updated")
 				successComp.Render(GetContext(r, db), w)
 			} else {
-				successComp := success("Season created")
+				successComp := successWithReload("Season created")
 				successComp.Render(GetContext(r, db), w)
 			}
 
@@ -335,6 +433,48 @@ func seasonHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 			return
 		}
+	}
+}
+
+func matchSportySyncHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		ctx := GetContext(r, db)
+		teamId := getTeamId(ctx)
+		requestedTeamID, err := parseOptionalUint(r.URL.Query().Get("teamId"))
+		if err != nil {
+			warning("Invalid team ID").Render(ctx, w)
+			return
+		}
+		if requestedTeamID > 0 {
+			teamId = requestedTeamID
+		}
+		if teamId == 0 {
+			warning("No active team - Sporty sync is unavailable").Render(ctx, w)
+			return
+		}
+
+		team, err := GetTeam(db, teamId)
+		if err != nil || team == nil {
+			warning(fmt.Sprintf("Team not found (teamId=%d)", teamId)).Render(ctx, w)
+			return
+		}
+		if !teamHasSportyConfig(*team) {
+			warning("Sporty IDs are missing for this team").Render(ctx, w)
+			return
+		}
+
+		result, err := syncSportyMatches(db, team, nil, false, includePastSportyMatches(r))
+		if err != nil {
+			renderMatchesManage(db, w, r, "/finemaster", fmt.Sprintf("Sporty sync failed: %v", err))
+			return
+		}
+
+		renderMatchesManage(db, w, r, "/finemaster", sportySyncSummary(result))
 	}
 }
 
@@ -350,20 +490,7 @@ func matchHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 			matchIdStr := chi.URLParam(r, "matchId")
 
 			if matchIdStr == "" {
-				matches, err := GetMatches(db, 1, 0, 9999)
-				if err != nil {
-					errComp := errMsg("Could not get matches")
-					errComp.Render(GetContext(r, db), w)
-				}
-
-				pwfs, err := GetPlayersWithFines(db, 0, []uint64{})
-				if err != nil {
-					http.Error(w, "Could not get matches", http.StatusNotFound)
-					return
-				}
-
-				matchComp := matchesManage(r.Header.Get("Referrer"), true, matches, pwfs)
-				matchComp.Render(GetContext(r, db), w)
+				renderMatchesManage(db, w, r, r.Header.Get("Referrer"), "")
 				return
 			}
 			var matchId64 uint64
@@ -384,12 +511,18 @@ func matchHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 			var url = templ.SafeURL(r.Header.Get("Referrer"))
 
 			var renderType = r.URL.Query().Get("type")
+			actor := getLineupActor(r, db)
+			notesData, notesErr := contextualNotesData(db, getTeamId(GetContext(r, db)), noteTargetMatch, match.Match.ID, "vs "+match.Match.Opponent, fmt.Sprintf("/match/%d", match.Match.ID))
+			if notesErr != nil {
+				successMsg = strings.TrimSpace(successMsg + " " + fmt.Sprintf("Could not load model notes: %v", notesErr))
+			}
+			notesData.ShowAdminNotes = actor.IsAdmin
 
 			log.Printf("MatchHanlder - %s", renderType)
 			switch renderType {
 			case "form":
 
-				matchComp := editMatch(url, *match, "")
+				matchComp := editMatch(url, *match, successMsg, notesData)
 				matchComp.Render(GetContext(r, db), w)
 				return
 			case "list":
@@ -397,7 +530,7 @@ func matchHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 				matchComp.Render(GetContext(r, db), w)
 				return
 			default:
-				matchComp := editMatchContainer(url, *match, "")
+				matchComp := editMatchContainer(url, *match, successMsg, notesData)
 				matchComp.Render(GetContext(r, db), w)
 				return
 
@@ -409,7 +542,9 @@ func matchHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, "Invalid form data", http.StatusBadRequest)
 				return
 			}
+			seasonId := activeSeasonID(db)
 			matchIdStr := r.FormValue("matchId")
+			matchAction := strings.TrimSpace(r.FormValue("matchAction"))
 			var matchId64 uint64 = 0
 			if len(matchIdStr) > 0 {
 				matchId64, err = strconv.ParseUint(matchIdStr, 10, 64)
@@ -417,6 +552,38 @@ func matchHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 					var msg = fmt.Sprintf("Error parsing match ID: (%s) %v", matchIdStr, err)
 					errComp := errMsg(msg)
 					errComp.Render(GetContext(r, db), w)
+				}
+				if matchAction == "quick-fix-season-team" {
+					teamID := getTeamId(GetContext(r, db))
+					if teamID == 0 || seasonId == 0 {
+						errComp := errMsg("Current season and active team are required to fix this match")
+						errComp.Render(GetContext(r, db), w)
+						return
+					}
+					if err := db.Model(&Match{}).Where("id = ?", uint(matchId64)).Updates(map[string]interface{}{
+						"season_id": seasonId,
+						"team_id":   teamID,
+					}).Error; err != nil {
+						errComp := errMsg(fmt.Sprintf("Could not fix match season/team: %v", err))
+						errComp.Render(GetContext(r, db), w)
+						return
+					}
+					successMsg = fmt.Sprintf("Match set to current season %d and team %d.", seasonId, teamID)
+					var url = templ.SafeURL(r.Header.Get("Referrer"))
+					genMeta, err := GetMatchMetaGeneral(db, uint(matchId64))
+					if err != nil || genMeta == nil {
+						errComp := errMsg(fmt.Sprintf("GetMatchMetaGeneral failed %v", err))
+						errComp.Render(GetContext(r, db), w)
+						return
+					}
+					actor := getLineupActor(r, db)
+					notesData, notesErr := contextualNotesData(db, teamID, noteTargetMatch, genMeta.Match.ID, "vs "+genMeta.Match.Opponent, fmt.Sprintf("/match/%d", genMeta.Match.ID))
+					if notesErr != nil {
+						successMsg = strings.TrimSpace(successMsg + " " + fmt.Sprintf("Could not load model notes: %v", notesErr))
+					}
+					notesData.ShowAdminNotes = actor.IsAdmin
+					editMatch(url, *genMeta, successMsg, notesData).Render(GetContext(r, db), w)
+					return
 				}
 
 				if err := r.ParseForm(); err != nil {
@@ -466,15 +633,48 @@ func matchHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 				log.Printf("\nUPDATE UPDATE UPDATE  %+v\n", form)
 
 				// Create a new match based on the form data
+				var existingMatch *Match
+				existingMatch, err = GetMatch(db, uint(matchId64))
+				if err != nil {
+					var msg = fmt.Sprintf("GetMatch failed %v", err)
+					log.Print(msg)
+					errComp := errMsg(msg)
+					errComp.Render(GetContext(r, db), w)
+					return
+				}
 				match := Match{
-					Location:       form.Location,
-					Opponent:       form.Opponent,
-					Subtitle:       form.Subtitle,
-					SeasonId:       seasonId,
-					PlayerOfTheDay: uint(form.PlayerOfTheDay),
-					DudOfTheDay:    uint(form.DudOfTheDay),
-					MatchLat:       form.MatchLat,
-					MatchLng:       form.MatchLng,
+					TeamID:          existingMatch.TeamID,
+					LineupID:        existingMatch.LineupID,
+					Location:        form.Location,
+					Opponent:        form.Opponent,
+					Subtitle:        form.Subtitle,
+					SeasonId:        uint64(seasonId),
+					PlayerOfTheDay:  uint(form.PlayerOfTheDay),
+					DudOfTheDay:     uint(form.DudOfTheDay),
+					MatchLat:        form.MatchLat,
+					MatchLng:        form.MatchLng,
+					SportyFixtureID: existingMatch.SportyFixtureID,
+				}
+				var selectedLineup *Lineup
+				if r.PostForm.Has("lineupId") && strings.TrimSpace(form.LineupID) != "" {
+					lineupID, err := strconv.ParseUint(form.LineupID, 10, 64)
+					if err != nil {
+						var msg = fmt.Sprintf("Error parsing line-up ID: %v", err)
+						log.Print(msg)
+						errComp := errMsg(msg)
+						errComp.Render(GetContext(r, db), w)
+						return
+					}
+					var lineup Lineup
+					if err := db.Where("id = ? AND team_id = ? AND status = ?", uint(lineupID), existingMatch.TeamID, lineupStatusLive).First(&lineup).Error; err != nil {
+						var msg = fmt.Sprintf("Selected line-up is not live for this team: %v", err)
+						log.Print(msg)
+						errComp := errMsg(msg)
+						errComp.Render(GetContext(r, db), w)
+						return
+					}
+					selectedLineup = &lineup
+					match.LineupID = lineup.ID
 				}
 
 				if len(form.StartTime) > 0 {
@@ -515,6 +715,30 @@ func matchHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 				matchId, err = SaveMatch(db, &match)
 				if err != nil {
 					var msg = fmt.Sprintf("SaveMatch 1 failed %v", err)
+					log.Print(msg)
+					errComp := errMsg(msg)
+					errComp.Render(GetContext(r, db), w)
+					return
+				}
+				if selectedLineup != nil {
+					if err := syncLineupMatch(db, *selectedLineup, matchId); err != nil {
+						var msg = fmt.Sprintf("Could not link line-up to match: %v", err)
+						log.Print(msg)
+						errComp := errMsg(msg)
+						errComp.Render(GetContext(r, db), w)
+						return
+					}
+				}
+				unavailablePlayerIDs, err := parseUnavailablePlayerIDs(r)
+				if err != nil {
+					var msg = fmt.Sprintf("Error parsing unavailable players: %v", err)
+					log.Print(msg)
+					errComp := errMsg(msg)
+					errComp.Render(GetContext(r, db), w)
+					return
+				}
+				if err := SaveUnavailablePlayersForMatch(db, existingMatch.TeamID, matchId, unavailablePlayerIDs); err != nil {
+					var msg = fmt.Sprintf("SaveUnavailablePlayersForMatch failed %v", err)
 					log.Print(msg)
 					errComp := errMsg(msg)
 					errComp.Render(GetContext(r, db), w)
@@ -607,11 +831,12 @@ func matchHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 				}
 				log.Printf("SaveMatch CREATE %+v", createForm)
 				matchId, err = SaveMatch(db, &Match{
+					TeamID:    getTeamId(GetContext(r, db)),
 					Location:  createForm.Location,
 					Opponent:  createForm.Opponent,
 					Subtitle:  createForm.Subtitle,
 					StartTime: &startTimeTime,
-					SeasonId:  seasonId,
+					SeasonId:  uint64(seasonId),
 				})
 				if err != nil {
 					var msg = fmt.Sprintf("SaveMatch 2 failed %v", err)
@@ -633,7 +858,13 @@ func matchHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 				errComp.Render(GetContext(r, db), w)
 			}
 
-			matchComp := editMatch(url, *genMeta, successMsg)
+			actor := getLineupActor(r, db)
+			notesData, notesErr := contextualNotesData(db, getTeamId(GetContext(r, db)), noteTargetMatch, genMeta.Match.ID, "vs "+genMeta.Match.Opponent, fmt.Sprintf("/match/%d", genMeta.Match.ID))
+			if notesErr != nil {
+				successMsg = strings.TrimSpace(successMsg + " " + fmt.Sprintf("Could not load model notes: %v", notesErr))
+			}
+			notesData.ShowAdminNotes = actor.IsAdmin
+			matchComp := editMatch(url, *genMeta, successMsg, notesData)
 			matchComp.Render(GetContext(r, db), w)
 			return
 

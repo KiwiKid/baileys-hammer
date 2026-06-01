@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/dustin/go-humanize"
 )
 
 var finemasterBaseUrl = "/finemaster"
@@ -23,7 +24,240 @@ templ finemasterNav(finemasterBaseUrl string) {
 	</nav>
 }
 
-templ finemaster(pass string, players []PlayerWithFines, fineWithPlayers []FineWithPlayer, pFines []PresetFine, matches []Match, qp FineMasterQueryParams, mst *MatchSeasonTeam, warnStr string) {
+templ adminFeatureBadge(enabled bool) {
+	if enabled {
+		<span class="inline-flex items-center rounded bg-green-100 px-2 py-1 text-xs font-bold uppercase tracking-wide text-green-800">On</span>
+	} else {
+		<span class="inline-flex items-center rounded bg-red-100 px-2 py-1 text-xs font-bold uppercase tracking-wide text-red-800" title="This feature is turned off for the active team">Off</span>
+	}
+}
+
+templ adminFeatureStatus(name string, enabled bool) {
+	<div class="flex items-center justify-between gap-3 rounded border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800">
+		<span class="font-semibold">{ name }</span>
+		@adminFeatureBadge(enabled)
+	</div>
+}
+
+templ adminFeatureUnavailable(name string) {
+	<div class="rounded border border-gray-200 bg-gray-50 px-4 py-3 text-center text-sm font-semibold text-gray-600">
+		{ name } is off for the active team.
+	</div>
+}
+
+templ adminFeatureSummary(team *Team) {
+	if team != nil {
+		<details class="my-4 rounded border border-gray-200 bg-gray-50 p-4">
+			<summary class="cursor-pointer text-lg font-bold text-gray-900">Active team features</summary>
+			<div class="mt-3 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+				<div class="flex items-center gap-2 text-sm font-semibold text-gray-600">
+					<span>{ team.TeamName }</span>
+					<a
+						href={ templ.SafeURL(fmt.Sprintf("/teams?viewMode=edit&teamId=%d", team.ID)) }
+						class="inline-flex h-9 w-9 items-center justify-center rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+						title="Edit active team"
+						aria-label="Edit active team"
+					>
+						<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+							<circle cx="12" cy="12" r="3"></circle>
+							<path d="M19.4 15a1.8 1.8 0 0 0 .4 2l.1.1a2.1 2.1 0 0 1-3 3l-.1-.1a1.8 1.8 0 0 0-2-.4 1.8 1.8 0 0 0-1 1.6V21a2.1 2.1 0 0 1-4.2 0v-.2a1.8 1.8 0 0 0-1-1.6 1.8 1.8 0 0 0-2 .4l-.1.1a2.1 2.1 0 0 1-3-3l.1-.1a1.8 1.8 0 0 0 .4-2 1.8 1.8 0 0 0-1.6-1H3a2.1 2.1 0 0 1 0-4.2h.2a1.8 1.8 0 0 0 1.6-1 1.8 1.8 0 0 0-.4-2l-.1-.1a2.1 2.1 0 0 1 3-3l.1.1a1.8 1.8 0 0 0 2 .4 1.8 1.8 0 0 0 1-1.6V3a2.1 2.1 0 0 1 4.2 0v.2a1.8 1.8 0 0 0 1 1.6 1.8 1.8 0 0 0 2-.4l.1-.1a2.1 2.1 0 0 1 3 3l-.1.1a1.8 1.8 0 0 0-.4 2 1.8 1.8 0 0 0 1.6 1h.2a2.1 2.1 0 0 1 0 4.2h-.2a1.8 1.8 0 0 0-1.6 1Z"></path>
+						</svg>
+					</a>
+				</div>
+			</div>
+			<div class="mt-3 grid grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-4">
+				@adminFeatureStatus("Fines", team.FinesModuleEnabled())
+				@adminFeatureStatus("Line-ups", team.LineupsModuleEnabled())
+				@adminFeatureStatus("Matches", team.EnableMatchesModule)
+				@adminFeatureStatus("Players", team.EnablePlayersModule)
+				@adminFeatureStatus("Court", team.EnableCourtModule)
+				@adminFeatureStatus("Court totals", team.ShowCourtTotals)
+				@adminFeatureStatus("Leaderboard", team.LeaderboardModuleEnabled())
+				@adminFeatureStatus("Public feedback", team.EnablePublicFeedbackForm)
+				@adminFeatureStatus("Home pitch match", team.ShowPitchMatchOnHomePage)
+				@adminFeatureStatus("Home court sheet", team.ShowCourtSheetOnHomePage)
+			</div>
+		</details>
+	}
+}
+
+templ backupStatusBadge(label string, ok bool) {
+	if ok {
+		<span class="inline-flex items-center rounded bg-green-100 px-2 py-1 text-xs font-bold uppercase tracking-wide text-green-800">{ label }</span>
+	} else {
+		<span class="inline-flex items-center rounded bg-red-100 px-2 py-1 text-xs font-bold uppercase tracking-wide text-red-800">{ label }</span>
+	}
+}
+
+templ litestreamBackupSummary(status LitestreamBackupStatus) {
+	<details class="my-4 rounded border border-gray-200 bg-gray-50 p-4">
+		<summary class="cursor-pointer text-lg font-bold text-gray-900">Backup status</summary>
+		<div class="mt-3 grid gap-2 md:grid-cols-2 lg:grid-cols-4">
+			<div class="rounded border border-gray-200 bg-white px-3 py-2 text-sm">
+				<div class="font-semibold text-gray-700">Configured</div>
+				<div class="mt-1">@backupStatusBadge("Env", status.Configured())</div>
+			</div>
+			<div class="rounded border border-gray-200 bg-white px-3 py-2 text-sm">
+				<div class="font-semibold text-gray-700">Litestream</div>
+				<div class="mt-1 flex flex-wrap gap-2">
+					@backupStatusBadge("Binary", status.LitestreamPresent)
+					@backupStatusBadge("Running", status.StartedWithApp)
+				</div>
+			</div>
+			<div class="rounded border border-gray-200 bg-white px-3 py-2 text-sm">
+				<div class="font-semibold text-gray-700">Snapshots</div>
+				<div class="mt-1">@backupStatusBadge("Reachable", status.SnapshotsReachable)</div>
+			</div>
+			<div class="rounded border border-gray-200 bg-white px-3 py-2 text-sm">
+				<div class="font-semibold text-gray-700">Last backup</div>
+				if status.LastSnapshotAt != nil {
+					<div class="mt-1 font-bold text-gray-900">{ humanize.Time(*status.LastSnapshotAt) }</div>
+					if status.LastSnapshotSize != "" {
+						<div class="text-xs text-gray-600">{ status.LastSnapshotSize } bytes</div>
+					}
+				} else {
+					<div class="mt-1 font-semibold text-gray-500">No snapshot found</div>
+				}
+			</div>
+		</div>
+		<div class="mt-3 rounded border border-gray-200 bg-white px-3 py-2 text-xs text-gray-600">
+			<div>Database: { status.DatabasePath }</div>
+			<div>Config: { status.ConfigPath }</div>
+			if status.Error != "" {
+				<div class="mt-2 font-semibold text-red-700">{ status.Error }</div>
+			}
+		</div>
+	</details>
+}
+
+templ adminUserRoleBadge(role AdminUserRoleView) {
+	<span class="inline-flex items-center rounded bg-blue-100 px-2 py-1 text-xs font-bold text-blue-800">
+		{ role.Role }
+		if role.TeamName != "" {
+			<span class="ml-1 font-semibold text-blue-700">({ role.TeamName })</span>
+		}
+	</span>
+}
+
+templ adminUserAccounts(accounts []AdminUserAccountView, teams []Team, requests []AdminAccessRequestView, canManageSuperAdmins bool, msg templ.Component) {
+	<details id="admin-users" class="my-4 rounded border border-gray-200 bg-gray-50 p-4" open>
+		<summary class="cursor-pointer text-lg font-bold text-gray-900">Admin users</summary>
+		if msg != nil {
+			<div class="mt-3">
+				@msg
+			</div>
+		}
+		if len(requests) > 0 {
+			<div class="mt-4 rounded border border-amber-200 bg-amber-50 p-3">
+				<div class="font-bold text-amber-900">Pending access requests</div>
+				<div class="mt-3 grid gap-2">
+					for _, request := range requests {
+						<div class="grid gap-2 rounded bg-white p-3 md:grid-cols-[minmax(0,1fr)_auto_auto] md:items-center">
+							<div>
+								<div class="font-semibold text-gray-900">{ request.User.Email }</div>
+								<div class="text-xs text-gray-600">{ fmt.Sprintf("%s for %s", request.Request.Role, request.Team.TeamName) }</div>
+							</div>
+							<form hx-post="/admin/access-requests" hx-target="#admin-users" hx-swap="outerHTML">
+								<input type="hidden" name="requestId" value={ fmt.Sprintf("%d", request.Request.ID) }/>
+								<button type="submit" name="action" value="approve" class="w-full rounded bg-green-500 px-3 py-2 text-sm font-semibold text-white hover:bg-green-600">Approve</button>
+							</form>
+							<form hx-post="/admin/access-requests" hx-target="#admin-users" hx-swap="outerHTML">
+								<input type="hidden" name="requestId" value={ fmt.Sprintf("%d", request.Request.ID) }/>
+								<button type="submit" name="action" value="deny" class="w-full rounded bg-gray-500 px-3 py-2 text-sm font-semibold text-white hover:bg-gray-600">Deny</button>
+							</form>
+						</div>
+					}
+				</div>
+			</div>
+		}
+		<div class="mt-4 overflow-x-auto rounded border border-gray-200 bg-white">
+			<table class="min-w-full divide-y divide-gray-200 text-left text-sm">
+				<thead class="bg-gray-100 text-xs uppercase text-gray-600">
+					<tr>
+						<th class="px-3 py-2">User</th>
+						<th class="px-3 py-2">Roles</th>
+						<th class="px-3 py-2">Last login</th>
+					</tr>
+				</thead>
+				<tbody class="divide-y divide-gray-100">
+					for _, account := range accounts {
+						<tr>
+							<td class="px-3 py-3 align-top">
+								<div class="font-semibold text-gray-900">{ account.User.Email }</div>
+								if account.User.DisplayName != "" {
+									<div class="text-xs text-gray-600">{ account.User.DisplayName }</div>
+								}
+							</td>
+							<td class="px-3 py-3 align-top">
+								if len(account.Roles) == 0 {
+									<span class="text-gray-500">No roles</span>
+								} else {
+									<div class="flex flex-wrap gap-2">
+										for _, role := range account.Roles {
+											<form hx-post="/admin/users/roles" hx-target="#admin-users" hx-swap="outerHTML" class="inline-flex items-center gap-1">
+												@adminUserRoleBadge(role)
+												<input type="hidden" name="adminUserId" value={ fmt.Sprintf("%d", account.User.ID) }/>
+												<input type="hidden" name="role" value={ role.Role }/>
+												<input type="hidden" name="teamId" value={ fmt.Sprintf("%d", role.TeamID) }/>
+												<button type="submit" name="action" value="revoke" class="rounded bg-red-100 px-2 py-1 text-xs font-bold text-red-700 hover:bg-red-200">Demote</button>
+											</form>
+										}
+									</div>
+								}
+							</td>
+							<td class="px-3 py-3 align-top text-gray-600">
+								if account.User.LastLoginAt != nil {
+									{ humanize.Time(*account.User.LastLoginAt) }
+								} else {
+									Never
+								}
+							</td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		</div>
+		<form hx-post="/admin/users/roles" hx-target="#admin-users" hx-swap="outerHTML" class="mt-4 grid gap-3 rounded border border-gray-200 bg-white p-4 md:grid-cols-4">
+			<input type="hidden" name="action" value="grant"/>
+			<label class="block text-sm font-semibold text-gray-700">User
+				<select name="adminUserId" required class="mt-1 w-full rounded border border-gray-300 p-2">
+					for _, account := range accounts {
+						<option value={ fmt.Sprintf("%d", account.User.ID) }>{ account.User.Email }</option>
+					}
+				</select>
+			</label>
+			<label class="block text-sm font-semibold text-gray-700">Role
+				<select name="role" required class="mt-1 w-full rounded border border-gray-300 p-2">
+					<option value={ adminRoleTeamAdmin }>team-admin</option>
+					if canManageSuperAdmins {
+						<option value={ adminRoleSuperAdmin }>super-admin</option>
+					}
+				</select>
+			</label>
+			<label class="block text-sm font-semibold text-gray-700">Team
+				<select name="teamId" class="mt-1 w-full rounded border border-gray-300 p-2">
+					if canManageSuperAdmins {
+						<option value="">All teams for super-admin</option>
+					}
+					for _, team := range teams {
+						<option value={ fmt.Sprintf("%d", team.ID) }>{ team.TeamName }</option>
+					}
+				</select>
+			</label>
+			<div class="flex items-end">
+				<button type="submit" class="w-full rounded bg-blue-500 px-4 py-2 font-semibold text-white hover:bg-blue-600">Assign role</button>
+			</div>
+		</form>
+	</details>
+}
+
+templ finemaster(pass string, players []PlayerWithFines, fineWithPlayers []FineWithPlayer, pFines []PresetFine, matches []Match, qp FineMasterQueryParams, mst *MatchSeasonTeam, warnStr string, showAdminUsers bool, adminAccounts []AdminUserAccountView, adminTeams []Team, adminRequests []AdminAccessRequestView, adminIsSuperAdmin bool, backupStatus LitestreamBackupStatus) {
+	{{ activeTeam := mst.Team }}
+	{{ finesEnabled := activeTeam != nil && activeTeam.FinesModuleEnabled() }}
+	{{ courtEnabled := activeTeam != nil && activeTeam.EnableCourtModule }}
+	{{ courtTotalsEnabled := activeTeam != nil && activeTeam.ShowCourtTotals }}
+	{{ playersEnabled := activeTeam != nil && activeTeam.EnablePlayersModule }}
+	{{ matchesEnabled := activeTeam != nil && activeTeam.EnableMatchesModule }}
 	<!DOCTYPE html>
 	<html hx-boost="true">
 		@header()
@@ -31,74 +265,87 @@ templ finemaster(pass string, players []PlayerWithFines, fineWithPlayers []FineW
 			<div class="lg:max-w-screen-2xl w-full">
 			<div class="bg-gray-900 text-center p-5">
 				<h1 class="text-xl md:text-3xl lg:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-teal-400">
-					<a class="text-white" href="/">&lt;&lt; Home </a> Fine Master Zone 
+					<a class="text-white" href="/">&lt;&lt; Home </a> Fine Admin Zone 
 				</h1>
 			</div>
 			<div hx-get="/teams/active-match?viewMode=button" hx-trigger="revealed">loading...</div>
 			if len(warnStr) > 0 {
 				@warning(warnStr)
 			}
+			if showAdminUsers {
+				@adminUserAccounts(adminAccounts, adminTeams, adminRequests, adminIsSuperAdmin, nil)
+			}
 
 			<div class="grid grid-cols-1 gap-2">
-				@fineAddV2(secureFineMasterbaseUrl(finemasterBaseUrl, pass), true, players, pFines, true)
+				if finesEnabled {
+					@fineAddV2(secureFineMasterbaseUrl(finemasterBaseUrl, pass), true, players, pFines, true)
+				}
 			</div>
-			<div class="mx-auto p-4 hidden" id="quick-finer">
-				<div class="flex items-center justify-center bg-gray-100 mx-auto">
-					<ul>
-						for _, p := range players {
-							<li class="mb-2">
-								<div _="on click toggle .hidden on next &lt;section/&gt;" class={ bigPri }>
-									{ p.Name }
-									- 
-									{ fmt.Sprintf("$%d (%d)", p.TotalFines, p.TotalFineCount) }
-									if UseRoles(ctx) {
-										if len(p.Role) > 0 {
-											- 
-											{ p.Role }
+			if finesEnabled {
+				<div class="mx-auto p-4 hidden" id="quick-finer">
+					<div class="flex items-center justify-center bg-gray-100 mx-auto">
+						<ul>
+							for _, p := range players {
+								<li class="mb-2">
+									<div _="on click toggle .hidden on next &lt;section/&gt;" class={ bigPri }>
+										{ p.Name }
+										-
+										{ fmt.Sprintf("$%d (%d)", p.TotalFines, p.TotalFineCount) }
+										if UseRoles(ctx) {
+											if len(p.Role) > 0 {
+												-
+												{ p.Role }
+											}
 										}
-									}
-								</div>
-								<section class="fines-info hidden">
-									<div class="p-2">
+									</div>
+									<section class="fines-info hidden">
 										<div class="p-2">
+											<div class="p-2">
 											for _, f := range p.Fines {
 												<div class="mt-1">
 													<p>{ f.Reason } - { fmt.Sprintf("$%.0f", f.Amount) }</p>
 												</div>
 											}
+											</div>
 										</div>
-									</div>
-								</section>
-								<section class="hidden quick-fine">
-									for _, pf := range pFines {
-										if pf.Approved && !pf.NotQuickFine {
-											<form class=" inline-flex mx-2 space-y-2">
-												<div hidden class={ fmt.Sprintf("fine-group-%d-%d", pf.ID, p.ID) }>
-													<input type="hidden" name="playerId" value={ fmt.Sprintf("%v", p.ID) }/>
-													<input type="hidden" name="presetFineId" value={ fmt.Sprintf("%v", pf.ID) }/>
-													<input type="hidden" name="approved" value="on"/>
-													<input type="hidden" name="dontRedirect" value="true"/>
-												</div>
-												<button hx-post="/fines" hx-swap="this" hx-include={ fmt.Sprintf(".fine-group-%d-%d", pf.ID, p.ID) } class={ bigAdd }>
-													{ fmt.Sprintf("%s ($%v)", pf.Reason, pf.Amount) }
-												</button>
-											</form>
+									</section>
+									<section class="hidden quick-fine">
+										for _, pf := range pFines {
+											if pf.Approved && !pf.NotQuickFine {
+												<form class=" inline-flex mx-2 space-y-2">
+													<div hidden class={ fmt.Sprintf("fine-group-%d-%d", pf.ID, p.ID) }>
+														<input type="hidden" name="playerId" value={ fmt.Sprintf("%v", p.ID) }/>
+														<input type="hidden" name="presetFineId" value={ fmt.Sprintf("%v", pf.ID) }/>
+														<input type="hidden" name="approved" value="on"/>
+														<input type="hidden" name="dontRedirect" value="true"/>
+													</div>
+													<button hx-post="/fines" hx-swap="this" hx-include={ fmt.Sprintf(".fine-group-%d-%d", pf.ID, p.ID) } class={ bigAdd }>
+														{ fmt.Sprintf("%s ($%v)", pf.Reason, pf.Amount) }
+													</button>
+												</form>
+											}
 										}
-									}
-								</section>
-							</li>
-						}
-					</ul>
+									</section>
+								</li>
+							}
+						</ul>
+					</div>
+					<div _="on click toggle .hidden on .quick-fine" class={ bigPri }>
+						Toggle Quick Fines
+					</div>
 				</div>
-				<div _="on click toggle .hidden on .quick-fine" class={ bigPri }>
-					Toggle Quick Fines
-				</div>
-			</div>
+			}
 
 			
-			@finesListButton("Open Court Sheet", "sheet", false, false)
-			@fineSummaryButton("Open Total View", "summary", false)
-			@fineListButton(true)
+			if courtEnabled && finesEnabled {
+				@finesListButton("Open Court Sheet", "sheet", false, false)
+			}
+			if courtTotalsEnabled && finesEnabled {
+				@fineSummaryButton("Open Total View", "summary", false)
+			}
+			if finesEnabled {
+				@fineListButton(true)
+			}
 
 			<div class="p-4 bg-gray-100 shadow-md flex justify-center">
 				<h1 class="text-2xl font-bold text-gray-800">Manage Main Configuration Data</h1>
@@ -107,21 +354,33 @@ templ finemaster(pass string, players []PlayerWithFines, fineWithPlayers []FineW
 
 
 
-			if mst.Season != nil {
-				@playerPaymentsButton("Open Player Payments", "table", mst.Season)  
-			}else {
-				@warning("no payments as no season is set")
+			if playersEnabled {
+				if mst.Season != nil {
+					@playerPaymentsButton("Manage Payments", "table", mst.Season)
+				} else {
+					@warning("no payments as no season is set")
+				}
 			}
 
 			@manageSeasonsButton(false)
 
 			@teamListButton(true)
-			if mst.Season != nil {
-				@playersManage(secureFineMasterbaseUrl(finemasterBaseUrl, pass), players, config, qp.PlayerOpen, mst.Season)
+			if playersEnabled {
+				if mst.Season != nil {
+					@playersManage("/finemaster", players, config, qp.PlayerOpen, mst.Season)
+				}
+			} else {
+				@adminFeatureUnavailable("Player management")
 			}
-			@matchesManage(secureFineMasterbaseUrl(finemasterBaseUrl, pass), qp.MatchesOpen, matches, players)
+			if matchesEnabled {
+				@matchesManage("/finemaster", qp.MatchesOpen, matches, players, activeTeam, "")
+			} else {
+				@adminFeatureUnavailable("Match management")
+			}
 
-			@presetFines(fmt.Sprintf("%s/%s", finemasterBaseUrl, pass), pass, qp.PresetFinesOpen, pFines)
+			if finesEnabled {
+				@presetFines("/finemaster", pass, qp.PresetFinesOpen, pFines)
+			}
 
 			<details>
 				<summary>season bulk update zone</summary>
@@ -135,10 +394,16 @@ templ finemaster(pass string, players []PlayerWithFines, fineWithPlayers []FineW
 				</div>
 				<div class={ bigSec } hx-get="/season/update/set-season" hx-trigger="click" hx-swap="outerHTML">Load Set Season on Players/Fines
 				</div>
-				<form hx-post="/fines/summary" hx-swap="outerHTML" hx-confirm="Are you sure you want to update all fine amounts to 2?">
-					<button class={ bigSec } type="submit" >Update Fine Amounts to 2</button>
-				</form>
+				if finesEnabled {
+					<form hx-post="/fines/summary" hx-swap="outerHTML" hx-confirm="Are you sure you want to update all fine amounts to 2?">
+						<button class={ bigSec } type="submit" >Update Fine Amounts to 2</button>
+					</form>
+				}
 			</details>
+			@adminFeatureSummary(activeTeam)
+			if showAdminUsers {
+				@litestreamBackupSummary(backupStatus)
+			}
 			<div class="mt-96"></div>
 			</div>
 		</body>
@@ -224,7 +489,7 @@ templ editPresetFine(baseUrl string, passCode string, pFine PresetFine, msg stri
 			</div>
 		</form>
 		<div class="flex justify-center w-full">
-			<a href={ makeSafeUrl(baseUrl, false, false, false, false, false) } class={ bigSec }>Close</a>
+			<a href={ makeSafeUrl(baseUrl, false, false, false, false, false) } class={ bigPri }>Close</a>
 		</div>
 	</div>
 }
@@ -255,7 +520,7 @@ templ newPresetFine(baseUrl string, passCode string) {
 			</div>
 		</form>
 		<div class="flex justify-center w-full">
-			<a href={ makeSafeUrl(baseUrl, false, false, false, false, false) } class={ bigSec } >Close</a>
+			<a href={ makeSafeUrl(baseUrl, false, false, false, false, false) } class={ bigPri } >Close</a>
 		</div>
 		<details>bigSecbigSec: { bigSec }</details>
 				<details>baseUrlbaseUrl: { baseUrl }</details>
@@ -323,7 +588,103 @@ templ matchesList(isOpen bool, matches []Match, pwfs []PlayerWithFines, isFineMa
 }
 
 
-templ matchesManage(baseUrl string, isOpen bool, matches []Match, pwfs []PlayerWithFines) {
+templ sportyMatchSyncPanel(team *Team, msg string) {
+	if team != nil && teamHasSportyConfig(*team) {
+		<div class="mb-4 rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-900">
+			if msg != "" {
+				@success(msg)
+			}
+			<div class="font-bold">Sporty match sync is available for { team.TeamName }</div>
+			if team.SportyLastSyncedAt != nil {
+				<div class="mt-1 text-green-800">Last synced { humanize.Time(*team.SportyLastSyncedAt) }</div>
+			}
+			<div class="mt-3 flex flex-wrap items-center gap-3">
+				<label class="flex items-center gap-2">
+					<input type="checkbox" name="includePastSportyMatches" class="form-checkbox h-5 w-5 text-green-600"/>
+					<span>Include past games</span>
+				</label>
+				<button
+					type="button"
+					hx-post={ fmt.Sprintf("/matches/sporty-sync?teamId=%d", team.ID) }
+					hx-include="closest div"
+					hx-target="#manage-matches"
+					hx-swap="outerHTML"
+					class="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+				>
+					Sync Sporty matches
+				</button>
+			</div>
+		</div>
+	}
+}
+
+templ historicMatchRow(m Match) {
+	<button
+		type="button"
+		hx-trigger="click"
+		hx-get={ fmt.Sprintf("/match/%d?type=form", m.ID) }
+		hx-target={ fmt.Sprintf("#historic-match-%d", m.ID) }
+		hx-swap="outerHTML"
+		id={ fmt.Sprintf("historic-match-%d", m.ID) }
+		class="rounded border border-gray-200 bg-white p-3 text-left hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+	>
+		<div class="font-semibold text-gray-900">vs { m.Opponent }</div>
+		<div class="text-sm text-gray-600">{ m.Location }</div>
+		if m.StartTime != nil {
+			<div class="text-sm text-gray-600">{ m.StartTime.Format("Jan 02, 2006 - 3:04 PM") }</div>
+		}
+		if m.TotalPlayerCount > 0 {
+			<div class="text-sm text-gray-600">{ fmt.Sprintf("%d/%d available", m.AvailablePlayerCount, m.TotalPlayerCount) }</div>
+		}
+	</button>
+}
+
+templ historicMatchesLoadMore(page int, limit int, total int) {
+	{{ totalPages := historicMatchTotalPages(total, limit) }}
+	<div id="historic-match-load-more" class="mt-4">
+		if page < totalPages {
+			<button
+				type="button"
+				hx-get={ fmt.Sprintf("/matches/history?page=%d&limit=%d", page + 1, limit) }
+				hx-target="#historic-match-load-more"
+				hx-swap="outerHTML"
+				class="w-full rounded border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+			>
+				Load more
+			</button>
+		}
+	</div>
+}
+
+templ historicMatchesPage(matches []Match, page int, limit int, total int) {
+	if len(matches) > 0 {
+		for _, m := range matches {
+			@historicMatchRow(m)
+		}
+	}
+	@historicMatchesLoadMore(page, limit, total)
+}
+
+templ historicMatchesPanelContent(matches []Match, page int, limit int, total int) {
+	{{ totalPages := historicMatchTotalPages(total, limit) }}
+	<div class="rounded-lg border border-gray-200 bg-gray-50 p-4">
+		<div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+			<div>
+				<h4 class="text-lg font-bold text-gray-900">Historic matches</h4>
+				<div class="text-sm text-gray-600">{ fmt.Sprintf("Page %d of %d, %d matches", page, totalPages, total) }</div>
+			</div>
+		</div>
+		if len(matches) > 0 {
+			<div id="historic-match-list" class="mt-4 grid grid-cols-1 gap-3">
+				@historicMatchesPage(matches, page, limit, total)
+			</div>
+		} else {
+			<div class="mt-4 rounded border border-gray-200 bg-white p-4 text-center text-sm font-semibold text-gray-600">No historic matches yet.</div>
+		}
+	</div>
+}
+
+templ matchesManage(baseUrl string, isOpen bool, matches []Match, pwfs []PlayerWithFines, team *Team, sportySyncMsg string) {
 	<div class="mx-auto bg-gray-200 shadow-xl m-10">
 		if isOpen {
 			<div class="w-full px-8 py-6 text-left bg-white shadow-xl" id="manage-matches">
@@ -331,13 +692,38 @@ templ matchesManage(baseUrl string, isOpen bool, matches []Match, pwfs []PlayerW
 				<div class="w-full flex justify-center items-center py-2">
 					<p>Edit existing matches, or add new ones</p>
 				</div>
-				@createMatch(makeSafeUrl(baseUrl, false, false, false, false, false), pwfs)
+				@sportyMatchSyncPanel(team, sportySyncMsg)
+				if team != nil && teamHasSportyConfig(*team) {
+					<details class="mb-4 rounded-lg border border-gray-200 bg-gray-50 p-4">
+						<summary class="cursor-pointer font-semibold text-gray-800">Add match manually as a backup</summary>
+						@createMatch(makeSafeUrl(baseUrl, false, false, false, false, false), pwfs)
+					</details>
+				} else {
+					@createMatch(makeSafeUrl(baseUrl, false, false, false, false, false), pwfs)
+				}
+				<div class="mt-4">
+					<button
+						type="button"
+						hx-get="/matches/history?page=1&limit=20"
+						hx-target="#historic-matches"
+						hx-swap="innerHTML"
+						hx-trigger="click once"
+						onclick="var panel=document.getElementById('historic-matches'); panel.classList.toggle('hidden'); this.textContent = panel.classList.contains('hidden') ? 'View historic matches' : 'Hide historic matches';"
+						class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+					>
+						View historic matches
+					</button>
+					<div id="historic-matches" class="mt-4 hidden"></div>
+				</div>
 				<div class="mx-auto bg-gray-200 shadow-xl m-10 flex flex-col justify-center items-center">
 					for _, m := range matches {
 						<button hx-trigger="click" hx-get={ fmt.Sprintf("/match/%d?type=form", m.ID) } hx-swap="outerHTML" class={ bigPri }>
 						Edit vs { m.Opponent } at { m.Location } 
 						if m.StartTime != nil {
 							{ m.StartTime.Format("Jan 02 - 3:04 PM") }
+						}
+						if m.TotalPlayerCount > 0 {
+							<span class="block text-sm font-semibold text-blue-100">{ fmt.Sprintf("%d/%d available", m.AvailablePlayerCount, m.TotalPlayerCount) }</span>
 						}
 						</button>
 					}
@@ -364,7 +750,7 @@ templ manageSeasonsButton(open bool){
 		if open {
 			Close
 		 } else {
-			Open
+			Manage
 		 } 
 		 Seasons
 	</div>
@@ -406,7 +792,7 @@ templ playersManage(baseUrl string, players []PlayerWithFines, config *Config, i
 	if isOpen {
 		<div>
 			<div class="flex justify-center w-full p-3">
-				<a href={ makeSafeUrl(baseUrl, false, false, false, false, false) } hx-transition="true" class={ bigSec }>Close Manage Players</a>
+				<a href={ makeSafeUrl(baseUrl, false, false, false, false, false) } hx-transition="true" class={ bigPri }>Close Manage Players</a>
 			</div>
 			<div class="flex items-center justify-center bg-gray-100  p-3" id="players-manage">
 				
@@ -420,9 +806,12 @@ templ playersManage(baseUrl string, players []PlayerWithFines, config *Config, i
 						for _, p := range players {
 							<details>
 								<summary>
-									<h4 class="text-2xl font-bold"> {p.Name}</h4>
+									<h4 class="text-2xl font-bold inline"> {p.Name}</h4>
+									if !p.Active {
+										<span class="ml-2 rounded bg-red-100 px-2 py-1 text-sm font-semibold text-red-700">Inactive</span>
+									}
 								</summary>
-								@playerRoleSelector(p, config, "")
+								@playerRoleSelector(p, config, successWithReload("Player updated"))
 							</details>
 							
 						}
@@ -436,12 +825,12 @@ templ playersManage(baseUrl string, players []PlayerWithFines, config *Config, i
 			</div>
 
 			<div class="flex justify-center w-full p-3">
-				<a href={ makeSafeUrl(baseUrl, false, false, false, false, false) } hx-transition="true" class={ bigSec }>Close Manage Players</a>
+				<a href={ makeSafeUrl("/finemaster", false, false, false, false, false) } hx-transition="true" class={ bigPri }>Close Manage Players</a>
 			</div>
 		</div>
 	} else {
 		<div class="flex justify-center w-full p-3">
-			<a href={ makeSafeUrlWithAnchorV2(baseUrl, "players-manage", true) } hx-transition="true" class={ bigPri }>Manage Players</a>
+			<a href={ makeSafeUrlWithAnchorV2("/finemaster", "players-manage", true) } hx-transition="true" class={ bigPri }>Manage Players</a>
 		</div>
 	}
 }
@@ -449,6 +838,7 @@ templ playersManage(baseUrl string, players []PlayerWithFines, config *Config, i
 
 templ addPlayer(){
 	<form hx-post="/players" method="POST" class="mt-4">
+		<input type="hidden" name="Active" value="true"/>
 		<div>
 			<label for="name" class="block">Name</label>
 			<input required type="text" name="name" id="name" placeholder="Name" class="w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600"/>

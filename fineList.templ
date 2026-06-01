@@ -447,7 +447,7 @@ templ fineListSheet(team *Team, fines []FineWithPlayer, standAlone bool, full bo
 							</div>
 							<div class="mb-4">
 								<label for="courtSessionOrder" class="block text-gray-700 font-medium mb-2">Court Session Order</label>
-								<input type="number" id="courtSessionOrder" name="courtSessionOrder" value={ fmt.Sprint("#%d", f.Fine.CourtSessionOrder) } required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+								<input type="number" id="courtSessionOrder" name="courtSessionOrder" value={ fmt.Sprintf("%d", f.Fine.CourtSessionOrder) } required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"/>
 							</div>
 							<div class="mb-4">
 								<label for="courtSessionNote" class="block text-gray-700 font-medium mb-2">Court Session Note</label>
@@ -577,7 +577,7 @@ templ fineContestRow(f FineWithPlayer) {
 				</button>
 				<div class="w-full text-center mt-4">
 					<div hx-get="/#fine-list-container" hx-target="body"
-						class={ bigSec }
+						class={ bigPri }
 					>
 						Cancel
 					</div>
@@ -693,7 +693,7 @@ templ fineEditForm(f FineWithPlayer, isFineMaster bool, hideFineImages bool) {
  				hx-target={ fmt.Sprintf("#fr-%d", f.Fine.ID) }
  				hx-swap="outerHTML"
  				type="button"
- 				class={ fmt.Sprintf("%s w-3/5", sec) }
+				class={ fmt.Sprintf("%s w-full", pri) }
 			>
 				Cancel
 			</button>
@@ -754,4 +754,3 @@ templ fineEditDiv(f FineWithPlayer, isFineMaster bool, hideFineImageFeature bool
 		</td>
 	</div>
 }
-

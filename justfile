@@ -30,7 +30,7 @@ check-dev: check
 
 install-tools:
   @echo "Installs go tools into your GOPATH/bin (requires network):"
-  @echo "  go install github.com/a-h/templ/cmd/templ@v0.3.960"
+  @echo "  go install github.com/a-h/templ/cmd/templ@v0.3.1020"
   @echo "  go install github.com/air-verse/air@latest"
 
 dirs:
@@ -101,4 +101,3 @@ nix-deploy:
 
 nix-docker:
   nix develop .#devShells.dockerBuild
-

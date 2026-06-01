@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 
 	"github.com/gorilla/sessions"
 	"gorm.io/gorm"
@@ -68,6 +69,7 @@ const (
 	UseDudOfTheDayNameKey       contextKey = "UseDudOfTheDayName"
 	InjuryCounterTrackerNameKey contextKey = "InjuryCounterTrackerName"
 	ShowOpponentScoreKey        contextKey = "ShowOpponentScoreKey"
+	teamKey                     contextKey = "Team"
 )
 
 func GetTitle(ctx context.Context) string {
@@ -133,13 +135,46 @@ func UseShowOpponentScore(ctx context.Context) bool {
 	return false
 }
 
+func FooterTeam(ctx context.Context) Team {
+	if team, ok := ctx.Value(teamKey).(Team); ok {
+		return team
+	}
+	return Team{
+		EnableFinesModule:        true,
+		ShowPitchMatchOnHomePage: true,
+		ShowCourtSheetOnHomePage: true,
+		EnablePublicFeedbackForm: true,
+		EnableLeaderboardModule:  true,
+		AllowAdminRegistration:   true,
+		LineupPlayerCount:        defaultLineupPlayerCount,
+	}
+}
+
 func saveTeamToSession(r *http.Request, team Team, session *sessions.Session) {
+	setTeamSessionValues(team, session)
+	session.Save(r, nil)
+}
+
+func setTeamSessionValues(team Team, session *sessions.Session) {
+	team.LineupPlayerCount = teamLineupPlayerCount(team)
 	session.Values["TeamID"] = team.ID
+	// Primary key used throughout the codebase (and expected by GetContext).
+	session.Values["team_id"] = team.ID
 	session.Values["team"] = team
 	session.Values["TeamName"] = team.TeamName
 	session.Values["ShowFineAddOnHomePage"] = team.ShowFineAddOnHomePage
+	session.Values["ShowPitchMatchOnHomePage"] = team.ShowPitchMatchOnHomePage
+	session.Values["ShowCourtSheetOnHomePage"] = team.ShowCourtSheetOnHomePage
+	session.Values["EnablePublicFeedbackForm"] = team.EnablePublicFeedbackForm
 	session.Values["ShowCourtTotals"] = team.ShowCourtTotals
-	session.Save(r, nil)
+	session.Values["EnableFinesModule"] = team.EnableFinesModule
+	session.Values["EnableLineupsModule"] = team.EnableLineupsModule
+	session.Values["EnableMatchesModule"] = team.EnableMatchesModule
+	session.Values["EnablePlayersModule"] = team.EnablePlayersModule
+	session.Values["EnableCourtModule"] = team.EnableCourtModule
+	session.Values["EnableLeaderboardModule"] = team.EnableLeaderboardModule
+	session.Values["AllowAdminRegistration"] = team.AllowAdminRegistration
+	session.Values["LineupPlayerCount"] = teamLineupPlayerCount(team)
 }
 
 var store = sessions.NewCookieStore([]byte("your-secret-key"))
@@ -157,50 +192,75 @@ func GetContext(r *http.Request, db *gorm.DB) context.Context {
 
 	session, _ := store.Get(r, "session-name")
 
-	// Get the selected team ID from the session
-	teamID, teamExists := session.Values["team_id"].(uint)
-
-	var team Team
 	ctx := r.Context()
 
-	// Check if team data exists in session; if not, fetch from the database
-	if teamExists && teamID > 0 {
-		if t, ok := session.Values["team"].(Team); ok {
-			team = t
-		} else {
-			team, err := GetTeam(db, teamID)
-			if err != nil {
-				log.Printf("Error fetching team data %d from the database: %+v", teamID, err)
-			} else {
-				saveTeamToSession(r, *team, session)
-			}
-
-		}
+	// Determine the active team for this request.
+	//
+	// Priority:
+	// - google admin-session cookie
+	// - admin-token cookie (set by password /admin)
+	// - session (team_id / TeamID)
+	// - if only one team exists, auto-select it
+	var teamID uint
+	if googleAuthEnabled() {
+		teamID = selectedAdminTeamID(r, db)
 	} else {
-		// Query the database only if no team is selected and no session data exists
+		if c, err := r.Cookie(adminTokenCookieName); err == nil {
+			if tid, ok := parseAdminToken(c.Value, adminTokenSecret()); ok && tid > 0 {
+				teamID = tid
+			}
+		}
+	}
+	// Backward compatibility with the older finemaster auth flow.
+	if teamID == 0 && !googleAuthEnabled() {
+		if c, err := r.Cookie("admin-user"); err == nil {
+			if tid64, err := strconv.ParseUint(c.Value, 10, 64); err == nil && tid64 > 0 {
+				teamID = uint(tid64)
+			}
+		}
+	}
+	if teamID == 0 {
+		if tid, ok := session.Values["team_id"].(uint); ok && tid > 0 {
+			teamID = tid
+		} else if tid, ok := session.Values["TeamID"].(uint); ok && tid > 0 {
+			teamID = tid
+		}
+	}
 
+	// Resolve the team record and persist into session for later requests.
+	var activeTeam *Team
+	if teamID > 0 {
+		if team, err := GetTeam(db, teamID); err != nil {
+			log.Printf("Error fetching team data %d from the database: %+v", teamID, err)
+			teamID = 0
+		} else {
+			activeTeam = team
+			saveTeamToSession(r, *team, session)
+		}
+	}
+	if teamID == 0 {
 		teams, err := GetTeams(db, 1, 0)
 		if err != nil {
 			log.Printf("Error fetching team data from the database: %+v", err)
+		} else if len(teams) == 1 {
+			teamID = teams[0].ID
+			activeTeam = &teams[0]
+			saveTeamToSession(r, teams[0], session)
 		}
-		if len(teams) == 1 {
-			log.Printf("(One team found) %+v", teams)
+	}
 
-			team = teams[0]
-			saveTeamToSession(r, team, session)
-		} else {
-			log.Printf("(no teams found)")
-
-			// Handle the case when no or multiple teams exist
-			// You may want to redirect to a team selection page
-		}
+	if teamID > 0 {
+		ctx = context.WithValue(ctx, "team_id", teamID)
+	}
+	if activeTeam != nil {
+		ctx = context.WithValue(ctx, teamKey, *activeTeam)
 	}
 
 	title := os.Getenv("TITLE")
 	if title == "" {
 		title = "🔨 Baileys Hammer 🔨"
 	}
-	ctx = context.WithValue(r.Context(), titleKey, title)
+	ctx = context.WithValue(ctx, titleKey, title)
 
 	if os.Getenv("DEV_ENV") == "true" {
 		ctx = context.WithValue(ctx, useRolesKey, devConfig.UseRoles)
@@ -212,7 +272,7 @@ func GetContext(r *http.Request, db *gorm.DB) context.Context {
 		ctx = context.WithValue(ctx, ShowGoalAssistMatchListKey, devConfig.ShowGoalAssistMatchList)
 		ctx = context.WithValue(ctx, ShowOpponentScoreKey, devConfig.ShowOpponentScore)
 	} else {
-		ctx := context.WithValue(r.Context(), titleKey, config.Title)
+		ctx = context.WithValue(ctx, titleKey, config.Title)
 		ctx = context.WithValue(ctx, useRolesKey, config.UseRoles)
 		ctx = context.WithValue(ctx, useMatchEventTrackerKey, config.UseMatchEventTracker)
 		ctx = context.WithValue(ctx, UsePlayerOfTheDayNameKey, config.UsePlayerOfTheDayName)

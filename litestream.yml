@@ -4,6 +4,9 @@ dbs:
       - type: s3 
         endpoint: ${DB_REPLICA_URL}
         bucket: ${R2_BUCKET}
+        path: development.sqlite3
+        region: auto
+        force-path-style: true
         access-key-id: ${R2_ACCESS_KEY_ID}
         secret-access-key: ${R2_SECRET_ACCESS_KEY}
   - path: /mnt/volume/production.sqlite3
@@ -11,5 +14,8 @@ dbs:
       - type: s3 
         endpoint: ${DB_REPLICA_URL}
         bucket: ${R2_BUCKET}
+        path: production.sqlite3
+        region: auto
+        force-path-style: true
         access-key-id: ${R2_ACCESS_KEY_ID}
         secret-access-key: ${R2_SECRET_ACCESS_KEY}

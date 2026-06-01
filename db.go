@@ -9,6 +9,7 @@ import (
 	"os"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
 
 	"gorm.io/driver/sqlite"
@@ -32,6 +33,7 @@ type PlayerPayment struct {
 	gorm.Model
 	PlayerID        uint
 	SeasonID        uint
+	TeamID          uint
 	Amount          float64
 	PaymentLoggedAt time.Time
 }
@@ -67,6 +69,7 @@ type Fine struct {
 	gorm.Model
 	PlayerID          uint
 	SeasonID          uint
+	TeamID            uint
 	CourtSessionOrder uint
 	CourtSessionNote  string
 	MatchId           uint
@@ -81,15 +84,150 @@ type Fine struct {
 
 type Team struct {
 	gorm.Model
-	ID                    uint
-	TeamName              string
-	TeamKey               string
-	TeamAdminPass         string
-	TeamMemberPass        string
-	ShowFineAddOnHomePage bool
-	ActiveMatchIDOverride uint
-	ShowCourtTotals       bool
-	CourtNotes            string
+	ID                       uint
+	TeamName                 string
+	TeamKey                  string
+	TeamAdminPass            string
+	TeamMemberPass           string
+	ShowFineAddOnHomePage    bool
+	ShowPitchMatchOnHomePage bool
+	ShowCourtSheetOnHomePage bool
+	EnablePublicFeedbackForm bool
+	ActiveMatchIDOverride    uint
+	ShowCourtTotals          bool
+	CourtNotes               string
+	EnableFinesModule        bool
+	EnableLineupsModule      bool
+	EnableMatchesModule      bool
+	EnablePlayersModule      bool
+	EnableCourtModule        bool
+	EnableLeaderboardModule  bool
+	AllowAdminRegistration   bool
+	LineupPlayerCount        int
+	SportyCompetitionID      uint
+	SportyOrgID              uint
+	SportyGradeID            uint
+	SportyTeamID             uint
+	SportyAutoMatchSync      bool
+	SportyLastSyncedAt       *time.Time
+}
+
+type AdminUser struct {
+	gorm.Model
+	Email           string `gorm:"uniqueIndex"`
+	GoogleSubjectID string `gorm:"uniqueIndex"`
+	DisplayName     string
+	LastLoginAt     *time.Time
+}
+
+type AdminUserTeamRole struct {
+	gorm.Model
+	AdminUserID uint   `gorm:"index:idx_admin_user_team_role,unique"`
+	TeamID      uint   `gorm:"index:idx_admin_user_team_role,unique"`
+	Role        string `gorm:"index:idx_admin_user_team_role,unique"`
+}
+
+type AdminAccessRequest struct {
+	gorm.Model
+	AdminUserID  uint
+	TeamID       uint
+	Role         string
+	Status       string
+	ReviewedByID uint
+	ReviewedAt   *time.Time
+}
+
+type AdminUserRoleView struct {
+	Role     string
+	TeamID   uint
+	TeamName string
+}
+
+type AdminAccessRequestView struct {
+	Request AdminAccessRequest
+	User    AdminUser
+	Team    Team
+}
+
+type AdminUserAccountView struct {
+	User  AdminUser
+	Roles []AdminUserRoleView
+}
+
+func (t Team) FinesModuleEnabled() bool {
+	return t.EnableFinesModule
+}
+
+func (t Team) LineupsModuleEnabled() bool {
+	return t.EnableLineupsModule
+}
+
+func (t Team) LeaderboardModuleEnabled() bool {
+	return t.EnableLeaderboardModule
+}
+
+type LineupUser struct {
+	gorm.Model
+	TeamID      uint
+	DisplayName string
+}
+
+type Formation struct {
+	gorm.Model
+	TeamID          uint
+	CreatedByUserID uint
+	Name            string
+	Status          string
+	Positions       []FormationPosition
+}
+
+type FormationPosition struct {
+	gorm.Model
+	FormationID  uint
+	IndexNumber  int
+	PositionName string
+	X            float64
+	Y            float64
+}
+
+type Lineup struct {
+	gorm.Model
+	TeamID          uint
+	CreatedByUserID uint
+	FormationID     uint
+	Name            string
+	Details         string
+	Status          string
+	Locked          bool
+	LockedByUserID  uint
+	LockedByName    string
+	Players         []LineupPlayer
+	Formation       Formation
+	Match           Match      `gorm:"foreignKey:LineupID"`
+	Creator         LineupUser `gorm:"foreignKey:CreatedByUserID"`
+}
+
+type LineupPlayer struct {
+	gorm.Model
+	LineupID    uint
+	IndexNumber int
+	SlotOrder   int
+	SubMinute   int
+	PlayerID    uint
+	Player      Player `gorm:"foreignKey:PlayerID"`
+}
+
+type MLNote struct {
+	gorm.Model
+	TeamID      uint
+	Channel     string
+	TargetKind  string
+	TargetID    uint
+	TargetLabel string
+	Priority    int
+	Creator     string
+	Type        string
+	Note        string
 }
 
 // DBInit initializes the database and creates the tables
@@ -109,9 +247,36 @@ func DBInit() (*gorm.DB, error) {
 		log.Printf("Connected to db at \"%s\"", dbUrl)
 	}
 
+	hadTeamFeatureColumns := map[string]bool{
+		"enable_fines_module":           db.Migrator().HasColumn(&Team{}, "EnableFinesModule"),
+		"enable_lineups_module":         db.Migrator().HasColumn(&Team{}, "EnableLineupsModule"),
+		"enable_matches_module":         db.Migrator().HasColumn(&Team{}, "EnableMatchesModule"),
+		"enable_players_module":         db.Migrator().HasColumn(&Team{}, "EnablePlayersModule"),
+		"enable_court_module":           db.Migrator().HasColumn(&Team{}, "EnableCourtModule"),
+		"enable_leaderboard_module":     db.Migrator().HasColumn(&Team{}, "EnableLeaderboardModule"),
+		"show_pitch_match_on_home_page": db.Migrator().HasColumn(&Team{}, "ShowPitchMatchOnHomePage"),
+		"show_court_sheet_on_home_page": db.Migrator().HasColumn(&Team{}, "ShowCourtSheetOnHomePage"),
+		"enable_public_feedback_form":   db.Migrator().HasColumn(&Team{}, "EnablePublicFeedbackForm"),
+		"allow_admin_registration":      db.Migrator().HasColumn(&Team{}, "AllowAdminRegistration"),
+	}
+
 	// Migrate the schema
-	err = db.AutoMigrate(&Player{}, &Fine{}, &PresetFine{}, &Match{}, &MatchEvent{}, &FineImage{}, &Season{}, &PlayerPayment{}, &Team{})
+	err = db.AutoMigrate(&Player{}, &Fine{}, &PresetFine{}, &Match{}, &MatchEvent{}, &FineImage{}, &Season{}, &PlayerPayment{}, &Team{}, &AdminUser{}, &AdminUserTeamRole{}, &AdminAccessRequest{}, &LineupUser{}, &Formation{}, &FormationPosition{}, &Lineup{}, &LineupPlayer{}, &MLNote{}, &PlayerMatchUnavailability{})
 	if err != nil {
+		return nil, err
+	}
+	if err := db.Model(&Team{}).Where("lineup_player_count = ?", 0).Update("lineup_player_count", defaultLineupPlayerCount).Error; err != nil {
+		return nil, err
+	}
+
+	for column, existed := range hadTeamFeatureColumns {
+		if !existed {
+			if err := db.Model(&Team{}).Where(column+" = ?", false).Update(column, true).Error; err != nil {
+				return nil, err
+			}
+		}
+	}
+	if err := applyStartupSuperAdminGrant(db); err != nil {
 		return nil, err
 	}
 
@@ -168,6 +333,14 @@ func DBInit() (*gorm.DB, error) {
 		db.Migrator().AddColumn(&Fine{}, "SeasonId")
 	}
 
+	if (!db.Migrator().HasColumn(&Fine{}, "TeamId")) {
+		db.Migrator().AddColumn(&Fine{}, "TeamId")
+	}
+
+	if (!db.Migrator().HasColumn(&PlayerPayment{}, "TeamId")) {
+		db.Migrator().AddColumn(&PlayerPayment{}, "TeamId")
+	}
+
 	if (!db.Migrator().HasColumn(&Player{}, "RoleDescription")) {
 		db.Migrator().AddColumn(&Player{}, "RoleDescription")
 	}
@@ -212,12 +385,37 @@ func DBInit() (*gorm.DB, error) {
 		panic(result.Error)
 	}
 
+	// Backfill missing team/season IDs for legacy rows (previously single-team / no-season aware).
+	activeTeam, _ := GetActiveTeam(db)
+	if activeTeam != nil && activeTeam.ID > 0 {
+		_ = db.Model(&Fine{}).Where("team_id = 0 OR team_id IS NULL").Update("team_id", activeTeam.ID).Error
+		_ = db.Model(&PlayerPayment{}).Where("team_id = 0 OR team_id IS NULL").Update("team_id", activeTeam.ID).Error
+	}
+	activeSeason, _ := GetActiveSeason(db)
+	if activeSeason != nil && activeSeason.ID > 0 {
+		_ = db.Model(&Fine{}).
+			Where("(season_id = 0 OR season_id IS NULL) AND created_at >= ?", activeSeason.StartDate).
+			Update("season_id", activeSeason.ID).Error
+		_ = db.Model(&PlayerPayment{}).
+			Where("(season_id = 0 OR season_id IS NULL) AND created_at >= ?", activeSeason.StartDate).
+			Update("season_id", activeSeason.ID).Error
+	}
+
 	return db, nil
 }
 
 func GetTeam(db *gorm.DB, id uint) (*Team, error) {
 	var team Team
 	result := db.First(&team, id)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	return &team, nil
+}
+
+func GetTeamByKey(db *gorm.DB, teamKey string) (*Team, error) {
+	var team Team
+	result := db.Where("team_key = ?", strings.TrimSpace(teamKey)).First(&team)
 	if result.Error != nil {
 		return nil, result.Error
 	}
@@ -251,6 +449,212 @@ func DeleteTeam(db *gorm.DB, id uint) error {
 	return nil
 }
 
+func CountAdminUsers(db *gorm.DB) (int64, error) {
+	var count int64
+	if err := db.Model(&AdminUser{}).Count(&count).Error; err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
+func GetAdminUser(db *gorm.DB, id uint) (*AdminUser, error) {
+	var user AdminUser
+	if err := db.First(&user, id).Error; err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
+func FindAdminUserByGoogleSubject(db *gorm.DB, subject string) (*AdminUser, error) {
+	var user AdminUser
+	if err := db.Where("google_subject_id = ?", subject).First(&user).Error; err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
+func FindAdminUserByEmail(db *gorm.DB, email string) (*AdminUser, error) {
+	var user AdminUser
+	if err := db.Where("LOWER(email) = ?", strings.ToLower(strings.TrimSpace(email))).First(&user).Error; err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
+func SaveAdminUserFromGoogle(db *gorm.DB, info googleUserInfo, allowCreate bool) (*AdminUser, bool, error) {
+	now := time.Now()
+	user, err := FindAdminUserByGoogleSubject(db, info.Subject)
+	if err == nil {
+		user.Email = strings.ToLower(strings.TrimSpace(info.Email))
+		user.DisplayName = info.DisplayName
+		user.LastLoginAt = &now
+		return user, false, db.Save(user).Error
+	}
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, false, err
+	}
+
+	user, err = FindAdminUserByEmail(db, info.Email)
+	if err == nil {
+		user.GoogleSubjectID = info.Subject
+		user.DisplayName = info.DisplayName
+		user.LastLoginAt = &now
+		return user, false, db.Save(user).Error
+	}
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, false, err
+	}
+	if !allowCreate {
+		return nil, false, gorm.ErrRecordNotFound
+	}
+
+	user = &AdminUser{
+		Email:           strings.ToLower(strings.TrimSpace(info.Email)),
+		GoogleSubjectID: info.Subject,
+		DisplayName:     info.DisplayName,
+		LastLoginAt:     &now,
+	}
+	if err := db.Create(user).Error; err != nil {
+		return nil, false, err
+	}
+	return user, true, nil
+}
+
+func GrantAdminRole(db *gorm.DB, userID uint, teamID uint, role string) error {
+	var existing AdminUserTeamRole
+	err := db.Where("admin_user_id = ? AND team_id = ? AND role = ?", userID, teamID, role).First(&existing).Error
+	if err == nil {
+		return nil
+	}
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return err
+	}
+	return db.Create(&AdminUserTeamRole{AdminUserID: userID, TeamID: teamID, Role: role}).Error
+}
+
+func RevokeAdminRole(db *gorm.DB, userID uint, teamID uint, role string) error {
+	return db.Where("admin_user_id = ? AND team_id = ? AND role = ?", userID, teamID, role).Delete(&AdminUserTeamRole{}).Error
+}
+
+func AdminUserHasRole(db *gorm.DB, userID uint, teamID uint, role string) (bool, error) {
+	var count int64
+	err := db.Model(&AdminUserTeamRole{}).
+		Where("admin_user_id = ? AND team_id = ? AND role = ?", userID, teamID, role).
+		Count(&count).Error
+	return count > 0, err
+}
+
+func CountAdminUsersWithRole(db *gorm.DB, teamID uint, role string) (int64, error) {
+	var count int64
+	err := db.Model(&AdminUserTeamRole{}).Where("team_id = ? AND role = ?", teamID, role).Count(&count).Error
+	return count, err
+}
+
+func RequestAdminAccess(db *gorm.DB, userID uint, teamID uint, role string) error {
+	var existing AdminAccessRequest
+	err := db.Where("admin_user_id = ? AND team_id = ? AND role = ? AND status = ?", userID, teamID, role, "pending").First(&existing).Error
+	if err == nil {
+		return nil
+	}
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return err
+	}
+	return db.Create(&AdminAccessRequest{AdminUserID: userID, TeamID: teamID, Role: role, Status: "pending"}).Error
+}
+
+func ResolveAdminAccessRequest(db *gorm.DB, requestID uint, reviewerID uint, status string) (*AdminAccessRequest, error) {
+	var request AdminAccessRequest
+	if err := db.Where("id = ? AND status = ?", requestID, "pending").First(&request).Error; err != nil {
+		return nil, err
+	}
+	now := time.Now()
+	if err := db.Model(&request).Updates(map[string]interface{}{"status": status, "reviewed_by_id": reviewerID, "reviewed_at": &now}).Error; err != nil {
+		return nil, err
+	}
+	request.Status = status
+	request.ReviewedByID = reviewerID
+	request.ReviewedAt = &now
+	return &request, nil
+}
+
+func FirstTeamForAdminUser(db *gorm.DB, userID uint) (*Team, error) {
+	if isSuperAdmin(db, userID) {
+		teams, err := GetTeams(db, 1, 0)
+		if err != nil || len(teams) == 0 {
+			return nil, err
+		}
+		return &teams[0], nil
+	}
+
+	var role AdminUserTeamRole
+	if err := db.Where("admin_user_id = ? AND role = ? AND team_id > 0", userID, adminRoleTeamAdmin).Order("team_id").First(&role).Error; err != nil {
+		return nil, err
+	}
+	return GetTeam(db, role.TeamID)
+}
+
+func ListAdminUserAccounts(db *gorm.DB) ([]AdminUserAccountView, error) {
+	var users []AdminUser
+	if err := db.Order("email").Find(&users).Error; err != nil {
+		return nil, err
+	}
+	var roles []AdminUserTeamRole
+	if err := db.Order("admin_user_id, role, team_id").Find(&roles).Error; err != nil {
+		return nil, err
+	}
+	teams, err := GetTeams(db, 9999, 0)
+	if err != nil {
+		return nil, err
+	}
+	teamNames := map[uint]string{}
+	for _, team := range teams {
+		teamNames[team.ID] = team.TeamName
+	}
+
+	accounts := make([]AdminUserAccountView, 0, len(users))
+	accountByUserID := map[uint]int{}
+	for _, user := range users {
+		accountByUserID[user.ID] = len(accounts)
+		accounts = append(accounts, AdminUserAccountView{User: user})
+	}
+	for _, role := range roles {
+		idx, ok := accountByUserID[role.AdminUserID]
+		if !ok {
+			continue
+		}
+		roleView := AdminUserRoleView{
+			Role:     role.Role,
+			TeamID:   role.TeamID,
+			TeamName: teamNames[role.TeamID],
+		}
+		if role.TeamID == 0 {
+			roleView.TeamName = "All teams"
+		}
+		accounts[idx].Roles = append(accounts[idx].Roles, roleView)
+	}
+	return accounts, nil
+}
+
+func ListPendingAdminAccessRequests(db *gorm.DB) ([]AdminAccessRequestView, error) {
+	var requests []AdminAccessRequest
+	if err := db.Where("status = ?", "pending").Order("created_at ASC").Find(&requests).Error; err != nil {
+		return nil, err
+	}
+	views := make([]AdminAccessRequestView, 0, len(requests))
+	for _, request := range requests {
+		var user AdminUser
+		if err := db.First(&user, request.AdminUserID).Error; err != nil {
+			continue
+		}
+		var team Team
+		if err := db.First(&team, request.TeamID).Error; err != nil {
+			continue
+		}
+		views = append(views, AdminAccessRequestView{Request: request, User: user, Team: team})
+	}
+	return views, nil
+}
+
 // GetTeamByKeyAndPassword authenticates a team by key and admin password
 func GetTeamByKeyAndPassword(db *gorm.DB, teamKey, adminPassword string) (*Team, error) {
 	var team Team
@@ -265,6 +669,7 @@ func GetTeamByKeyAndPassword(db *gorm.DB, teamKey, adminPassword string) (*Team,
 type PlayerWithFines struct {
 	ID                     uint
 	Name                   string
+	Active                 bool
 	TotalFineCount         int
 	TotalFines             int
 	Role                   string
@@ -277,27 +682,27 @@ type PlayerWithFines struct {
 	SubsOutstandingAmount  float64
 }
 
-func GetPlayersWithFines(db *gorm.DB, seasonId uint64, playerIds []uint64) ([]PlayerWithFines, error) {
+func GetPlayersWithFines(db *gorm.DB, seasonId uint, teamId uint, playerIds []uint64) ([]PlayerWithFines, error) {
 	var playersWithFines []PlayerWithFines
 
 	var players []Player
 
+	q := db.Model(&Player{}).Order("players.name")
 	if len(playerIds) > 0 {
-		db.Preload("Fines", func(db *gorm.DB) *gorm.DB {
-			return db.Order("fines.fine_at DESC")
-		}).Where("id IN ?", playerIds).Find(&players).Order("players.name")
-
-	} else {
-		if seasonId == 0 {
-			db.Preload("Fines", func(db *gorm.DB) *gorm.DB {
-				return db.Order("fines.fine_at DESC")
-			}).Find(&players).Where("season_ids IN ?", seasonId).Order("players.name")
-		} else {
-			db.Preload("Fines", func(db *gorm.DB) *gorm.DB {
-				return db.Order("fines.fine_at DESC")
-			}).Find(&players).Order("players.name")
+		q = q.Where("id IN ?", playerIds)
+	}
+	err := q.Preload("Fines", func(db *gorm.DB) *gorm.DB {
+		fq := db.Order("fines.fine_at DESC")
+		if seasonId > 0 {
+			fq = fq.Where("season_id = ?", seasonId)
 		}
-
+		if teamId > 0 {
+			fq = fq.Where("team_id = ?", teamId)
+		}
+		return fq
+	}).Find(&players).Error
+	if err != nil {
+		return nil, err
 	}
 	//.Where("active = true")
 
@@ -320,6 +725,7 @@ func GetPlayersWithFines(db *gorm.DB, seasonId uint64, playerIds []uint64) ([]Pl
 		pwf := PlayerWithFines{
 			ID:                     player.ID,
 			Name:                   player.Name,
+			Active:                 player.Active,
 			TotalFineCount:         len(approvedFines),
 			TotalFines:             fineSum,
 			Role:                   player.Role,
@@ -397,7 +803,7 @@ func SetSeasonId(db *gorm.DB, days int) (int64, int64, error) {
 
 func SetPlayerFinesOutstandingForActiveSeason(db *gorm.DB, seasonID uint) (int, error) {
 
-	playerWithFines, err := GetPlayersWithFines(db, seasonId, []uint64{})
+	playerWithFines, err := GetPlayersWithFines(db, seasonID, 0, []uint64{})
 	if err != nil {
 		return 0, err
 	}
@@ -440,12 +846,13 @@ func SetPlayerSubsOutstandingForActiveSeason(db *gorm.DB, seasonID uint, seasonS
 	return int(result.RowsAffected), nil
 }
 
-func CreatePlayerPayment(db *gorm.DB, playerId uint, amount float64, seasonId uint) error {
+func CreatePlayerPayment(db *gorm.DB, playerId uint, amount float64, seasonId uint, teamId uint) error {
 	payment := PlayerPayment{
 		PlayerID:        playerId,
 		Amount:          amount,
 		PaymentLoggedAt: time.Now(),
 		SeasonID:        seasonId,
+		TeamID:          teamId,
 	}
 
 	if err := db.Save(&payment).Error; err != nil {
@@ -454,9 +861,12 @@ func CreatePlayerPayment(db *gorm.DB, playerId uint, amount float64, seasonId ui
 	return nil
 }
 
-func GetPlayerPayments(db *gorm.DB, seasonId uint) ([]PlayerPayment, error) {
+func GetPlayerPayments(db *gorm.DB, seasonId uint, teamId uint) ([]PlayerPayment, error) {
+	if seasonId == 0 || teamId == 0 {
+		return []PlayerPayment{}, nil
+	}
 	var payments []PlayerPayment
-	if err := db.Where("season_id = ?", seasonId).Find(&payments).Error; err != nil {
+	if err := db.Where("season_id = ? AND team_id = ?", seasonId, teamId).Find(&payments).Error; err != nil {
 		return nil, err
 	}
 	return payments, nil
@@ -539,11 +949,18 @@ func DeletePlayer(db *gorm.DB, playerId uint) error {
 	return nil
 }
 
-func FetchLatestFines(db *gorm.DB, page int, pageSize int) ([]Fine, error) {
+func FetchLatestFines(db *gorm.DB, seasonId uint, teamId uint, page int, pageSize int) ([]Fine, error) {
+	if seasonId == 0 || teamId == 0 {
+		return []Fine{}, nil
+	}
 	var fines []Fine
 	offset := (page - 1) * pageSize
 
-	result := db.Order("fine_at DESC").Offset(offset).Limit(pageSize).Find(&fines)
+	result := db.Where("season_id = ? AND team_id = ?", seasonId, teamId).
+		Order("fine_at DESC").
+		Offset(offset).
+		Limit(pageSize).
+		Find(&fines)
 	if result.Error != nil {
 		return nil, result.Error
 	}
@@ -728,8 +1145,8 @@ type PresetFine struct {
 	IsKudos      bool
 }
 
-func GetFineWithPlayers(db *gorm.DB, pageId uint64, limit int) ([]FineWithPlayer, error) {
-	fines, getFErr := FetchLatestFines(db, int(pageId), int(limit))
+func GetFineWithPlayers(db *gorm.DB, seasonId uint, teamId uint, pageId uint64, limit int) ([]FineWithPlayer, error) {
+	fines, getFErr := FetchLatestFines(db, seasonId, teamId, int(pageId), int(limit))
 	if getFErr != nil {
 		return []FineWithPlayer{}, getFErr
 	}
@@ -740,7 +1157,7 @@ func GetFineWithPlayers(db *gorm.DB, pageId uint64, limit int) ([]FineWithPlayer
 	}
 
 	// Get all relevant matches
-	matches, getMatchErr := GetMatches(db, 0, 0, 1000)
+	matches, getMatchErr := GetAllMatches(db, 0, 1000)
 	if getMatchErr != nil {
 		return []FineWithPlayer{}, getMatchErr
 	}
@@ -901,17 +1318,31 @@ type Season struct {
 
 type Match struct {
 	gorm.Model
-	Location       string
-	StartTime      *time.Time `json:"timestamp" gorm:"type:datetime"`
-	Opponent       string
-	Subtitle       string
-	Events         []MatchEvent `gorm:"foreignKey:MatchId"`
-	SeasonId       uint64
-	PlayerOfTheDay uint
-	DudOfTheDay    uint
-	MatchLat       float64
-	MatchLng       float64
-	MatchPointList LatLngArray `json:"coords"`
+	TeamID               uint
+	LineupID             uint
+	Location             string
+	StartTime            *time.Time `json:"timestamp" gorm:"type:datetime"`
+	Opponent             string
+	Subtitle             string
+	Events               []MatchEvent `gorm:"foreignKey:MatchId"`
+	SeasonId             uint64
+	PlayerOfTheDay       uint
+	DudOfTheDay          uint
+	MatchLat             float64
+	MatchLng             float64
+	MatchPointList       LatLngArray `json:"coords"`
+	SportyFixtureID      uint
+	AvailablePlayerCount int `gorm:"-"`
+	TotalPlayerCount     int `gorm:"-"`
+}
+
+type PlayerMatchUnavailability struct {
+	gorm.Model
+	TeamID   uint
+	MatchID  uint
+	PlayerID uint
+	Player   Player
+	Match    Match
 }
 
 type DrinkPayment struct {
@@ -941,6 +1372,7 @@ type MatchEvent struct {
 	EventTime   *time.Time `json:"timestamp" gorm:"type:datetime"`
 	EventMinute int
 	PlayerId    uint
+	EventData   string `gorm:"type:text"`
 }
 
 type PlayerState struct {
@@ -962,15 +1394,86 @@ type MatchState struct {
 
 // FetchLatestFines fetches a paginated list of the latest fines.
 func GetMatches(db *gorm.DB, season uint, page int, pageSize int) ([]Match, error) {
+	return getMatches(db, season, true, page, pageSize)
+}
+
+func GetManageMatches(db *gorm.DB, teamID uint, season uint, page int, pageSize int) ([]Match, error) {
 	var matches []Match
 	offset := (page - 1) * pageSize
-	//.Where("season_id = ?", season)
-	result := db.Order("start_time DESC").Offset(offset).Limit(pageSize).Find(&matches)
+	query := db.Where("team_id = ?", teamID).Order("start_time DESC").Offset(offset).Limit(pageSize)
+	if season > 0 {
+		query = query.Where("season_id = ? OR (season_id = ? AND start_time > ?)", season, 0, time.Now())
+	}
+	result := query.Find(&matches)
 	if result.Error != nil {
 		return nil, result.Error
 	}
+	if err := enrichMatchAvailabilityCounts(db, matches); err != nil {
+		return nil, err
+	}
+	return matches, nil
+}
+
+func GetAllMatches(db *gorm.DB, page int, pageSize int) ([]Match, error) {
+	return getMatches(db, 0, false, page, pageSize)
+}
+
+func GetHistoricMatches(db *gorm.DB, teamID uint, page int, pageSize int, now time.Time) ([]Match, int64, error) {
+	var matches []Match
+	var total int64
+	if page < 1 {
+		page = 1
+	}
+	if pageSize < 1 {
+		pageSize = 20
+	}
+	query := db.Model(&Match{}).Where("team_id = ? AND start_time IS NOT NULL AND start_time <= ?", teamID, now)
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+	if err := query.Order("start_time DESC").Offset((page - 1) * pageSize).Limit(pageSize).Find(&matches).Error; err != nil {
+		return nil, 0, err
+	}
+	if err := enrichMatchAvailabilityCounts(db, matches); err != nil {
+		return nil, 0, err
+	}
+	return matches, total, nil
+}
+
+func getMatches(db *gorm.DB, season uint, filterSeason bool, page int, pageSize int) ([]Match, error) {
+	var matches []Match
+	offset := (page - 1) * pageSize
+	query := db.Order("start_time DESC").Offset(offset).Limit(pageSize)
+	if filterSeason {
+		query = query.Where("season_id = ?", season)
+	}
+	result := query.Find(&matches)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	if err := enrichMatchAvailabilityCounts(db, matches); err != nil {
+		return nil, err
+	}
 
 	return matches, nil
+}
+
+func enrichMatchAvailabilityCounts(db *gorm.DB, matches []Match) error {
+	if len(matches) == 0 {
+		return nil
+	}
+	players, err := GetPlayers(db, 0, 999)
+	if err != nil {
+		return err
+	}
+	for i := range matches {
+		unavailablePlayerIDs, err := GetUnavailablePlayerIDsForMatch(db, matches[i].TeamID, matches[i].ID)
+		if err != nil {
+			return err
+		}
+		matches[i].AvailablePlayerCount, matches[i].TotalPlayerCount = playerAvailabilityCounts(players, unavailablePlayerIDs)
+	}
+	return nil
 }
 
 func GetMatch(db *gorm.DB, id uint) (*Match, error) {
@@ -1108,6 +1611,19 @@ func WrapMatchWithMeta(db *gorm.DB, match Match) (*MatchMetaGeneral, error) {
 	if err != nil {
 		return nil, err
 	}
+	unavailablePlayerIDs, err := GetUnavailablePlayerIDsForMatch(db, match.TeamID, match.ID)
+	if err != nil {
+		return nil, err
+	}
+	availablePlayerCount, totalPlayerCount := playerAvailabilityCounts(players, unavailablePlayerIDs)
+	lineup, err := lineupForMatch(db, match)
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, err
+	}
+	liveLineups, err := liveLineupsForTeam(db, match.TeamID)
+	if err != nil {
+		return nil, err
+	}
 
 	var playerOfTheDay *Player
 	var dudOfTheDay *Player
@@ -1138,13 +1654,18 @@ func WrapMatchWithMeta(db *gorm.DB, match Match) (*MatchMetaGeneral, error) {
 
 	log.Printf("🎁 WrapMatchWithMeta END - %d:%v %d:%v", match.PlayerOfTheDay, playerOfTheDay, match.DudOfTheDay, dudOfTheDay)
 	return &MatchMetaGeneral{
-		Match:             match,
-		GoalScorers:       goalScorers,
-		GoalAssisters:     goalAssisters,
-		OpponentGoalCount: opponentGoalCount,
-		Players:           players,
-		PlayerOfTheDay:    playerOfTheDay,
-		DudOfTheDay:       dudOfTheDay,
+		Match:                match,
+		Lineup:               lineup,
+		LiveLineups:          liveLineups,
+		GoalScorers:          goalScorers,
+		GoalAssisters:        goalAssisters,
+		OpponentGoalCount:    opponentGoalCount,
+		Players:              players,
+		UnavailablePlayerIDs: unavailablePlayerIDs,
+		AvailablePlayerCount: availablePlayerCount,
+		TotalPlayerCount:     totalPlayerCount,
+		PlayerOfTheDay:       playerOfTheDay,
+		DudOfTheDay:          dudOfTheDay,
 	}, nil
 }
 

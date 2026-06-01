@@ -16,7 +16,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/v5"
 	"github.com/gorilla/schema"
 	"gorm.io/gorm"
 )
@@ -31,13 +31,15 @@ type Context struct {
 
 func playerHandler(db *gorm.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var activeSeasonId uint64 = 0
+		ctx := GetContext(r, db)
+		teamId := getTeamId(ctx)
+		var activeSeasonId uint = 0
 		activeSeason, err := GetActiveSeason(db)
 		if err != nil {
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 			return
 		} else if activeSeason != nil {
-			activeSeasonId = uint64(activeSeason.ID)
+			activeSeasonId = activeSeason.ID
 		}
 		switch r.Method {
 		case "GET":
@@ -58,15 +60,15 @@ func playerHandler(db *gorm.DB) http.HandlerFunc {
 				playerIds := []uint64{
 					playerId,
 				}
-				playersWithFines, err := GetPlayersWithFines(db, activeSeasonId, playerIds)
+				playersWithFines, err := GetPlayersWithFines(db, activeSeasonId, teamId, playerIds)
 				if err != nil || len(playersWithFines) == 0 {
 					log.Printf("Error fetching players with fines: %v", err)
 					http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 					return
 				}
 
-				playerList := playerRoleSelector(playersWithFines[0], config, "")
-				playerList.Render(GetContext(r, db), w)
+				playerList := playerRoleSelector(playersWithFines[0], config, nil)
+				playerList.Render(ctx, w)
 				return
 			} else if displayType == "super-input" {
 
@@ -90,10 +92,10 @@ func playerHandler(db *gorm.DB) http.HandlerFunc {
 				}
 
 				playerList := playerInputSelector(players, uint(playerId), inputType)
-				playerList.Render(GetContext(r, db), w)
+				playerList.Render(ctx, w)
 			} else {
 				warnings := warning("Playerhanlder - Method not allowed")
-				warnings.Render(GetContext(r, db), w)
+				warnings.Render(ctx, w)
 				return
 			}
 
@@ -104,12 +106,41 @@ func playerHandler(db *gorm.DB) http.HandlerFunc {
 					http.Error(w, "Bad Request savePlayerHandler ParseForm", http.StatusBadRequest)
 					return
 				}
+				playerAction := r.FormValue("playerAction")
+				delete(r.PostForm, "playerAction")
 
 				var player Player
 				// Use the decoder to populate the player struct
 				if err := decoder.Decode(&player, r.PostForm); err != nil {
 					log.Printf("Error decoding form into player struct: %v", err)
 					http.Error(w, "Bad Request savePlayerHandler Decode", http.StatusBadRequest)
+					return
+				}
+				if player.ID > 0 {
+					existingPlayer, err := GetPlayerByID(db, player.ID)
+					if err != nil {
+						log.Printf("Error fetching player before update: %v", err)
+						http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+						return
+					}
+					player.Active = existingPlayer.Active
+				}
+				switch playerAction {
+				case "activate":
+					player.Active = true
+				case "deactivate":
+					player.Active = false
+				case "":
+					if activeValues, ok := r.PostForm["Active"]; ok && len(activeValues) > 0 {
+						active, err := strconv.ParseBool(activeValues[len(activeValues)-1])
+						if err != nil {
+							http.Error(w, "Bad Request savePlayerHandler Active", http.StatusBadRequest)
+							return
+						}
+						player.Active = active
+					}
+				default:
+					http.Error(w, "Bad Request savePlayerHandler playerAction", http.StatusBadRequest)
 					return
 				}
 
@@ -128,15 +159,15 @@ func playerHandler(db *gorm.DB) http.HandlerFunc {
 					uint64(player.ID),
 				}
 
-				playersWithFines, err := GetPlayersWithFines(db, activeSeasonId, playerIds)
+				playersWithFines, err := GetPlayersWithFines(db, activeSeasonId, teamId, playerIds)
 				if err != nil || len(playersWithFines) == 0 {
 					log.Printf("Error fetching players with fines: %v", err)
 					http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 					return
 				}
 
-				playerList := playerRoleSelector(playersWithFines[0], config, fmt.Sprintf("Updated player"))
-				playerList.Render(GetContext(r, db), w)
+				playerList := playerRoleSelector(playersWithFines[0], config, successWithReload("Updated player"))
+				playerList.Render(ctx, w)
 				return
 
 			}
@@ -365,14 +396,16 @@ func fineEditHandler(db *gorm.DB) http.HandlerFunc {
 			isContest := r.URL.Query().Get("isContest")
 			isContext := r.URL.Query().Get("isContext")
 
-			isFineMasterStr := r.URL.Query().Get("isFineMaster")
+			//	isFineMasterStr := r.URL.Query().Get("isFineMaster")
 
-			var isFineMaster bool = isFineMasterStr == "true"
+			/*var isFineMaster bool = isFineMasterStr == "true"
 			if isFineMaster {
 				log.Printf("permision Error fetching fineEditHandler")
 				http.Error(w, "Not this time mate.", http.StatusInternalServerError)
 				return
-			}
+			}*/
+
+			var isFineMaster bool = true
 
 			if isEdit == "true" {
 				fineEditRow := fineEditRow(fineWithPlayer, isFineMaster, hideFineImageFeature)
@@ -388,7 +421,7 @@ func fineEditHandler(db *gorm.DB) http.HandlerFunc {
 				fineContestRow := fineContestRow(fineWithPlayer)
 				fineContestRow.Render(GetContext(r, db), w)
 			} else if isContext == "true" {
-				matches, err := GetMatches(db, 1, 0, 9999)
+				matches, err := GetMatches(db, activeSeasonID(db), 0, 9999)
 				if err != nil {
 					http.Error(w, fmt.Sprintf("Player not found - %d", fine.PlayerID), http.StatusNotFound)
 					return
@@ -617,21 +650,43 @@ func fineSummaryHandler(db *gorm.DB) http.HandlerFunc {
 		switch r.Method {
 		case "GET":
 			{
+				ctx := GetContext(r, db)
+				teamId := getTeamId(ctx)
+				activeSeason, err := GetActiveSeason(db)
+				if err != nil {
+					http.Error(w, "Failed when getting active season", http.StatusNotFound)
+					return
+				}
+				seasonId := uint(0)
+				if activeSeason != nil {
+					seasonId = activeSeason.ID
+				}
+
 				viewMode := r.URL.Query().Get("viewMode")
 				if viewMode == "button" {
 					fineList := fineSummaryButton("Open Total View", "summary", false)
-					fineList.Render(GetContext(r, db), w)
+					fineList.Render(ctx, w)
 					return
 				}
 
-				playersWithFines, err := GetPlayersWithFines(db, 0, []uint64{})
+				if seasonId == 0 || teamId == 0 {
+					warning("No active season/team - totals are unavailable").Render(ctx, w)
+					return
+				}
+
+				playersWithFines, err := GetPlayersWithFines(db, seasonId, teamId, []uint64{})
 				if err != nil {
 					log.Printf("Error fetching players with fines: %v", err)
 					http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 					return
 				}
 
-				playerPayments, err := GetPlayerPayments(db, 0)
+				playerPayments, err := GetPlayerPayments(db, seasonId, teamId)
+				if err != nil {
+					log.Printf("Error fetching player payments: %v", err)
+					http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+					return
+				}
 
 				var playerFinesTotals []PlayerFinesTotal
 
@@ -665,7 +720,7 @@ func fineSummaryHandler(db *gorm.DB) http.HandlerFunc {
 				}
 
 				fineSummary := fineTotals(playerFinesTotals, grandTotal)
-				fineSummary.Render(GetContext(r, db), w)
+				fineSummary.Render(ctx, w)
 			}
 		case "POST":
 			{
@@ -698,21 +753,43 @@ type FineWithPlayer struct {
 
 func fineHandler(db *gorm.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := GetContext(r, db)
+		teamId := getTeamId(ctx)
+		if user, ok := requireGoogleAdminForTeam(db, r, teamId); !ok {
+			if user == nil {
+				w.Header().Set("HX-Redirect", "/finemaster/auth")
+				http.Redirect(w, r, "/finemaster/auth", http.StatusSeeOther)
+			} else {
+				http.Error(w, "Admin user cannot access this team", http.StatusForbidden)
+			}
+			return
+		}
+		activeSeason, _ := GetActiveSeason(db)
+		seasonId := uint(0)
+		if activeSeason != nil {
+			seasonId = activeSeason.ID
+		}
+
 		switch r.Method {
 		case "GET":
 			{
 				viewMode := r.URL.Query().Get("viewMode")
 				if viewMode == "list-button" {
 					fineList := finesListButton("Open Fine List", "list", false, false)
-					fineList.Render(GetContext(r, db), w)
+					fineList.Render(ctx, w)
 					return
 				} else if viewMode == "sheet-button" {
 					fineList := finesListButton("Open Court Sheet", "sheet", false, false)
-					fineList.Render(GetContext(r, db), w)
+					fineList.Render(ctx, w)
 					return
 				} else if viewMode == "all-button" {
 					allFineList := fineListButton(true)
-					allFineList.Render(GetContext(r, db), w)
+					allFineList.Render(ctx, w)
+					return
+				}
+
+				if seasonId == 0 || teamId == 0 {
+					warning("No active season/team - fine list is unavailable").Render(ctx, w)
 					return
 				}
 
@@ -749,7 +826,7 @@ func fineHandler(db *gorm.DB) http.HandlerFunc {
 					}
 				}
 
-				fineWithPlayers, err := GetFineWithPlayers(db, 0, limit)
+				fineWithPlayers, err := GetFineWithPlayers(db, seasonId, teamId, 0, limit)
 				if err != nil {
 					http.Error(w, fmt.Sprintf("Error parsing limitStr %v", err), http.StatusBadRequest)
 					return
@@ -763,26 +840,20 @@ func fineHandler(db *gorm.DB) http.HandlerFunc {
 				case "sheet":
 					log.Printf("fineHandler - fineListSheet %+v", fineWithPlayers)
 
-					ctx := GetContext(r, db)
-					mst, err := GetMatchSeasonTeam(db)
-					if err != nil {
-						warning := warning(fmt.Sprintf("Error fetching match season team: %v", err))
-						warning.Render(ctx, w)
-						return
-					} else if mst.Team == nil {
-						warning := warning(fmt.Sprintf("No active team"))
-						warning.Render(ctx, w)
+					team, err := GetTeam(db, teamId)
+					if err != nil || team == nil {
+						warning(fmt.Sprintf("No active team")).Render(ctx, w)
 						return
 					}
 
-					fineListSheet := fineListSheet(mst.Team, fineWithPlayers, standAlone, full)
+					fineListSheet := fineListSheet(team, fineWithPlayers, standAlone, full)
 					fineListSheet.Render(ctx, w)
 					return
 				default:
 					log.Printf("fineHandler - fineList ")
 
 					fineList := fineList(fineWithPlayers, pageId, 0, finemasterPage, false)
-					fineList.Render(GetContext(r, db), w)
+					fineList.Render(ctx, w)
 				}
 
 				return
@@ -792,6 +863,11 @@ func fineHandler(db *gorm.DB) http.HandlerFunc {
 
 				if err := r.ParseForm(); err != nil {
 					http.Error(w, "fineHandler - Invalid form data", http.StatusBadRequest)
+					return
+				}
+				if seasonId == 0 || teamId == 0 {
+					warning("No active season/team - cannot save fine").Render(ctx, w)
+					http.Error(w, "No active season/team", http.StatusBadRequest)
 					return
 				}
 				createdFines := []Fine{}
@@ -900,6 +976,8 @@ func fineHandler(db *gorm.DB) http.HandlerFunc {
 								PlayerID: uint(playerId),
 								FineAt:   fineAt,
 								Approved: approved,
+								SeasonID: seasonId,
+								TeamID:   teamId,
 							}
 
 							if err := SaveFine(db, &fine); err != nil {
@@ -936,6 +1014,8 @@ func fineHandler(db *gorm.DB) http.HandlerFunc {
 								Context:  context,
 								PlayerID: uint(playerId),
 								Approved: approved,
+								SeasonID: seasonId,
+								TeamID:   teamId,
 							}
 
 							if err := SaveFine(db, &fine); err != nil {
@@ -1117,7 +1197,12 @@ func adminHandler(db *gorm.DB) http.HandlerFunc {
 					http.Error(w, "fineHandler - Invalid form data", http.StatusBadRequest)
 					return
 				}
+				if googleAuthEnabled() {
+					handleGoogleAdminAuth(db, w, r)
+					return
+				}
 				password := r.FormValue("password")
+				teamIdStr := r.FormValue("teamId")
 				pass := os.Getenv("PASS")
 				if pass == "" {
 					pass = DEFAULT_PASS
@@ -1130,7 +1215,41 @@ func adminHandler(db *gorm.DB) http.HandlerFunc {
 					return
 				}
 
-				var url = fmt.Sprintf("/finemaster/%s", pass)
+				if len(teamIdStr) == 0 {
+					warn := warning("Please select a team")
+					warn.Render(GetContext(r, db), w)
+					http.Error(w, "Missing teamId", http.StatusBadRequest)
+					return
+				}
+
+				teamIdInt, err := strconv.ParseUint(teamIdStr, 10, 64)
+				if err != nil {
+					warn := warning(fmt.Sprintf("Invalid teamId: %v", err))
+					warn.Render(GetContext(r, db), w)
+					http.Error(w, "Invalid teamId", http.StatusBadRequest)
+					return
+				}
+
+				team, err := GetTeam(db, uint(teamIdInt))
+				if err != nil || team == nil {
+					warn := warning(fmt.Sprintf("Team not found (teamId=%s)", teamIdStr))
+					warn.Render(GetContext(r, db), w)
+					http.Error(w, "Team not found", http.StatusBadRequest)
+					return
+				}
+
+				// Persist admin login for this team
+				http.SetCookie(w, &http.Cookie{
+					Name:     adminTokenCookieName,
+					Value:    makeAdminToken(team.ID, adminTokenSecret()),
+					Path:     "/",
+					HttpOnly: true,
+					Secure:   false, // Set to true in production with HTTPS
+					SameSite: http.SameSiteStrictMode,
+					MaxAge:   60 * 60 * 24 * 30, // 30 days
+				})
+
+				var url = "/finemaster"
 				log.Printf("REdirecting to %s", url)
 				w.Header().Set("HX-Redirect", url)
 				w.Header().Set("HX-Reload", "true")
@@ -1163,6 +1282,14 @@ func adminHandler(db *gorm.DB) http.HandlerFunc {
 
 func fineAddHandler(db *gorm.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := GetContext(r, db)
+		teamId := getTeamId(ctx)
+		activeSeason, _ := GetActiveSeason(db)
+		seasonId := uint(0)
+		if activeSeason != nil {
+			seasonId = activeSeason.ID
+		}
+
 		var newFines []uint
 		if r.Method == "POST" {
 
@@ -1191,7 +1318,7 @@ func fineAddHandler(db *gorm.DB) http.HandlerFunc {
 			//success.Render(GetContext(r, db), w)
 		}
 
-		playersWithFines, err := GetPlayersWithFines(db, 0, []uint64{})
+		playersWithFines, err := GetPlayersWithFines(db, seasonId, teamId, []uint64{})
 		if err != nil {
 			log.Printf("Error fetching players with fines: %v", err)
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
@@ -1216,7 +1343,7 @@ func fineAddHandler(db *gorm.DB) http.HandlerFunc {
 				}
 			}*/
 		fsComp := fineSuperSelect(playersWithFines, pFines, newFines, "2")
-		fsComp.Render(GetContext(r, db), w)
+		fsComp.Render(ctx, w)
 	}
 }
 
@@ -1278,14 +1405,22 @@ func fineMultiHandler(db *gorm.DB) http.HandlerFunc {
 					fine.FineAt = time.Now()
 				}
 
+				ctx := GetContext(r, db)
 				activeSeason, err := GetActiveSeason(db)
 				if err != nil {
 					errComp := errMsg(F("Could not get active season %v", err))
-					errComp.Render(GetContext(r, db), w)
+					errComp.Render(ctx, w)
 				} else if activeSeason != nil {
 					fine.SeasonID = uint(activeSeason.ID)
 				} else {
 					warnStr = warnStr + "\nNo active season"
+				}
+
+				fine.TeamID = getTeamId(ctx)
+				if fine.TeamID == 0 || fine.SeasonID == 0 {
+					errMsg("No active season/team - cannot save fine").Render(ctx, w)
+					http.Error(w, "No active season/team", http.StatusBadRequest)
+					return
 				}
 
 				fine.Approved = config.DefaultToApproved
@@ -1295,7 +1430,7 @@ func fineMultiHandler(db *gorm.DB) http.HandlerFunc {
 				if err != nil {
 					http.Error(w, "Invalid player ID", http.StatusBadRequest)
 					errComp := errMsg(F("Could not Save Fine %+v", fine))
-					errComp.Render(GetContext(r, db), w)
+					errComp.Render(ctx, w)
 					return
 				} else {
 					savedFines = append(savedFines, *fine)
@@ -1303,7 +1438,14 @@ func fineMultiHandler(db *gorm.DB) http.HandlerFunc {
 			}
 		}
 
-		playersWithFines, err := GetPlayersWithFines(db, 0, []uint64{})
+		ctx := GetContext(r, db)
+		teamId := getTeamId(ctx)
+		activeSeason2, _ := GetActiveSeason(db)
+		seasonId := uint(0)
+		if activeSeason2 != nil {
+			seasonId = activeSeason2.ID
+		}
+		playersWithFines, err := GetPlayersWithFines(db, seasonId, teamId, []uint64{})
 		if err != nil {
 			log.Printf("Error fetching players with fines: %v", err)
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
@@ -1318,7 +1460,7 @@ func fineMultiHandler(db *gorm.DB) http.HandlerFunc {
 		}
 
 		res := fineSuperSelectResults(playersWithFines, pFines, savedFines, warnStr)
-		res.Render(GetContext(r, db), w)
+		res.Render(ctx, w)
 	}
 }
 
@@ -1455,14 +1597,14 @@ func teamActiveMatchHandler(db *gorm.DB) http.HandlerFunc {
 					return
 				}
 
-				matches, err := GetMatches(db, 0, 0, 999)
+				matches, err := GetMatches(db, activeSeasonID(db), 0, 999)
 				if err != nil {
 					warning := warning(fmt.Sprintf("teamActiveMatchHandler - Error fetching matches: %v", err))
 					warning.Render(GetContext(r, db), w)
 					return
 				}
 
-				success := teamEditForm(newTeam, matches, fmt.Sprintf("Active Match ID set to %s", activeMatchOverrideId))
+				success := teamEditForm(newTeam, matches, success(fmt.Sprintf("Active Match ID set to %s", activeMatchOverrideId)))
 				success.Render(GetContext(r, db), w)
 				return
 
@@ -1500,6 +1642,14 @@ func teamActiveMatchHandler(db *gorm.DB) http.HandlerFunc {
 					warning := warning(fmt.Sprintf("Error fetching GetMatchSeasonTeam: %v", err))
 					warning.Render(GetContext(r, db), w)
 					return
+				}
+				if matchSeasonTeam.Team != nil {
+					if upcomingMatch, lineup, err := upcomingMatchLineupForTeam(db, matchSeasonTeam.Team.ID); err == nil {
+						matchSeasonTeam.Match = upcomingMatch
+						if matchSeasonTeam.Match != nil && lineup != nil {
+							matchSeasonTeam.Match.LineupID = lineup.ID
+						}
+					}
 				}
 
 				viewMode := r.URL.Query().Get("viewMode")
@@ -1541,7 +1691,7 @@ func teamActiveMatchHandler(db *gorm.DB) http.HandlerFunc {
 
 					}*/
 
-					matches, err := GetMatches(db, 0, 0, 999)
+					matches, err := GetMatches(db, activeSeasonID(db), 0, 999)
 					if err != nil {
 						warning := warning(fmt.Sprintf("Error fetching matches: %v", err))
 						warning.Render(GetContext(r, db), w)
@@ -1553,6 +1703,14 @@ func teamActiveMatchHandler(db *gorm.DB) http.HandlerFunc {
 						warning := warning(fmt.Sprintf("Error fetching GetMatchSeasonTeam: %v", err))
 						warning.Render(GetContext(r, db), w)
 						return
+					}
+					if matchSeasonTeam.Team != nil {
+						if upcomingMatch, lineup, err := upcomingMatchLineupForTeam(db, matchSeasonTeam.Team.ID); err == nil {
+							matchSeasonTeam.Match = upcomingMatch
+							if matchSeasonTeam.Match != nil && lineup != nil {
+								matchSeasonTeam.Match.LineupID = lineup.ID
+							}
+						}
 					}
 
 					teamActiveMatchForm := teamActiveMatchAddOrOverrideForm(matchSeasonTeam.Team, matchSeasonTeam, matches, "")
@@ -1573,16 +1731,194 @@ func teamActiveMatchHandler(db *gorm.DB) http.HandlerFunc {
 	}
 }
 
+func teamActivateHandler(db *gorm.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		teamId := r.URL.Query().Get("teamId")
+		if len(teamId) == 0 {
+			warning("No team ID provided").Render(GetContext(r, db), w)
+			return
+		}
+
+		teamIdInt, err := strconv.ParseUint(teamId, 10, 64)
+		if err != nil {
+			warning(fmt.Sprintf("Error parsing team ID: %v", err)).Render(GetContext(r, db), w)
+			return
+		}
+
+		team, err := GetTeam(db, uint(teamIdInt))
+		if err != nil || team == nil {
+			warning(fmt.Sprintf("Team not found (teamId=%s)", teamId)).Render(GetContext(r, db), w)
+			return
+		}
+		if user, ok := requireGoogleAdminForTeam(db, r, team.ID); !ok {
+			if user == nil {
+				http.Error(w, "Admin auth required", http.StatusUnauthorized)
+			} else {
+				http.Error(w, "Admin user cannot access this team", http.StatusForbidden)
+			}
+			return
+		}
+
+		http.SetCookie(w, &http.Cookie{
+			Name:     adminTokenCookieName,
+			Value:    makeAdminToken(team.ID, adminTokenSecret()),
+			Path:     "/",
+			HttpOnly: true,
+			Secure:   false,
+			SameSite: http.SameSiteStrictMode,
+			MaxAge:   60 * 60 * 24 * 30,
+		})
+		if user, _, ok := currentAdminUser(r, db); ok {
+			if err := activateAdminTeam(w, *user, *team); err != nil {
+				warning(fmt.Sprintf("Error saving active team: %v", err)).Render(GetContext(r, db), w)
+				return
+			}
+		} else {
+			session, _ := store.Get(r, "session-name")
+			setTeamSessionValues(*team, session)
+			if err := session.Save(r, w); err != nil {
+				warning(fmt.Sprintf("Error saving active team: %v", err)).Render(GetContext(r, db), w)
+				return
+			}
+		}
+
+		teams, err := GetTeams(db, 9999, 0)
+		if err != nil {
+			http.Error(w, "Error fetching teams", http.StatusInternalServerError)
+			return
+		}
+
+		matches, err := GetMatches(db, activeSeasonID(db), 0, 999)
+		if err != nil {
+			warning(fmt.Sprintf("teamActivateHandler - Error fetching matches: %v", err)).Render(GetContext(r, db), w)
+			return
+		}
+
+		teamList(teams, matches, team.ID).Render(GetContext(r, db), w)
+	}
+}
+
+func activateAdminTeam(w http.ResponseWriter, user AdminUser, team Team) error {
+	setAdminSessionCookie(w, user.ID, team.ID)
+	http.SetCookie(w, &http.Cookie{
+		Name:     adminTokenCookieName,
+		Value:    makeAdminToken(team.ID, adminTokenSecret()),
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   false,
+		SameSite: http.SameSiteStrictMode,
+		MaxAge:   60 * 60 * 24 * 30,
+	})
+	return nil
+}
+
+func adminTeamAccessRequestHandler(db *gorm.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		user, _, ok := currentAdminUser(r, db)
+		if !ok {
+			http.Error(w, "Admin access required", http.StatusForbidden)
+			return
+		}
+		if err := r.ParseForm(); err != nil {
+			http.Error(w, "Invalid form data", http.StatusBadRequest)
+			return
+		}
+		teamID64, err := strconv.ParseUint(r.FormValue("teamId"), 10, 64)
+		if err != nil || teamID64 == 0 {
+			http.Error(w, "Invalid team", http.StatusBadRequest)
+			return
+		}
+		team, err := GetTeam(db, uint(teamID64))
+		if err != nil {
+			http.Error(w, "Team not found", http.StatusBadRequest)
+			return
+		}
+		if canAdminAccessTeam(db, user.ID, team.ID) {
+			if err := activateAdminTeam(w, *user, *team); err != nil {
+				http.Error(w, "Could not activate team", http.StatusInternalServerError)
+				return
+			}
+			w.Header().Set("HX-Redirect", "/")
+			http.Redirect(w, r, "/", http.StatusSeeOther)
+			return
+		}
+		if err := RequestAdminAccess(db, user.ID, team.ID, adminRoleTeamAdmin); err != nil {
+			http.Error(w, "Could not request admin access", http.StatusInternalServerError)
+			return
+		}
+		success("Access request sent. A team admin or super admin can approve it.").Render(GetContext(r, db), w)
+	}
+}
+
+func adminTeamSwitchHandler(db *gorm.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		user, _, ok := currentAdminUser(r, db)
+		if !ok {
+			http.Error(w, "Admin access required", http.StatusForbidden)
+			return
+		}
+		if err := r.ParseForm(); err != nil {
+			http.Error(w, "Invalid form data", http.StatusBadRequest)
+			return
+		}
+		teamID64, err := strconv.ParseUint(r.FormValue("teamId"), 10, 64)
+		if err != nil || teamID64 == 0 {
+			http.Error(w, "Invalid team", http.StatusBadRequest)
+			return
+		}
+		team, err := GetTeam(db, uint(teamID64))
+		if err != nil || team == nil {
+			http.Error(w, "Team not found", http.StatusBadRequest)
+			return
+		}
+		if !canAdminAccessTeam(db, user.ID, team.ID) {
+			http.Error(w, "Admin user cannot access this team", http.StatusForbidden)
+			return
+		}
+		if err := activateAdminTeam(w, *user, *team); err != nil {
+			http.Error(w, "Could not activate team", http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("HX-Redirect", "/")
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+	}
+}
+
 func teamHandler(db *gorm.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		var adminUser *AdminUser
+		if googleAuthEnabled() {
+			user, _, ok := currentAdminUser(r, db)
+			if !ok {
+				w.Header().Set("HX-Redirect", "/finemaster/auth")
+				http.Redirect(w, r, "/finemaster/auth", http.StatusSeeOther)
+				return
+			}
+			adminUser = user
+		}
 		switch r.Method {
 		case "GET":
 			{
+				ctx := GetContext(r, db)
+				activeTeamID := getTeamId(ctx)
 				viewMode := r.URL.Query().Get("viewMode")
 				switch viewMode {
 				case "button":
 					teamList := teamListButton(true)
-					teamList.Render(GetContext(r, db), w)
+					teamList.Render(ctx, w)
 					return
 
 				case "add":
@@ -1610,6 +1946,10 @@ func teamHandler(db *gorm.DB) http.HandlerFunc {
 						warning.Render(GetContext(r, db), w)
 						return
 					}
+					if adminUser != nil && !canAdminAccessTeam(db, adminUser.ID, team.ID) {
+						http.Error(w, "Admin user cannot access this team", http.StatusForbidden)
+						return
+					}
 
 					teamEditFormButton := teamEditFormButton(*team, false)
 					teamEditFormButton.Render(GetContext(r, db), w)
@@ -1635,15 +1975,19 @@ func teamHandler(db *gorm.DB) http.HandlerFunc {
 						warning.Render(GetContext(r, db), w)
 						return
 					}
+					if adminUser != nil && !canAdminAccessTeam(db, adminUser.ID, team.ID) {
+						http.Error(w, "Admin user cannot access this team", http.StatusForbidden)
+						return
+					}
 
-					matches, err := GetMatches(db, 0, 0, 999)
+					matches, err := GetMatches(db, activeSeasonID(db), 0, 999)
 					if err != nil {
 						warning := warning(fmt.Sprintf("teamHandler - Error fetching matches: %v", err))
 						warning.Render(GetContext(r, db), w)
 						return
 					}
 
-					editTeam := teamEditForm(*team, matches, "")
+					editTeam := teamEditForm(*team, matches, nil)
 					editTeam.Render(GetContext(r, db), w)
 					return
 				case "list":
@@ -1653,8 +1997,11 @@ func teamHandler(db *gorm.DB) http.HandlerFunc {
 						http.Error(w, "Error fetching teams", http.StatusInternalServerError)
 						return
 					}
+					if adminUser != nil {
+						teams = FilterTeamsForAdminUser(db, adminUser.ID, teams)
+					}
 
-					matches, err := GetMatches(db, 0, 0, 999)
+					matches, err := GetMatches(db, activeSeasonID(db), 0, 999)
 					if err != nil {
 						warning := warning(fmt.Sprintf("teamHandler - Error fetching matches: %v", err))
 						warning.Render(GetContext(r, db), w)
@@ -1664,12 +2011,12 @@ func teamHandler(db *gorm.DB) http.HandlerFunc {
 					includeFrame := r.URL.Query().Get("includeFrame") == "true"
 
 					if includeFrame {
-						teamList := teamListFrame(teams, matches)
-						teamList.Render(GetContext(r, db), w)
+						teamList := teamListFrame(teams, matches, activeTeamID)
+						teamList.Render(ctx, w)
 						return
 					}
-					teamList := teamList(teams, matches)
-					teamList.Render(GetContext(r, db), w)
+					teamList := teamList(teams, matches, activeTeamID)
+					teamList.Render(ctx, w)
 					return
 
 				}
@@ -1694,35 +2041,107 @@ func teamHandler(db *gorm.DB) http.HandlerFunc {
 					teamKey := r.FormValue("teamKey")
 					teamMemberPass := r.FormValue("teamMemberPass")
 					teamAdminPass := r.FormValue("teamAdminPass")
+					activeMatchOverrideID, err := parseOptionalUint(r.FormValue("activeMatchOverrideId"))
+					if err != nil {
+						waring := warning(fmt.Sprintf("Error parsing active match override ID: %v", err))
+						waring.Render(GetContext(r, db), w)
+						return
+					}
+					sportyCompetitionID, err := parseOptionalUint(r.FormValue("sportyCompetitionId"))
+					if err != nil {
+						warning(fmt.Sprintf("Error parsing Sporty competition ID: %v", err)).Render(GetContext(r, db), w)
+						return
+					}
+					sportyGradeID, err := parseOptionalUint(r.FormValue("sportyGradeId"))
+					if err != nil {
+						warning(fmt.Sprintf("Error parsing Sporty grade ID: %v", err)).Render(GetContext(r, db), w)
+						return
+					}
+					sportyTeamID, err := parseOptionalUint(r.FormValue("sportyTeamId"))
+					if err != nil {
+						warning(fmt.Sprintf("Error parsing Sporty team ID: %v", err)).Render(GetContext(r, db), w)
+						return
+					}
 					showFineAddOnHomePage := r.FormValue("showFineAddOnHomePage") == "on"
+					showPitchMatchOnHomePage := r.FormValue("showPitchMatchOnHomePage") == "on"
+					showCourtSheetOnHomePage := r.FormValue("showCourtSheetOnHomePage") == "on"
+					enablePublicFeedbackForm := r.FormValue("enablePublicFeedbackForm") == "on"
 					showCourtTotals := r.FormValue("showCourtTotals") == "on"
-
-					team := Team{
-						ID:                    uint(id),
-						TeamName:              teamName,
-						TeamKey:               teamKey,
-						TeamAdminPass:         teamAdminPass,
-						TeamMemberPass:        teamMemberPass,
-						ShowFineAddOnHomePage: showFineAddOnHomePage,
-						ShowCourtTotals:       showCourtTotals,
+					enableFinesModule := r.FormValue("enableFinesModule") == "on"
+					enableLineupsModule := r.FormValue("enableLineupsModule") == "on"
+					enableMatchesModule := r.FormValue("enableMatchesModule") == "on"
+					enablePlayersModule := r.FormValue("enablePlayersModule") == "on"
+					enableCourtModule := r.FormValue("enableCourtModule") == "on"
+					enableLeaderboardModule := r.FormValue("enableLeaderboardModule") == "on"
+					allowAdminRegistration := r.FormValue("allowAdminRegistration") == "on"
+					sportyAutoMatchSync := r.FormValue("sportyAutoMatchSync") == "on"
+					lineupPlayerCount, err := parseLineupPlayerCount(r.FormValue("lineupPlayerCount"))
+					if err != nil {
+						warning(err.Error()).Render(GetContext(r, db), w)
+						return
 					}
 
-					newTeam, err := SaveTeam(db, &team)
+					team, err := GetTeam(db, uint(id))
+					if err != nil {
+						warning(fmt.Sprintf("Error fetching team %+v", err)).Render(GetContext(r, db), w)
+						return
+					}
+					if adminUser != nil && !canAdminAccessTeam(db, adminUser.ID, team.ID) {
+						http.Error(w, "Admin user cannot access this team", http.StatusForbidden)
+						return
+					}
+					team.TeamName = teamName
+					team.TeamKey = teamKey
+					team.TeamAdminPass = teamAdminPass
+					team.TeamMemberPass = teamMemberPass
+					team.ActiveMatchIDOverride = activeMatchOverrideID
+					team.ShowFineAddOnHomePage = showFineAddOnHomePage
+					team.ShowPitchMatchOnHomePage = showPitchMatchOnHomePage
+					team.ShowCourtSheetOnHomePage = showCourtSheetOnHomePage
+					team.EnablePublicFeedbackForm = enablePublicFeedbackForm
+					team.ShowCourtTotals = showCourtTotals
+					team.EnableFinesModule = enableFinesModule
+					team.EnableLineupsModule = enableLineupsModule
+					team.EnableMatchesModule = enableMatchesModule
+					team.EnablePlayersModule = enablePlayersModule
+					team.EnableCourtModule = enableCourtModule
+					team.EnableLeaderboardModule = enableLeaderboardModule
+					team.AllowAdminRegistration = allowAdminRegistration
+					team.LineupPlayerCount = lineupPlayerCount
+					team.SportyCompetitionID = sportyCompetitionID
+					team.SportyOrgID = 0
+					team.SportyGradeID = sportyGradeID
+					team.SportyTeamID = sportyTeamID
+					team.SportyAutoMatchSync = sportyAutoMatchSync
+
+					newTeam, err := SaveTeam(db, team)
 					if err != nil {
 						warning := warning(fmt.Sprintf("Error saving team %+v", err))
 						warning.Render(GetContext(r, db), w)
 						return
 					}
+					var syncResult *SportySyncResult
+					var syncErr error
+					if newTeam.SportyAutoMatchSync {
+						syncResult, syncErr = SyncSportyMatches(db, &newTeam)
+					}
+					session, _ := store.Get(r, "session-name")
+					saveTeamToSession(r, newTeam, session)
 
-					matches, err := GetMatches(db, 0, 0, 999)
+					matches, err := GetMatches(db, activeSeasonID(db), 0, 999)
 					if err != nil {
 						warning := warning(fmt.Sprintf("teamHandler - Error fetching matches: %v", err))
 						warning.Render(GetContext(r, db), w)
 						return
 					}
 
-					success := teamEditForm(newTeam, matches, "Team updated")
-					success.Render(GetContext(r, db), w)
+					if syncErr != nil {
+						teamEditForm(newTeam, matches, warning(fmt.Sprintf("Team updated, but Sporty sync failed: %v", syncErr))).Render(GetContext(r, db), w)
+					} else if syncResult != nil {
+						teamEditForm(newTeam, matches, sportySyncResultMessage("Team updated.", syncResult, true)).Render(GetContext(r, db), w)
+					} else {
+						teamEditForm(newTeam, matches, successWithHomepageLink("Team updated")).Render(GetContext(r, db), w)
+					}
 					return
 				}
 
@@ -1739,34 +2158,99 @@ func teamHandler(db *gorm.DB) http.HandlerFunc {
 				teamKey := r.FormValue("teamKey")
 				teamMemberPass := r.FormValue("teamMemberPass")
 				teamAdminPass := r.FormValue("teamAdminPass")
+				sportyCompetitionID, err := parseOptionalUint(r.FormValue("sportyCompetitionId"))
+				if err != nil {
+					warning(fmt.Sprintf("Error parsing Sporty competition ID: %v", err)).Render(GetContext(r, db), w)
+					return
+				}
+				sportyGradeID, err := parseOptionalUint(r.FormValue("sportyGradeId"))
+				if err != nil {
+					warning(fmt.Sprintf("Error parsing Sporty grade ID: %v", err)).Render(GetContext(r, db), w)
+					return
+				}
+				sportyTeamID, err := parseOptionalUint(r.FormValue("sportyTeamId"))
+				if err != nil {
+					warning(fmt.Sprintf("Error parsing Sporty team ID: %v", err)).Render(GetContext(r, db), w)
+					return
+				}
 				showFineAddOnHomePage := r.FormValue("showFineAddOnHomePage") == "on"
+				showPitchMatchOnHomePage := r.FormValue("showPitchMatchOnHomePage") == "on"
+				showCourtSheetOnHomePage := r.FormValue("showCourtSheetOnHomePage") == "on"
+				enablePublicFeedbackForm := r.FormValue("enablePublicFeedbackForm") == "on"
 				showCourtTotals := r.FormValue("showCourtTotals") == "on"
-
-				team := Team{
-					TeamName:              teamName,
-					TeamKey:               teamKey,
-					TeamAdminPass:         teamAdminPass,
-					TeamMemberPass:        teamMemberPass,
-					ShowFineAddOnHomePage: showFineAddOnHomePage,
-					ShowCourtTotals:       showCourtTotals,
+				enableFinesModule := r.FormValue("enableFinesModule") == "on"
+				enableLineupsModule := r.FormValue("enableLineupsModule") == "on"
+				enableMatchesModule := r.FormValue("enableMatchesModule") == "on"
+				enablePlayersModule := r.FormValue("enablePlayersModule") == "on"
+				enableCourtModule := r.FormValue("enableCourtModule") == "on"
+				enableLeaderboardModule := r.FormValue("enableLeaderboardModule") == "on"
+				allowAdminRegistration := r.FormValue("allowAdminRegistration") == "on"
+				sportyAutoMatchSync := r.FormValue("sportyAutoMatchSync") == "on"
+				lineupPlayerCount, err := parseLineupPlayerCount(r.FormValue("lineupPlayerCount"))
+				if err != nil {
+					warning(err.Error()).Render(GetContext(r, db), w)
+					return
 				}
 
-				team, err := SaveTeam(db, &team)
+				team := Team{
+					TeamName:                 teamName,
+					TeamKey:                  teamKey,
+					TeamAdminPass:            teamAdminPass,
+					TeamMemberPass:           teamMemberPass,
+					ShowFineAddOnHomePage:    showFineAddOnHomePage,
+					ShowPitchMatchOnHomePage: showPitchMatchOnHomePage,
+					ShowCourtSheetOnHomePage: showCourtSheetOnHomePage,
+					EnablePublicFeedbackForm: enablePublicFeedbackForm,
+					ShowCourtTotals:          showCourtTotals,
+					EnableFinesModule:        enableFinesModule,
+					EnableLineupsModule:      enableLineupsModule,
+					EnableMatchesModule:      enableMatchesModule,
+					EnablePlayersModule:      enablePlayersModule,
+					EnableCourtModule:        enableCourtModule,
+					EnableLeaderboardModule:  enableLeaderboardModule,
+					AllowAdminRegistration:   allowAdminRegistration,
+					LineupPlayerCount:        lineupPlayerCount,
+					SportyCompetitionID:      sportyCompetitionID,
+					SportyOrgID:              0,
+					SportyGradeID:            sportyGradeID,
+					SportyTeamID:             sportyTeamID,
+					SportyAutoMatchSync:      sportyAutoMatchSync,
+				}
+
+				team, err = SaveTeam(db, &team)
 				if err != nil {
 					warning := warning(fmt.Sprintf("Error saving team %+v", err))
 					warning.Render(GetContext(r, db), w)
 					return
 				}
+				if adminUser != nil && !isSuperAdmin(db, adminUser.ID) {
+					if err := GrantAdminRole(db, adminUser.ID, team.ID, adminRoleTeamAdmin); err != nil {
+						warning(fmt.Sprintf("Team created, but admin role assignment failed: %v", err)).Render(GetContext(r, db), w)
+						return
+					}
+				}
+				var syncResult *SportySyncResult
+				var syncErr error
+				if team.SportyAutoMatchSync {
+					syncResult, syncErr = SyncSportyMatches(db, &team)
+				}
+				session, _ := store.Get(r, "session-name")
+				saveTeamToSession(r, team, session)
 
-				matches, err := GetMatches(db, 0, 0, 999)
+				matches, err := GetMatches(db, activeSeasonID(db), 0, 999)
 				if err != nil {
 					warning := warning(fmt.Sprintf("teamHandler - Error fetching matches: %v", err))
 					warning.Render(GetContext(r, db), w)
 					return
 				}
 
-				success := teamEditForm(team, matches, "Team created")
-				success.Render(GetContext(r, db), w)
+				if syncErr != nil {
+					teamEditForm(team, matches, warning(fmt.Sprintf("Team created, but Sporty sync failed: %v", syncErr))).Render(GetContext(r, db), w)
+				} else if syncResult != nil {
+					teamEditForm(team, matches, sportySyncResultMessage("Team created.", syncResult, true)).Render(GetContext(r, db), w)
+				} else {
+					teamEditForm(team, matches, successWithHomepageLink("Team created")).Render(GetContext(r, db), w)
+				}
 				return
 			}
 		case "DELETE":
@@ -1781,6 +2265,10 @@ func teamHandler(db *gorm.DB) http.HandlerFunc {
 				if err != nil {
 					warning := warning(fmt.Sprintf("teanHandler Error parsing team ID: %v", err))
 					warning.Render(GetContext(r, db), w)
+					return
+				}
+				if adminUser != nil && !canAdminAccessTeam(db, adminUser.ID, uint(teamIdInt)) {
+					http.Error(w, "Admin user cannot access this team", http.StatusForbidden)
 					return
 				}
 
@@ -1948,7 +2436,7 @@ func presetFineHandler(db *gorm.DB) http.HandlerFunc {
 			realPass := os.Getenv("PASS")
 			if pass != realPass {
 				log.Printf("key Error fetching presetFineHandler")
-				http.Error(w, "Not this time mate.", http.StatusInternalServerError)
+				http.Error(w, "Not this time mate. [3]", http.StatusInternalServerError)
 				return
 			}
 
@@ -2043,6 +2531,21 @@ func finemasterAuthHandler(db *gorm.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case "GET":
+			if googleAuthEnabled() {
+				if _, _, ok := currentAdminUser(r, db); ok {
+					w.Header().Set("HX-Redirect", "/finemaster")
+					return
+				}
+				teams, err := GetTeams(db, 9999, 0)
+				if err != nil {
+					log.Printf("Error checking teams: %v", err)
+					http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+					return
+				}
+				authForm := googleAdminAuthForm(os.Getenv("GOOGLE_CLIENT_ID"), teams, getTeamId(GetContext(r, db)), r.URL.Query().Get("mode") == "register")
+				authForm.Render(GetContext(r, db), w)
+				return
+			}
 			// Check if user is already authenticated
 			if _, err := r.Cookie("admin-user"); err == nil {
 				// User is authenticated, redirect to finemaster
@@ -2072,6 +2575,10 @@ func finemasterAuthHandler(db *gorm.DB) http.HandlerFunc {
 		case "POST":
 			if err := r.ParseForm(); err != nil {
 				http.Error(w, "Invalid form data", http.StatusBadRequest)
+				return
+			}
+			if googleAuthEnabled() {
+				handleGoogleAdminAuth(db, w, r)
 				return
 			}
 
@@ -2109,52 +2616,359 @@ func finemasterAuthHandler(db *gorm.DB) http.HandlerFunc {
 	}
 }
 
+func handleGoogleAdminAuth(db *gorm.DB, w http.ResponseWriter, r *http.Request) {
+	info, err := googleCredentialVerifier(r.FormValue("credential"))
+	if err != nil {
+		log.Printf("Google admin auth failed: %v", err)
+		w.WriteHeader(http.StatusUnauthorized)
+		warning("Google sign-in failed").Render(GetContext(r, db), w)
+		return
+	}
+
+	teamID := parseAdminTeamID(r, db)
+	firstUserCount, err := CountAdminUsers(db)
+	if err != nil {
+		http.Error(w, "Could not check admin users", http.StatusInternalServerError)
+		return
+	}
+	register := r.FormValue("mode") == "register"
+	requestAccess := r.FormValue("mode") == "request"
+	if requestAccess {
+		if teamID == 0 {
+			http.Error(w, "No active team for access request", http.StatusBadRequest)
+			return
+		}
+		user, _, err := SaveAdminUserFromGoogle(db, *info, true)
+		if err != nil {
+			http.Error(w, "Could not save access request user", http.StatusInternalServerError)
+			return
+		}
+		if err := RequestAdminAccess(db, user.ID, teamID, adminRoleTeamAdmin); err != nil {
+			http.Error(w, "Could not request admin access", http.StatusInternalServerError)
+			return
+		}
+		success("Access request sent. A team admin or super admin can approve it.").Render(GetContext(r, db), w)
+		return
+	}
+	allowCreate := firstUserCount == 0
+	if register && !allowCreate {
+		team, err := GetTeam(db, teamID)
+		if err == nil && team != nil && team.AllowAdminRegistration {
+			allowCreate = true
+		}
+	}
+
+	user, created, err := SaveAdminUserFromGoogle(db, *info, allowCreate)
+	if err != nil {
+		log.Printf("Admin user auth failed for %s: %v", info.Email, err)
+		w.WriteHeader(http.StatusForbidden)
+		warning("Admin account is not registered for this team").Render(GetContext(r, db), w)
+		return
+	}
+
+	if created {
+		if firstUserCount == 0 {
+			if err := GrantAdminRole(db, user.ID, 0, adminRoleSuperAdmin); err != nil {
+				http.Error(w, "Could not grant super admin role", http.StatusInternalServerError)
+				return
+			}
+		} else {
+			if teamID == 0 {
+				http.Error(w, "No active team for registration", http.StatusBadRequest)
+				return
+			}
+			if err := GrantAdminRole(db, user.ID, teamID, adminRoleTeamAdmin); err != nil {
+				http.Error(w, "Could not grant team admin role", http.StatusInternalServerError)
+				return
+			}
+		}
+	}
+
+	if teamID == 0 {
+		if team, err := FirstTeamForAdminUser(db, user.ID); err == nil && team != nil {
+			teamID = team.ID
+		}
+	}
+	if teamID > 0 && !canAdminAccessTeam(db, user.ID, teamID) {
+		http.Error(w, "Admin user cannot access this team", http.StatusForbidden)
+		return
+	}
+
+	setAdminSessionCookie(w, user.ID, teamID)
+	if teamID > 0 {
+		http.SetCookie(w, &http.Cookie{
+			Name:     adminTokenCookieName,
+			Value:    makeAdminToken(teamID, adminTokenSecret()),
+			Path:     "/",
+			HttpOnly: true,
+			Secure:   false,
+			SameSite: http.SameSiteStrictMode,
+			MaxAge:   60 * 60 * 24 * 30,
+		})
+	}
+	w.Header().Set("HX-Redirect", "/finemaster")
+}
+
+func parseAdminTeamID(r *http.Request, db *gorm.DB) uint {
+	for _, key := range []string{"teamId", "teamID"} {
+		if value := r.FormValue(key); value != "" {
+			if id64, err := strconv.ParseUint(value, 10, 64); err == nil {
+				return uint(id64)
+			}
+		}
+	}
+	return getTeamId(GetContext(r, db))
+}
+
+func canManageAdminRole(db *gorm.DB, viewer AdminUser, role string, teamID uint) bool {
+	if isSuperAdmin(db, viewer.ID) {
+		return true
+	}
+	return role == adminRoleTeamAdmin && teamID > 0 && canAdminAccessTeam(db, viewer.ID, teamID)
+}
+
+func adminUserRoleHandler(db *gorm.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		user, _, ok := currentAdminUser(r, db)
+		if !ok {
+			http.Error(w, "Admin access required", http.StatusForbidden)
+			return
+		}
+
+		if r.Method != http.MethodPost {
+			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		if err := r.ParseForm(); err != nil {
+			http.Error(w, "Invalid form data", http.StatusBadRequest)
+			return
+		}
+
+		adminUserID64, err := strconv.ParseUint(r.FormValue("adminUserId"), 10, 64)
+		if err != nil || adminUserID64 == 0 {
+			http.Error(w, "Invalid admin user", http.StatusBadRequest)
+			return
+		}
+		role := r.FormValue("role")
+		action := strings.TrimSpace(r.FormValue("action"))
+		if action == "" {
+			action = "grant"
+		}
+		teamID := uint(0)
+		switch role {
+		case adminRoleSuperAdmin:
+			teamID = 0
+		case adminRoleTeamAdmin:
+			teamID64, err := strconv.ParseUint(r.FormValue("teamId"), 10, 64)
+			if err != nil || teamID64 == 0 {
+				http.Error(w, "Team admin role requires a team", http.StatusBadRequest)
+				return
+			}
+			teamID = uint(teamID64)
+		default:
+			http.Error(w, "Invalid role", http.StatusBadRequest)
+			return
+		}
+		if !canManageAdminRole(db, *user, role, teamID) {
+			http.Error(w, "Admin user cannot manage this role", http.StatusForbidden)
+			return
+		}
+
+		if _, err := GetAdminUser(db, uint(adminUserID64)); err != nil {
+			http.Error(w, "Admin user not found", http.StatusBadRequest)
+			return
+		}
+		if teamID > 0 {
+			if _, err := GetTeam(db, teamID); err != nil {
+				http.Error(w, "Team not found", http.StatusBadRequest)
+				return
+			}
+		}
+		switch action {
+		case "grant":
+			if err := GrantAdminRole(db, uint(adminUserID64), teamID, role); err != nil {
+				http.Error(w, "Could not assign admin role", http.StatusInternalServerError)
+				return
+			}
+		case "revoke":
+			count, err := CountAdminUsersWithRole(db, teamID, role)
+			if err != nil {
+				http.Error(w, "Could not check admin role count", http.StatusInternalServerError)
+				return
+			}
+			if count <= 1 {
+				http.Error(w, "Cannot remove the last admin for this role", http.StatusBadRequest)
+				return
+			}
+			if err := RevokeAdminRole(db, uint(adminUserID64), teamID, role); err != nil {
+				http.Error(w, "Could not remove admin role", http.StatusInternalServerError)
+				return
+			}
+		default:
+			http.Error(w, "Invalid role action", http.StatusBadRequest)
+			return
+		}
+
+		accounts, teams, requests, err := adminAccountsViewData(db, *user)
+		if err != nil {
+			http.Error(w, "Could not load admin users", http.StatusInternalServerError)
+			return
+		}
+		message := "Role assigned"
+		if action == "revoke" {
+			message = "Role removed"
+		}
+		adminUserAccounts(accounts, teams, requests, isSuperAdmin(db, user.ID), success(message)).Render(GetContext(r, db), w)
+	}
+}
+
+func adminAccessRequestHandler(db *gorm.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		user, _, ok := currentAdminUser(r, db)
+		if !ok {
+			http.Error(w, "Admin access required", http.StatusForbidden)
+			return
+		}
+		if r.Method != http.MethodPost {
+			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		if err := r.ParseForm(); err != nil {
+			http.Error(w, "Invalid form data", http.StatusBadRequest)
+			return
+		}
+		requestID64, err := strconv.ParseUint(r.FormValue("requestId"), 10, 64)
+		if err != nil || requestID64 == 0 {
+			http.Error(w, "Invalid access request", http.StatusBadRequest)
+			return
+		}
+		action := strings.TrimSpace(r.FormValue("action"))
+		if action != "approve" && action != "deny" {
+			http.Error(w, "Invalid request action", http.StatusBadRequest)
+			return
+		}
+		var request AdminAccessRequest
+		if err := db.Where("id = ? AND status = ?", requestID64, "pending").First(&request).Error; err != nil {
+			http.Error(w, "Access request not found", http.StatusBadRequest)
+			return
+		}
+		if !canManageAdminRole(db, *user, request.Role, request.TeamID) {
+			http.Error(w, "Admin user cannot manage this request", http.StatusForbidden)
+			return
+		}
+		status := "denied"
+		if action == "approve" {
+			status = "approved"
+		}
+		resolved, err := ResolveAdminAccessRequest(db, uint(requestID64), user.ID, status)
+		if err != nil {
+			http.Error(w, "Could not update access request", http.StatusInternalServerError)
+			return
+		}
+		if action == "approve" {
+			if err := GrantAdminRole(db, resolved.AdminUserID, resolved.TeamID, resolved.Role); err != nil {
+				http.Error(w, "Could not grant admin role", http.StatusInternalServerError)
+				return
+			}
+		}
+		accounts, teams, requests, err := adminAccountsViewData(db, *user)
+		if err != nil {
+			http.Error(w, "Could not load admin users", http.StatusInternalServerError)
+			return
+		}
+		message := "Access request denied"
+		if action == "approve" {
+			message = "Access request approved"
+		}
+		adminUserAccounts(accounts, teams, requests, isSuperAdmin(db, user.ID), success(message)).Render(GetContext(r, db), w)
+	}
+}
+
+func adminAccountsViewData(db *gorm.DB, viewer AdminUser) ([]AdminUserAccountView, []Team, []AdminAccessRequestView, error) {
+	accounts, err := ListAdminUserAccounts(db)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	teams, err := GetTeams(db, 9999, 0)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	requests, err := ListPendingAdminAccessRequests(db)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	if isSuperAdmin(db, viewer.ID) {
+		return accounts, teams, requests, nil
+	}
+	teams = FilterTeamsForAdminUser(db, viewer.ID, teams)
+	allowedTeams := map[uint]bool{}
+	for _, team := range teams {
+		allowedTeams[team.ID] = true
+	}
+	requestUserIDs := map[uint]bool{}
+	filteredRequests := []AdminAccessRequestView{}
+	for _, request := range requests {
+		if allowedTeams[request.Request.TeamID] {
+			filteredRequests = append(filteredRequests, request)
+			requestUserIDs[request.User.ID] = true
+		}
+	}
+	filteredAccounts := []AdminUserAccountView{}
+	for _, account := range accounts {
+		filteredRoles := []AdminUserRoleView{}
+		for _, role := range account.Roles {
+			if role.Role == adminRoleTeamAdmin && allowedTeams[role.TeamID] {
+				filteredRoles = append(filteredRoles, role)
+			}
+		}
+		if len(filteredRoles) > 0 || requestUserIDs[account.User.ID] {
+			account.Roles = filteredRoles
+			filteredAccounts = append(filteredAccounts, account)
+		}
+	}
+	return filteredAccounts, teams, filteredRequests, nil
+}
+
 func presetFineMasterHandler(db *gorm.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		log.Print("presetFineMasterHandler")
 		warnStr := ""
-
-		// Check authentication cookie
-		adminCookie, err := r.Cookie("admin-user")
-		if err != nil {
-			log.Printf("No admin-user cookie found, redirecting to auth")
-			w.Header().Set("HX-Redirect", "/finemaster/auth")
-			return
+		ctx := GetContext(r, db)
+		teamId := getTeamId(ctx)
+		activeSeason, _ := GetActiveSeason(db)
+		seasonId := uint(0)
+		if activeSeason != nil {
+			seasonId = activeSeason.ID
 		}
 
-		// Get team ID from cookie
-		teamIDStr := adminCookie.Value
-		teamID, err := strconv.ParseUint(teamIDStr, 10, 64)
-		if err != nil {
-			log.Printf("Invalid team ID in cookie: %v", err)
-			w.Header().Set("HX-Redirect", "/finemaster/auth")
+		pass := r.URL.Query().Get("pass")
+		/*realPass := os.Getenv("PASS")
+		pass := r.URL.Query().Get("pass")
+		if pass != realPass {
+			log.Printf("Error fetching presetFineMasterHandler - key miss match '%s' %s", pass, r.Referer())
+			http.Error(w, "Not this time mate.", http.StatusInternalServerError)
 			return
-		}
-
-		// Get team to use as pass (for backward compatibility)
-		team, err := GetTeam(db, uint(teamID))
-		if err != nil {
-			log.Printf("Team not found: %v", err)
-			w.Header().Set("HX-Redirect", "/finemaster/auth")
-			return
-		}
-
-		pass := team.TeamKey // Use team key as pass for backward compatibility
+		}*/
 
 		decoder := schema.NewDecoder()
 		queryParams := new(FineMasterQueryParams)
 		if err := decoder.Decode(queryParams, r.URL.Query()); err != nil {
 			warn := warning(fmt.Sprintf("presetFineMasterHandler - Error decoding query params: %v", err))
-			warn.Render(GetContext(r, db), w)
+			warn.Render(ctx, w)
 			return
 		}
 
-		playersWithFines, err := GetPlayersWithFines(db, 0, []uint64{})
+		if seasonId == 0 || teamId == 0 {
+			warning("No active season/team - finemaster fines view is unavailable").Render(ctx, w)
+			return
+		}
+
+		playersWithFines, err := GetPlayersWithFines(db, seasonId, teamId, []uint64{})
 		if err != nil {
 			msg := fmt.Sprintf("Error fetching players with fines: %v", err)
 			log.Print(msg)
 			warn := warning(msg)
-			warn.Render(GetContext(r, db), w)
+			warn.Render(ctx, w)
 			return
 		}
 
@@ -2163,25 +2977,25 @@ func presetFineMasterHandler(db *gorm.DB) http.HandlerFunc {
 			msg := fmt.Sprintf("Error retrieving preset fines: %v", err)
 			log.Print(msg)
 			warn := warning(msg)
-			warn.Render(GetContext(r, db), w)
+			warn.Render(ctx, w)
 			return
 		}
 
-		matches, err := GetMatches(db, 1, 0, 9999)
+		matches, err := GetManageMatches(db, teamId, seasonId, 0, 9999)
 		if err != nil {
 			msg := fmt.Sprintf("Error retrieving preset fines: %v", err)
 			log.Print(msg)
 			warn := warning(msg)
-			warn.Render(GetContext(r, db), w)
+			warn.Render(ctx, w)
 			return
 		}
 
-		fineWithPlayers, err := GetFineWithPlayers(db, 0, 999999)
+		fineWithPlayers, err := GetFineWithPlayers(db, seasonId, teamId, 0, 999999)
 		if err != nil {
 			msg := fmt.Sprintf("Error retrieving GetFineWithPlayers: %v", err)
 			log.Print(msg)
 			warn := warning(msg)
-			warn.Render(GetContext(r, db), w)
+			warn.Render(ctx, w)
 			return
 		}
 
@@ -2190,16 +3004,55 @@ func presetFineMasterHandler(db *gorm.DB) http.HandlerFunc {
 			msg := fmt.Sprintf("Error retrieving GetFineWithPlayers: %v", err)
 			log.Print(msg)
 			warn := warning(msg)
-			warn.Render(GetContext(r, db), w)
+			warn.Render(ctx, w)
 			return
+		}
+		if teamId > 0 && (matchSeasonTeam.Team == nil || matchSeasonTeam.Team.ID != teamId) {
+			team, err := GetTeam(db, teamId)
+			if err != nil {
+				msg := fmt.Sprintf("Error retrieving selected team: %v", err)
+				log.Print(msg)
+				warn := warning(msg)
+				warn.Render(ctx, w)
+				return
+			}
+			matchSeasonTeam.Team = team
+		}
+		showAdminUsers := false
+		adminAccounts := []AdminUserAccountView{}
+		adminTeams := []Team{}
+		adminRequests := []AdminAccessRequestView{}
+		adminIsSuperAdmin := false
+		if googleAuthEnabled() {
+			if adminUser, _, ok := currentAdminUser(r, db); ok {
+				showAdminUsers = true
+				adminIsSuperAdmin = isSuperAdmin(db, adminUser.ID)
+				var err error
+				adminAccounts, adminTeams, adminRequests, err = adminAccountsViewData(db, *adminUser)
+				if err != nil {
+					msg := fmt.Sprintf("Error retrieving admin users: %v", err)
+					log.Print(msg)
+					warn := warning(msg)
+					warn.Render(ctx, w)
+					return
+				}
+			}
 		}
 
 		log.Print("presetFineMasterHandler - Rendering")
 
-		finemaster := finemaster(pass, playersWithFines, fineWithPlayers, pFines, matches, *queryParams, matchSeasonTeam, warnStr)
+		backupStatus := LitestreamBackupStatus{}
+		if showAdminUsers {
+			backupStatus = litestreamBackupStatus()
+		}
+		finemaster := finemaster(pass, playersWithFines, fineWithPlayers, pFines, matches, *queryParams, matchSeasonTeam, warnStr, showAdminUsers, adminAccounts, adminTeams, adminRequests, adminIsSuperAdmin, backupStatus)
 		log.Print("presetFineMasterHandler - Rendered")
 
-		finemaster.Render(GetContext(r, db), w)
+		// set url to "/finemaster"
+		//w.Header().Set("HX-Redirect", "/finemaster")
+		//w.Header().Set("HX-Reload", "true")
+
+		finemaster.Render(ctx, w)
 		return
 	}
 }
@@ -2282,49 +3135,103 @@ func getUserFromContext(ctx context.Context) *User {
 	return user
 }
 
+func requireTeamFeature(db *gorm.DB, moduleName string, enabled func(Team) bool, next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		teamID := getTeamId(GetContext(r, db))
+		if teamID == 0 {
+			next(w, r)
+			return
+		}
+		team, err := GetTeam(db, teamID)
+		if err != nil {
+			http.Error(w, "Active team not found", http.StatusNotFound)
+			return
+		}
+		if !enabled(*team) {
+			http.Error(w, fmt.Sprintf("%s module is disabled for %s", moduleName, team.TeamName), http.StatusForbidden)
+			return
+		}
+		next(w, r)
+	}
+}
+
 // setupRouter initializes the HTTP routes and returns a router.
 func setupRouter(db *gorm.DB) *chi.Mux {
 	r := chi.NewRouter()
 
-	r.HandleFunc("/players", playerHandler(db))
-	r.HandleFunc("/fines", fineHandler(db))
-	r.HandleFunc("/fines/summary", fineSummaryHandler(db))
+	finesEnabled := func(team Team) bool { return team.FinesModuleEnabled() }
+	lineupsEnabled := func(team Team) bool { return team.LineupsModuleEnabled() }
+	matchesEnabled := func(team Team) bool { return team.EnableMatchesModule }
+	playersEnabled := func(team Team) bool { return team.EnablePlayersModule }
+	courtEnabled := func(team Team) bool { return team.EnableCourtModule }
+
+	r.HandleFunc("/players", requireTeamFeature(db, "Players", playersEnabled, playerHandler(db)))
+	r.HandleFunc("/fines", requireTeamFeature(db, "Fines", finesEnabled, fineHandler(db)))
+	r.HandleFunc("/fines/summary", requireTeamFeature(db, "Fines", finesEnabled, fineSummaryHandler(db)))
 
 	r.HandleFunc("/admin", adminHandler(db))
+	r.HandleFunc("/admin/users/roles", requireGoogleAdmin(db, adminUserRoleHandler(db)))
+	r.HandleFunc("/admin/access-requests", requireGoogleAdmin(db, adminAccessRequestHandler(db)))
+	r.HandleFunc("/admin/team-access-requests", adminTeamAccessRequestHandler(db))
+	r.HandleFunc("/admin/team-switch", adminTeamSwitchHandler(db))
 
-	r.HandleFunc("/fines/add", fineAddHandler(db))
-	r.HandleFunc("/fines-multi", fineMultiHandler(db))
-	r.HandleFunc("/fines/approve", fineApproveHandler(db))
-	r.HandleFunc("/fines/edit/{fid}", fineEditHandler(db))
-	r.HandleFunc("/fines/edit/{fid}/image", fineImageHandler(db))
-	r.HandleFunc("/fines/contest", fineContestHandler(db))
-	r.HandleFunc("/fines/context", fineContextHandler(db))
-	r.HandleFunc("/fines/court-display-order", fineSetCourtSessionOrderHandler(db))
+	r.HandleFunc("/fines/add", requireTeamFeature(db, "Fines", finesEnabled, fineAddHandler(db)))
+	r.HandleFunc("/fines-multi", requireTeamFeature(db, "Fines", finesEnabled, fineMultiHandler(db)))
+	r.HandleFunc("/fines/approve", requireTeamFeature(db, "Fines", finesEnabled, fineApproveHandler(db)))
+	r.HandleFunc("/fines/edit/{fid}", requireTeamFeature(db, "Fines", finesEnabled, fineEditHandler(db)))
+	r.HandleFunc("/fines/edit/{fid}/image", requireTeamFeature(db, "Fines", finesEnabled, fineImageHandler(db)))
+	r.HandleFunc("/fines/contest", requireTeamFeature(db, "Fines", finesEnabled, fineContestHandler(db)))
+	r.HandleFunc("/fines/context", requireTeamFeature(db, "Fines", finesEnabled, fineContextHandler(db)))
+	r.HandleFunc("/fines/court-display-order", requireTeamFeature(db, "Court", courtEnabled, fineSetCourtSessionOrderHandler(db)))
 
-	r.HandleFunc("/court", courtHandler(db))
+	r.HandleFunc("/court", requireTeamFeature(db, "Court", courtEnabled, courtHandler(db)))
 
-	r.HandleFunc("/preset-fines", presetFineHandler(db))
-	r.HandleFunc("/preset-fines/approve", presetFineApproveHandler(db))
-	r.HandleFunc("/preset-fines/{showOrHide}", fineQuickHideHandler(db))
+	r.HandleFunc("/preset-fines", requireTeamFeature(db, "Fines", finesEnabled, presetFineHandler(db)))
+	r.HandleFunc("/preset-fines/approve", requireTeamFeature(db, "Fines", finesEnabled, presetFineApproveHandler(db)))
+	r.HandleFunc("/preset-fines/{showOrHide}", requireTeamFeature(db, "Fines", finesEnabled, fineQuickHideHandler(db)))
 	r.HandleFunc("/finemaster/auth", finemasterAuthHandler(db))
-	r.HandleFunc("/finemaster", presetFineMasterHandler(db))
-	r.HandleFunc("/finemaster/{pass}", presetFineMasterHandler(db)) // Keep for backward compatibility
+	r.HandleFunc("/finemaster", requireGoogleAdmin(db, presetFineMasterHandler(db)))
+	r.HandleFunc("/finemaster/{pass}", requireGoogleAdmin(db, presetFineMasterHandler(db))) // Keep for backward compatibility
 	r.HandleFunc("/", homeHandler(db))
-	r.HandleFunc("/match-list", matchListHandler(db))
-	r.HandleFunc("/match/{matchId}", matchHandler(db))
-	r.HandleFunc("/match", matchHandler(db))
+	r.HandleFunc("/match-list", requireTeamFeature(db, "Matches", matchesEnabled, matchListHandler(db)))
+	r.HandleFunc("/matches/history", requireTeamFeature(db, "Matches", matchesEnabled, matchHistoryHandler(db)))
+	r.HandleFunc("/matches/sporty-sync", requireTeamFeature(db, "Matches", matchesEnabled, matchSportySyncHandler(db)))
+	r.HandleFunc("/match/{matchId}", requireTeamFeature(db, "Matches", matchesEnabled, matchHandler(db)))
+	r.HandleFunc("/match", requireTeamFeature(db, "Matches", matchesEnabled, matchHandler(db)))
+	r.HandleFunc("/feedback", feedbackHandler(db))
+	r.HandleFunc("/notes", notesHandler(db))
+	r.HandleFunc("/notes/context", notesContextHandler(db))
+	r.HandleFunc("/notes/{noteId}", noteDetailHandler(db))
+	r.HandleFunc("/lineups", requireTeamFeature(db, "Line-ups and formations", lineupsEnabled, lineupListHandler(db)))
+	r.HandleFunc("/lineups/login", requireTeamFeature(db, "Line-ups and formations", lineupsEnabled, lineupLoginHandler(db)))
+	r.HandleFunc("/lineups/new", requireTeamFeature(db, "Line-ups and formations", lineupsEnabled, lineupNewHandler(db)))
+	r.HandleFunc("/lineups/{lineupId}/share", requireTeamFeature(db, "Line-ups and formations", lineupsEnabled, lineupShareHandler(db)))
+	r.HandleFunc("/lineups/{lineupId}/errors", requireTeamFeature(db, "Line-ups and formations", lineupsEnabled, lineupErrorsHandler(db)))
+	r.HandleFunc("/lineups/{lineupId}/slot", requireTeamFeature(db, "Line-ups and formations", lineupsEnabled, lineupSlotHandler(db)))
+	r.HandleFunc("/lineups/{lineupId}/copy", requireTeamFeature(db, "Line-ups and formations", lineupsEnabled, lineupCopyHandler(db)))
+	r.HandleFunc("/lineups/{lineupId}", requireTeamFeature(db, "Line-ups and formations", lineupsEnabled, lineupDetailHandler(db)))
+	r.HandleFunc("/formations", requireTeamFeature(db, "Line-ups and formations", lineupsEnabled, formationListHandler(db)))
+	r.HandleFunc("/formations/new", requireTeamFeature(db, "Line-ups and formations", lineupsEnabled, formationNewHandler(db)))
+	r.HandleFunc("/formations/{formationId}/live", requireTeamFeature(db, "Line-ups and formations", lineupsEnabled, formationLiveHandler(db)))
+	r.HandleFunc("/formations/{formationId}/edit", requireTeamFeature(db, "Line-ups and formations", lineupsEnabled, formationEditHandler(db)))
+	r.HandleFunc("/formations/{formationId}/copy", requireTeamFeature(db, "Line-ups and formations", lineupsEnabled, formationCopyHandler(db)))
+	r.HandleFunc("/match-day", requireTeamFeature(db, "Line-ups and formations", lineupsEnabled, matchDayHandler(db)))
+	r.HandleFunc("/match-day/{lineupId}/action", requireTeamFeature(db, "Line-ups and formations", lineupsEnabled, matchDayActionHandler(db)))
+	r.HandleFunc("/match-day/{lineupId}", requireTeamFeature(db, "Line-ups and formations", lineupsEnabled, matchDayHandler(db)))
 
-	r.HandleFunc("/playersName", playerNamesHandler(db))
-	r.HandleFunc("/season/{seasonId}/payments", playerPayments(db))
+	r.HandleFunc("/playersName", requireTeamFeature(db, "Players", playersEnabled, playerNamesHandler(db)))
+	r.HandleFunc("/season/{seasonId}/payments", requireTeamFeature(db, "Players", playersEnabled, playerPayments(db)))
 
-	r.HandleFunc("/match/{matchId}/event", matchEventHandler(db))
-	r.HandleFunc("/match/{matchId}/event/{eventId}", matchEventHandler(db))
+	r.HandleFunc("/match/{matchId}/event", requireTeamFeature(db, "Matches", matchesEnabled, matchEventHandler(db)))
+	r.HandleFunc("/match/{matchId}/event/{eventId}", requireTeamFeature(db, "Matches", matchesEnabled, matchEventHandler(db)))
 	r.HandleFunc("/match/{matchId}/events", matchEventListHandler(db))
 	r.HandleFunc("/season/update/{updateType}", seasonBulkUpdateHandler(db))
 
 	r.HandleFunc("/teams", teamHandler(db))
-	r.HandleFunc("/teams/court-session", teamCourtHandler(db))
-	r.HandleFunc("/teams/active-match", teamActiveMatchHandler(db))
+	r.HandleFunc("/teams/activate", requireGoogleAdmin(db, teamActivateHandler(db)))
+	r.HandleFunc("/teams/sporty-sync", requireGoogleAdmin(db, sportySyncHandler(db)))
+	r.HandleFunc("/teams/court-session", requireTeamFeature(db, "Court", courtEnabled, teamCourtHandler(db)))
+	r.HandleFunc("/teams/active-match", requireGoogleAdmin(db, teamActiveMatchHandler(db)))
 
 	r.HandleFunc("/season", seasonHandler(db))
 	r.HandleFunc("/season/{seasonId}", seasonSpecificHandler(db))
@@ -2335,6 +3242,16 @@ func setupRouter(db *gorm.DB) *chi.Mux {
 func homeHandler(db *gorm.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("homeHandler")
+		if handleHomeTeamKey(w, r, db) {
+			return
+		}
+		ctx := GetContext(r, db)
+		teamId := getTeamId(ctx)
+		activeSeason, _ := GetActiveSeason(db)
+		seasonId := uint(0)
+		if activeSeason != nil {
+			seasonId = activeSeason.ID
+		}
 
 		decoder := schema.NewDecoder()
 		queryParams := new(HomeQueryParams)
@@ -2344,7 +3261,11 @@ func homeHandler(db *gorm.DB) http.HandlerFunc {
 			http.Error(w, "Bad Request - home Decode", http.StatusBadRequest)
 		}
 
-		playersWithFines, err := GetPlayersWithFines(db, 0, []uint64{})
+		if seasonId == 0 || teamId == 0 {
+			warnStr = warnStr + "No active season/team - showing empty fines\n"
+		}
+
+		playersWithFines, err := GetPlayersWithFines(db, seasonId, teamId, []uint64{})
 		if err != nil {
 			log.Printf("Error fetching players with fines: %v", err)
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
@@ -2369,7 +3290,7 @@ func homeHandler(db *gorm.DB) http.HandlerFunc {
 			}
 		}
 
-		fineWithPlayers, err := GetFineWithPlayers(db, 0, 999999)
+		fineWithPlayers, err := GetFineWithPlayers(db, seasonId, teamId, 0, 999999)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Error parsing limitStr %v", err), http.StatusBadRequest)
 		}
@@ -2377,7 +3298,7 @@ func homeHandler(db *gorm.DB) http.HandlerFunc {
 		mst, err := GetMatchSeasonTeam(db)
 		if err != nil {
 			warning := warning(fmt.Sprintf("Error fetching GetMatchSeasonTeam: %v", err))
-			warning.Render(GetContext(r, db), w)
+			warning.Render(ctx, w)
 			return
 		}
 
@@ -2385,8 +3306,33 @@ func homeHandler(db *gorm.DB) http.HandlerFunc {
 			http.Redirect(w, r, "/teams?includeFrame=true", http.StatusSeeOther)
 			return
 		}
+		// Ensure the rendered "active team" matches the user's admin selection (cookie).
+		if teamId > 0 && (mst.Team == nil || mst.Team.ID != teamId) {
+			if t, err := GetTeam(db, teamId); err == nil && t != nil {
+				mst.Team = t
+			}
+		}
+		matchDayLineupID := uint(0)
+		if mst.Team != nil {
+			if upcomingMatch, err := upcomingMatchForTeam(db, mst.Team.ID); err == nil {
+				mst.Match = upcomingMatch
+				matchDayLineupID = matchDayLineupIDForTeam(db, mst.Team.ID)
+				if matchDayLineupID > 0 {
+					mst.Match.LineupID = matchDayLineupID
+				}
+			} else {
+				mst.Match = nil
+			}
+		}
 
-		matches, err := GetMatches(db, 1, 0, 9999)
+		teams, err := GetTeams(db, 9999, 0)
+		if err != nil {
+			log.Printf("Error fetching teams: %v", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+
+		matches, err := GetMatches(db, seasonId, 0, 9999)
 		if err != nil {
 			log.Printf("Error retrieving preset fines: %v", err)
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
@@ -2397,9 +3343,64 @@ func homeHandler(db *gorm.DB) http.HandlerFunc {
 			previewPassword = os.Getenv("PASS")
 		}
 
-		home := home(playersWithFines, approvedPFines, pendingPFines, fineWithPlayers, *queryParams, matches, mst, warnStr, previewPassword)
-		home.Render(GetContext(r, db), w)
+		hasAdminToken := false
+		selectedTeamID := uint(0)
+		allowedTeams := []Team{}
+		if googleAuthEnabled() {
+			if adminUser, tid, ok := currentAdminUser(r, db); ok {
+				hasAdminToken = true
+				selectedTeamID = tid
+				allowedTeams = FilterTeamsForAdminUser(db, adminUser.ID, teams)
+			}
+		} else if c, err := r.Cookie(adminTokenCookieName); err == nil {
+			if tid, ok := parseAdminToken(c.Value, adminTokenSecret()); ok && tid > 0 {
+				hasAdminToken = true
+				selectedTeamID = tid
+			}
+		}
+		if selectedTeamID == 0 && mst.Team != nil {
+			selectedTeamID = mst.Team.ID
+		}
+
+		home := home(playersWithFines, approvedPFines, pendingPFines, fineWithPlayers, *queryParams, matches, mst, warnStr, previewPassword, teams, hasAdminToken, selectedTeamID, allowedTeams, matchDayLineupID, os.Getenv("GOOGLE_CLIENT_ID"))
+		home.Render(ctx, w)
 	}
+}
+
+func handleHomeTeamKey(w http.ResponseWriter, r *http.Request, db *gorm.DB) bool {
+	teamKey := strings.TrimSpace(r.URL.Query().Get("teamKey"))
+	if teamKey == "" {
+		return false
+	}
+	team, err := GetTeamByKey(db, teamKey)
+	if err != nil || team == nil {
+		warning(fmt.Sprintf("Team not found for key %q", teamKey)).Render(GetContext(r, db), w)
+		return true
+	}
+	if googleAuthEnabled() {
+		if user, _, ok := currentAdminUser(r, db); ok {
+			if canAdminAccessTeam(db, user.ID, team.ID) {
+				if err := activateAdminTeam(w, *user, *team); err != nil {
+					warning(fmt.Sprintf("Error saving active team: %v", err)).Render(GetContext(r, db), w)
+					return true
+				}
+				http.Redirect(w, r, "/", http.StatusSeeOther)
+				return true
+			}
+			teamKeyAccessPage(*team, os.Getenv("GOOGLE_CLIENT_ID"), true).Render(GetContext(r, db), w)
+			return true
+		}
+		teamKeyAccessPage(*team, os.Getenv("GOOGLE_CLIENT_ID"), false).Render(GetContext(r, db), w)
+		return true
+	}
+	session, _ := store.Get(r, "session-name")
+	setTeamSessionValues(*team, session)
+	if err := session.Save(r, w); err != nil {
+		warning(fmt.Sprintf("Error saving active team: %v", err)).Render(GetContext(r, db), w)
+		return true
+	}
+	http.Redirect(w, r, "/", http.StatusSeeOther)
+	return true
 }
 
 // startServer starts the HTTP server with graceful shutdown.

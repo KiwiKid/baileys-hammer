@@ -1,0 +1,3819 @@
+package main
+
+import (
+	"fmt"
+	"github.com/dustin/go-humanize"
+	"sort"
+	"strings"
+	"time"
+)
+
+type lineupPlayerSelectOption struct {
+	Player       Player
+	CurrentIndex int
+	Label        string
+	Group        int
+}
+
+func lineupPlayerIDAt(players []LineupPlayer, indexNumber int) uint {
+	for _, lp := range players {
+		if lp.IndexNumber == indexNumber && lp.SlotOrder == 0 {
+			return lp.PlayerID
+		}
+	}
+	return 0
+}
+
+func lineupPlayerIDAtSlot(players []LineupPlayer, indexNumber int, slotOrder int) uint {
+	for _, lp := range players {
+		if lp.IndexNumber == indexNumber && lp.SlotOrder == slotOrder {
+			return lp.PlayerID
+		}
+	}
+	return 0
+}
+
+func lineupSubMinuteAtSlot(players []LineupPlayer, indexNumber int, slotOrder int) int {
+	for _, lp := range players {
+		if lp.IndexNumber == indexNumber && lp.SlotOrder == slotOrder {
+			return lp.SubMinute
+		}
+	}
+	return 0
+}
+
+func lineupLastAssignedSlot(players []LineupPlayer, indexNumber int) int {
+	lastSlot := 0
+	for _, lp := range players {
+		if lp.IndexNumber == indexNumber && lp.PlayerID != 0 && lp.SlotOrder > lastSlot {
+			lastSlot = lp.SlotOrder
+		}
+	}
+	return lastSlot
+}
+
+func lineupSubMinuteLabel(minute int) string {
+	if minute <= 0 {
+		return ""
+	}
+	return fmt.Sprintf(" %d'", minute)
+}
+
+func lineupPositionInitials(positionName string) string {
+	normalized := normalizedLineupPosition(positionName)
+	if normalized == "" {
+		return ""
+	}
+	switch normalized {
+	case "goalkeeper", "keeper":
+		return "GK"
+	case "striker":
+		return "ST"
+	case "forward":
+		return "FWD"
+	case "defender", "defence", "defense":
+		return "DEF"
+	case "midfielder", "midfield":
+		return "MID"
+	case "winger", "wing":
+		return "W"
+	}
+	parts := strings.Fields(normalized)
+	if len(parts) == 1 {
+		upper := strings.ToUpper(parts[0])
+		runes := []rune(upper)
+		if len(runes) <= 3 {
+			return upper
+		}
+		return string(runes[:3])
+	}
+	initials := ""
+	for _, part := range parts {
+		for _, r := range part {
+			initials += strings.ToUpper(string(r))
+			break
+		}
+	}
+	return initials
+}
+
+func lineupPlayerIndexForPlayer(players []LineupPlayer, playerID uint) int {
+	for _, lp := range players {
+		if lp.PlayerID == playerID {
+			return lp.IndexNumber
+		}
+	}
+	return -1
+}
+
+func lineupPositionNamesByIndex(positions []FormationPosition) map[int]string {
+	names := map[int]string{}
+	for _, position := range positions {
+		name := lineupPositionInitials(position.PositionName)
+		if name == "" {
+			name = fmt.Sprintf("position %d", position.IndexNumber)
+		}
+		names[position.IndexNumber] = name
+	}
+	return names
+}
+
+func normalizedLineupPosition(value string) string {
+	value = strings.ToLower(strings.TrimSpace(value))
+	replacer := strings.NewReplacer("-", " ", "_", " ", "/", " ", ",", " ", ".", " ")
+	return strings.Join(strings.Fields(replacer.Replace(value)), " ")
+}
+
+func lineupPositionTokens(value string) map[string]bool {
+	normalized := normalizedLineupPosition(value)
+	tokens := map[string]bool{}
+	if normalized == "" {
+		return tokens
+	}
+	tokens[normalized] = true
+	for _, token := range strings.Fields(normalized) {
+		tokens[token] = true
+	}
+	return tokens
+}
+
+func lineupPositionCategory(value string) string {
+	tokens := lineupPositionTokens(value)
+	switch {
+	case tokens["gk"] || tokens["goalkeeper"] || tokens["keeper"]:
+		return "keeper"
+	case tokens["cb"] || tokens["lb"] || tokens["rb"] || tokens["lwb"] || tokens["rwb"] || tokens["def"] || tokens["defender"] || tokens["defence"] || tokens["defense"] || tokens["back"]:
+		return "defence"
+	case tokens["dm"] || tokens["cm"] || tokens["am"] || tokens["lm"] || tokens["rm"] || tokens["mid"] || tokens["midfield"] || tokens["midfielder"]:
+		return "midfield"
+	case tokens["lw"] || tokens["rw"] || tokens["st"] || tokens["cf"] || tokens["fwd"] || tokens["forward"] || tokens["striker"] || tokens["wing"] || tokens["winger"] || tokens["attack"] || tokens["attacker"]:
+		return "attack"
+	default:
+		return ""
+	}
+}
+
+func playerPositionText(player Player) string {
+	return strings.TrimSpace(strings.Join([]string{player.Role, player.RoleDescription}, " "))
+}
+
+func playerMatchesLineupPosition(player Player, positionName string) bool {
+	playerTokens := lineupPositionTokens(playerPositionText(player))
+	if len(playerTokens) == 0 {
+		return false
+	}
+	for token := range lineupPositionTokens(positionName) {
+		if playerTokens[token] {
+			return true
+		}
+	}
+	return false
+}
+
+func playerNearMatchesLineupPosition(player Player, positionName string) bool {
+	positionCategory := lineupPositionCategory(positionName)
+	if positionCategory == "" {
+		return false
+	}
+	return lineupPositionCategory(playerPositionText(player)) == positionCategory
+}
+
+func lineupPlayerSelectOptions(players []Player, lineupPlayers []LineupPlayer, positions []FormationPosition, targetIndex int, targetPosition string, selectedPlayerID uint, unavailablePlayerIDs map[uint]bool) []lineupPlayerSelectOption {
+	positionNames := lineupPositionNamesByIndex(positions)
+	options := []lineupPlayerSelectOption{}
+	for _, player := range players {
+		if !lineupPlayerOptionVisible(unavailablePlayerIDs, selectedPlayerID, player.ID) {
+			continue
+		}
+		currentIndex := lineupPlayerIndexForPlayer(lineupPlayers, player.ID)
+		assigned := currentIndex >= 0
+		group := 2
+		if assigned {
+			group = 3
+		} else if playerMatchesLineupPosition(player, targetPosition) {
+			group = 0
+		} else if playerNearMatchesLineupPosition(player, targetPosition) {
+			group = 1
+		}
+		label := player.Name
+		if assigned {
+			assignedPosition := positionNames[currentIndex]
+			if assignedPosition == "" {
+				assignedPosition = fmt.Sprintf("position %d", currentIndex)
+			}
+			if currentIndex == targetIndex {
+				label = fmt.Sprintf("%s (assigned here)", player.Name)
+			} else {
+				label = fmt.Sprintf("%s (assigned: %s)", player.Name, assignedPosition)
+			}
+		}
+		options = append(options, lineupPlayerSelectOption{
+			Player:       player,
+			CurrentIndex: currentIndex,
+			Label:        label,
+			Group:        group,
+		})
+	}
+	sort.SliceStable(options, func(i, j int) bool {
+		if options[i].Group != options[j].Group {
+			return options[i].Group < options[j].Group
+		}
+		return strings.ToLower(options[i].Player.Name) < strings.ToLower(options[j].Player.Name)
+	})
+	return options
+}
+
+func pitchPopupEdgeClass(x float64) string {
+	if x <= 24 {
+		return "popup-align-left"
+	}
+	if x >= 76 {
+		return "popup-align-right"
+	}
+	return ""
+}
+
+func markerEditorClass(position FormationPosition) string {
+	classes := []string{"marker-editor", "hidden"}
+	if position.Y > 58 {
+		classes = append(classes, "editor-up")
+	}
+	if edgeClass := pitchPopupEdgeClass(position.X); edgeClass != "" {
+		classes = append(classes, edgeClass)
+	}
+	return strings.Join(classes, " ")
+}
+
+func matchDayMarkerPopupClass(position FormationPosition) string {
+	classes := []string{"match-day-marker-popup", "hidden"}
+	if edgeClass := pitchPopupEdgeClass(position.X); edgeClass != "" {
+		classes = append(classes, edgeClass)
+	}
+	return strings.Join(classes, " ")
+}
+
+func matchDayStartInputValue(match Match) string {
+	startTime := matchDayStartTime(match)
+	if startTime == nil {
+		return ""
+	}
+	return startTime.Format("2006-01-02T15:04")
+}
+
+func matchDayStartDataValue(match Match) string {
+	startTime := matchDayStartTime(match)
+	if startTime == nil {
+		return ""
+	}
+	return startTime.Format("2006-01-02T15:04:05")
+}
+
+func matchDayKickoffLongLabel(match Match) string {
+	startTime := matchDayStartTime(match)
+	if startTime == nil {
+		return ""
+	}
+	now := time.Now()
+	if startTime.Sub(now) <= time.Hour {
+		return ""
+	}
+	return strings.TrimSpace(humanize.RelTime(now, *startTime, "", ""))
+}
+
+func matchDayClockStarted(match Match) bool {
+	return matchDayClockStateForMatch(match).Started
+}
+
+func matchDayLiveMinuteLabel(match Match, playerTime MatchDayPlayerTime) string {
+	if matchDayStartTime(match) == nil || !playerTime.Current {
+		return ""
+	}
+	return fmt.Sprintf("%d min on", playerTime.LiveMinutes)
+}
+
+func matchDayScore(match Match) (int, int) {
+	us := 0
+	them := 0
+	for _, event := range match.Events {
+		switch event.EventType {
+		case "goal":
+			us++
+		case "conceded-goal", "own-goal", "opponent-goal":
+			them++
+		}
+	}
+	return us, them
+}
+
+func matchDayQuickSubCandidateIDs(lineupPlayers []LineupPlayer, currentPlayerID uint, playerTimes []MatchDayPlayerTime, unavailablePlayerIDs map[uint]bool) map[uint]bool {
+	playerIDs := map[uint]bool{}
+	for _, lineupPlayer := range lineupPlayers {
+		if lineupPlayer.PlayerID == 0 || lineupPlayer.PlayerID == currentPlayerID {
+			continue
+		}
+		if matchDayPlayerCurrentlyOn(playerTimes, lineupPlayer.PlayerID) || playerUnavailableForMatch(unavailablePlayerIDs, lineupPlayer.PlayerID) {
+			continue
+		}
+		playerIDs[lineupPlayer.PlayerID] = true
+	}
+	return playerIDs
+}
+
+func matchDayAlternativeLineups(lineups []Lineup, selected *Lineup) []Lineup {
+	if selected == nil {
+		return lineups
+	}
+	alternatives := []Lineup{}
+	for _, lineup := range lineups {
+		if lineup.ID != selected.ID {
+			alternatives = append(alternatives, lineup)
+		}
+	}
+	return alternatives
+}
+
+func matchDayLineupOptionLabel(lineup Lineup) string {
+	label := fmt.Sprintf("%s - %s", lineup.Name, lineup.Status)
+	if lineup.Match.ID > 0 {
+		label = fmt.Sprintf("%s - %s", label, lineup.Match.Opponent)
+	}
+	return label
+}
+
+func matchDayLineupHasFormation(lineup Lineup) bool {
+	return lineup.FormationID > 0 && lineup.Formation.ID > 0
+}
+
+func matchDayLineupFormationLabel(lineup Lineup) string {
+	if matchDayLineupHasFormation(lineup) {
+		return fmt.Sprintf("Formation: %s", lineup.Formation.Name)
+	}
+	return "No formation attached"
+}
+
+func matchDayMatchOptionLabel(match Match) string {
+	label := fmt.Sprintf("%s - %s", match.Opponent, match.Location)
+	if match.StartTime != nil {
+		label = fmt.Sprintf("%s - %s", label, match.StartTime.Format("Mon 2 Jan, 3:04 PM"))
+	}
+	return label
+}
+
+templ matchDayLineupChoice(lineup Lineup) {
+	if matchDayLineupHasFormation(lineup) {
+		<a href={ fmt.Sprintf("/match-day/%d", lineup.ID) } class="drawer-row-action">
+			<span class="block font-bold">{ matchDayLineupOptionLabel(lineup) }</span>
+			<span class="block text-sm font-semibold opacity-80">{ matchDayLineupFormationLabel(lineup) }</span>
+		</a>
+	} else {
+		<div class="rounded-lg border border-gray-200 bg-gray-100 px-3 py-2 text-gray-500 cursor-not-allowed" aria-disabled="true">
+			<div class="font-bold">{ matchDayLineupOptionLabel(lineup) }</div>
+			<div class="text-sm font-semibold">{ matchDayLineupFormationLabel(lineup) }</div>
+		</div>
+	}
+}
+
+templ matchDayLineupAssignChoice(lineup Lineup, match Match) {
+	if matchDayLineupHasFormation(lineup) && !lineup.Locked {
+		<form method="POST" action={ fmt.Sprintf("/match-day/%d/action", lineup.ID) }>
+			<input type="hidden" name="action" value="set-match"/>
+			<input type="hidden" name="matchId" value={ fmt.Sprintf("%d", match.ID) }/>
+			<button type="submit" class="drawer-row-action">
+				<span class="block font-bold">{ matchDayLineupOptionLabel(lineup) }</span>
+				<span class="block text-sm font-semibold opacity-80">Assign to { matchDayMatchOptionLabel(match) }</span>
+			</button>
+		</form>
+	} else {
+		<div class="rounded-lg border border-gray-200 bg-gray-100 px-3 py-2 text-gray-500 cursor-not-allowed" aria-disabled="true">
+			<div class="font-bold">{ matchDayLineupOptionLabel(lineup) }</div>
+			if lineup.Locked {
+				<div class="text-sm font-semibold">Unlock before assigning</div>
+			} else {
+				<div class="text-sm font-semibold">{ matchDayLineupFormationLabel(lineup) }</div>
+			}
+		</div>
+	}
+}
+
+func matchDaySortedEvents(match Match) []MatchEvent {
+	events := []MatchEvent{}
+	for _, event := range match.Events {
+		if event.EventType == matchDayEventInit {
+			continue
+		}
+		events = append(events, event)
+	}
+	sort.SliceStable(events, func(i, j int) bool {
+		if events[i].EventMinute != events[j].EventMinute {
+			return events[i].EventMinute > events[j].EventMinute
+		}
+		return events[i].CreatedAt.After(events[j].CreatedAt)
+	})
+	return events
+}
+
+func matchDayEventWhenLabel(event MatchEvent) string {
+	parts := []string{}
+	parts = append(parts, fmt.Sprintf("%d'", event.EventMinute))
+	if event.EventTime != nil {
+		parts = append(parts, event.EventTime.Format("3:04 PM"))
+	}
+	return strings.Join(parts, " - ")
+}
+
+func matchDayEventLabel(event MatchEvent) string {
+	name := strings.TrimSpace(event.EventName)
+	if name != "" {
+		return name
+	}
+	eventType := strings.TrimSpace(event.EventType)
+	if eventType != "" {
+		return eventType
+	}
+	return fmt.Sprintf("event %d", event.ID)
+}
+
+templ lineupStylesAndScript() {
+	<style>
+		html,
+		body {
+			width: 100%;
+			max-width: 100%;
+			overflow-x: hidden;
+		}
+		* {
+			box-sizing: border-box;
+		}
+		.pitch-shell {
+			min-height: 100vh;
+			width: 100%;
+			max-width: 100vw;
+			background: #104c23;
+			position: relative;
+			overflow-x: hidden;
+			overflow-y: hidden;
+		}
+		.pitch {
+			position: absolute;
+			inset: 0;
+			width: 100%;
+			max-width: 100vw;
+			overflow: visible;
+			background:
+				radial-gradient(circle at 50% 50%, rgba(98, 174, 22, .24), transparent 58%),
+				repeating-linear-gradient(180deg, #2f8f07 0 8.333%, #1e7205 8.333% 16.666%);
+			box-shadow: inset 0 0 90px rgba(0,0,0,.42);
+		}
+		.pitch-lines {
+			position: absolute;
+			inset: 52px 34px 118px;
+			border: 4px solid rgba(239,246,255,.82);
+			border-radius: 2px;
+			pointer-events: none;
+		}
+		.pitch-lines:before {
+			content: "";
+			position: absolute;
+			left: 0;
+			right: 0;
+			top: 50%;
+			border-top: 4px solid rgba(239,246,255,.82);
+		}
+		.pitch-lines:after {
+			content: "";
+			position: absolute;
+			width: min(34vw, 190px);
+			height: min(34vw, 190px);
+			left: 50%;
+			top: 50%;
+			transform: translate(-50%, -50%);
+			border: 4px solid rgba(239,246,255,.82);
+			border-radius: 999px;
+		}
+		.pitch-dot {
+			position: absolute;
+			left: 50%;
+			top: 50%;
+			width: 12px;
+			height: 12px;
+			transform: translate(-50%, -50%);
+			border-radius: 999px;
+			background: rgba(239,246,255,.9);
+			pointer-events: none;
+		}
+		.pitch-box {
+			position: absolute;
+			left: 22%;
+			width: 56%;
+			height: 15%;
+			border: 4px solid rgba(239,246,255,.82);
+			pointer-events: none;
+		}
+		.pitch-box.top { top: 0; border-top: 0; }
+		.pitch-box.bottom { bottom: 0; border-bottom: 0; }
+		.goal-box {
+			position: absolute;
+			left: 38%;
+			width: 24%;
+			height: 7%;
+			border: 4px solid rgba(239,246,255,.82);
+			pointer-events: none;
+		}
+		.goal-box.top { top: 0; border-top: 0; }
+		.goal-box.bottom { bottom: 0; border-bottom: 0; }
+		.goal-frame {
+			position: absolute;
+			left: 42%;
+			width: 16%;
+			height: 34px;
+			border: 4px solid rgba(239,246,255,.82);
+			pointer-events: none;
+		}
+		.goal-frame.top { top: -38px; }
+		.goal-frame.bottom { bottom: -38px; }
+		.penalty-arc {
+			position: absolute;
+			left: 50%;
+			width: min(30vw, 150px);
+			height: min(30vw, 150px);
+			transform: translateX(-50%);
+			border: 4px solid rgba(239,246,255,.82);
+			border-radius: 999px;
+			pointer-events: none;
+		}
+		.penalty-arc.top {
+			top: 9.5%;
+			clip-path: inset(50% 0 0 0);
+		}
+		.penalty-arc.bottom {
+			bottom: 9.5%;
+			clip-path: inset(0 0 50% 0);
+		}
+		.corner {
+			position: absolute;
+			width: 36px;
+			height: 36px;
+			border: 4px solid rgba(239,246,255,.82);
+			pointer-events: none;
+		}
+		.corner.tl { top: -4px; left: -4px; border-right: 0; border-bottom: 0; border-radius: 0 0 36px 0; }
+		.corner.tr { top: -4px; right: -4px; border-left: 0; border-bottom: 0; border-radius: 0 0 0 36px; }
+		.corner.bl { bottom: -4px; left: -4px; border-right: 0; border-top: 0; border-radius: 0 36px 0 0; }
+		.corner.br { bottom: -4px; right: -4px; border-left: 0; border-top: 0; border-radius: 36px 0 0 0; }
+		.pitch-marker {
+			position: absolute;
+			transform: translate(-50%, -50%);
+			width: 92px;
+			border: 0;
+			background: transparent;
+			color: white;
+			padding: 0;
+			text-align: center;
+			touch-action: none;
+			text-shadow: 0 2px 3px rgba(0,0,0,.9);
+			z-index: 2;
+		}
+		.pitch-marker.is-editing,
+		.pitch-marker.is-actions-open {
+			z-index: 60;
+		}
+		.pitch-marker:focus {
+			outline: none;
+		}
+		.pitch-marker:focus .shirt,
+		.pitch-marker:hover .shirt {
+			transform: translateY(-2px) scale(1.04);
+			filter: brightness(1.08);
+		}
+		.pitch-marker.unassigned .shirt {
+			background: linear-gradient(180deg, #facc15 0%, #eab308 100%);
+			box-shadow: 0 0 0 4px rgba(250, 204, 21, .35), 0 12px 24px rgba(0,0,0,.3);
+		}
+		.pitch-marker.unassigned .shirt-collar {
+			border-color: #eab308;
+		}
+		.pitch-marker.unassigned .marker-caption {
+			color: #fef08a;
+		}
+		.shirt {
+			position: relative;
+			width: 56px;
+			height: 66px;
+			margin: 0 auto 4px;
+			background: linear-gradient(180deg, #ef3b25 0%, #d82214 100%);
+			border-radius: 14px 14px 12px 12px;
+			box-shadow: 0 10px 20px rgba(0,0,0,.28);
+			transition: transform .15s ease, filter .15s ease;
+		}
+		.shirt:before,
+		.shirt:after {
+			content: "";
+			position: absolute;
+			top: 10px;
+			width: 22px;
+			height: 30px;
+			background: white;
+			border-radius: 8px 8px 5px 5px;
+			z-index: -1;
+		}
+		.shirt:before {
+			left: -16px;
+			transform: rotate(8deg);
+		}
+		.shirt:after {
+			right: -16px;
+			transform: rotate(-8deg);
+		}
+		.shirt-collar {
+			position: absolute;
+			left: 50%;
+			top: -5px;
+			width: 26px;
+			height: 12px;
+			transform: translateX(-50%);
+			background: white;
+			border: 2px solid #ef3b25;
+			border-radius: 0 0 999px 999px;
+		}
+		.shirt-number {
+			position: absolute;
+			inset: 0;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			font-size: 28px;
+			font-weight: 800;
+			color: white;
+		}
+		.marker-caption {
+			display: block;
+			font-size: 16px;
+			line-height: 1.05;
+			font-weight: 800;
+			white-space: nowrap;
+			color: white;
+		}
+		.marker-subcaption {
+			display: block;
+			margin-top: 2px;
+			font-size: 11px;
+			line-height: 1;
+			color: rgba(255,255,255,.82);
+			white-space: nowrap;
+		}
+		.marker-player-stack {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			gap: 1px;
+		}
+		.marker-player-stack .sub-player {
+			font-size: 12px;
+			line-height: 1;
+			font-weight: 700;
+			color: rgba(255,255,255,.9);
+		}
+		.slot-editor-row {
+			display: grid;
+			grid-template-columns: minmax(0, 1fr) 64px;
+			gap: 6px;
+			align-items: center;
+			margin-top: 6px;
+		}
+		.slot-editor-row.hidden {
+			display: none;
+		}
+		.slot-editor-row input {
+			width: 100%;
+			border: 1px solid #cbd5e1;
+			border-radius: 10px;
+			padding: 8px;
+			font-size: 15px;
+		}
+		.slot-editor-row .add-sub-button {
+			grid-column: 1 / -1;
+			margin-top: 0;
+			padding: 8px 9px;
+			background: #4b5563;
+			white-space: nowrap;
+			font-size: 14px;
+		}
+		.lineup-assignment-choice {
+			border: 1px solid #bfdbfe;
+			border-radius: 12px;
+			background: #eff6ff;
+			color: #1e3a8a;
+			padding: 10px;
+			font-size: 13px;
+		}
+		.lineup-assignment-choice .choice-actions {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 8px;
+			margin-top: 8px;
+		}
+		.lineup-assignment-choice .choice-list {
+			display: grid;
+			gap: 8px;
+			margin-top: 8px;
+		}
+		.lineup-assignment-choice .choice-row {
+			display: grid;
+			grid-template-columns: auto minmax(0, 1fr);
+			gap: 8px;
+			align-items: start;
+			padding: 8px;
+			border-radius: 9px;
+			background: rgba(255,255,255,.74);
+			border: 1px solid #bfdbfe;
+		}
+		.lineup-assignment-choice .choice-row input {
+			margin-top: 3px;
+			width: 18px;
+			height: 18px;
+		}
+		.lineup-assignment-choice .choice-move-hint {
+			display: block;
+			margin-top: 4px;
+			color: #1d4ed8;
+		}
+		.lineup-assignment-choice button {
+			border-radius: 9px;
+			font-weight: 700;
+			padding: 7px 10px;
+		}
+		.lineup-assignment-choice .move-button {
+			background: #2563eb;
+			color: white;
+		}
+		.lineup-assignment-choice .add-button {
+			background: #16a34a;
+			color: white;
+		}
+		.lineup-assignment-choice .cancel-button {
+			background: white;
+			color: #1f2937;
+			border: 1px solid #cbd5e1;
+		}
+		.pitch-toast {
+			position: fixed;
+			left: 50%;
+			bottom: 112px;
+			transform: translate(-50%, 16px);
+			max-width: min(92vw, 360px);
+			padding: 12px 16px;
+			border-radius: 999px;
+			background: rgba(17,24,39,.94);
+			color: white;
+			font-size: 14px;
+			font-weight: 700;
+			text-align: center;
+			box-shadow: 0 14px 34px rgba(0,0,0,.32);
+			opacity: 0;
+			pointer-events: none;
+			transition: opacity .16s ease, transform .16s ease;
+			z-index: 50;
+		}
+		.pitch-toast.is-visible {
+			opacity: 1;
+			transform: translate(-50%, 0);
+		}
+		.formation-settings-button {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			width: 34px;
+			height: 34px;
+			border-radius: 999px;
+			background: #e5e7eb;
+			color: #374151;
+			font-size: 12px;
+			font-weight: 800;
+			transition: background .15s ease, color .15s ease, transform .15s ease;
+		}
+		.formation-settings-button[aria-pressed="true"] {
+			background: #2563eb;
+			color: white;
+		}
+		.formation-settings-button:focus {
+			outline: 2px solid #93c5fd;
+			outline-offset: 2px;
+		}
+		.marker-editor {
+			position: absolute;
+			left: 50%;
+			top: 100%;
+			transform: translateX(-50%);
+			width: min(86vw, 290px);
+			margin-top: 8px;
+			padding: 10px;
+			border-radius: 14px;
+			background: rgba(255,255,255,.96);
+			box-shadow: 0 12px 28px rgba(0,0,0,.34);
+			text-shadow: none;
+			color: #111827;
+			z-index: 70;
+		}
+		.marker-editor.editor-up {
+			top: auto;
+			bottom: 100%;
+			margin-top: 0;
+			margin-bottom: 8px;
+		}
+		.marker-editor.popup-align-left,
+		.match-day-marker-popup.popup-align-left {
+			left: 0;
+			right: auto;
+			transform: none;
+		}
+		.marker-editor.popup-align-right,
+		.match-day-marker-popup.popup-align-right {
+			left: auto;
+			right: 0;
+			transform: none;
+		}
+		.marker-editor select {
+			width: 100%;
+			border: 1px solid #cbd5e1;
+			border-radius: 10px;
+			padding: 8px;
+			font-size: 16px;
+			background: white;
+		}
+		.marker-editor button {
+			width: 100%;
+			margin-top: 10px;
+			border-radius: 12px;
+			background: #16a34a;
+			color: white;
+			font-weight: 800;
+			font-size: 17px;
+			padding: 12px;
+		}
+		.pitch-drawer {
+			position: fixed;
+			left: 0;
+			right: 0;
+			bottom: 0;
+			width: 100%;
+			max-width: 100vw;
+			overflow-x: hidden;
+			height: 52vh;
+			max-height: 88vh;
+			background: white;
+			border-radius: 22px 22px 0 0;
+			box-shadow: 0 -16px 40px rgba(0,0,0,.35);
+			transition: height .18s ease;
+			z-index: 20;
+			display: flex;
+			flex-direction: column;
+		}
+		.pitch-drawer[data-state="collapsed"] { height: 92px; }
+		.pitch-drawer[data-state="expanded"] {
+			height: min(86vh, calc(100dvh - 24px));
+			max-height: calc(100dvh - 24px);
+			border-radius: 22px 22px 0 0;
+		}
+		.drawer-handle {
+			width: 100%;
+			min-height: 44px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			cursor: grab;
+			touch-action: manipulation;
+		}
+		.drawer-handle:after {
+			content: "";
+			width: 76px;
+			height: 10px;
+			border-radius: 999px;
+			background: #cbd5e1;
+		}
+		.drawer-body {
+			overflow-y: auto;
+			overflow-x: hidden;
+			-webkit-overflow-scrolling: touch;
+			padding: 0 16px 24px;
+		}
+		.drawer-body:not([data-detail-mode="full"]) [data-drawer-extended] {
+			display: none;
+		}
+		.drawer-body input,
+		.drawer-body select,
+		.drawer-body button {
+			min-width: 0;
+		}
+		.drawer-list-footer {
+			margin-top: 16px;
+			padding-top: 14px;
+			border-top: 1px solid #e5e7eb;
+		}
+		.drawer-list-nav a,
+		.drawer-list-footer a {
+			display: block;
+			width: 100%;
+		}
+		.drawer-list-footer a {
+			margin-top: 0;
+			margin-bottom: 0;
+		}
+		.drawer-row-actions {
+			display: grid;
+			grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+			gap: 8px;
+			margin-top: 12px;
+		}
+		.drawer-row-actions form {
+			margin: 0;
+		}
+		.drawer-row-action {
+			display: block;
+			width: 100%;
+			border-radius: 8px;
+			border: 1px solid #bfdbfe;
+			background: #eff6ff;
+			color: #1d4ed8;
+			padding: 9px 12px;
+			text-align: center;
+			font-weight: 700;
+		}
+		.match-day-summary {
+			display: grid;
+			grid-template-columns: repeat(3, minmax(0, 1fr));
+			gap: 8px;
+		}
+		.match-day-stat {
+			border: 1px solid #e5e7eb;
+			border-radius: 8px;
+			padding: 10px;
+			background: #f9fafb;
+			text-align: center;
+		}
+		.match-day-stat-value {
+			font-size: 20px;
+			line-height: 1;
+			font-weight: 800;
+			color: #111827;
+		}
+		.match-day-stat-label {
+			margin-top: 4px;
+			font-size: 11px;
+			font-weight: 700;
+			text-transform: uppercase;
+			color: #6b7280;
+		}
+		.match-day-player-row {
+			display: grid;
+			grid-template-columns: minmax(0, 1fr) auto;
+			gap: 12px;
+			align-items: center;
+			border: 1px solid #e5e7eb;
+			border-radius: 8px;
+			padding: 12px;
+			background: white;
+		}
+		.match-day-player-name {
+			font-weight: 800;
+			color: #111827;
+		}
+		.match-day-player-meta {
+			margin-top: 2px;
+			font-size: 13px;
+			color: #6b7280;
+		}
+		.match-day-minutes {
+			min-width: 58px;
+			border-radius: 8px;
+			background: #ecfdf5;
+			color: #047857;
+			padding: 8px 10px;
+			text-align: center;
+			font-weight: 900;
+		}
+		.match-day-minutes span {
+			display: block;
+			font-size: 11px;
+			font-weight: 700;
+			color: #065f46;
+		}
+		.match-day-current {
+			display: inline-flex;
+			align-items: center;
+			border-radius: 999px;
+			background: #dcfce7;
+			color: #166534;
+			padding: 2px 8px;
+			font-size: 11px;
+			font-weight: 800;
+		}
+		.match-day-actions {
+			display: grid;
+			grid-template-columns: repeat(3, minmax(0, 1fr));
+			gap: 6px;
+			margin-top: 10px;
+			grid-column: 1 / -1;
+		}
+		.match-day-action-button {
+			width: 100%;
+			border-radius: 8px;
+			background: #f3f4f6;
+			color: #111827;
+			padding: 9px 8px;
+			font-size: 14px;
+			font-weight: 800;
+		}
+		.match-day-action-button.primary {
+			background: #dcfce7;
+			color: #166534;
+		}
+		.match-day-action-button.warning {
+			background: #fee2e2;
+			color: #991b1b;
+		}
+		.match-day-extra-menu-button {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			width: 36px;
+			height: 36px;
+			border-radius: 8px;
+			background: #f3f4f6;
+			color: #111827;
+			font-size: 18px;
+			font-weight: 900;
+			line-height: 1;
+		}
+		.match-day-extra-events {
+			display: grid;
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			gap: 6px;
+		}
+		.match-day-extra-events form {
+			margin: 0;
+		}
+		.match-day-sub-form {
+			grid-column: 1 / -1;
+			display: grid;
+			grid-template-columns: minmax(0, 1fr) 68px auto;
+			gap: 6px;
+			align-items: center;
+			margin-top: 8px;
+		}
+		.match-day-sub-form select,
+		.match-day-sub-form input {
+			width: 100%;
+			min-width: 0;
+			border: 1px solid #cbd5e1;
+			border-radius: 8px;
+			padding: 9px 8px;
+			font-size: 13px;
+			background: white;
+		}
+		.match-day-global-actions {
+			display: grid;
+			grid-template-columns: minmax(0, 1fr);
+			gap: 8px;
+		}
+		.match-day-start-panel {
+			border: 1px solid #d1d5db;
+			border-radius: 8px;
+			background: #f9fafb;
+			padding: 12px;
+		}
+		.match-day-countdown {
+			display: grid;
+			grid-template-columns: minmax(0, 1fr) auto;
+			gap: 10px;
+			align-items: center;
+			margin-bottom: 10px;
+		}
+		.match-day-countdown-label {
+			font-size: 12px;
+			font-weight: 800;
+			text-transform: uppercase;
+			color: #6b7280;
+		}
+		.match-day-countdown-time {
+			font-size: 24px;
+			line-height: 1;
+			font-weight: 900;
+			color: #111827;
+			font-variant-numeric: tabular-nums;
+			cursor: pointer;
+			user-select: none;
+		}
+		.match-day-countdown-meta {
+			grid-column: 1 / -1;
+			font-size: 13px;
+			color: #4b5563;
+		}
+		.match-day-start-actions {
+			display: grid;
+			grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+			gap: 8px;
+		}
+		.match-day-start-at-form {
+			display: none;
+			margin-top: 10px;
+		}
+		.match-day-start-panel[data-start-at-open="true"] .match-day-start-at-form {
+			display: block;
+		}
+		.match-day-start-input-row {
+			display: grid;
+			grid-template-columns: minmax(0, 1fr) auto;
+			gap: 8px;
+		}
+		.match-day-start-input-row input {
+			width: 100%;
+			border: 1px solid #cbd5e1;
+			border-radius: 8px;
+			padding: 9px 8px;
+			font-size: 14px;
+			background: white;
+		}
+		.match-day-start-quick {
+			display: grid;
+			grid-template-columns: repeat(5, minmax(0, 1fr));
+			gap: 6px;
+			margin-top: 8px;
+		}
+		.match-day-start-quick button {
+			border-radius: 8px;
+			background: #e5e7eb;
+			color: #374151;
+			padding: 8px 6px;
+			font-size: 12px;
+			font-weight: 800;
+		}
+		.match-day-marker-popup {
+			position: absolute;
+			left: 50%;
+			top: 100%;
+			transform: translateX(-50%);
+			width: min(86vw, 270px);
+			margin-top: 8px;
+			border-radius: 12px;
+			background: rgba(255,255,255,.98);
+			color: #111827;
+			text-shadow: none;
+			box-shadow: 0 16px 34px rgba(0,0,0,.36);
+			padding: 10px;
+			z-index: 70;
+			text-align: left;
+		}
+		.match-day-marker-popup.hidden {
+			display: none;
+		}
+		.match-day-marker-title {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: 8px;
+			margin-bottom: 8px;
+			font-size: 15px;
+			font-weight: 900;
+		}
+		.match-day-popup-actions {
+			display: grid;
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			gap: 6px;
+		}
+		.match-day-popup-sub-form,
+		.match-day-popup-swap-form {
+			display: grid;
+			grid-template-columns: minmax(0, 1fr) 72px;
+			gap: 8px;
+			margin-top: 8px;
+		}
+		.match-day-step-panel {
+			display: none;
+			margin-top: 8px;
+			border-top: 1px solid #e5e7eb;
+			padding-top: 8px;
+		}
+		.match-day-step-panel.is-open {
+			display: block;
+		}
+		.match-day-goal-form {
+			display: grid;
+			grid-template-columns: minmax(0, 1fr) auto;
+			gap: 6px;
+			align-items: center;
+		}
+		.match-day-quick-sub-options {
+			display: grid;
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			gap: 6px;
+			margin-bottom: 8px;
+			grid-column: 1 / -1;
+		}
+		.match-day-popup-sub-form select,
+		.match-day-popup-swap-form select {
+			grid-column: 1 / -1;
+			font-size: 16px;
+			padding: 12px;
+		}
+		.match-day-sub-injury-option {
+			grid-column: 1 / -1;
+			display: grid;
+			grid-template-columns: auto minmax(0, 1fr);
+			gap: 8px;
+			align-items: center;
+			border: 1px solid #fcd34d;
+			border-radius: 8px;
+			background: #fffbeb;
+			color: #92400e;
+			padding: 8px 10px;
+			font-size: 13px;
+			font-weight: 800;
+		}
+		.match-day-sub-injury-option input {
+			width: 18px;
+			height: 18px;
+		}
+		.match-day-popup-sub-form > button[type='submit'],
+		.match-day-popup-swap-form > button[type='submit'] {
+			grid-column: 1 / -1;
+		}
+		.match-day-score {
+			display: grid;
+			grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+			gap: 10px;
+			align-items: center;
+			border: 1px solid #d1d5db;
+			border-radius: 8px;
+			background: white;
+			padding: 10px;
+			text-align: center;
+		}
+		.match-day-score-team {
+			min-width: 0;
+			font-size: 12px;
+			font-weight: 800;
+			text-transform: uppercase;
+			color: #6b7280;
+			overflow-wrap: anywhere;
+		}
+		.match-day-score-value {
+			font-size: 28px;
+			line-height: 1;
+			font-weight: 900;
+			color: #111827;
+			font-variant-numeric: tabular-nums;
+		}
+		.match-day-edit-lineup-callout {
+			border: 2px solid #f59e0b;
+			box-shadow: 0 0 0 4px rgba(245, 158, 11, .22);
+			border-radius: 10px;
+			padding: 8px;
+			transition: box-shadow .18s ease, border-color .18s ease;
+		}
+		.match-day-edit-lineup-message {
+			display: none;
+			margin-bottom: 8px;
+			border: 1px solid #fcd34d;
+			border-radius: 8px;
+			background: #fffbeb;
+			color: #92400e;
+			padding: 8px 10px;
+			font-size: 13px;
+			font-weight: 800;
+		}
+		.match-day-edit-lineup-callout .match-day-edit-lineup-message {
+			display: block;
+		}
+		.match-day-popup-sub-form input[type='number'],
+		.match-day-goal-form select {
+			min-width: 0;
+			border: 1px solid #cbd5e1;
+			border-radius: 8px;
+			padding: 8px;
+			font-size: 14px;
+			background: white;
+		}
+		.speech-input-row {
+			display: grid;
+			grid-template-columns: minmax(0, 1fr) auto;
+			gap: 8px;
+			align-items: start;
+		}
+		.speech-button {
+			min-width: 44px;
+			min-height: 44px;
+			border-radius: 10px;
+			background: #e5e7eb;
+			color: #374151;
+			font-weight: 800;
+		}
+		.speech-button[aria-pressed="true"] {
+			background: #dc2626;
+			color: white;
+		}
+		.speech-button[disabled] {
+			opacity: .45;
+			cursor: not-allowed;
+		}
+		.drawer-body [data-formation-advanced-field] {
+			display: none;
+		}
+		.drawer-body[data-formation-advanced="true"] [data-formation-advanced-field] {
+			display: grid;
+		}
+		.drawer-body [data-formation-advanced-field][hidden] {
+			display: none !important;
+		}
+		@media (min-width: 900px) {
+			.pitch {
+				right: auto;
+				width: calc(100vw - 420px);
+			}
+			.pitch-drawer {
+				left: auto;
+				top: 0;
+				right: 0;
+				width: 420px;
+				height: 100vh !important;
+				max-height: none;
+				border-radius: 22px 0 0 22px;
+			}
+			.drawer-handle,
+			.back-to-pitch-button { display: none; }
+		}
+		@media (max-width: 899px) {
+			.pitch {
+				width: 100vw;
+				max-width: 100vw;
+			}
+			.pitch-drawer {
+				left: 0;
+				right: 0;
+				width: 100vw;
+				max-width: 100vw;
+			}
+			.slot-editor-row { grid-template-columns: minmax(0, 1fr) 58px; }
+		}
+		@media (max-width: 480px) {
+			.match-day-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+			.match-day-sub-form { grid-template-columns: minmax(0, 1fr) 58px; }
+			.match-day-sub-form button { grid-column: 1 / -1; }
+			.match-day-popup-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+			.match-day-popup-sub-form { grid-template-columns: minmax(0, 1fr) 54px; }
+			.match-day-popup-sub-form button { grid-column: 1 / -1; }
+			.pitch-lines {
+				inset: 36px 14px 104px;
+				border-width: 3px;
+			}
+			.pitch-lines:before,
+			.pitch-lines:after,
+			.pitch-box,
+			.goal-box,
+			.goal-frame,
+			.penalty-arc,
+			.corner {
+				border-width: 3px;
+			}
+			.pitch-marker {
+				width: 76px;
+			}
+			.shirt {
+				width: 45px;
+				height: 54px;
+			}
+			.shirt:before,
+			.shirt:after {
+				width: 18px;
+				height: 24px;
+			}
+			.shirt:before { left: -13px; }
+			.shirt:after { right: -13px; }
+			.shirt-number {
+				font-size: 22px;
+			}
+			.marker-caption {
+				font-size: 13px;
+			}
+		}
+	</style>
+	<script>
+		window.drawerStateStorageKey = "baileys-hammer.drawer.state";
+		window.setDrawerState = function(state) {
+			document.querySelectorAll(".pitch-drawer").forEach(function(drawer) {
+				drawer.dataset.state = state;
+			});
+			try {
+				window.sessionStorage.setItem(window.drawerStateStorageKey, state);
+			} catch (err) {}
+		};
+		window.openDrawer = function() {
+			window.setDrawerState("expanded");
+		};
+		window.restoreDrawerState = function(root) {
+			var drawers = (root || document).querySelectorAll(".pitch-drawer");
+			if (!drawers.length) return;
+			var storedState = "";
+			try {
+				storedState = window.sessionStorage.getItem(window.drawerStateStorageKey) || "";
+			} catch (err) {}
+			drawers.forEach(function(drawer) {
+				if (storedState === "expanded" || storedState === "collapsed") {
+					drawer.dataset.state = storedState;
+				}
+				try {
+					window.sessionStorage.setItem(window.drawerStateStorageKey, drawer.dataset.state || "collapsed");
+				} catch (err) {}
+			});
+		};
+		window.syncDrawerDetailButton = function(button, full) {
+			button.textContent = full ? "Simple" : "Full";
+			button.setAttribute("aria-label", full ? "Show simple drawer details" : "Show full drawer details");
+			button.setAttribute("aria-pressed", full ? "true" : "false");
+		};
+		window.toggleDrawer = function(drawerPart) {
+			var drawer = drawerPart.closest(".pitch-drawer");
+			if (!drawer) return;
+			window.setDrawerState(drawer.dataset.state === "expanded" ? "collapsed" : "expanded");
+		};
+		window.toggleDrawerFull = function(button) {
+			var drawer = button.closest(".pitch-drawer");
+			if (!drawer) return;
+			var body = drawer.querySelector(".drawer-body");
+			if (!body) return;
+			var full = body.dataset.detailMode !== "full";
+			body.dataset.detailMode = full ? "full" : "simple";
+			window.syncDrawerDetailButton(button, full);
+		};
+		window.showLineupToast = function(message) {
+			var toast = document.querySelector("[data-pitch-toast]");
+			if (!toast) {
+				toast = document.createElement("div");
+				toast.dataset.pitchToast = "true";
+				toast.className = "pitch-toast";
+				document.body.appendChild(toast);
+			}
+			toast.textContent = message;
+			toast.classList.add("is-visible");
+			window.clearTimeout(window.pitchToastTimer);
+			window.pitchToastTimer = window.setTimeout(function() {
+				toast.classList.remove("is-visible");
+			}, 2600);
+		};
+		window.selectPitchSlot = function(indexNumber) {
+			var panel = document.querySelector("[data-slot-panel='" + indexNumber + "']");
+			if (panel) {
+				window.setDrawerState("expanded");
+				document.querySelectorAll("[data-slot-panel]").forEach(function(panel) {
+					panel.classList.add("hidden");
+				});
+				panel.classList.remove("hidden");
+				panel.scrollIntoView({ block: "center" });
+			} else {
+				window.showLineupToast("Select a line-up or formation to edit");
+			}
+		};
+		window.showPitchEditUnavailableToast = function() {
+			window.showLineupToast("Select a line-up or formation to edit");
+		};
+		window.copyLineupShareLink = function(button, event) {
+			if (event) event.preventDefault();
+			var rawURL = button.dataset.shareUrl || window.location.href;
+			var shareURL = new URL(rawURL, window.location.href).href;
+			var copied = navigator.clipboard && navigator.clipboard.writeText
+				? navigator.clipboard.writeText(shareURL)
+				: Promise.reject(new Error("Clipboard unavailable"));
+			copied.then(function() {
+				window.showLineupToast("Copied formation link");
+			}).catch(function() {
+				window.prompt("Copy formation link", shareURL);
+			});
+		};
+		window.handleFormationMarkerTap = function(marker) {
+			if (marker.dataset.editable === "true") {
+				window.selectPitchSlot(marker.dataset.slot);
+				return;
+			}
+			window.showPitchEditUnavailableToast();
+		};
+			window.keepPitchPopupInViewport = function(popup) {
+				if (!popup) return;
+				popup.style.marginLeft = "0px";
+				var rect = popup.getBoundingClientRect();
+				var gutter = 10;
+			var offset = 0;
+			if (rect.left < gutter) {
+				offset = gutter - rect.left;
+			} else if (rect.right > window.innerWidth - gutter) {
+				offset = window.innerWidth - gutter - rect.right;
+			}
+			if (offset !== 0) {
+					popup.style.marginLeft = offset.toFixed(0) + "px";
+				}
+			};
+			window.closePitchPlayerEditors = function() {
+				document.querySelectorAll("[data-marker-editor]").forEach(function(editor) {
+					editor.classList.add("hidden");
+				});
+				document.querySelectorAll(".pitch-marker.is-editing").forEach(function(marker) {
+					marker.classList.remove("is-editing");
+				});
+			};
+			window.showPitchPlayerEditor = function(indexNumber) {
+				window.closePitchPlayerEditors();
+				document.querySelectorAll("[data-marker-view]").forEach(function(view) {
+					view.classList.remove("hidden");
+				});
+				var view = document.querySelector("[data-marker-view='" + indexNumber + "']");
+				var editor = document.querySelector("[data-marker-editor='" + indexNumber + "']");
+				if (view && editor) {
+				editor.classList.remove("hidden");
+				var marker = editor.closest(".pitch-marker");
+				if (marker) marker.classList.add("is-editing");
+				window.keepPitchPopupInViewport(editor);
+				var select = editor.querySelector("select");
+				if (select) select.focus();
+			} else {
+				window.showLineupToast("Select a line-up or formation to edit");
+			}
+		};
+		window.toggleMatchDayActions = function(button, event) {
+			if (event) {
+				event.preventDefault();
+				event.stopPropagation();
+			}
+			var marker = button.closest("[data-match-day-marker]");
+			if (!marker) return;
+			var popup = marker.querySelector("[data-match-day-popup]");
+			if (!popup) {
+				window.openMatchDayLineupEditor();
+				return;
+			}
+			var isHidden = popup.classList.contains("hidden");
+			document.querySelectorAll("[data-match-day-popup]").forEach(function(otherPopup) {
+				otherPopup.classList.add("hidden");
+			});
+			document.querySelectorAll(".pitch-marker.is-actions-open").forEach(function(openMarker) {
+				openMarker.classList.remove("is-actions-open");
+			});
+			if (isHidden) {
+				popup.classList.remove("hidden");
+				marker.classList.add("is-actions-open");
+				window.keepPitchPopupInViewport(popup);
+				}
+			};
+		window.openMatchDayLineupEditor = function() {
+			var drawer = document.querySelector(".pitch-drawer");
+			if (drawer) {
+				window.setDrawerState("expanded");
+			}
+			var editLink = document.querySelector("[data-match-day-edit-lineup]");
+			if (!editLink) return;
+			var editTarget = editLink.closest("[data-match-day-edit-lineup-target]") || editLink;
+			editTarget.classList.add("match-day-edit-lineup-callout");
+			window.clearTimeout(window.matchDayEditLineupHighlightTimeout);
+			window.matchDayEditLineupHighlightTimeout = window.setTimeout(function() {
+				editTarget.classList.remove("match-day-edit-lineup-callout");
+			}, 4500);
+			editTarget.scrollIntoView({ behavior: "smooth", block: "center" });
+			editLink.focus({ preventScroll: true });
+		};
+		window.toggleMatchDayLineupOptions = function(button) {
+			var options = document.querySelector("[data-match-day-lineup-options]");
+			if (!options) return;
+			var hidden = options.classList.toggle("hidden");
+			button.setAttribute("aria-expanded", hidden ? "false" : "true");
+		};
+		window.toggleMatchDayEvents = function(button) {
+			var events = document.querySelector("[data-match-day-events]");
+			if (!events) return;
+			var hidden = events.classList.toggle("hidden");
+			button.setAttribute("aria-expanded", hidden ? "false" : "true");
+		};
+		window.showMatchDayStepPanel = function(button, panelName) {
+			var popup = button.closest("[data-match-day-popup]");
+			if (!popup) return;
+			popup.querySelectorAll("[data-match-day-step-panel]").forEach(function(panel) {
+				panel.classList.toggle("is-open", panel.dataset.matchDayStepPanel === panelName);
+			});
+			var panel = popup.querySelector("[data-match-day-step-panel='" + panelName + "']");
+			if (panel) {
+				window.keepPitchPopupInViewport(popup);
+				var focusTarget = panel.querySelector("select, button, input");
+				if (focusTarget) focusTarget.focus();
+			}
+		};
+
+		window.updateMatchDaySwapButton = function(select) {
+			var form = select.closest("form");
+			if (!form) return;
+			var button = form.querySelector("[data-match-day-swap-button]");
+			if (!button) return;
+			var playerName = select.dataset.currentPlayerName || "player";
+			var selected = select.options[select.selectedIndex];
+			var swapName = selected && selected.value ? (selected.dataset.playerName || selected.textContent) : "";
+			button.classList.toggle("hidden", !swapName);
+			if (swapName) {
+				button.textContent = "Swap " + playerName + " and " + swapName;
+			}
+		};
+
+		function padLineupNumber(value) {
+			return String(value).padStart(2, "0");
+		}
+
+		function matchDayLocalInputValue(date) {
+			return date.getFullYear() + "-" +
+				padLineupNumber(date.getMonth() + 1) + "-" +
+				padLineupNumber(date.getDate()) + "T" +
+				padLineupNumber(date.getHours()) + ":" +
+				padLineupNumber(date.getMinutes());
+		}
+
+		function formatMatchDayCountdown(totalSeconds) {
+			var absSeconds = Math.abs(totalSeconds);
+			var hours = Math.floor(absSeconds / 3600);
+			var minutes = Math.floor((absSeconds % 3600) / 60);
+			var seconds = absSeconds % 60;
+			if (hours > 0) {
+				return hours + ":" + padLineupNumber(minutes) + ":" + padLineupNumber(seconds);
+			}
+			return minutes + ":" + padLineupNumber(seconds);
+		}
+
+		function formatMatchDayCountdownMinutes(totalSeconds) {
+			return Math.floor(Math.abs(totalSeconds) / 60) + "m";
+		}
+
+		function pluralMatchDayUnit(value, unit) {
+			return value + " " + unit + (value === 1 ? "" : "s");
+		}
+
+		function formatMatchDayCountdownLong(totalSeconds) {
+			if (totalSeconds <= 3600) return "";
+			var seconds = Math.abs(totalSeconds);
+			if (seconds < 7200) return "1 hour";
+			if (seconds < 86400) return pluralMatchDayUnit(Math.floor(seconds / 3600), "hour");
+			if (seconds < 172800) return "1 day";
+			if (seconds < 604800) return pluralMatchDayUnit(Math.floor(seconds / 86400), "day");
+			if (seconds < 1209600) return "1 week";
+			if (seconds < 2628000) return pluralMatchDayUnit(Math.floor(seconds / 604800), "week");
+			if (seconds < 5256000) return "1 month";
+			if (seconds < 31536000) return pluralMatchDayUnit(Math.floor(seconds / 2628000), "month");
+			if (seconds < 47304000) return "1 year";
+			return pluralMatchDayUnit(Math.floor(seconds / 31536000), "year");
+		}
+
+		window.updateMatchDayCountdowns = function(root) {
+			(root || document).querySelectorAll("[data-match-day-countdown]").forEach(function(countdown) {
+				var targetValue = countdown.dataset.matchClockBaseAt || countdown.dataset.matchStartAt;
+				var timeEl = countdown.querySelector("[data-countdown-time]");
+				var labelEl = countdown.querySelector("[data-countdown-label]");
+				if (!targetValue || !timeEl || !labelEl) return;
+				var target = new Date(targetValue);
+				if (Number.isNaN(target.getTime())) {
+					timeEl.textContent = "--:--";
+					labelEl.textContent = "Kick-off";
+					return;
+				}
+				var baseMinute = parseInt(countdown.dataset.matchClockBaseMinute || "0", 10);
+				var paused = countdown.dataset.matchClockPaused === "true";
+				var finished = countdown.dataset.matchClockFinished === "true";
+				var started = countdown.dataset.matchClockStarted === "true";
+				if (paused || finished) {
+					timeEl.textContent = baseMinute + "m";
+					labelEl.textContent = countdown.dataset.matchClockLabel || (finished ? "Game ended" : "Game pause");
+					return;
+				}
+				if (started) {
+					var elapsedSeconds = Math.max(0, baseMinute * 60 + Math.round((Date.now() - target.getTime()) / 1000));
+					timeEl.textContent = countdown.dataset.hideSeconds === "true" ? formatMatchDayCountdownMinutes(elapsedSeconds) : formatMatchDayCountdown(elapsedSeconds);
+					labelEl.textContent = countdown.dataset.matchClockLabel || "Match running";
+					return;
+				}
+				var diffSeconds = Math.round((target.getTime() - Date.now()) / 1000);
+				var longLabel = formatMatchDayCountdownLong(diffSeconds);
+				if (longLabel) {
+					timeEl.textContent = longLabel;
+					labelEl.textContent = "Kick-off in";
+					return;
+				}
+				timeEl.textContent = countdown.dataset.hideSeconds === "true" ? formatMatchDayCountdownMinutes(diffSeconds) : formatMatchDayCountdown(diffSeconds);
+				labelEl.textContent = diffSeconds >= 0 ? "Kick-off in" : "Match running";
+			});
+		};
+
+		window.toggleMatchDayCountdownPrecision = function(timeEl) {
+			var countdown = timeEl.closest("[data-match-day-countdown]");
+			if (!countdown) return;
+			countdown.dataset.hideSeconds = countdown.dataset.hideSeconds === "true" ? "false" : "true";
+			window.updateMatchDayCountdowns(countdown);
+		};
+
+		window.toggleMatchDayStartAt = function(button) {
+			var panel = button.closest("[data-match-day-start-panel]");
+			if (!panel) return;
+			var open = panel.dataset.startAtOpen !== "true";
+			panel.dataset.startAtOpen = open ? "true" : "false";
+			button.setAttribute("aria-expanded", open ? "true" : "false");
+			if (open) {
+				var input = panel.querySelector("input[name='startTime']");
+				if (input) input.focus();
+			}
+		};
+
+		window.setMatchDayStartMinutesAgo = function(button, minutesAgo, submit) {
+			var form = button.closest("form");
+			if (!form) return;
+			var input = form.querySelector("input[name='startTime']");
+			if (!input) return;
+			var startAt = new Date(Date.now() - minutesAgo * 60000);
+			input.value = matchDayLocalInputValue(startAt);
+			if (submit) form.requestSubmit ? form.requestSubmit() : form.submit();
+		};
+
+		function handleMatchDayStartHotkey(event) {
+			if (!/^[1-5]$/.test(event.key)) return;
+			var active = document.activeElement;
+			if (active && ["INPUT", "TEXTAREA", "SELECT"].indexOf(active.tagName) >= 0) return;
+			var panel = document.querySelector("[data-match-day-start-panel][data-start-at-open='true']");
+			if (!panel) return;
+			var form = panel.querySelector("form[data-match-day-start-at-form]");
+			if (!form) return;
+			event.preventDefault();
+			var fakeButton = form.querySelector("[data-start-minutes-ago='" + event.key + "']");
+			window.setMatchDayStartMinutesAgo(fakeButton || form, parseInt(event.key, 10), true);
+		}
+
+		document.addEventListener("keydown", handleMatchDayStartHotkey);
+		window.matchDayCountdownInterval = window.matchDayCountdownInterval || setInterval(function() {
+			window.updateMatchDayCountdowns(document);
+		}, 1000);
+			document.addEventListener("click", function(event) {
+				if (!event.target.closest("[data-marker-editor]") && !event.target.closest("[data-marker-view]")) {
+					window.closePitchPlayerEditors();
+				}
+				if (event.target.closest("[data-match-day-marker]")) return;
+				document.querySelectorAll("[data-match-day-popup]").forEach(function(popup) {
+					popup.classList.add("hidden");
+				});
+			document.querySelectorAll(".pitch-marker.is-actions-open").forEach(function(marker) {
+				marker.classList.remove("is-actions-open");
+			});
+			});
+			document.addEventListener("keydown", function(event) {
+				if (event.key !== "Escape") return;
+				window.closePitchPlayerEditors();
+				document.querySelectorAll("[data-match-day-popup]").forEach(function(popup) {
+					popup.classList.add("hidden");
+				});
+			document.querySelectorAll(".pitch-marker.is-actions-open").forEach(function(marker) {
+				marker.classList.remove("is-actions-open");
+			});
+		});
+		function lineupTargetIndexForSelect(select, form) {
+			var panel = select.closest("[data-slot-panel]");
+			if (panel) return panel.dataset.slotPanel;
+			var indexInput = form.querySelector("input[name='indexNumber']");
+			return indexInput ? indexInput.value : "";
+		}
+
+		function lineupPositionInitialsByIndex() {
+			var positions = {};
+			document.querySelectorAll("[data-lineup-position-index][data-lineup-position-initials]").forEach(function(element) {
+				if (!element.dataset.lineupPositionIndex) return;
+				positions[element.dataset.lineupPositionIndex] = element.dataset.lineupPositionInitials;
+			});
+			return positions;
+		}
+
+		function lineupPositionLabel(index, positions) {
+			return positions[index] || ("position " + index);
+		}
+
+		function lineupMoveConflicts(form) {
+			var moved = [];
+			var positions = lineupPositionInitialsByIndex();
+			form.querySelectorAll("select[data-player-slot]").forEach(function(select) {
+				if (!select.value) return;
+				var targetIndex = lineupTargetIndexForSelect(select, form);
+				var selected = select.options[select.selectedIndex];
+				var currentIndex = selected.dataset.currentIndex;
+				if (currentIndex && currentIndex !== "-1" && currentIndex !== targetIndex) {
+					moved.push({
+						select: select,
+						playerID: select.value,
+						playerName: selected.dataset.playerName || selected.text,
+						currentIndex: currentIndex,
+						targetIndex: targetIndex,
+						currentPosition: lineupPositionLabel(currentIndex, positions),
+						targetPosition: lineupPositionLabel(targetIndex, positions),
+					});
+				}
+			});
+			return moved;
+		}
+
+		function lineupChoiceContainer(form) {
+			var choice = form.querySelector("[data-lineup-assignment-choice]");
+			if (choice) return choice;
+			choice = document.createElement("div");
+			choice.dataset.lineupAssignmentChoice = "true";
+			choice.className = "lineup-assignment-choice hidden";
+			form.appendChild(choice);
+			return choice;
+		}
+
+		function escapeLineupHTML(value) {
+			return String(value).replace(/[&<>"']/g, function(character) {
+				return {
+					"&": "&amp;",
+					"<": "&lt;",
+					">": "&gt;",
+					"\"": "&quot;",
+					"'": "&#39;",
+				}[character];
+			});
+		}
+
+		function setLineupSubmitLoading(button, loading) {
+			if (!button) return;
+			if (loading) {
+				button.dataset.originalText = button.textContent;
+				button.textContent = "Checking...";
+				button.setAttribute("aria-busy", "true");
+				button.classList.add("opacity-75", "cursor-wait");
+			} else {
+				if (button.dataset.originalText) button.textContent = button.dataset.originalText;
+				button.removeAttribute("aria-busy");
+				button.classList.remove("opacity-75", "cursor-wait");
+			}
+		}
+
+		function clearMovedPlayerOriginalSelections(form, conflicts) {
+			conflicts.forEach(function(conflict) {
+				form.querySelectorAll("select[data-player-slot]").forEach(function(select) {
+					if (select === conflict.select || select.value !== conflict.playerID) return;
+					select.value = "";
+					var row = select.closest("[data-lineup-slot-row]");
+					var minuteInput = row ? row.querySelector("input[type='number']") : null;
+					if (minuteInput) minuteInput.value = "0";
+				});
+			});
+		}
+
+		function submitLineupForm(form, submitter) {
+			form.dataset.lineupMoveResolved = "true";
+			if (submitter && form.requestSubmit) {
+				form.requestSubmit(submitter);
+			} else if (form.requestSubmit) {
+				form.requestSubmit();
+			} else {
+				form.submit();
+			}
+		}
+
+		window.prepareLineupSave = function(form, event) {
+			if (form.dataset.lineupMoveResolved === "true") {
+				delete form.dataset.lineupMoveResolved;
+				return true;
+			}
+			if (event) event.preventDefault();
+			var submitter = event && event.submitter ? event.submitter : form.querySelector("[type='submit']");
+			form._pendingLineupSubmitter = submitter;
+			setLineupSubmitLoading(submitter, true);
+			setTimeout(function() {
+				var conflicts = lineupMoveConflicts(form);
+				setLineupSubmitLoading(submitter, false);
+				if (conflicts.length === 0) {
+					submitLineupForm(form, submitter);
+					return;
+				}
+				var choice = lineupChoiceContainer(form);
+				choice.innerHTML = "<div><strong>Player already assigned.</strong></div>" +
+					"<div class='choice-list'>" + conflicts.map(function(conflict) {
+						var playerName = escapeLineupHTML(conflict.playerName);
+						var currentPosition = escapeLineupHTML(conflict.currentPosition);
+						var targetPosition = escapeLineupHTML(conflict.targetPosition);
+						return "<label class='choice-row'>" +
+							"<input type='checkbox' name='lineupMovePlayerIds' value='" + escapeLineupHTML(conflict.playerID) + "' aria-label='Move " + playerName + " from " + currentPosition + " to " + targetPosition + "'>" +
+							"<span><strong>" + playerName + "</strong> is already assigned at <strong>" +
+							currentPosition + "</strong>. Tick to move them to <strong>" +
+							targetPosition + "</strong>; leave unticked to keep " +
+							currentPosition + " and also add them here." +
+							"<span class='choice-move-hint'><strong>Move</strong> - tick to move " + playerName + " from " + currentPosition + " to " + targetPosition + "</span></span>" +
+							"</label>";
+					}).join("") + "</div>" +
+					"<div class='choice-actions'>" +
+					"<button type='button' class='move-button' onclick=\"window.submitLineupAssignmentChoice(this)\">Apply choices</button>" +
+					"<button type='button' class='cancel-button' onclick='window.cancelLineupAssignmentChoice(this)'>Cancel</button>" +
+					"</div>";
+				choice.classList.remove("hidden");
+				choice.scrollIntoView({ block: "nearest" });
+			}, 120);
+			return false;
+		};
+
+		window.submitLineupAssignmentChoice = function(button) {
+			var form = button.closest("form");
+			if (!form) return;
+			var checkedPlayerIDs = {};
+			form.querySelectorAll("[data-lineup-assignment-choice] input[name='lineupMovePlayerIds']:checked").forEach(function(input) {
+				checkedPlayerIDs[input.value] = true;
+			});
+			clearMovedPlayerOriginalSelections(form, lineupMoveConflicts(form).filter(function(conflict) {
+				return checkedPlayerIDs[conflict.playerID];
+			}));
+			submitLineupForm(form, form._pendingLineupSubmitter);
+		};
+
+		window.cancelLineupAssignmentChoice = function(button) {
+			var choice = button.closest("[data-lineup-assignment-choice]");
+			if (choice) choice.classList.add("hidden");
+		};
+		window.moveFormationMarker = function(marker, pointerEvent) {
+			var pitch = marker.closest("[data-pitch]");
+			var id = marker.dataset.positionId;
+			if (!pitch || !id) return;
+			var rect = pitch.getBoundingClientRect();
+			var x = Math.max(0, Math.min(100, ((pointerEvent.clientX - rect.left) / rect.width) * 100));
+			var y = Math.max(0, Math.min(100, ((pointerEvent.clientY - rect.top) / rect.height) * 100));
+			marker.style.left = x.toFixed(2) + "%";
+			marker.style.top = y.toFixed(2) + "%";
+			var xInput = document.querySelector("[name='position_" + id + "_x']");
+			var yInput = document.querySelector("[name='position_" + id + "_y']");
+			if (xInput) xInput.value = x.toFixed(2);
+			if (yInput) yInput.value = y.toFixed(2);
+		};
+		function syncFormationAdvancedFields(root, showAdvanced) {
+			root.dataset.formationAdvanced = showAdvanced ? "true" : "false";
+			root.querySelectorAll("[data-formation-advanced-field]").forEach(function(field) {
+				field.hidden = !showAdvanced;
+			});
+		}
+
+		window.toggleFormationAdvanced = function(button) {
+			var drawer = button.closest(".pitch-drawer");
+			var root = drawer ? drawer.querySelector(".drawer-body") : button.closest(".drawer-body");
+			if (!root) return;
+			var showAdvanced = button.getAttribute("aria-pressed") !== "true";
+			button.setAttribute("aria-pressed", showAdvanced ? "true" : "false");
+			button.title = showAdvanced ? "Hide position coordinates" : "Show position coordinates";
+			button.setAttribute("aria-label", button.title);
+			syncFormationAdvancedFields(root, showAdvanced);
+		};
+		window.startSpeechToText = function(button) {
+			var targetSelector = button.dataset.speechTarget;
+			var target = targetSelector ? document.querySelector(targetSelector) : null;
+			var Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+			if (!target || !Recognition) return;
+			var recognition = new Recognition();
+			recognition.lang = navigator.language || "en-NZ";
+			recognition.interimResults = false;
+			recognition.maxAlternatives = 1;
+			button.setAttribute("aria-pressed", "true");
+			recognition.onresult = function(event) {
+				var transcript = event.results && event.results[0] && event.results[0][0] ? event.results[0][0].transcript : "";
+				if (!transcript) return;
+				var prefix = target.value && !target.value.match(/\s$/) ? " " : "";
+				target.value = target.value + prefix + transcript;
+				target.dispatchEvent(new Event("input", { bubbles: true }));
+				target.focus();
+			};
+			recognition.onend = function() {
+				button.setAttribute("aria-pressed", "false");
+			};
+			recognition.onerror = function() {
+				button.setAttribute("aria-pressed", "false");
+			};
+			recognition.start();
+		};
+		window.enableSpeechButtons = function(root) {
+			var supported = !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+			(root || document).querySelectorAll("[data-speech-target]").forEach(function(button) {
+				button.disabled = !supported;
+				button.title = supported ? "Dictate details" : "Speech input is not supported in this browser";
+			});
+		};
+		document.addEventListener("DOMContentLoaded", function() {
+			window.restoreDrawerState(document);
+			window.updateMatchDayCountdowns(document);
+			window.enableSpeechButtons(document);
+			document.querySelectorAll(".drawer-body[data-formation-advanced]").forEach(function(root) {
+				syncFormationAdvancedFields(root, root.dataset.formationAdvanced === "true");
+			});
+		});
+		document.addEventListener("htmx:afterSettle", function(event) {
+			window.restoreDrawerState(event.target || document);
+			window.updateMatchDayCountdowns(event.target || document);
+			window.enableSpeechButtons(event.target || document);
+			(event.target || document).querySelectorAll(".drawer-body[data-formation-advanced]").forEach(function(root) {
+				syncFormationAdvancedFields(root, root.dataset.formationAdvanced === "true");
+			});
+		});
+		window.showNextLineupSub = function(button) {
+			var group = button.closest("[data-lineup-slot-group]");
+			var slotOrder = parseInt(button.dataset.slotOrder || "0", 10);
+			if (!group || slotOrder >= 3) return;
+			var nextRow = group.querySelector("[data-lineup-slot-row='" + (slotOrder + 1) + "']");
+			if (!nextRow) return;
+			nextRow.classList.remove("hidden");
+			button.classList.add("hidden");
+			var nextButton = nextRow.querySelector("[data-add-sub-button]");
+			if (nextButton) {
+				nextButton.classList.remove("hidden");
+			}
+			var select = nextRow.querySelector("select");
+			if (select) select.focus();
+		};
+		document.addEventListener("pointerdown", function(event) {
+			var marker = event.target.closest("[data-draggable-position]");
+			if (!marker) return;
+			event.preventDefault();
+			event.stopPropagation();
+			marker.dataset.dragging = "true";
+			if (marker.setPointerCapture) {
+				marker.setPointerCapture(event.pointerId);
+			}
+			window.moveFormationMarker(marker, event);
+		});
+		document.addEventListener("pointermove", function(event) {
+			var marker = document.querySelector("[data-draggable-position][data-dragging='true']");
+			if (!marker) return;
+			event.preventDefault();
+			window.moveFormationMarker(marker, event);
+		});
+		document.addEventListener("pointerup", function(event) {
+			var marker = document.querySelector("[data-draggable-position][data-dragging='true']");
+			if (!marker) return;
+			if (marker.releasePointerCapture) {
+				try {
+					marker.releasePointerCapture(event.pointerId);
+				} catch (err) {}
+			}
+			delete marker.dataset.dragging;
+		});
+	</script>
+	@dirtyFormScript()
+}
+
+templ dirtyFormScript() {
+	<script>
+		(function() {
+			if (window.dirtyFormCheckReady) return;
+			window.dirtyFormCheckReady = true;
+
+			var warningMessage = "You have unsaved changes. Leave without saving?";
+
+			function trackedForms() {
+				return Array.prototype.slice.call(document.querySelectorAll("form[data-dirty-check]"));
+			}
+
+			function formSnapshot(form) {
+				return new URLSearchParams(new FormData(form)).toString();
+			}
+
+			function refreshFormSnapshot(form) {
+				form.dataset.dirtySnapshot = formSnapshot(form);
+			}
+
+			function hasDirtyForm() {
+				return trackedForms().some(function(form) {
+					if (!form.dataset.dirtySnapshot) refreshFormSnapshot(form);
+					return form.dataset.dirtySnapshot !== formSnapshot(form);
+				});
+			}
+
+			function navigationAlreadyAllowed() {
+				return window.dirtyFormNavigationAllowedUntil && window.dirtyFormNavigationAllowedUntil > Date.now();
+			}
+
+			function allowNavigation() {
+				window.dirtyFormNavigationAllowedUntil = Date.now() + 2000;
+			}
+
+			window.refreshDirtyFormSnapshots = function(root) {
+				Array.prototype.slice.call((root || document).querySelectorAll("form[data-dirty-check]")).forEach(refreshFormSnapshot);
+			};
+
+			document.addEventListener("DOMContentLoaded", function() {
+				window.refreshDirtyFormSnapshots(document);
+			});
+			document.addEventListener("htmx:afterSettle", function(event) {
+				window.refreshDirtyFormSnapshots(event.target || document);
+			});
+			document.addEventListener("submit", function(event) {
+				var form = event.target.closest("form[data-dirty-check]");
+				if (!form || event.defaultPrevented) return;
+				window.dirtyFormSubmitInProgress = true;
+				setTimeout(function() {
+					window.dirtyFormSubmitInProgress = false;
+				}, 2000);
+			});
+			window.addEventListener("beforeunload", function(event) {
+				if (window.dirtyFormSubmitInProgress || navigationAlreadyAllowed() || !hasDirtyForm()) return;
+				event.preventDefault();
+				event.returnValue = "";
+			});
+			document.addEventListener("htmx:beforeRequest", function(event) {
+				if (window.dirtyFormSubmitInProgress || navigationAlreadyAllowed() || !hasDirtyForm()) return;
+				var source = event.detail && event.detail.elt;
+				if (source && source.closest("form[data-dirty-check]")) return;
+				if (!window.confirm(warningMessage)) {
+					event.preventDefault();
+				} else {
+					allowNavigation();
+				}
+			});
+			document.addEventListener("click", function(event) {
+				var link = event.target.closest("a[href]");
+				if (!link || link.target || link.hasAttribute("download")) return;
+				if (window.dirtyFormSubmitInProgress || navigationAlreadyAllowed() || !hasDirtyForm()) return;
+				if (!window.confirm(warningMessage)) {
+					event.preventDefault();
+					event.stopPropagation();
+				} else {
+					allowNavigation();
+				}
+			}, true);
+		})();
+	</script>
+}
+
+templ lineupLoginPage(msg string) {
+	<!DOCTYPE html>
+	<html>
+		@header()
+		<body class="min-h-screen bg-gray-100 p-4">
+			<div class="max-w-md mx-auto bg-white shadow-xl rounded-lg p-6 mt-10">
+				<h1 class="text-3xl font-bold mb-4">Line-up access</h1>
+				<a href="/" class="text-blue-600 underline">Back home</a>
+				@warning(msg)
+				<form method="POST" action="/lineups/login" class="space-y-4">
+					<label class="block">Team key
+						<input name="teamKey" required class="w-full border rounded-lg p-3 mt-1"/>
+					</label>
+					<label class="block">Team member password
+						<input name="teamMemberPass" type="password" required class="w-full border rounded-lg p-3 mt-1"/>
+					</label>
+					<label class="block">Display name
+						<input name="displayName" required class="w-full border rounded-lg p-3 mt-1"/>
+					</label>
+					<button class={ bigPri } type="submit">Continue</button>
+				</form>
+			</div>
+		</body>
+	</html>
+}
+
+templ lineupPreviewPitch(lineup *Lineup) {
+	<div class="pitch" data-pitch>
+		@pitchMarkings()
+		if lineup != nil {
+			for _, pp := range lineupPitchPlayers(lineup) {
+				<button type="button"
+					if len(pp.Players) == 0 {
+						class="pitch-marker unassigned"
+					} else {
+						class="pitch-marker"
+					}
+					data-slot={ fmt.Sprintf("%d", pp.Position.IndexNumber) }
+					style={ fmt.Sprintf("left:%.2f%%; top:%.2f%%;", pp.Position.X, pp.Position.Y) }
+					onclick="window.showPitchEditUnavailableToast()"
+				>
+					<div class="shirt">
+						<span class="shirt-collar"></span>
+						<span class="shirt-number">{ fmt.Sprintf("%d", pp.Position.IndexNumber) }</span>
+					</div>
+					if len(pp.Players) > 0 {
+						<div class="marker-player-stack">
+							for i, assigned := range pp.Players {
+								if i == 0 {
+									<span class="marker-caption">{ assigned.Player.Name }{ lineupSubMinuteLabel(assigned.SubMinute) }</span>
+								} else {
+									<span class="sub-player">{ assigned.Player.Name }{ lineupSubMinuteLabel(assigned.SubMinute) }</span>
+								}
+							}
+						</div>
+						<span class="marker-subcaption">{ pp.Position.PositionName }</span>
+					} else {
+						<span class="marker-caption">Tap to edit</span>
+						<span class="marker-subcaption">{ pp.Position.PositionName }</span>
+					}
+				</button>
+			}
+		}
+	</div>
+}
+
+templ matchDayPitch(lineup *Lineup, playerTimes []MatchDayPlayerTime, players []Player, unavailablePlayerIDs map[uint]bool) {
+	<div class="pitch" data-pitch>
+		@pitchMarkings()
+		if lineup != nil {
+			for _, pp := range lineupPitchPlayers(lineup) {
+				{{ currentPlayer := currentMatchDayPlayerForPosition(playerTimes, pp.Position.IndexNumber) }}
+				<div
+					if len(pp.Players) == 0 {
+						class="pitch-marker unassigned"
+					} else {
+						class="pitch-marker"
+					}
+					data-match-day-marker
+					data-slot={ fmt.Sprintf("%d", pp.Position.IndexNumber) }
+					style={ fmt.Sprintf("left:%.2f%%; top:%.2f%%;", pp.Position.X, pp.Position.Y) }
+				>
+					<button type="button" class="w-full text-white" onclick="window.toggleMatchDayActions(this, event)">
+						<div class="shirt">
+							<span class="shirt-collar"></span>
+							<span class="shirt-number">{ fmt.Sprintf("%d", pp.Position.IndexNumber) }</span>
+						</div>
+						if len(pp.Players) > 0 {
+							<div class="marker-player-stack">
+								for i, assigned := range pp.Players {
+									if i == 0 {
+										<span class="marker-caption">{ assigned.Player.Name }{ lineupSubMinuteLabel(assigned.SubMinute) }</span>
+									} else {
+										<span class="sub-player">{ assigned.Player.Name }{ lineupSubMinuteLabel(assigned.SubMinute) }</span>
+									}
+								}
+							</div>
+							<span class="marker-subcaption">
+								{ pp.Position.PositionName }
+								if matchDayLiveMinuteLabel(lineup.Match, currentPlayer) != "" {
+									- { matchDayLiveMinuteLabel(lineup.Match, currentPlayer) }
+								}
+							</span>
+						} else {
+							<span class="marker-caption">Unassigned</span>
+							<span class="marker-subcaption">{ pp.Position.PositionName }</span>
+						}
+					</button>
+					if currentPlayer.Player.ID > 0 && lineupMatchID(lineup) > 0 && matchDayCanLogLiveEvent(lineup.Match) {
+						<div class={ matchDayMarkerPopupClass(pp.Position) } data-match-day-popup onclick="event.stopPropagation()">
+							<div class="match-day-marker-title">
+								<span>{ currentPlayer.Player.Name }</span>
+								<div class="flex items-center gap-2">
+									if matchDayLiveMinuteLabel(lineup.Match, currentPlayer) != "" {
+										<span>{ matchDayLiveMinuteLabel(lineup.Match, currentPlayer) }</span>
+									} else {
+										<span>{ fmt.Sprintf("%d min", currentPlayer.Minutes) }</span>
+									}
+									<button
+										type="button"
+										class="match-day-extra-menu-button"
+										aria-label={ fmt.Sprintf("Extra match events for %s", currentPlayer.Player.Name) }
+										title="Extra match events"
+										onclick="window.showMatchDayStepPanel(this, 'extra')"
+									>☰</button>
+								</div>
+							</div>
+							<div class="match-day-popup-actions">
+								<button type="button" class="match-day-action-button primary" onclick="window.showMatchDayStepPanel(this, 'goal')">Add goal</button>
+								<button type="button" class="match-day-action-button" onclick="window.showMatchDayStepPanel(this, 'swap')">Swap</button>
+								if !lineup.Locked {
+									<button type="button" class="match-day-action-button" onclick="window.showMatchDayStepPanel(this, 'sub')">Sub player</button>
+								}
+							</div>
+							<div class="match-day-step-panel" data-match-day-step-panel="extra">
+								<div class="match-day-extra-events">
+									for _, extraEvent := range []struct{ Action string; Label string; Warning bool }{
+										{"yellow-card", "Yellow card", false},
+										{"red-card", "Red card", true},
+										{"gave-away-penalty", "Gave away pen", false},
+										{"injury", "Injury", false},
+									} {
+										<form method="POST" action={ fmt.Sprintf("/match-day/%d/action", lineup.ID) }>
+											<input type="hidden" name="action" value={ extraEvent.Action }/>
+											<input type="hidden" name="playerId" value={ fmt.Sprintf("%d", currentPlayer.Player.ID) }/>
+											<input type="hidden" name="minute" value={ fmt.Sprintf("%d", matchDayMinute(lineup.Match)) }/>
+											<button
+												type="submit"
+												if extraEvent.Warning {
+													class="match-day-action-button warning"
+												} else {
+													class="match-day-action-button"
+												}
+											>{ extraEvent.Label }</button>
+										</form>
+									}
+								</div>
+							</div>
+							<div class="match-day-step-panel" data-match-day-step-panel="goal">
+								<form method="POST" action={ fmt.Sprintf("/match-day/%d/action", lineup.ID) } class="match-day-goal-form">
+									<input type="hidden" name="action" value="goal"/>
+									<input type="hidden" name="playerId" value={ fmt.Sprintf("%d", currentPlayer.Player.ID) }/>
+									<input type="hidden" name="minute" value={ fmt.Sprintf("%d", matchDayMinute(lineup.Match)) }/>
+									<select name="assisterPlayerId" aria-label={ fmt.Sprintf("Assist for %s goal", currentPlayer.Player.Name) }>
+										<option value="">No assist</option>
+										for _, playerTime := range playerTimes {
+											if playerTime.Current && playerTime.Player.ID != currentPlayer.Player.ID {
+												<option value={ fmt.Sprintf("%d", playerTime.Player.ID) }>{ playerTime.Player.Name }</option>
+											}
+										}
+									</select>
+									<button type="submit" class="match-day-action-button primary">Add goal</button>
+								</form>
+							</div>
+							<div class="match-day-step-panel" data-match-day-step-panel="swap">
+								<form method="POST" action={ fmt.Sprintf("/match-day/%d/action", lineup.ID) } class="match-day-popup-swap-form">
+									<input type="hidden" name="action" value="swap"/>
+									<input type="hidden" name="playerId" value={ fmt.Sprintf("%d", currentPlayer.Player.ID) }/>
+									<input type="hidden" name="minute" value={ fmt.Sprintf("%d", matchDayMinute(lineup.Match)) }/>
+									<select name="swapPlayerId" aria-label={ fmt.Sprintf("Swap %s with", currentPlayer.Player.Name) } data-current-player-name={ currentPlayer.Player.Name } onchange="window.updateMatchDaySwapButton(this)" required>
+										<option value="">Swap with player</option>
+										for _, playerTime := range playerTimes {
+											if playerTime.Current && playerTime.Player.ID != currentPlayer.Player.ID {
+												<option value={ fmt.Sprintf("%d", playerTime.Player.ID) } data-player-name={ playerTime.Player.Name }>{ playerTime.Player.Name }</option>
+											}
+										}
+									</select>
+									<button type="submit" class="match-day-action-button primary hidden" data-match-day-swap-button>Swap</button>
+								</form>
+							</div>
+								if !lineup.Locked {
+									<div class="match-day-step-panel" data-match-day-step-panel="sub">
+										{{ quickSubCandidateIDs := matchDayQuickSubCandidateIDs(pp.Players, currentPlayer.Player.ID, playerTimes, unavailablePlayerIDs) }}
+										<form method="POST" action={ fmt.Sprintf("/match-day/%d/action", lineup.ID) } class="match-day-popup-sub-form">
+											<input type="hidden" name="action" value="sub"/>
+											<input type="hidden" name="playerId" value={ fmt.Sprintf("%d", currentPlayer.Player.ID) }/>
+											<input type="hidden" name="indexNumber" value={ fmt.Sprintf("%d", currentPlayer.CurrentIndexNumber) }/>
+											if len(quickSubCandidateIDs) > 0 {
+												<div class="match-day-quick-sub-options">
+													for _, assigned := range pp.Players {
+														if quickSubCandidateIDs[assigned.PlayerID] {
+															<button type="submit" name="replacementPlayerId" value={ fmt.Sprintf("%d", assigned.PlayerID) } class="match-day-action-button primary" formnovalidate>{ assigned.Player.Name }</button>
+														}
+													}
+												</div>
+											}
+											<select name="replacementPlayerId" aria-label={ fmt.Sprintf("Sub for %s", currentPlayer.Player.Name) } required>
+												<option value="">Other player</option>
+												for _, player := range players {
+													if !quickSubCandidateIDs[player.ID] && !matchDayPlayerCurrentlyOn(playerTimes, player.ID) && !playerUnavailableForMatch(unavailablePlayerIDs, player.ID) {
+														<option value={ fmt.Sprintf("%d", player.ID) }>{ player.Name }</option>
+													}
+												}
+											</select>
+											<input type="number" min="0" max="120" name="minute" value={ fmt.Sprintf("%d", matchDayMinute(lineup.Match)) } aria-label="Sub minute"/>
+											<label class="match-day-sub-injury-option">
+												<input type="checkbox" name="markInjured" value="on"/>
+												<span>Mark { currentPlayer.Player.Name } as injured</span>
+											</label>
+											<button type="submit" class="match-day-action-button primary">Sub</button>
+										</form>
+									</div>
+								}
+						</div>
+					}
+				</div>
+			}
+		}
+	</div>
+}
+
+templ lineupEditablePitch(lineup *Lineup, players []Player, unavailablePlayerIDs map[uint]bool) {
+	<div class="pitch" data-pitch>
+		@pitchMarkings()
+		if lineup != nil {
+			for _, pp := range lineupPitchPlayers(lineup) {
+				<div
+					if len(pp.Players) == 0 {
+						class="pitch-marker unassigned"
+					} else {
+						class="pitch-marker"
+					}
+					style={ fmt.Sprintf("left:%.2f%%; top:%.2f%%;", pp.Position.X, pp.Position.Y) }
+				>
+					<button type="button" data-marker-view={ fmt.Sprintf("%d", pp.Position.IndexNumber) } onclick="window.showPitchPlayerEditor(this.dataset.markerView)">
+						<div class="shirt">
+							<span class="shirt-collar"></span>
+							<span class="shirt-number">{ fmt.Sprintf("%d", pp.Position.IndexNumber) }</span>
+						</div>
+						if len(pp.Players) > 0 {
+							<div class="marker-player-stack">
+								for i, assigned := range pp.Players {
+									if i == 0 {
+										<span class="marker-caption">{ assigned.Player.Name }{ lineupSubMinuteLabel(assigned.SubMinute) }</span>
+									} else {
+										<span class="sub-player">{ assigned.Player.Name }{ lineupSubMinuteLabel(assigned.SubMinute) }</span>
+									}
+								}
+							</div>
+							<span class="marker-subcaption">{ pp.Position.PositionName }</span>
+						} else {
+							<span class="marker-caption">Tap to edit</span>
+							<span class="marker-subcaption">{ pp.Position.PositionName }</span>
+						}
+					</button>
+					<form
+						method="POST"
+						action={ fmt.Sprintf("/lineups/%d/slot", lineup.ID) }
+						class={ markerEditorClass(pp.Position) }
+						data-marker-editor={ fmt.Sprintf("%d", pp.Position.IndexNumber) }
+						data-dirty-check="true"
+						onsubmit="return window.prepareLineupSave(this, event)"
+					>
+						<input type="hidden" name="indexNumber" value={ fmt.Sprintf("%d", pp.Position.IndexNumber) }/>
+						<input type="hidden" name="lineupAssignmentMode" value="move"/>
+						<div class="text-md font-bold mb-2">{ fmt.Sprintf("%d - %s", pp.Position.IndexNumber, pp.Position.PositionName) }</div>
+						<div
+							data-lineup-slot-group
+							data-lineup-position-index={ fmt.Sprintf("%d", pp.Position.IndexNumber) }
+							data-lineup-position-initials={ lineupPositionInitials(pp.Position.PositionName) }
+						>
+						for slotOrder := 0; slotOrder < 4; slotOrder++ {
+							{{ selectedPlayerID := lineupPlayerIDAtSlot(lineup.Players, pp.Position.IndexNumber, slotOrder) }}
+							{{ playerOptions := lineupPlayerSelectOptions(players, lineup.Players, lineup.Formation.Positions, pp.Position.IndexNumber, pp.Position.PositionName, selectedPlayerID, unavailablePlayerIDs) }}
+							<div
+								data-lineup-slot-row={ fmt.Sprintf("%d", slotOrder) }
+								if slotOrder > lineupLastAssignedSlot(lineup.Players, pp.Position.IndexNumber) {
+									class="slot-editor-row hidden"
+								} else {
+									class="slot-editor-row"
+								}
+							>
+								<select name={ fmt.Sprintf("playerId_%d", slotOrder) } data-player-slot={ fmt.Sprintf("%d", slotOrder) }>
+									if slotOrder == 0 {
+										<option value="">Unassigned starter</option>
+									} else {
+										<option value="">No sub</option>
+									}
+									for _, option := range playerOptions {
+										<option
+											value={ fmt.Sprintf("%d", option.Player.ID) }
+											data-current-index={ fmt.Sprintf("%d", option.CurrentIndex) }
+											data-player-name={ option.Player.Name }
+											selected?={ option.Player.ID == selectedPlayerID }
+										>{ option.Label }</option>
+									}
+								</select>
+								<input
+									type="number"
+									min="0"
+									name={ fmt.Sprintf("subMinute_%d", slotOrder) }
+									value={ fmt.Sprintf("%d", lineupSubMinuteAtSlot(lineup.Players, pp.Position.IndexNumber, slotOrder)) }
+									placeholder="Min"
+									class="border rounded-lg p-2"
+								/>
+								if slotOrder < 3 {
+									<button
+										type="button"
+										data-add-sub-button
+										data-slot-order={ fmt.Sprintf("%d", slotOrder) }
+										onclick="window.showNextLineupSub(this)"
+										if slotOrder == lineupLastAssignedSlot(lineup.Players, pp.Position.IndexNumber) {
+											class="add-sub-button"
+										} else {
+											class="add-sub-button hidden"
+										}
+									>Add sub</button>
+								}
+							</div>
+						}
+						</div>
+						<button type="submit">Save players</button>
+					</form>
+				</div>
+			}
+		}
+	</div>
+}
+
+templ formationPreviewPitch(formation *Formation, editable bool) {
+	<div class="pitch" data-pitch>
+		@pitchMarkings()
+		if formation != nil {
+			for _, pos := range formation.Positions {
+				<button
+					type="button"
+					class="pitch-marker"
+					data-draggable-position?={ editable }
+					data-position-id={ fmt.Sprintf("%d", pos.ID) }
+					style={ fmt.Sprintf("left:%.2f%%; top:%.2f%%;", pos.X, pos.Y) }
+					data-slot={ fmt.Sprintf("%d", pos.ID) }
+					data-editable={ fmt.Sprintf("%t", editable) }
+					onclick="window.handleFormationMarkerTap(this)"
+				>
+					<div class="shirt">
+						<span class="shirt-collar"></span>
+						<span class="shirt-number">{ fmt.Sprintf("%d", pos.IndexNumber) }</span>
+					</div>
+					<span class="marker-caption">{ pos.PositionName }</span>
+					if editable {
+						<span class="marker-subcaption">Tap or drag</span>
+					} else {
+						<span class="marker-subcaption">Position</span>
+					}
+				</button>
+			}
+		}
+	</div>
+}
+
+templ pitchMarkings() {
+	<div class="pitch-lines">
+		<div class="goal-frame top"></div>
+		<div class="goal-frame bottom"></div>
+		<div class="pitch-box top"></div>
+		<div class="pitch-box bottom"></div>
+		<div class="goal-box top"></div>
+		<div class="goal-box bottom"></div>
+		<div class="penalty-arc top"></div>
+		<div class="penalty-arc bottom"></div>
+		<div class="corner tl"></div>
+		<div class="corner tr"></div>
+		<div class="corner bl"></div>
+		<div class="corner br"></div>
+		<div class="pitch-dot"></div>
+	</div>
+}
+
+func drawerNavButtonClass(active bool) string {
+	if active {
+		return "inline-flex min-w-0 flex-1 items-center justify-center rounded-lg bg-blue-600 px-3 py-1.5 font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+	}
+	return "inline-flex min-w-0 flex-1 items-center justify-center rounded-lg bg-gray-200 px-3 py-1.5 font-semibold text-gray-800 shadow-sm transition hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+}
+
+templ drawerTopNav(active string, matchDayLineupID uint) {
+	<div class="flex w-full flex-wrap gap-2 text-sm pb-2">
+		<a href="/" class={ drawerNavButtonClass(active == "home") } onclick="event.stopPropagation()">Home</a>
+		<a href="/formations" class={ drawerNavButtonClass(active == "formations") } onclick="event.stopPropagation()">Formations</a>
+		<a href="/lineups" class={ drawerNavButtonClass(active == "lineups") } onclick="event.stopPropagation()">Line-ups</a>
+		if matchDayLineupID > 0 {
+			<a href={ fmt.Sprintf("/match-day/%d", matchDayLineupID) } class={ drawerNavButtonClass(active == "match-day") } onclick="event.stopPropagation()">Match day</a>
+		}
+	</div>
+}
+
+templ modeBadge(isAdmin bool) {
+	if isAdmin {
+		<div class="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-800">admin mode</div>
+	}
+}
+
+templ drawerChrome(title string, active string, matchDayLineupID uint) {
+	<div class="drawer-handle" onclick="window.openDrawer()"></div>
+	<div class="px-4 pb-3 border-b bg-white sticky top-0 z-10 cursor-pointer" onclick="window.openDrawer()">
+		@drawerTopNav(active, matchDayLineupID)
+		<div class="flex items-center justify-between">
+			<h1 class="text-xl font-bold">{ title }</h1>
+			<div class="flex gap-2 text-sm">
+				<button type="button" class="back-to-pitch-button px-3 py-1 rounded bg-gray-200" onclick="event.stopPropagation(); window.setDrawerState('collapsed')">Back to pitch</button>
+				<button type="button" class="px-3 py-1 rounded bg-gray-200" data-drawer-full-button aria-label="Show full drawer details" aria-pressed="false" onclick="event.stopPropagation(); window.toggleDrawerFull(this)">Full</button>
+			</div>
+		</div>
+	</div>
+}
+
+templ formationDrawerChrome(title string, showCoordinateToggle bool, active string, matchDayLineupID uint) {
+	<div class="drawer-handle" onclick="window.openDrawer()"></div>
+	<div class="px-4 pb-3 border-b bg-white sticky top-0 z-10 cursor-pointer" onclick="window.openDrawer()">
+		@drawerTopNav(active, matchDayLineupID)
+		<div class="flex items-center justify-between">
+			<h1 class="text-xl font-bold">{ title }</h1>
+			<div class="flex gap-2 text-sm">
+				<button type="button" class="back-to-pitch-button px-3 py-1 rounded bg-gray-200" onclick="event.stopPropagation(); window.setDrawerState('collapsed')">Back to pitch</button>
+				if showCoordinateToggle {
+					<button
+						type="button"
+						class="formation-settings-button"
+						aria-label="Show position coordinates"
+						title="Show position coordinates"
+						aria-pressed="false"
+						onclick="event.stopPropagation(); window.toggleFormationAdvanced(this)"
+					>
+						<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+							<circle cx="12" cy="12" r="3"></circle>
+							<path d="M19.4 15a1.8 1.8 0 0 0 .4 2l.1.1a2.1 2.1 0 0 1-3 3l-.1-.1a1.8 1.8 0 0 0-2-.4 1.8 1.8 0 0 0-1 1.6V21a2.1 2.1 0 0 1-4.2 0v-.2a1.8 1.8 0 0 0-1-1.6 1.8 1.8 0 0 0-2 .4l-.1.1a2.1 2.1 0 0 1-3-3l.1-.1a1.8 1.8 0 0 0 .4-2 1.8 1.8 0 0 0-1.6-1H3a2.1 2.1 0 0 1 0-4.2h.2a1.8 1.8 0 0 0 1.6-1 1.8 1.8 0 0 0-.4-2l-.1-.1a2.1 2.1 0 0 1 3-3l.1.1a1.8 1.8 0 0 0 2 .4 1.8 1.8 0 0 0 1-1.6V3a2.1 2.1 0 0 1 4.2 0v.2a1.8 1.8 0 0 0 1 1.6 1.8 1.8 0 0 0 2-.4l.1-.1a2.1 2.1 0 0 1 3 3l-.1.1a1.8 1.8 0 0 0-.4 2 1.8 1.8 0 0 0 1.6 1h.2a2.1 2.1 0 0 1 0 4.2h-.2a1.8 1.8 0 0 0-1.6 1Z"></path>
+						</svg>
+					</button>
+				}
+			</div>
+		</div>
+	</div>
+}
+
+templ lineupListPage(lineups []Lineup, formations []Formation, selected *Lineup, actor LineupActor, hasUpcomingMatch bool, matchDayLineupID uint) {
+	<!DOCTYPE html>
+	<html>
+		@headLinks()
+		@lineupStylesAndScript()
+		<body>
+			<div class="pitch-shell">
+				@lineupPreviewPitch(selected)
+					<section class="pitch-drawer" data-state="collapsed">
+						@drawerChrome("Line-ups", "lineups", matchDayLineupID)
+						<div class="drawer-body space-y-4" data-detail-mode="simple">
+							@modeBadge(actor.IsAdmin)
+							<p class="text-sm text-gray-500 leading-snug" data-drawer-extended>Line-ups are which players are assigned which position. Each line-up has one formation. Each Match has a line-up. </p>
+							if actor.UserID == 0 && !actor.IsAdmin {
+								@warning("Log in to create private drafts.")
+								<a href="/lineups/login" class={ bigPri }>Line-up login</a>
+						}
+						if len(lineups) == 0 {
+							@infoBox("No visible line-ups yet.")
+						}
+						for _, lineup := range lineups {
+							<div class="border rounded-lg p-3 shadow-sm">
+								<div>
+									<div class="font-bold">{ lineup.Name }</div>
+									<div class="text-sm text-gray-600" data-drawer-extended>{ lineup.Status } - { lineup.Formation.Name }</div>
+									if lineup.Details != "" {
+										<div class="mt-2 text-sm text-gray-700" data-drawer-extended>{ lineup.Details }</div>
+									}
+									</div>
+									<div class="drawer-row-actions">
+									<a href={ fmt.Sprintf("/lineups/%d", lineup.ID) } class="drawer-row-action" onclick="window.setDrawerState('collapsed')">Open</a>
+									if lineup.Status != lineupStatusDraft {
+										<button
+											type="button"
+											class="drawer-row-action"
+											data-share-url={ fmt.Sprintf("/lineups/%d/share", lineup.ID) }
+											onclick="window.copyLineupShareLink(this, event)"
+										>Share view</button>
+									}
+								</div>
+							</div>
+						}
+						<div class="pt-4 border-t" data-drawer-extended>
+							<h2 class="font-bold">Visible formations</h2>
+							for _, f := range formations {
+								<div class="text-sm py-1">{ f.Name } - { f.Status }</div>
+							}
+						</div>
+						<div class="drawer-list-footer">
+							<a href="/lineups/new" class={ bigAdd }>New line-up</a>
+						</div>
+					</div>
+				</section>
+			</div>
+		</body>
+	</html>
+}
+
+templ lineupNewPage(formations []Formation, matches []Match, selected *Formation, isAdmin bool, msg string, hasUpcomingMatch bool, matchDayLineupID uint) {
+	<!DOCTYPE html>
+	<html>
+		@headLinks()
+		@lineupStylesAndScript()
+		<body>
+			<div class="pitch-shell">
+				@formationPreviewPitch(selected, false)
+				<section
+					class="pitch-drawer"
+					if selected != nil {
+						data-state="expanded"
+					} else {
+						data-state="collapsed"
+					}
+				>
+					@drawerChrome("New line-up", "lineups", matchDayLineupID)
+					<div class="drawer-body" data-detail-mode="simple">
+						@modeBadge(isAdmin)
+						@warning(msg)
+						<form method="POST" action="/lineups/new" class="space-y-4" data-dirty-check="true">
+							<label class="block">Name
+								<input name="name" class="w-full border rounded-lg p-3 mt-1" placeholder="Sunday starting XI"/>
+							</label>
+							<label class="block" data-drawer-extended>Details
+								<div class="speech-input-row mt-1">
+									<textarea id="lineup-new-details" name="details" class="w-full border rounded-lg p-3" rows="4" placeholder="Notes, availability, plan, reminders"></textarea>
+									<button type="button" class="speech-button" aria-label="Dictate details" aria-pressed="false" data-speech-target="#lineup-new-details" onclick="window.startSpeechToText(this)">Mic</button>
+								</div>
+							</label>
+							<label class="block" data-drawer-extended>Match
+								<select name="matchId" class="w-full border rounded-lg p-3 mt-1">
+									<option value="">No match</option>
+									for _, m := range matches {
+										<option value={ fmt.Sprintf("%d", m.ID) }>{ m.Opponent } - { m.Location }</option>
+									}
+								</select>
+							</label>
+							<label class="block" data-drawer-extended>Formation
+								<select name="formationId" class="w-full border rounded-lg p-3 mt-1">
+									<option value="">No formation yet</option>
+									for _, f := range formations {
+										<option value={ fmt.Sprintf("%d", f.ID) } selected?={ selected != nil && f.ID == selected.ID }>{ f.Name } - { f.Status }</option>
+									}
+								</select>
+							</label>
+							<button type="submit" class={ bigAdd }>Create draft</button>
+							<a href="/lineups" class={ bigPri } onclick="window.dirtyFormNavigationAllowedUntil = Date.now() + 2000">Cancel</a>
+						</form>
+					</div>
+				</section>
+			</div>
+		</body>
+	</html>
+}
+
+templ statusActionButtonRow(lineup *Lineup, formation *Formation, isAdmin bool, activeMatch *Match, hasActiveMatchLineup bool) {
+	<div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+		if lineup != nil {
+			if lineup.Status == lineupStatusDraft {
+				<button type="submit" name="lineupAction" value="publish" class={ bigPri }>
+					if isAdmin {
+						Publish line-up
+					} else {
+						Submit line-up
+					}
+				</button>
+			}
+			if lineup.Status == lineupStatusLive && isAdmin && activeMatch != nil {
+				<button type="submit" name="lineupAction" value="set-active-match-lineup" class={ bigPri + " sm:col-span-2 text-2xl leading-tight" }>
+					if hasActiveMatchLineup {
+						Replace existing selected line-up for { matchDayMatchOptionLabel(*activeMatch) }
+					} else {
+						Set as selected line-up for { matchDayMatchOptionLabel(*activeMatch) }
+					}
+				</button>
+			}
+			if lineup.Status == lineupStatusSelected && isAdmin {
+				<button type="submit" name="lineupAction" value="unselect" class={ bigSec }>Unselect this line-up</button>
+			}
+		}
+		if formation != nil {
+			if formation.Status == formationStatusDraft {
+				<button type="submit" name="formationAction" value="publish" class={ bigPri }>
+					if isAdmin {
+						Publish formation
+					} else {
+						Submit formation
+					}
+				</button>
+			}
+			if formation.Status == formationStatusLive && isAdmin && activeMatch != nil {
+				<button type="submit" name="formationAction" value="set-active-match-lineup" class={ bigPri + " sm:col-span-2 text-2xl leading-tight" }>
+					if hasActiveMatchLineup {
+						Replace existing selected line-up for { matchDayMatchOptionLabel(*activeMatch) }
+					} else {
+						Set as selected line-up for { matchDayMatchOptionLabel(*activeMatch) }
+					}
+				</button>
+			}
+		}
+	</div>
+}
+
+templ lineupLockControl(lineup *Lineup, canLock bool, canUnlock bool) {
+	if lineup.Locked || canLock {
+		<div class="flex items-center justify-end gap-2">
+			if lineup.Locked && lineup.LockedByName != "" {
+				<div class="min-w-0 truncate text-xs font-semibold uppercase tracking-wide text-amber-700">Locked by { lineup.LockedByName }</div>
+			}
+			if lineup.Locked && canUnlock {
+				<form method="POST" action={ fmt.Sprintf("/lineups/%d", lineup.ID) }>
+					<button
+						type="submit"
+						name="lineupAction"
+						value="unlock"
+						class="inline-flex h-9 w-9 items-center justify-center rounded-full border border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100 focus:outline-none focus:ring-2 focus:ring-amber-300"
+						title="Unlock line-up"
+						aria-label="Unlock line-up"
+						onclick="return confirm('this line-up is locked, are you sure you want to unlock it')"
+					>
+						<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+							<rect width="18" height="11" x="3" y="11" rx="2"></rect>
+							<path d="M7 11V7a5 5 0 0 1 9.9-1"></path>
+						</svg>
+					</button>
+				</form>
+			} else if lineup.Locked {
+				<span class="inline-flex h-9 w-9 items-center justify-center rounded-full border border-amber-200 bg-amber-50 text-amber-800" title="Line-up locked" aria-label="Line-up locked">
+					<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+						<rect width="18" height="11" x="3" y="11" rx="2"></rect>
+						<path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+					</svg>
+				</span>
+			} else if canLock {
+				<form method="POST" action={ fmt.Sprintf("/lineups/%d", lineup.ID) }>
+					<button
+						type="submit"
+						name="lineupAction"
+						value="lock"
+						class="inline-flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 hover:bg-gray-50 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-300"
+						title="Lock line-up"
+						aria-label="Lock line-up"
+					>
+						<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+							<rect width="18" height="11" x="3" y="11" rx="2"></rect>
+							<path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+						</svg>
+					</button>
+				</form>
+			}
+		</div>
+	}
+}
+
+templ lineupEditPage(lineup *Lineup, players []Player, formations []Formation, matches []Match, unavailablePlayerIDs map[uint]bool, canEdit bool, canUnlock bool, canCopy bool, isAdmin bool, msg string, activeMatch *Match, hasActiveMatchLineup bool, matchDayLineupID uint) {
+	<!DOCTYPE html>
+	<html>
+		@headLinks()
+		@lineupStylesAndScript()
+		<body>
+			<div class="pitch-shell">
+				if canEdit {
+					@lineupEditablePitch(lineup, players, unavailablePlayerIDs)
+				} else {
+					@lineupPreviewPitch(lineup)
+				}
+				<section class="pitch-drawer" data-state="collapsed">
+					@drawerChrome(lineup.Name, "lineups", matchDayLineupID)
+					<div class="drawer-body" data-detail-mode="simple">
+						@modeBadge(isAdmin)
+						@lineupLockControl(lineup, canEdit, canUnlock)
+						@lineupSaveWarning(lineup, canEdit, isAdmin, msg)
+						<div hx-get={ fmt.Sprintf("/lineups/%d/errors", lineup.ID) } hx-trigger="load once" hx-swap="outerHTML"></div>
+						if canEdit {
+							<form method="POST" action={ fmt.Sprintf("/lineups/%d", lineup.ID) } class="space-y-4" data-dirty-check="true" onsubmit="return window.prepareLineupSave(this, event)">
+								<input type="hidden" name="lineupAssignmentMode" value="move"/>
+								<label class="block">Name
+									<input name="name" value={ lineup.Name } class="w-full border rounded-lg p-3 mt-1"/>
+								</label>
+								<label class="block" data-drawer-extended>Details
+									<div class="speech-input-row mt-1">
+										<textarea id="lineup-details" name="details" class="w-full border rounded-lg p-3" rows="4" placeholder="Notes, availability, plan, reminders">{ lineup.Details }</textarea>
+										<button type="button" class="speech-button" aria-label="Dictate details" aria-pressed="false" data-speech-target="#lineup-details" onclick="window.startSpeechToText(this)">Mic</button>
+									</div>
+								</label>
+								<label class="block" data-drawer-extended>Status
+									<select name="status" class="w-full border rounded-lg p-3 mt-1">
+										for _, status := range lineupStatusesForActor(LineupActor{IsAdmin: isAdmin}) {
+											<option value={ status } selected?={ status == lineup.Status }>{ status }</option>
+										}
+									</select>
+								</label>
+								<label class="block" data-drawer-extended>Match
+									<select name="matchId" class="w-full border rounded-lg p-3 mt-1">
+										<option value="">No match</option>
+										for _, m := range matches {
+											<option value={ fmt.Sprintf("%d", m.ID) } selected?={ m.ID == lineupMatchID(lineup) }>{ m.Opponent } - { m.Location }</option>
+										}
+									</select>
+								</label>
+									<label class="block" data-drawer-extended>Formation
+										<select name="formationId" class="w-full border rounded-lg p-3 mt-1">
+											<option value="">No formation</option>
+											for _, f := range formations {
+												<option value={ fmt.Sprintf("%d", f.ID) } selected?={ f.ID == lineup.FormationID }>{ f.Name } - { f.Status }</option>
+											}
+										</select>
+									</label>
+									<button type="submit" class={ bigAdd }>Save this line-up</button>
+									if lineup.FormationID == 0 {
+										@infoBox("Choose a formation, save, then assign players to positions.")
+									}
+								for _, pos := range lineup.Formation.Positions {
+									<div
+										class="border rounded-lg p-3"
+										data-slot-panel={ fmt.Sprintf("%d", pos.IndexNumber) }
+										data-lineup-slot-group
+										data-lineup-position-index={ fmt.Sprintf("%d", pos.IndexNumber) }
+										data-lineup-position-initials={ lineupPositionInitials(pos.PositionName) }
+									>
+										<div class="font-bold">{ fmt.Sprintf("%d - %s", pos.IndexNumber, pos.PositionName) }</div>
+										<input type="hidden" name="indexNumber" value={ fmt.Sprintf("%d", pos.IndexNumber) }/>
+										for slotOrder := 0; slotOrder < 4; slotOrder++ {
+											{{ selectedPlayerID := lineupPlayerIDAtSlot(lineup.Players, pos.IndexNumber, slotOrder) }}
+											{{ playerOptions := lineupPlayerSelectOptions(players, lineup.Players, lineup.Formation.Positions, pos.IndexNumber, pos.PositionName, selectedPlayerID, unavailablePlayerIDs) }}
+											<div
+												data-lineup-slot-row={ fmt.Sprintf("%d", slotOrder) }
+												if slotOrder > lineupLastAssignedSlot(lineup.Players, pos.IndexNumber) {
+													class="mt-3 hidden"
+												} else {
+													class="mt-3"
+												}
+											>
+												<label class="text-sm font-semibold text-gray-700">
+													if slotOrder == 0 {
+														Starter
+													} else {
+														{ fmt.Sprintf("Sub %d", slotOrder) }
+													}
+												</label>
+												<div class="grid grid-cols-[minmax(0,1fr)_80px] gap-2 mt-1">
+													<select
+														name={ fmt.Sprintf("player_%d_%d", pos.IndexNumber, slotOrder) }
+														data-player-slot={ fmt.Sprintf("%d", slotOrder) }
+														class="w-full border rounded-lg p-3"
+													>
+														if slotOrder == 0 {
+															<option value="">Unassigned starter</option>
+														} else {
+															<option value="">No sub</option>
+														}
+														for _, option := range playerOptions {
+															<option
+																value={ fmt.Sprintf("%d", option.Player.ID) }
+																data-current-index={ fmt.Sprintf("%d", option.CurrentIndex) }
+																data-player-name={ option.Player.Name }
+																selected?={ option.Player.ID == selectedPlayerID }
+															>{ option.Label }</option>
+														}
+													</select>
+													<input
+														type="number"
+														min="0"
+														name={ fmt.Sprintf("minute_%d_%d", pos.IndexNumber, slotOrder) }
+														value={ fmt.Sprintf("%d", lineupSubMinuteAtSlot(lineup.Players, pos.IndexNumber, slotOrder)) }
+														placeholder="Min"
+														class="w-full border rounded-lg p-3"
+													/>
+													if slotOrder < 3 {
+														<button
+															type="button"
+															data-add-sub-button
+															data-slot-order={ fmt.Sprintf("%d", slotOrder) }
+															onclick="window.showNextLineupSub(this)"
+															if slotOrder == lineupLastAssignedSlot(lineup.Players, pos.IndexNumber) {
+																class="col-span-2 rounded-lg bg-gray-500 px-3 py-2 text-sm font-semibold text-white hover:bg-gray-600"
+															} else {
+																class="hidden col-span-2 rounded-lg bg-gray-500 px-3 py-2 text-sm font-semibold text-white hover:bg-gray-600"
+															}
+														>Add sub</button>
+													}
+												</div>
+											</div>
+										}
+									</div>
+								}
+								@statusActionButtonRow(lineup, nil, isAdmin, activeMatch, hasActiveMatchLineup)
+								<button type="submit" class={ bigAdd }>Save this line-up</button>
+								<button type="submit" formaction={ fmt.Sprintf("/lineups/%d/copy", lineup.ID) } class={ bigAdd }>Save a new copy</button>
+								<a href="/lineups" class={ bigPri } onclick="window.dirtyFormNavigationAllowedUntil = Date.now() + 2000">Cancel</a>
+								if lineup.Status != lineupStatusDraft {
+									<button
+										type="button"
+										class={ bigPri }
+										data-share-url={ fmt.Sprintf("/lineups/%d/share", lineup.ID) }
+										onclick="window.copyLineupShareLink(this, event)"
+									>Share view</button>
+								}
+								<button
+									type="button"
+									hx-delete={ fmt.Sprintf("/lineups/%d", lineup.ID) }
+									hx-confirm={ fmt.Sprintf("Delete this line-up - %s?", lineup.Name) }
+									class="w-full rounded-lg bg-red-600 px-4 py-3 font-bold text-white"
+								>Delete this line-up - { lineup.Name }</button>
+							</form>
+						} else {
+								@lineupReadOnlyDrawer(lineup)
+								if canCopy {
+									<form method="POST" action={ fmt.Sprintf("/lineups/%d/copy", lineup.ID) } class="mt-4">
+										<button type="submit" class={ bigAdd }>Save a new copy</button>
+									</form>
+								}
+							}
+					</div>
+				</section>
+			</div>
+		</body>
+	</html>
+}
+
+templ lineupProblemBadge(level string) {
+	if level == "error" {
+		<span class="rounded bg-red-100 px-2 py-1 text-xs font-bold uppercase text-red-800">error</span>
+	} else {
+		<span class="rounded bg-yellow-100 px-2 py-1 text-xs font-bold uppercase text-yellow-800">warn</span>
+	}
+}
+
+templ lineupSaveWarning(lineup *Lineup, canEdit bool, isAdmin bool, msg string) {
+	if msg == sharedLineupLiveFormationError && lineup != nil && lineup.FormationID > 0 && lineup.Formation.Status != formationStatusLive && canEdit && isAdmin {
+		<div class="p-4 mb-4 text-red-900 border border-red-500 rounded-lg bg-red-200 dark:bg-red-700 dark:text-red-100 dark:border-red-600">
+			<p class="text-lg font-semibold">{ msg }</p>
+			<form method="POST" action={ fmt.Sprintf("/formations/%d/live", lineup.FormationID) } class="mt-3">
+				<input type="hidden" name="returnTo" value={ fmt.Sprintf("/lineups/%d", lineup.ID) }/>
+				<button type="submit" class={ bigAdd }>Make this formation live</button>
+			</form>
+		</div>
+	} else {
+		@warning(msg)
+	}
+}
+
+templ lineupProblemsPanel(problems []LineupProblem) {
+	<div class="mb-4 rounded-lg border border-gray-200 bg-white p-3 shadow-sm">
+		<div class="mb-2 text-sm font-bold uppercase text-gray-500">Line-up checks</div>
+		if len(problems) == 0 {
+			<div class="rounded border border-green-200 bg-green-50 px-3 py-2 text-sm font-semibold text-green-800">No pending problems.</div>
+		} else {
+			<div class="space-y-2">
+				for _, problem := range problems {
+					<div
+						if problem.Level == "error" {
+							class="flex items-start gap-3 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-900"
+						} else {
+							class="flex items-start gap-3 rounded border border-yellow-200 bg-yellow-50 px-3 py-2 text-sm text-yellow-900"
+						}
+					>
+						@lineupProblemBadge(problem.Level)
+						<div class="font-semibold">{ problem.Msg }</div>
+					</div>
+				}
+			</div>
+		}
+	</div>
+}
+
+templ matchDayProblemsPanel(problems []LineupProblem) {
+	<div class="mb-4 rounded-lg border border-gray-200 bg-white p-3 shadow-sm">
+		<div class="mb-2 text-sm font-bold uppercase text-gray-500">Match-day checks</div>
+		if len(problems) == 0 {
+			<div class="rounded border border-green-200 bg-green-50 px-3 py-2 text-sm font-semibold text-green-800">No pending problems.</div>
+		} else {
+			<div class="space-y-2">
+				for _, problem := range problems {
+					<div
+						if problem.Level == "error" {
+							class="flex items-start gap-3 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-900"
+						} else {
+							class="flex items-start gap-3 rounded border border-yellow-200 bg-yellow-50 px-3 py-2 text-sm text-yellow-900"
+						}
+					>
+						@lineupProblemBadge(problem.Level)
+						<div class="font-semibold">{ problem.Msg }</div>
+					</div>
+				}
+			</div>
+		}
+	</div>
+}
+
+templ lineupReadOnlyDrawer(lineup *Lineup) {
+	<div class="space-y-4">
+		<div class="text-sm uppercase tracking-wide text-gray-500" data-drawer-extended>{ lineup.Status }</div>
+		if lineup.Match.ID > 0 {
+			<div data-drawer-extended>{ lineup.Match.Opponent } - { lineup.Match.Location }</div>
+		}
+		<div data-drawer-extended>Formation: { lineup.Formation.Name }</div>
+		if lineup.Details != "" {
+			<div class="rounded-lg border bg-gray-50 p-3 text-sm text-gray-700 whitespace-pre-wrap" data-drawer-extended>{ lineup.Details }</div>
+		}
+		{{ pitchPlayers := lineupPitchPlayers(lineup) }}
+		<details class="rounded-lg border border-gray-200 bg-white shadow-sm">
+			<summary class="cursor-pointer px-4 py-3 text-sm font-bold uppercase text-gray-500">
+				Players by position ({ fmt.Sprintf("%d", len(pitchPlayers)) })
+			</summary>
+			<div class="divide-y divide-gray-100">
+				for _, pp := range pitchPlayers {
+					<div class="p-3">
+						<div class="font-bold">{ pp.Position.PositionName }</div>
+						if len(pp.Players) > 0 {
+							for i, assigned := range pp.Players {
+								if i == 0 {
+									<div>{ assigned.Player.Name }</div>
+								} else {
+									<div class="text-sm text-gray-600">{ assigned.Player.Name }{ lineupSubMinuteLabel(assigned.SubMinute) }</div>
+								}
+							}
+						} else {
+							<div class="text-gray-500">Unassigned</div>
+						}
+					</div>
+				}
+			</div>
+		</details>
+	</div>
+}
+
+templ lineupSharePage(lineup *Lineup, matchDayLineupID uint) {
+	<!DOCTYPE html>
+	<html>
+		@headLinks()
+		@lineupStylesAndScript()
+		<body>
+			<div class="pitch-shell">
+				@lineupPreviewPitch(lineup)
+				<section class="pitch-drawer" data-state="collapsed">
+					@drawerChrome(lineup.Name, "lineups", matchDayLineupID)
+					<div class="drawer-body" data-detail-mode="simple">
+						<div hx-get={ fmt.Sprintf("/lineups/%d/errors", lineup.ID) } hx-trigger="load once" hx-swap="outerHTML"></div>
+						<button type="button" class={ bigPri } onclick="window.copyLineupShareLink(this, event)">Share view</button>
+						@lineupReadOnlyDrawer(lineup)
+					</div>
+				</section>
+			</div>
+		</body>
+	</html>
+}
+
+templ matchDayRedoEventForm(lineup *Lineup, event *MatchEvent) {
+	if lineup != nil && event != nil {
+		<form method="POST" action={ fmt.Sprintf("/match-day/%d/action", lineup.ID) } class="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-950">
+			<input type="hidden" name="action" value="redo-event"/>
+			<input type="hidden" name="eventName" value={ event.EventName }/>
+			<input type="hidden" name="eventType" value={ event.EventType }/>
+			<input type="hidden" name="playerId" value={ fmt.Sprintf("%d", event.PlayerId) }/>
+			<input type="hidden" name="minute" value={ fmt.Sprintf("%d", event.EventMinute) }/>
+			if event.EventTime != nil {
+				<input type="hidden" name="eventTime" value={ event.EventTime.Format(time.RFC3339Nano) }/>
+			}
+			<div class="flex items-center justify-between gap-3">
+				<div>
+					<div class="font-semibold">Re-do { matchDayEventLabel(*event) }</div>
+					<div class="text-emerald-800">{ event.EventType } - { matchDayEventWhenLabel(*event) }</div>
+				</div>
+				<button type="submit" class="rounded-lg bg-emerald-700 px-3 py-2 font-bold text-white">Re-do</button>
+			</div>
+		</form>
+	}
+}
+
+templ matchDayAdjacentButton(label string, lineup *Lineup) {
+	if lineup != nil {
+		<a href={ fmt.Sprintf("/match-day/%d", lineup.ID) } class="block rounded-lg bg-gray-100 px-3 py-2 text-center text-sm font-bold text-gray-800 ring-1 ring-gray-200 hover:bg-gray-200">
+			{ label }
+		</a>
+	} else {
+		<span class="block rounded-lg bg-gray-50 px-3 py-2 text-center text-sm font-bold text-gray-400 ring-1 ring-gray-100">
+			{ label }
+		</span>
+	}
+}
+
+templ matchDayAdjacentNav(adjacentLineups MatchDayAdjacentLineups) {
+	<div class="grid grid-cols-2 gap-2">
+		@matchDayAdjacentButton("Go to previous match", adjacentLineups.Previous)
+		@matchDayAdjacentButton("Go to next match", adjacentLineups.Next)
+	</div>
+}
+
+templ matchDayCustomEventForm(lineup *Lineup, players []Player) {
+	if lineup != nil {
+		<details class="rounded-lg border border-gray-200 bg-white p-3">
+			<summary class="cursor-pointer text-sm font-bold text-gray-800">Add custom match event</summary>
+			<form method="POST" action={ fmt.Sprintf("/match-day/%d/action", lineup.ID) } class="mt-3 grid gap-2">
+				<input type="hidden" name="action" value="custom-event"/>
+				<div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+					<label class="grid gap-1 text-sm font-semibold text-gray-700">
+						<span>Event type</span>
+						<input list="match-day-custom-event-types" name="eventType" required placeholder="yellow-card" class="rounded-lg border border-gray-300 p-2 text-gray-900"/>
+					</label>
+					<label class="grid gap-1 text-sm font-semibold text-gray-700">
+						<span>Minute</span>
+						<input type="number" name="minute" min="0" max={ fmt.Sprintf("%d", matchDayOverrunWarnMinute) } value={ fmt.Sprintf("%d", matchDayMinute(lineup.Match)) } class="rounded-lg border border-gray-300 p-2 text-gray-900"/>
+					</label>
+				</div>
+				<datalist id="match-day-custom-event-types">
+					for _, eventType := range []string{"goal", "assist", "conceded-goal", "own-goal", "subbed-on", "subbed-off", "yellow-card", "red-card", "injury", "gave-away-penalty", "half-time", "match-resumed", "match-finished"} {
+						<option value={ eventType }></option>
+					}
+				</datalist>
+				<label class="grid gap-1 text-sm font-semibold text-gray-700">
+					<span>Event label</span>
+					<input type="text" name="eventName" placeholder="What happened?" class="rounded-lg border border-gray-300 p-2 text-gray-900"/>
+				</label>
+				<label class="grid gap-1 text-sm font-semibold text-gray-700">
+					<span>Player</span>
+					<select name="playerId" class="rounded-lg border border-gray-300 p-2 text-gray-900">
+						<option value="">No player</option>
+						for _, player := range players {
+							<option value={ fmt.Sprintf("%d", player.ID) }>{ player.Name }</option>
+						}
+					</select>
+				</label>
+				<button type="submit" class="match-day-action-button primary">Add event</button>
+			</form>
+		</details>
+	}
+}
+
+templ matchDayPage(lineups []Lineup, selected *Lineup, playerTimes []MatchDayPlayerTime, players []Player, unavailablePlayerIDs map[uint]bool, problems []LineupProblem, matches []Match, activeMatch *Match, adjacentLineups MatchDayAdjacentLineups, isHistoricalMatch bool, isAdmin bool, msg string, errorMsg string, hasUpcomingMatch bool, matchDayLineupID uint, redoEvent *MatchEvent, focusPointsData NotesPageData) {
+	<!DOCTYPE html>
+	<html>
+		@headLinks()
+		@lineupStylesAndScript()
+		<body>
+			<div class="pitch-shell">
+				@matchDayPitch(selected, playerTimes, players, unavailablePlayerIDs)
+				<section class="pitch-drawer" data-state="collapsed">
+					@drawerChrome("Match day", "match-day", matchDayLineupID)
+					<div class="drawer-body space-y-4" data-detail-mode="simple">
+						@modeBadge(isAdmin)
+						@errMsg(errorMsg)
+						if selected == nil {
+							<div>
+								<div class="text-sm uppercase tracking-wide text-gray-500">Step 1</div>
+								if isAdmin && activeMatch != nil {
+									<h2 class="text-lg font-bold">Assign a line-up to this match</h2>
+								} else {
+									<h2 class="text-lg font-bold">Select a line-up</h2>
+								}
+							</div>
+							if isAdmin && activeMatch == nil {
+								<div class="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-900">
+									No upcoming match is ready for match day.
+								</div>
+								<a href={ makeSafeUrlWithAnchorV2("/finemaster", "manage-matches", true) } class={ bigPri }>Manage matches</a>
+							} else if len(lineups) == 0 {
+								@infoBox("No visible line-up yet.")
+								<a href="/lineups/new" class={ bigAdd }>New line-up</a>
+							} else {
+								if isAdmin && activeMatch != nil {
+									<div class="rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900">
+										<div class="font-semibold">{ matchDayMatchOptionLabel(*activeMatch) }</div>
+										<div>Choose a line-up to assign to this match.</div>
+									</div>
+								}
+									<div class="space-y-2">
+										for _, lineup := range lineups {
+											if isAdmin && activeMatch != nil {
+												@matchDayLineupAssignChoice(lineup, *activeMatch)
+											} else {
+												@matchDayLineupChoice(lineup)
+											}
+										}
+									</div>
+								<div class="drawer-list-footer">
+									<a href="/lineups/new" class={ bigAdd }>New line-up</a>
+								</div>
+							}
+							}
+							if selected != nil {
+								@success(msg)
+								if isAdmin {
+									@matchDayRedoEventForm(selected, redoEvent)
+								}
+								<div data-drawer-extended>
+									@matchDayProblemsPanel(problems)
+								</div>
+							<div>
+								<div class="text-sm uppercase tracking-wide text-gray-500" data-drawer-extended>{ selected.Status }</div>
+								<h2 class="text-lg font-bold">{ selected.Name }</h2>
+								if isHistoricalMatch {
+									<div class="mt-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-900">
+										You are viewing an old match.
+									</div>
+								}
+								if selected.Match.ID > 0 {
+									<div class="text-sm text-gray-600" data-drawer-extended>{ selected.Match.Opponent } - { selected.Match.Location }</div>
+									@matchDayAdjacentNav(adjacentLineups)
+								} else {
+									<div class="rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900">
+										<div class="font-semibold">This match does not have a line-up. Add one to continue</div>
+										<div class="mt-3 space-y-2">
+											if selected.Locked {
+												@infoBox("Unlock this line-up before attaching it to a match.")
+											} else if isAdmin {
+												<form method="POST" action={ fmt.Sprintf("/match-day/%d/action", selected.ID) } class="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
+													<input type="hidden" name="action" value="set-match"/>
+													<select name="matchId" class="min-w-0 rounded-lg border border-blue-200 bg-white p-2 text-gray-900" required>
+														<option value="">Choose match</option>
+														for _, match := range matches {
+															<option value={ fmt.Sprintf("%d", match.ID) }>{ matchDayMatchOptionLabel(match) }</option>
+														}
+													</select>
+													<button type="submit" class="rounded-lg bg-blue-600 px-3 py-2 font-bold text-white">Set</button>
+												</form>
+												if activeMatch != nil {
+													<form method="POST" action={ fmt.Sprintf("/match-day/%d/action", selected.ID) }>
+														<input type="hidden" name="action" value="set-match"/>
+														<input type="hidden" name="matchId" value={ fmt.Sprintf("%d", activeMatch.ID) }/>
+														<button type="submit" class="w-full rounded-lg bg-white px-3 py-2 font-bold text-blue-800 ring-1 ring-blue-200">
+															Use active match: { matchDayMatchOptionLabel(*activeMatch) }
+														</button>
+													</form>
+												}
+											} else {
+												@infoBox("An admin needs to attach this line-up to a match.")
+											}
+										</div>
+									</div>
+								}
+							</div>
+							if selected.Match.ID > 0 {
+								{{ scoreFor, scoreAgainst := matchDayScore(selected.Match) }}
+								<div class="match-day-score">
+									<div class="match-day-score-team">Us</div>
+									<div class="match-day-score-value">{ fmt.Sprintf("%d - %d", scoreFor, scoreAgainst) }</div>
+									<div class="match-day-score-team">{ selected.Match.Opponent }</div>
+								</div>
+								@matchDayFocusPoints(focusPointsData)
+								<div
+									class="match-day-start-panel"
+									data-match-day-start-panel
+									data-start-at-open="false"
+								>
+									<div
+										class="match-day-countdown"
+										data-match-day-countdown
+										data-match-start-at={ matchDayStartDataValue(selected.Match) }
+										data-match-clock-base-at={ matchDayClockBaseDataValue(selected.Match) }
+										data-match-clock-base-minute={ fmt.Sprintf("%d", matchDayClockStateForMatch(selected.Match).BaseMinute) }
+										data-match-clock-paused={ matchDayClockDataBool(matchDayClockStateForMatch(selected.Match).Paused) }
+										data-match-clock-finished={ matchDayClockDataBool(matchDayClockStateForMatch(selected.Match).Finished) }
+										data-match-clock-started={ matchDayClockDataBool(matchDayClockStateForMatch(selected.Match).Started) }
+										data-match-clock-label={ matchDayClockStatusLabel(selected.Match) }
+									>
+										<div>
+											<div class="match-day-countdown-label" data-countdown-label>Kick-off</div>
+											<div class="match-day-countdown-meta">
+												if matchDayStartTime(selected.Match) != nil {
+													{ matchDayStartTime(selected.Match).Format("Mon 2 Jan, 3:04 PM") }
+												} else {
+													No scheduled start time
+												}
+											</div>
+										</div>
+										<div
+											class="match-day-countdown-time"
+											data-countdown-time
+											role="button"
+											tabindex="0"
+											title="Toggle seconds"
+											onclick="window.toggleMatchDayCountdownPrecision(this)"
+											onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); window.toggleMatchDayCountdownPrecision(this); }"
+										>
+											if matchDayKickoffLongLabel(selected.Match) != "" {
+												{ matchDayKickoffLongLabel(selected.Match) }
+											} else {
+												--:--
+											}
+										</div>
+									</div>
+									if isAdmin {
+										<div class="match-day-start-actions">
+											if !matchDayClockStarted(selected.Match) {
+												<form method="POST" action={ fmt.Sprintf("/match-day/%d/action", selected.ID) }>
+													<input type="hidden" name="action" value="start-match-now"/>
+													<button type="submit" class="match-day-action-button primary">Start match now</button>
+												</form>
+											}
+											<button
+												type="button"
+												class="match-day-action-button"
+												aria-expanded="false"
+												onclick="window.toggleMatchDayStartAt(this)"
+											>
+												if matchDayClockStarted(selected.Match) {
+													Adjust start time
+												} else {
+													Start match at
+												}
+											</button>
+										</div>
+										<form
+											method="POST"
+											action={ fmt.Sprintf("/match-day/%d/action", selected.ID) }
+											class="match-day-start-at-form"
+											data-match-day-start-at-form
+										>
+											<input type="hidden" name="action" value="start-match-at"/>
+											<div class="match-day-start-input-row">
+												<input type="datetime-local" name="startTime" value={ matchDayStartInputValue(selected.Match) } required/>
+												<button type="submit" class="match-day-action-button primary">Set</button>
+											</div>
+											<div class="match-day-start-quick" aria-label="Start minutes ago">
+												for _, minutesAgo := range []int{1, 2, 3, 4, 5} {
+													<button
+														type="button"
+														data-start-minutes-ago={ fmt.Sprintf("%d", minutesAgo) }
+														onclick="window.setMatchDayStartMinutesAgo(this, parseInt(this.dataset.startMinutesAgo, 10), true)"
+													>{ fmt.Sprintf("%d", minutesAgo) }m</button>
+												}
+											</div>
+										</form>
+									}
+								</div>
+								<div class="match-day-global-actions">
+									if isAdmin && matchDayCanShowResume(selected.Match) {
+										for _, minutesAgo := range []int{0, 1, 2, 3, 4, 5} {
+											<form method="POST" action={ fmt.Sprintf("/match-day/%d/action", selected.ID) }>
+												<input type="hidden" name="action" value="match-resumed"/>
+												<input type="hidden" name="minute" value={ fmt.Sprintf("%d", matchDayResumeMinute(selected.Match)) }/>
+												<input type="hidden" name="minutesAgo" value={ fmt.Sprintf("%d", minutesAgo) }/>
+												<button type="submit" class="match-day-action-button primary">
+													if minutesAgo == 0 {
+														Game resumed now
+													} else if minutesAgo == 1 {
+														Game resumed 1 min ago
+													} else {
+														{ fmt.Sprintf("Game resumed %d mins ago", minutesAgo) }
+													}
+												</button>
+											</form>
+										}
+									}
+									if matchDayCanShowOverrunWarning(selected.Match) {
+										<div class="rounded-lg border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-900">
+											Match has been running for { fmt.Sprintf("%d", matchDayRawMinute(selected.Match)) } minutes.
+										</div>
+									}
+									if isAdmin && matchDayCanShowHalfTime(selected.Match) {
+										<form method="POST" action={ fmt.Sprintf("/match-day/%d/action", selected.ID) }>
+											<input type="hidden" name="action" value="half-time"/>
+											<input type="hidden" name="minute" value={ fmt.Sprintf("%d", matchDayMinute(selected.Match)) }/>
+											<button type="submit" class="match-day-action-button primary">Half-time</button>
+										</form>
+									}
+									if isAdmin && matchDayCanShowExtraTimeStart(selected.Match) {
+										<form method="POST" action={ fmt.Sprintf("/match-day/%d/action", selected.ID) }>
+											<input type="hidden" name="action" value="match-extra-time-start"/>
+											<button type="submit" class="match-day-action-button primary">Start extra time</button>
+										</form>
+									}
+									if isAdmin && matchDayCanShowMatchFinished(selected.Match) {
+										<form method="POST" action={ fmt.Sprintf("/match-day/%d/action", selected.ID) }>
+											<input type="hidden" name="action" value="match-finished"/>
+											<input type="hidden" name="minute" value={ fmt.Sprintf("%d", matchDayMinute(selected.Match)) }/>
+											<button type="submit" class="match-day-action-button warning">
+												if matchDayCanShowOverrunWarning(selected.Match) {
+													End match
+												} else {
+													Match finished
+												}
+											</button>
+										</form>
+									}
+									if matchDayCanLogLiveEvent(selected.Match) {
+										<form method="POST" action={ fmt.Sprintf("/match-day/%d/action", selected.ID) }>
+											<input type="hidden" name="action" value="goal-against"/>
+											<input type="hidden" name="minute" value={ fmt.Sprintf("%d", matchDayMinute(selected.Match)) }/>
+											<button type="submit" class="match-day-action-button warning">+ Goal them</button>
+										</form>
+									}
+								</div>
+								<div class="space-y-2" data-drawer-extended>
+									{{ matchEvents := matchDaySortedEvents(selected.Match) }}
+									<button
+										type="button"
+										class="match-day-action-button"
+										aria-expanded="false"
+										onclick="window.toggleMatchDayEvents(this)"
+									>{ fmt.Sprintf("Match events (%d)", len(matchEvents)) }</button>
+									<div class="hidden space-y-2" data-match-day-events>
+										if isAdmin {
+											@matchDayCustomEventForm(selected, players)
+										}
+										if len(matchEvents) == 0 {
+											@infoBox("No match events yet.")
+										}
+										for _, event := range matchEvents {
+											<div class="match-day-player-row">
+												<div>
+													<div class="match-day-player-name">{ matchDayEventLabel(event) }</div>
+													<div class="match-day-player-meta">
+														<span>{ event.EventType }</span>
+														<span>{ matchDayEventWhenLabel(event) }</span>
+													</div>
+												</div>
+												if isAdmin {
+													<form method="POST" action={ fmt.Sprintf("/match-day/%d/action", selected.ID) }>
+														<input type="hidden" name="action" value="undo-event"/>
+														<input type="hidden" name="eventId" value={ fmt.Sprintf("%d", event.ID) }/>
+														<button
+															type="submit"
+															class="rounded-lg bg-red-100 px-3 py-2 text-sm font-bold text-red-800"
+															onclick="return confirm('Undo this match event?')"
+														>Undo</button>
+													</form>
+												}
+											</div>
+										}
+									</div>
+								</div>
+							}
+							<div class="match-day-summary">
+								<div class="match-day-stat">
+									<div class="match-day-stat-value">{ fmt.Sprintf("%d", len(playerTimes)) }</div>
+									<div class="match-day-stat-label">Players</div>
+								</div>
+								<div class="match-day-stat">
+									<div class="match-day-stat-value">{ fmt.Sprintf("%d", currentMatchDayPlayerCount(playerTimes)) }</div>
+									<div class="match-day-stat-label">On pitch</div>
+								</div>
+								<div class="match-day-stat">
+									<div class="match-day-stat-value">90</div>
+									<div class="match-day-stat-label">Mins</div>
+								</div>
+							</div>
+							if selected.Details != "" {
+								<div class="rounded-lg border bg-gray-50 p-3 text-sm text-gray-700 whitespace-pre-wrap" data-drawer-extended>{ selected.Details }</div>
+							}
+							<div class="space-y-2" data-drawer-extended>
+								<h2 class="font-bold">Player minutes</h2>
+								if len(playerTimes) == 0 {
+									@infoBox("No players have been assigned to this line-up yet.")
+								}
+								for _, playerTime := range playerTimes {
+									<div class="match-day-player-row">
+										<div>
+											<div class="match-day-player-name">{ playerTime.Player.Name }</div>
+											<div class="match-day-player-meta">
+												{ strings.Join(playerTime.Positions, ", ") }
+												if playerTime.Current {
+													<span class="match-day-current">On</span>
+													if matchDayLiveMinuteLabel(selected.Match, playerTime) != "" {
+														<span class="match-day-current">{ matchDayLiveMinuteLabel(selected.Match, playerTime) }</span>
+													}
+												}
+											</div>
+										</div>
+										<div class="match-day-minutes">
+											if matchDayLiveMinuteLabel(selected.Match, playerTime) != "" {
+												{ fmt.Sprintf("%d", playerTime.LiveMinutes) }
+											} else {
+												{ fmt.Sprintf("%d", playerTime.Minutes) }
+											}
+											<span>min</span>
+										</div>
+									</div>
+								}
+							</div>
+							<div class="pt-4 border-t space-y-2">
+								<button type="button" class="match-day-action-button" aria-expanded="false" onclick="window.toggleMatchDayLineupOptions(this)">Change selected line-up</button>
+								<div class="hidden space-y-2" data-match-day-lineup-options>
+									for _, lineup := range lineups {
+										@matchDayLineupChoice(lineup)
+									}
+								</div>
+							</div>
+							if !matchDayClockStarted(selected.Match) {
+								<div class="drawer-list-footer space-y-2" data-match-day-edit-lineup-target>
+									<div class="match-day-edit-lineup-message">Edit line up to change players</div>
+									<a href={ fmt.Sprintf("/lineups/%d", selected.ID) } class={ bigPri } data-match-day-edit-lineup onclick="window.setDrawerState('collapsed')">Edit line-up</a>
+								</div>
+							}
+						}
+						if FooterTeam(ctx).EnablePublicFeedbackForm {
+							<div class="drawer-list-footer">
+								<a href="/feedback" class={ bigPri }>Feedback</a>
+							</div>
+						}
+					</div>
+				</section>
+			</div>
+		</body>
+	</html>
+}
+
+templ matchDayFocusPoints(data NotesPageData) {
+	if len(data.Notes) > 0 || data.ShowAdminNotes {
+		<div class="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-emerald-950">
+			<div class="flex items-start justify-between gap-3">
+				<div>
+					<div class="text-xs font-bold uppercase tracking-wide text-emerald-700">Focus points</div>
+					<div class="text-sm text-emerald-900">{ noteTargetLabel(data.Selected) }</div>
+				</div>
+				if data.ShowAdminNotes {
+					<details class="text-sm">
+						<summary class="cursor-pointer rounded-md bg-white px-3 py-2 font-bold text-emerald-900 ring-1 ring-emerald-200">Configure</summary>
+						<div class="mt-3 w-full min-w-[260px] space-y-3 rounded-lg bg-white p-3 text-gray-900 shadow ring-1 ring-emerald-100">
+							<form method="POST" action={ noteActionURL("/notes", data.ReturnTo) } class="space-y-3">
+								@noteHiddenTarget(data.Selected)
+								<input type="hidden" name="type" value={ noteTypeFocus }/>
+								<div class="grid grid-cols-[minmax(0,1fr)_5rem] gap-2">
+									<label class="block text-xs font-semibold text-gray-700">Focus point
+										<textarea name="note" rows="3" required class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"></textarea>
+									</label>
+									<label class="block text-xs font-semibold text-gray-700">Priority
+										<input type="number" min="0" max="10" name="priority" value={ fmt.Sprintf("%d", data.Selected.Priority) } class="mt-1 block w-full rounded-md border border-gray-300 px-2 py-2"/>
+									</label>
+								</div>
+								<input type="hidden" name="creator" value="admin"/>
+								<button type="submit" class="rounded-lg bg-emerald-700 px-3 py-2 text-sm font-bold text-white">Add focus point</button>
+							</form>
+							if len(data.Notes) > 0 {
+								<div class="space-y-2">
+									for _, note := range data.Notes {
+										<div class="rounded-lg border border-gray-200 p-2">
+											<div class="flex items-center justify-between gap-2 text-xs text-gray-600">
+												<span>Priority { fmt.Sprintf("%d", note.Priority) }</span>
+												<button type="button" hx-delete={ noteActionURL(fmt.Sprintf("/notes/%d", note.ID), data.ReturnTo) } hx-confirm="Delete this focus point?" class="rounded-md bg-red-100 px-2 py-1 font-bold text-red-800">Delete</button>
+											</div>
+											<details class="mt-2">
+												<summary class="cursor-pointer text-xs font-bold text-emerald-800">Edit</summary>
+												<form method="POST" action={ noteActionURL(fmt.Sprintf("/notes/%d", note.ID), data.ReturnTo) } class="mt-2 space-y-2">
+													@noteHiddenTarget(note)
+													<input type="hidden" name="type" value={ noteTypeFocus }/>
+													<label class="block text-xs font-semibold text-gray-700">Focus point
+														<textarea name="note" rows="3" required class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2">{ note.Note }</textarea>
+													</label>
+													<label class="block text-xs font-semibold text-gray-700">Priority
+														<input type="number" min="0" max="10" name="priority" value={ fmt.Sprintf("%d", note.Priority) } class="mt-1 block w-20 rounded-md border border-gray-300 px-2 py-2"/>
+													</label>
+													<input type="hidden" name="creator" value={ note.Creator }/>
+													<button type="submit" class="rounded-lg bg-emerald-700 px-3 py-2 text-sm font-bold text-white">Save</button>
+												</form>
+											</details>
+										</div>
+									}
+								</div>
+							}
+						</div>
+					</details>
+				}
+			</div>
+			if len(data.Notes) == 0 {
+				<div class="mt-3 text-sm font-semibold text-emerald-900">No focus points published yet.</div>
+			} else {
+				<ul class="mt-3 space-y-2">
+					for _, note := range data.Notes {
+						<li class="rounded-lg bg-white px-3 py-2 text-sm font-semibold text-emerald-950 ring-1 ring-emerald-100">
+							{ note.Note }
+						</li>
+					}
+				</ul>
+			}
+		</div>
+	}
+}
+
+templ formationListPage(formations []Formation, selected *Formation, actor LineupActor, hasUpcomingMatch bool, matchDayLineupID uint) {
+	<!DOCTYPE html>
+	<html>
+		@headLinks()
+		@lineupStylesAndScript()
+		<body>
+			<div class="pitch-shell">
+				@formationPreviewPitch(selected, false)
+					<section class="pitch-drawer" data-state="collapsed">
+						@formationDrawerChrome("Formations", false, "formations", matchDayLineupID)
+						<div class="drawer-body space-y-4">
+							@modeBadge(actor.IsAdmin)
+							<p class="text-sm text-gray-500 leading-snug">Formations are the overall shape of the team and where the players are on the pitch.</p>
+							if len(formations) == 0 {
+								@infoBox("No visible formations yet. Create one to continue")
+							}
+						for _, formation := range formations {
+							<div class="border rounded-lg p-3 shadow-sm">
+								<div class="font-bold">{ formation.Name }</div>
+								<div class="text-sm text-gray-600">{ formation.Status }</div>
+								<div class="drawer-row-actions">
+									<a href={ fmt.Sprintf("/formations/%d/edit", formation.ID) } class="drawer-row-action" onclick="window.setDrawerState('collapsed')">View</a>
+								</div>
+							</div>
+						}
+						<div class="drawer-list-footer">
+							<a href="/formations/new" class={ bigAdd }>New formation</a>
+						</div>
+					</div>
+				</section>
+			</div>
+		</body>
+	</html>
+}
+
+templ formationNewPage(isAdmin bool, msg string, hasUpcomingMatch bool, matchDayLineupID uint) {
+	<!DOCTYPE html>
+	<html>
+		@headLinks()
+		@lineupStylesAndScript()
+		<body>
+			<div class="pitch-shell">
+				@formationPreviewPitch(nil, false)
+				<section class="pitch-drawer" data-state="collapsed">
+					@formationDrawerChrome("New formation", false, "formations", matchDayLineupID)
+					<div class="drawer-body">
+						@modeBadge(isAdmin)
+						@warning(msg)
+						<form method="POST" action="/formations/new" class="space-y-4" data-dirty-check="true">
+							<label class="block">Name
+								<input name="name" class="w-full border rounded-lg p-3 mt-1" placeholder="New formation"/>
+							</label>
+							<button type="submit" class={ bigAdd }>Create draft formation</button>
+							<a href="/formations" class={ bigPri } onclick="window.dirtyFormNavigationAllowedUntil = Date.now() + 2000">Cancel</a>
+						</form>
+					</div>
+				</section>
+			</div>
+		</body>
+	</html>
+}
+
+templ formationViewSummary(formation *Formation, canEdit bool) {
+	<div class="space-y-4">
+		<div class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+			<div class="flex items-start justify-between gap-3">
+				<div>
+					<div class="text-xs font-bold uppercase text-gray-500">Formation</div>
+					<h2 class="text-2xl font-bold text-gray-900">{ formation.Name }</h2>
+					<div class="mt-1 text-sm text-gray-600">{ formation.Status }</div>
+				</div>
+				<div class="rounded bg-gray-100 px-3 py-2 text-sm font-bold text-gray-700">
+					{ fmt.Sprintf("%d positions", len(formation.Positions)) }
+				</div>
+			</div>
+			if canEdit {
+				<div class="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
+					<a href={ fmt.Sprintf("/formations/%d/edit?mode=edit", formation.ID) } class={ bigPri }>Edit formation</a>
+					<form method="POST" action={ fmt.Sprintf("/formations/%d/copy", formation.ID) }>
+						<button type="submit" class={ bigSec }>Save a copy</button>
+					</form>
+				</div>
+			}
+		</div>
+		if len(formation.Positions) == 0 {
+			@infoBox("No positions have been added yet.")
+		} else {
+			<details class="rounded-lg border border-gray-200 bg-white shadow-sm">
+				<summary class="cursor-pointer border-b border-gray-200 px-4 py-3 text-sm font-bold uppercase text-gray-500">
+					Positions ({ fmt.Sprintf("%d", len(formation.Positions)) })
+				</summary>
+				<div class="divide-y divide-gray-100">
+					for _, pos := range formation.Positions {
+						<div class="grid grid-cols-[48px_minmax(0,1fr)_auto] items-center gap-3 px-4 py-3">
+							<div class="flex h-9 w-9 items-center justify-center rounded bg-gray-900 text-sm font-bold text-white">{ fmt.Sprintf("%d", pos.IndexNumber) }</div>
+							<div class="min-w-0">
+								<div class="truncate font-bold text-gray-900">{ pos.PositionName }</div>
+							</div>
+							<div class="text-xs font-semibold text-gray-500">{ fmt.Sprintf("%.0f, %.0f", pos.X, pos.Y) }</div>
+						</div>
+					}
+				</div>
+			</details>
+		}
+		if !canEdit {
+			@infoBox("This formation is read-only for you.")
+		}
+	</div>
+}
+
+templ formationEditPage(formation *Formation, canEdit bool, isAdmin bool, editMode bool, msg string, notesData NotesPageData, drawerExpanded bool, activeMatch *Match, hasActiveMatchLineup bool, matchDayLineupID uint) {
+	<!DOCTYPE html>
+	<html>
+		@headLinks()
+		@lineupStylesAndScript()
+		<body>
+			<div class="pitch-shell">
+				@formationPreviewPitch(formation, canEdit && editMode)
+				<section
+					class="pitch-drawer"
+					if drawerExpanded {
+						data-state="expanded"
+					} else {
+						data-state="collapsed"
+					}
+				>
+					@formationDrawerChrome(formation.Name, canEdit && editMode, "formations", matchDayLineupID)
+					<div class="drawer-body" data-formation-advanced="false">
+						@modeBadge(isAdmin)
+						@warning(msg)
+						if canEdit && editMode {
+							<form method="POST" action={ fmt.Sprintf("/formations/%d/edit", formation.ID) } class="space-y-4" data-formation-editor="true" data-dirty-check="true">
+								<label class="block">Name
+									<input name="name" value={ formation.Name } class="w-full border rounded-lg p-3 mt-1"/>
+								</label>
+									<label class="block">Status
+										<select name="status" class="w-full border rounded-lg p-3 mt-1">
+											for _, status := range formationStatusesForActor(LineupActor{IsAdmin: isAdmin}) {
+												<option value={ status } selected?={ status == formation.Status }>{ status }</option>
+											}
+										</select>
+									</label>
+									<button type="submit" class={ bigAdd }>Save formation</button>
+									for _, pos := range formation.Positions {
+									<div class="border rounded-lg p-3" data-slot-panel={ fmt.Sprintf("%d", pos.ID) }>
+										<input type="hidden" name="positionIds" value={ fmt.Sprintf("%d", pos.ID) }/>
+										<div class="font-bold">Position { fmt.Sprintf("%d", pos.IndexNumber) }</div>
+										<label class="block text-sm">Index
+											<input name={ fmt.Sprintf("position_%d_index", pos.ID) } value={ fmt.Sprintf("%d", pos.IndexNumber) } class="w-full border rounded p-2"/>
+										</label>
+										<label class="block text-sm">Name
+											<input name={ fmt.Sprintf("position_%d_name", pos.ID) } value={ pos.PositionName } class="w-full border rounded p-2"/>
+										</label>
+										<div class="grid grid-cols-2 gap-2" data-formation-advanced-field hidden>
+											<label class="block text-sm">X
+												<input name={ fmt.Sprintf("position_%d_x", pos.ID) } value={ fmt.Sprintf("%.2f", pos.X) } class="w-full border rounded p-2"/>
+											</label>
+											<label class="block text-sm">Y
+												<input name={ fmt.Sprintf("position_%d_y", pos.ID) } value={ fmt.Sprintf("%.2f", pos.Y) } class="w-full border rounded p-2"/>
+											</label>
+										</div>
+									</div>
+								}
+								<div class="border rounded-lg p-3 bg-gray-50">
+									<div class="font-bold">Add position</div>
+									<input name="newPositionName" placeholder="Position name" class="w-full border rounded p-2 mt-2"/>
+									<div class="mt-2">
+										<input name="newPositionIndex" placeholder="Index" class="border rounded p-2"/>
+									</div>
+									<div class="grid grid-cols-2 gap-2 mt-2" data-formation-advanced-field hidden>
+										<input name="newPositionX" placeholder="X" class="border rounded p-2"/>
+										<input name="newPositionY" placeholder="Y" class="border rounded p-2"/>
+									</div>
+								</div>
+								@statusActionButtonRow(nil, formation, isAdmin, activeMatch, hasActiveMatchLineup)
+								<button type="submit" class={ bigAdd }>Save formation</button>
+								<button type="submit" formaction={ fmt.Sprintf("/formations/%d/copy", formation.ID) } class={ bigSec }>Save a copy</button>
+								<a href={ fmt.Sprintf("/formations/%d/edit", formation.ID) } class={ bigPri } onclick="window.dirtyFormNavigationAllowedUntil = Date.now() + 2000">View mode</a>
+								<button
+									type="button"
+									hx-delete={ fmt.Sprintf("/formations/%d/edit", formation.ID) }
+									hx-confirm={ fmt.Sprintf("Delete this formation - %s?", formation.Name) }
+									class="w-full rounded-lg bg-red-600 px-4 py-3 font-bold text-white"
+								>Delete this formation - { formation.Name }</button>
+							</form>
+						} else {
+							@formationViewSummary(formation, canEdit)
+						}
+						@contextualNotes(notesData)
+					</div>
+				</section>
+			</div>
+		</body>
+	</html>
+}

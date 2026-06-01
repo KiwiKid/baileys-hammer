@@ -5,37 +5,56 @@ import (
     "github.com/dustin/go-humanize"
 )
 
-templ teamListFrame(teams []Team, matches []Match){
+templ teamListFrame(teams []Team, matches []Match, activeTeamID uint){
    <head>
         @headLinks()
         @globalStyles()
     </head>
     <body>
-        <div hx-target="this">
-            <h1>{fmt.Sprintf("Teams %d", len(teams))}</h1>
-            @teamListButton(false)
-            for _, t := range teams {
-                @teamEditForm(t, matches, "")
-            }
-            @teamAddForm()
-            @teamListButton(false)
-        </div>
+        @teamList(teams, matches, activeTeamID)
     </body>
 }
 
-templ teamList(teams []Team, matches []Match){
-    <div hx-target="this">
+templ teamList(teams []Team, matches []Match, activeTeamID uint){
+    <div id="team-list" hx-target="this">
         <h1>{fmt.Sprintf("Teams %d", len(teams))}</h1>
         @teamListButton(false)
         for _, t := range teams {
-            <details>
-                <summary>
-                    {t.TeamName} - {fmt.Sprintf("[%d]", t.ID)}
-                </summary>
-                @teamEditForm(t, matches, "")
-            </details>
+            <div class="mx-auto max-w-xl mb-3">
+                <button
+                    type="button"
+                    _="on click toggle .hidden on next &lt;section/&gt;"
+                    class="flex w-full items-center justify-between bg-white px-4 py-3 shadow-lg rounded-lg cursor-pointer hover:shadow-xl transition-shadow duration-300 text-left"
+                >
+                    <span class="font-semibold text-gray-800">
+                        {t.TeamName} - {fmt.Sprintf("[%d]", t.ID)}
+                        if t.ID == activeTeamID {
+                            <span class="ml-2 inline-flex items-center rounded bg-green-100 px-2 py-1 text-xs font-bold uppercase text-green-800">Active</span>
+                        }
+                    </span>
+                    <svg class="w-5 h-5 text-gray-500 transform transition-transform duration-200" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                </button>
+                <section class="hidden">
+                if t.ID != activeTeamID {
+                    <div class="max-w-xl mx-auto bg-white px-8 pt-8">
+                        <button
+                            type="button"
+                            hx-post={ fmt.Sprintf("/teams/activate?teamId=%d", t.ID) }
+                            hx-target="#team-list"
+                            hx-swap="outerHTML"
+                            class="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                        >
+                            Make active team
+                        </button>
+                    </div>
+                }
+                @teamEditForm(t, matches, nil)
+                </section>
+            </div>
         }
-        @teamAddForm()
+        @teamAddFormAccordion()
         @teamListButton(false)
     </div>
 }
@@ -56,9 +75,98 @@ templ teamListButton(open bool){
 			if !open {
 				Close
 			}
-			Manage Teams    
+			Manage Teams
 		</div>
 	</div>
+}
+
+templ teamAddFormAccordion(){
+    <div class="mx-auto max-w-xl mb-3">
+        <button
+            type="button"
+            _="on click toggle .hidden on next &lt;section/&gt;"
+            class="flex w-full items-center justify-between bg-white px-4 py-3 shadow-lg rounded-lg cursor-pointer hover:shadow-xl transition-shadow duration-300 text-left"
+        >
+            <span class="font-semibold text-gray-800">Add new team</span>
+            <svg class="w-5 h-5 text-gray-500 transform transition-transform duration-200" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+        </button>
+        <section class="hidden">
+            @teamAddForm()
+        </section>
+	</div>
+}
+
+templ teamFeatureCheckbox(name string, label string, checked bool) {
+	<label class="mt-2 flex items-center gap-2">
+		<input
+			type="checkbox"
+			name={ name }
+			class="form-checkbox h-5 w-5 text-blue-600"
+			if checked {
+				checked
+			}
+		/>
+		<span>{ label }</span>
+	</label>
+}
+
+templ googleAdminAuthForm(googleClientID string, teams []Team, selectedTeamID uint, registerMode bool) {
+    <div class="max-w-md mx-auto bg-white p-8 shadow-md rounded-lg">
+        <h2 class="text-2xl font-bold text-center mb-6">Google Admin Access</h2>
+        <script src="https://accounts.google.com/gsi/client" async defer></script>
+        <form id="google-admin-auth-form" hx-post="/finemaster/auth" hx-target="this" hx-swap="outerHTML" class="space-y-4">
+            <input type="hidden" name="credential" id="google-admin-credential"/>
+            <input type="hidden" name="mode" id="google-admin-mode" value="login"/>
+            if len(teams) > 0 {
+                <label class="block text-gray-700 font-semibold">Team
+                    <select name="teamId" class="mt-1 w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        for _, t := range teams {
+                            <option value={ fmt.Sprintf("%d", t.ID) } selected?={ t.ID == selectedTeamID }>{ t.TeamName }</option>
+                        }
+                    </select>
+                </label>
+            }
+            <div
+                id="g_id_onload"
+                data-client_id={ googleClientID }
+                data-callback="handleGoogleAdminCredential"
+                data-auto_prompt="false"
+            ></div>
+            <div class="g_id_signin" data-type="standard" data-size="large" data-theme="outline" data-text="signin_with" data-shape="rectangular" data-logo_alignment="left"></div>
+            <div class="flex flex-wrap justify-center gap-2">
+                <button type="button" onclick="window.setGoogleAdminMode('login')" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-6 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">Login</button>
+                if registerMode {
+                    <button type="button" onclick="window.setGoogleAdminMode('register')" class="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-6 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">Sign up</button>
+                } else if len(teams) > 0 {
+                    <button type="button" onclick="window.setGoogleAdminMode('request')" class="bg-amber-500 hover:bg-amber-600 text-white font-semibold py-2 px-6 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500">Request access</button>
+                    for _, t := range teams {
+                        if t.ID == selectedTeamID && t.AllowAdminRegistration {
+                            <button type="button" onclick="window.setGoogleAdminMode('register')" class="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-6 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">Sign up</button>
+                        }
+                    }
+                }
+            </div>
+        </form>
+        <script>
+            window.setGoogleAdminMode = function(mode) {
+                var modeInput = document.getElementById("google-admin-mode");
+                if (modeInput) modeInput.value = mode;
+            };
+            window.handleGoogleAdminCredential = function(response) {
+                var credentialInput = document.getElementById("google-admin-credential");
+                var form = document.getElementById("google-admin-auth-form");
+                if (!credentialInput || !form || !response || !response.credential) return;
+                credentialInput.value = response.credential;
+                if (window.htmx) {
+                    window.htmx.trigger(form, "submit");
+                } else {
+                    form.submit();
+                }
+            };
+        </script>
+    </div>
 }
 
 templ teamAddForm(){
@@ -88,23 +196,51 @@ templ teamAddForm(){
             <input type="password" id="teamAdminPass" name="teamAdminPass" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required/>
         </div>
 
-        <!-- Show Fine Add On Home Page -->
-        <div class="mb-4">
-            <label class="inline-flex items-center">
+        <fieldset class="mb-4 rounded-lg border border-gray-200 p-4">
+            <legend class="px-2 font-semibold text-gray-700">Pre-season actions</legend>
+            @teamFeatureCheckbox("enablePlayersModule", "Players and player registration", true)
+            @teamFeatureCheckbox("enablePublicFeedbackForm", "Public feedback form", true)
+            @teamFeatureCheckbox("allowAdminRegistration", "Allow admin registration", false)
+        </fieldset>
 
-                <span class="ml-2 text-gray-700">Show Fine Add-On Home Page</span>
-                <input type="checkbox" name="showFineAddOnHomePage" class="form-checkbox h-5 w-5 text-blue-600"/>
+        <fieldset class="mb-4 rounded-lg border border-gray-200 p-4">
+            <legend class="px-2 font-semibold text-gray-700">In-season features</legend>
+            @teamFeatureCheckbox("enableFinesModule", "Fines", true)
+            @teamFeatureCheckbox("showFineAddOnHomePage", "Show fine add on home page", true)
+            @teamFeatureCheckbox("enableLineupsModule", "Line-ups and formations", true)
+            <label class="mt-3 block text-gray-700 font-semibold">Line-up format
+                <input type="number" name="lineupPlayerCount" min={ fmt.Sprintf("%d", minLineupPlayerCount) } max={ fmt.Sprintf("%d", maxLineupPlayerCount) } value={ fmt.Sprintf("%d", defaultLineupPlayerCount) } class="mt-1 w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"/>
             </label>
-        </div>
+            @teamFeatureCheckbox("enableMatchesModule", "Matches and match events", true)
+            @teamFeatureCheckbox("showPitchMatchOnHomePage", "Show home page pitch match display", true)
+        </fieldset>
 
-        <!-- Show Court Totals -->
-        <div class="mb-4">
-            <label class="inline-flex items-center">
+        <fieldset class="mb-4 rounded-lg border border-gray-200 p-4">
+            <legend class="px-2 font-semibold text-gray-700">Post-season features</legend>
+            @teamFeatureCheckbox("enableCourtModule", "Court session", true)
+            @teamFeatureCheckbox("showCourtTotals", "Show court totals", false)
+            @teamFeatureCheckbox("showCourtSheetOnHomePage", "Show court sheet on home page", true)
+            @teamFeatureCheckbox("enableLeaderboardModule", "Leaderboard", true)
+        </fieldset>
 
-                <span class="ml-2 text-gray-700">Show Court Totals</span>
-                <input type="checkbox" name="showCourtTotals" class="form-checkbox h-5 w-5 text-blue-600"/>
+        <fieldset class="mb-4 rounded-lg border border-gray-200 p-4">
+            <legend class="px-2 font-semibold text-gray-700">Sporty integration</legend>
+            <div class="grid gap-3 sm:grid-cols-2">
+                <label class="block text-gray-700 font-semibold">Competition ID
+                    <input type="number" name="sportyCompetitionId" class="mt-1 w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                </label>
+                <label class="block text-gray-700 font-semibold">Grade ID
+                    <input type="number" name="sportyGradeId" class="mt-1 w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                </label>
+                <label class="block text-gray-700 font-semibold">Team ID
+                    <input type="number" name="sportyTeamId" class="mt-1 w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                </label>
+            </div>
+            <label class="mt-3 flex items-center gap-2">
+                <input type="checkbox" name="sportyAutoMatchSync" class="form-checkbox h-5 w-5 text-blue-600"/>
+                <span>Auto-match-sync</span>
             </label>
-        </div>
+        </fieldset>
 
         <!-- Submit Button -->
         <div class="flex justify-end">
@@ -115,11 +251,8 @@ templ teamAddForm(){
     </form>
 }
 
-templ teamEditForm(team Team, matches []Match, msg string){
+templ teamEditForm(team Team, matches []Match, msg templ.Component){
     <form hx-put={fmt.Sprintf("/teams?teamId=%d", team.ID) } class="max-w-xl mx-auto bg-white p-8 shadow-md rounded-lg" hx-target="this">
-    if len(msg) > 0 {
-        @success(msg)
-    }
         <div class="mb-4">
             <label for="ID" class="block text-gray-700 font-semibold mb-2">Team ID</label>
             <input type="text" disabled="disabled" id="ID" value={ fmt.Sprintf("%d", team.ID) } class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"/>
@@ -169,33 +302,82 @@ templ teamEditForm(team Team, matches []Match, msg string){
             <input type="password" id="teamAdminPass" name="teamAdminPass" value={team.TeamAdminPass} class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required/>
         </div>
 
-        <!-- Show Fine Add On Home Page -->
-        <div class="mb-4">
-            <label class="inline-flex items-center">
-              <span class="ml-2 text-gray-700">Show Fine Add-On Home Page</span>
-                <input type="checkbox" name="showFineAddOnHomePage" class="form-checkbox h-5 w-5 text-blue-600"
-                        if team.ShowFineAddOnHomePage {
-                            checked
-                        }
-                        />
-            </label>
-        </div>
+        <fieldset class="mb-4 rounded-lg border border-gray-200 p-4">
+            <legend class="px-2 font-semibold text-gray-700">Pre-season actions</legend>
+            @teamFeatureCheckbox("enablePlayersModule", "Players and player registration", team.EnablePlayersModule)
+            @teamFeatureCheckbox("enablePublicFeedbackForm", "Public feedback form", team.EnablePublicFeedbackForm)
+            @teamFeatureCheckbox("allowAdminRegistration", "Allow admin registration", team.AllowAdminRegistration)
+        </fieldset>
 
-        <!-- Show Court Totals -->
-        <div class="mb-4">
-            <label class="inline-flex items-center">
-            <span class="ml-2 text-gray-700">Show Court Totals</span>
-                <input type="checkbox" name="showCourtTotals"   class="form-checkbox h-5 w-5 text-blue-600"
-                    if team.ShowCourtTotals {
-                        checked
-                    } 
-                      />
+        <fieldset class="mb-4 rounded-lg border border-gray-200 p-4">
+            <legend class="px-2 font-semibold text-gray-700">In-season features</legend>
+            @teamFeatureCheckbox("enableFinesModule", "Fines", team.EnableFinesModule)
+            @teamFeatureCheckbox("showFineAddOnHomePage", "Show fine add on home page", team.ShowFineAddOnHomePage)
+            @teamFeatureCheckbox("enableLineupsModule", "Line-ups and formations", team.EnableLineupsModule)
+            <label class="mt-3 block text-gray-700 font-semibold">Line-up format
+                <input type="number" name="lineupPlayerCount" min={ fmt.Sprintf("%d", minLineupPlayerCount) } max={ fmt.Sprintf("%d", maxLineupPlayerCount) } value={ fmt.Sprintf("%d", teamLineupPlayerCount(team)) } class="mt-1 w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"/>
             </label>
-        </div>
+            @teamFeatureCheckbox("enableMatchesModule", "Matches and match events", team.EnableMatchesModule)
+            @teamFeatureCheckbox("showPitchMatchOnHomePage", "Show home page pitch match display", team.ShowPitchMatchOnHomePage)
+        </fieldset>
+
+        <fieldset class="mb-4 rounded-lg border border-gray-200 p-4">
+            <legend class="px-2 font-semibold text-gray-700">Post-season features</legend>
+            @teamFeatureCheckbox("enableCourtModule", "Court session", team.EnableCourtModule)
+            @teamFeatureCheckbox("showCourtTotals", "Show court totals", team.ShowCourtTotals)
+            @teamFeatureCheckbox("showCourtSheetOnHomePage", "Show court sheet on home page", team.ShowCourtSheetOnHomePage)
+            @teamFeatureCheckbox("enableLeaderboardModule", "Leaderboard", team.EnableLeaderboardModule)
+        </fieldset>
+
+        <fieldset class="mb-4 rounded-lg border border-gray-200 p-4">
+            <legend class="px-2 font-semibold text-gray-700">Sporty integration</legend>
+            <div class="grid gap-3 sm:grid-cols-2">
+                <label class="block text-gray-700 font-semibold">Competition ID
+                    <input type="number" name="sportyCompetitionId" value={ fmt.Sprintf("%d", team.SportyCompetitionID) } class="mt-1 w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                </label>
+                <label class="block text-gray-700 font-semibold">Grade ID
+                    <input type="number" name="sportyGradeId" value={ fmt.Sprintf("%d", team.SportyGradeID) } class="mt-1 w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                </label>
+                <label class="block text-gray-700 font-semibold">Team ID
+                    <input type="number" name="sportyTeamId" value={ fmt.Sprintf("%d", team.SportyTeamID) } class="mt-1 w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                </label>
+            </div>
+            <label class="mt-3 flex items-center gap-2">
+                <input type="checkbox" name="sportyAutoMatchSync" class="form-checkbox h-5 w-5 text-blue-600"
+                    if team.SportyAutoMatchSync {
+                        checked
+                    }
+                />
+                <span>Auto-match-sync</span>
+            </label>
+            if team.SportyLastSyncedAt != nil {
+                <div class="mt-2 text-sm text-gray-600">Last synced { humanize.Time(*team.SportyLastSyncedAt) }</div>
+            }
+            if teamHasSportyConfig(team) {
+                <label class="mt-3 flex items-center gap-2 text-sm text-gray-700">
+                    <input type="checkbox" name="includePastSportyMatches" class="form-checkbox h-5 w-5 text-green-600"/>
+                    <span>Include past games</span>
+                </label>
+                <button
+                    type="button"
+                    hx-post={ fmt.Sprintf("/teams/sporty-sync?teamId=%d", team.ID) }
+                    hx-target="closest form"
+                    hx-swap="outerHTML"
+                    class="mt-3 bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                >
+                    Sync Sporty matches now
+                </button>
+            }
+        </fieldset>
 
         
 
         <!-- Submit Button -->
+        if msg != nil {
+            <div class="mb-4">
+                @msg
+            </div>
+        }
         <div class="flex justify-end">
             <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                 Submit
@@ -210,6 +392,121 @@ templ teamEditForm(team Team, matches []Match, msg string){
         </details>
     </form>
 
+}
+
+templ sportySyncPreview(team Team, preview *SportySyncPreview){
+    <div id={ fmt.Sprintf("sporty-sync-preview-%d", team.ID) } data-sporty-preview class="mb-4 rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-gray-800">
+        <div class="font-semibold text-green-900">Sporty matches ready to sync</div>
+        <div class="mt-1 text-green-800">
+            { fmt.Sprintf("%d matched, %d skipped", preview.Matched, preview.Skipped) }
+            if preview.IncludePast {
+                <span class="block">Including recent results.</span>
+            }
+        </div>
+        if len(preview.SkippedRecords) > 0 {
+            @sportySkippedRecordsAccordion(preview.SkippedRecords)
+        }
+        if preview.IncludePast {
+            <input type="hidden" name="includePastSportyMatches" value="1"/>
+        }
+        if len(preview.Candidates) == 0 {
+            <div class="mt-3 text-gray-700">No matching Sporty fixtures were found for this team.</div>
+        } else {
+            <div class="mt-3 space-y-2">
+                for _, candidate := range preview.Candidates {
+                    <label class="flex items-start gap-3 rounded-md bg-white p-3 shadow-sm">
+                        <input
+                            type="checkbox"
+                            name="sportyFixtureId"
+                            value={ fmt.Sprintf("%d", candidate.Fixture.ID) }
+                            checked
+                            class="mt-1 form-checkbox h-5 w-5 text-green-600"
+                        />
+                        <span>
+                            <span class="font-semibold">
+                                if candidate.IsNew {
+                                    Create
+                                } else {
+                                    Update
+                                }
+                                { candidate.Match.Opponent }
+                            </span>
+                            if candidate.Match.StartTime != nil {
+                                <span class="block text-gray-700">
+                                    { candidate.Match.StartTime.Format("Mon 2 Jan 15:04") }
+                                </span>
+                            }
+                            <span class="block text-gray-700">
+                                { candidate.Match.Location }
+                                if candidate.Match.Subtitle != "" {
+                                    { fmt.Sprintf(" - %s", candidate.Match.Subtitle) }
+                                }
+                            </span>
+                        </span>
+                    </label>
+                }
+            </div>
+            <div class="mt-4 flex flex-wrap gap-2">
+                <button
+                    type="button"
+                    hx-post={ fmt.Sprintf("/teams/sporty-sync?teamId=%d&confirm=1", team.ID) }
+                    hx-include={ fmt.Sprintf("#sporty-sync-preview-%d", team.ID) }
+                    hx-target="closest form"
+                    hx-swap="outerHTML"
+                    class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                >
+                    Sync selected matches
+                </button>
+                <button
+                    type="button"
+                    onclick="this.closest('[data-sporty-preview]').remove()"
+                    class="bg-white hover:bg-gray-50 text-gray-700 font-semibold py-2 px-4 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                >
+                    Cancel
+                </button>
+            </div>
+        }
+    </div>
+}
+
+templ sportySkippedRecordsAccordion(records []SportySyncSkippedRecord) {
+    <details class="mt-3 rounded-lg border border-green-300 bg-white/70 p-3 text-sm text-green-950">
+        <summary class="cursor-pointer font-semibold">
+            { fmt.Sprintf("Skipped records (%d)", len(records)) }
+        </summary>
+        <div class="mt-3 space-y-2">
+            for _, skipped := range records {
+                <div class="rounded-md border border-green-200 bg-white p-3">
+                    <div class="font-semibold">{ sportyFixtureSummary(skipped.Fixture) }</div>
+                    <div class="mt-1 text-green-800">{ skipped.Reason }</div>
+                    <div class="mt-1 text-xs text-green-700">
+                        { fmt.Sprintf("Fixture %d - home team %d - away team %d", skipped.Fixture.ID, skipped.Fixture.HomeTeamID, skipped.Fixture.AwayTeamID) }
+                    </div>
+                </div>
+            }
+        </div>
+    </details>
+}
+
+templ sportySyncResultMessage(prefix string, result *SportySyncResult, includeHomeLink bool) {
+    if result == nil {
+        @success(prefix + " Sporty sync skipped")
+    } else {
+        <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-lg">
+            <p class="text-lg font-semibold">
+                if prefix != "" {
+                    { prefix }
+                }
+                { sportySyncSummary(result) }
+            </p>
+            if includeHomeLink {
+                <a href="/" class="text-blue-500 hover:text-blue-700">Home</a>
+            }
+            if len(result.SkippedRecords) > 0 {
+                @sportySkippedRecordsAccordion(result.SkippedRecords)
+            }
+        </div>
+    }
 }
 
 
@@ -286,24 +583,34 @@ templ teamActiveMatchButton(open bool, matchSeasonTeam *MatchSeasonTeam){
 		</div>
 	</div>
     } else {
+        <div class="grid grid-cols-1 gap-3 md:grid-cols-3">
+            <div>
+                if matchSeasonTeam.Season != nil {
+                    @success(fmt.Sprintf("Season: %s", matchSeasonTeam.Season.Title))
+                }else{
+                    @warning("no active season?")
+                }
+            </div>
 
-        if matchSeasonTeam.Season != nil {
-            @success(fmt.Sprintf("Season: %s", matchSeasonTeam.Season.Title))
-        }else{
-            @warning("no active season?")
-        }
+            <div>
+                if matchSeasonTeam.Team != nil {
+                    @success(fmt.Sprintf("Team: %s", matchSeasonTeam.Team.TeamName))
+                }else{
+                    @teamListButton(true)
+                }
+            </div>
 
-        if matchSeasonTeam.Team != nil {
-            @success(fmt.Sprintf("Team:%s", matchSeasonTeam.Team.TeamName))
-        }else{
-            @teamListButton(true)
-        }
-        
-        if matchSeasonTeam.Match != nil {
-            @success(fmt.Sprintf("Match: %s", matchSeasonTeam.Match.Opponent))
-        }else{
-            @warning("no active match? Navigate to 'Matches' to create an upcoming match")
-        }
+            <div>
+                if matchSeasonTeam.Match != nil {
+                    @success(fmt.Sprintf("Match: %s", matchSeasonTeam.Match.Opponent))
+                    if matchSeasonTeam.Match.LineupID == 0 {
+                        @warning("Upcoming match does not have a line-up assigned. Match day is hidden until a line-up is assigned.")
+                    }
+                }else{
+                    @warning("no active match? Navigate to 'Matches' to create an upcoming match")
+                }
+            </div>
+        </div>
 
     }
 }

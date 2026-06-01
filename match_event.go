@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/v5"
 	"gorm.io/gorm"
 )
 
@@ -44,13 +44,18 @@ type MatchMeta struct {
 }
 
 type MatchMetaGeneral struct {
-	Match             Match
-	Players           []Player
-	GoalScorers       []Player
-	GoalAssisters     []Player
-	OpponentGoalCount uint
-	PlayerOfTheDay    *Player
-	DudOfTheDay       *Player
+	Match                Match
+	Lineup               *Lineup
+	LiveLineups          []Lineup
+	Players              []Player
+	GoalScorers          []Player
+	GoalAssisters        []Player
+	OpponentGoalCount    uint
+	UnavailablePlayerIDs map[uint]bool
+	AvailablePlayerCount int
+	TotalPlayerCount     int
+	PlayerOfTheDay       *Player
+	DudOfTheDay          *Player
 }
 
 func matchEventHandler(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {

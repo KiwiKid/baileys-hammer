@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/v5"
 	"gorm.io/gorm"
 )
 
@@ -35,6 +35,8 @@ type PlayerPaymentsWithTotals struct {
 func playerPayments(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 
 	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := GetContext(r, db)
+		teamId := getTeamId(ctx)
 		switch r.Method {
 		case "POST":
 			log.Printf("PlayerPayments POST entry")
@@ -62,12 +64,21 @@ func playerPayments(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, "Could not parse seasonId", http.StatusBadRequest)
 				return
 			}
+			activeSeason, _ := GetActiveSeason(db)
+			if activeSeason == nil || uint(seasonId) != activeSeason.ID {
+				http.Error(w, "Payments are only available for the active season", http.StatusBadRequest)
+				return
+			}
+			if teamId == 0 {
+				http.Error(w, "No active team", http.StatusBadRequest)
+				return
+			}
 			var totalAdded float64
 			var totalRecords int
 			for _, playerIDStr := range playerIDs {
 				playerID, err := strconv.ParseUint(playerIDStr, 10, 64)
 
-				err = CreatePlayerPayment(db, uint(playerID), amount, uint(seasonId))
+				err = CreatePlayerPayment(db, uint(playerID), amount, uint(seasonId), teamId)
 				if err != nil {
 					http.Error(w, "Could not add payment", http.StatusBadRequest)
 					return
@@ -91,14 +102,22 @@ func playerPayments(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 			if displayType == "button" {
 
 				btn := playerPaymentsButton("Open Player Payments", "table", activeSeason)
-				btn.Render(GetContext(r, db), w)
+				btn.Render(ctx, w)
 				return
 			}
 
 			seasonIdParam := chi.URLParam(r, "seasonId")
 			seasonId, err := strconv.ParseUint(seasonIdParam, 10, 64)
+			if activeSeason == nil || uint(seasonId) != activeSeason.ID {
+				http.Error(w, "Payments are only available for the active season", http.StatusBadRequest)
+				return
+			}
 
-			pays, err := GetPlayerPayments(db, uint(seasonId))
+			if teamId == 0 {
+				http.Error(w, "No active team", http.StatusBadRequest)
+				return
+			}
+			pays, err := GetPlayerPayments(db, uint(seasonId), teamId)
 			if err != nil {
 				http.Error(w, "Could not get matches", http.StatusNotFound)
 				return
@@ -130,7 +149,7 @@ func playerPayments(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 			switch displayType {
 			case "table":
 				paymentsComp := viewPlayerPayments(playerTotals, players, activeSeason)
-				paymentsComp.Render(GetContext(r, db), w)
+				paymentsComp.Render(ctx, w)
 				return
 			default:
 				http.Error(w, "Invalid display type", http.StatusBadRequest)

@@ -1,5 +1,5 @@
 # Start from a specific golang base image
-FROM golang:1.23.4 AS builder
+FROM golang:1.26.3 AS builder
 
 WORKDIR /app
 
@@ -12,7 +12,7 @@ COPY . .
 RUN CGO_ENABLED=1 GOOS=linux go build -o main .
 
 # Start a new stage from a specific debian slim version for consistency
-FROM golang:1.23.4
+FROM golang:1.26.3
 
 # Install ca-certificates in one layer to reduce size
 RUN apt-get update && \
@@ -28,9 +28,16 @@ RUN apt-get update && apt-get install -y wget && rm -rf /var/lib/apt/lists/*
 
 # Download and install Litestream
 ARG LITESTREAM_VERSION=v0.3.9
-RUN wget https://github.com/benbjohnson/litestream/releases/download/${LITESTREAM_VERSION}/litestream-${LITESTREAM_VERSION}-linux-amd64.tar.gz && \
-    tar -C /usr/local/bin -xzf litestream-${LITESTREAM_VERSION}-linux-amd64.tar.gz && \
-    rm litestream-${LITESTREAM_VERSION}-linux-amd64.tar.gz
+ARG TARGETARCH
+RUN set -eux; \
+    case "${TARGETARCH:-amd64}" in \
+      amd64|arm64) litestream_arch="${TARGETARCH:-amd64}" ;; \
+      *) echo "Unsupported Litestream architecture: ${TARGETARCH}" >&2; exit 1 ;; \
+    esac; \
+    litestream_archive="litestream-${LITESTREAM_VERSION}-linux-${litestream_arch}.tar.gz"; \
+    wget "https://github.com/benbjohnson/litestream/releases/download/${LITESTREAM_VERSION}/${litestream_archive}"; \
+    tar -C /usr/local/bin -xzf "${litestream_archive}"; \
+    rm "${litestream_archive}"
 
 
 COPY litestream.yml /etc/litestream.yml
