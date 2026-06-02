@@ -67,6 +67,40 @@ func lineupSubMinuteLabel(minute int) string {
 	return fmt.Sprintf(" %d'", minute)
 }
 
+func playerShortName(name string) string {
+	parts := strings.Fields(strings.TrimSpace(name))
+	if len(parts) == 0 {
+		return ""
+	}
+	if len(parts) == 1 {
+		return parts[0]
+	}
+	return fmt.Sprintf("%s. %s", strings.ToUpper(string([]rune(parts[0])[0])), parts[len(parts)-1])
+}
+
+func playerPitchLabel(player Player) string {
+	name := playerShortName(player.Name)
+	if name == "" {
+		name = strings.TrimSpace(player.Name)
+	}
+	number := strings.TrimSpace(player.Number)
+	if number == "" {
+		return name
+	}
+	if name == "" {
+		return fmt.Sprintf("#%s", number)
+	}
+	return fmt.Sprintf("#%s %s", number, name)
+}
+
+func playerPitchShirtNumber(player Player, fallback int) string {
+	number := strings.TrimSpace(player.Number)
+	if number != "" {
+		return number
+	}
+	return fmt.Sprintf("%d", fallback)
+}
+
 func lineupPositionInitials(positionName string) string {
 	normalized := normalizedLineupPosition(positionName)
 	if normalized == "" {
@@ -165,8 +199,15 @@ func playerPositionText(player Player) string {
 	return strings.TrimSpace(strings.Join([]string{player.Role, player.RoleDescription}, " "))
 }
 
+func playerPlayablePositionText(player Player) string {
+	return strings.TrimSpace(player.PlayablePositions)
+}
+
 func playerMatchesLineupPosition(player Player, positionName string) bool {
-	playerTokens := lineupPositionTokens(playerPositionText(player))
+	playerTokens := lineupPositionTokens(playerPlayablePositionText(player))
+	if len(playerTokens) == 0 {
+		playerTokens = lineupPositionTokens(playerPositionText(player))
+	}
 	if len(playerTokens) == 0 {
 		return false
 	}
@@ -182,6 +223,9 @@ func playerNearMatchesLineupPosition(player Player, positionName string) bool {
 	positionCategory := lineupPositionCategory(positionName)
 	if positionCategory == "" {
 		return false
+	}
+	if lineupPositionCategory(playerPlayablePositionText(player)) == positionCategory {
+		return true
 	}
 	return lineupPositionCategory(playerPositionText(player)) == positionCategory
 }
@@ -340,6 +384,14 @@ func matchDayAlternativeLineups(lineups []Lineup, selected *Lineup) []Lineup {
 	return alternatives
 }
 
+func lineupAuthorLabel(lineup Lineup) string {
+	name := strings.TrimSpace(lineup.Creator.DisplayName)
+	if name == "" {
+		return ""
+	}
+	return fmt.Sprintf("by %s", name)
+}
+
 func matchDayLineupOptionLabel(lineup Lineup) string {
 	label := fmt.Sprintf("%s - %s", lineup.Name, lineup.Status)
 	if lineup.Match.ID > 0 {
@@ -396,7 +448,7 @@ func matchDayLineupChoice(lineup Lineup) templ.Component {
 			var templ_7745c5c3_Var2 templ.SafeURL
 			templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/match-day/%d", lineup.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 364, Col: 51}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 416, Col: 51}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 			if templ_7745c5c3_Err != nil {
@@ -409,7 +461,7 @@ func matchDayLineupChoice(lineup Lineup) templ.Component {
 			var templ_7745c5c3_Var3 string
 			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(matchDayLineupOptionLabel(lineup))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 365, Col: 68}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 417, Col: 68}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 			if templ_7745c5c3_Err != nil {
@@ -422,7 +474,7 @@ func matchDayLineupChoice(lineup Lineup) templ.Component {
 			var templ_7745c5c3_Var4 string
 			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(matchDayLineupFormationLabel(lineup))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 366, Col: 94}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 418, Col: 94}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 			if templ_7745c5c3_Err != nil {
@@ -440,7 +492,7 @@ func matchDayLineupChoice(lineup Lineup) templ.Component {
 			var templ_7745c5c3_Var5 string
 			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(matchDayLineupOptionLabel(lineup))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 370, Col: 61}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 422, Col: 61}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 			if templ_7745c5c3_Err != nil {
@@ -453,7 +505,7 @@ func matchDayLineupChoice(lineup Lineup) templ.Component {
 			var templ_7745c5c3_Var6 string
 			templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(matchDayLineupFormationLabel(lineup))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 371, Col: 76}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 423, Col: 76}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 			if templ_7745c5c3_Err != nil {
@@ -497,7 +549,7 @@ func matchDayLineupAssignChoice(lineup Lineup, match Match) templ.Component {
 			var templ_7745c5c3_Var8 templ.SafeURL
 			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/match-day/%d/action", lineup.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 378, Col: 77}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 430, Col: 77}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 			if templ_7745c5c3_Err != nil {
@@ -510,7 +562,7 @@ func matchDayLineupAssignChoice(lineup Lineup, match Match) templ.Component {
 			var templ_7745c5c3_Var9 string
 			templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", match.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 380, Col: 74}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 432, Col: 74}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var9)
 			if templ_7745c5c3_Err != nil {
@@ -523,7 +575,7 @@ func matchDayLineupAssignChoice(lineup Lineup, match Match) templ.Component {
 			var templ_7745c5c3_Var10 string
 			templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(matchDayLineupOptionLabel(lineup))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 382, Col: 69}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 434, Col: 69}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 			if templ_7745c5c3_Err != nil {
@@ -536,7 +588,7 @@ func matchDayLineupAssignChoice(lineup Lineup, match Match) templ.Component {
 			var templ_7745c5c3_Var11 string
 			templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(matchDayMatchOptionLabel(match))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 383, Col: 100}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 435, Col: 100}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 			if templ_7745c5c3_Err != nil {
@@ -554,7 +606,7 @@ func matchDayLineupAssignChoice(lineup Lineup, match Match) templ.Component {
 			var templ_7745c5c3_Var12 string
 			templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(matchDayLineupOptionLabel(lineup))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 388, Col: 61}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 440, Col: 61}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 			if templ_7745c5c3_Err != nil {
@@ -577,7 +629,7 @@ func matchDayLineupAssignChoice(lineup Lineup, match Match) templ.Component {
 				var templ_7745c5c3_Var13 string
 				templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(matchDayLineupFormationLabel(lineup))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 392, Col: 77}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 444, Col: 77}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 				if templ_7745c5c3_Err != nil {
@@ -656,7 +708,7 @@ func lineupStylesAndScript() templ.Component {
 			templ_7745c5c3_Var14 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "<style>\n\t\thtml,\n\t\tbody {\n\t\t\twidth: 100%;\n\t\t\tmax-width: 100%;\n\t\t\toverflow-x: hidden;\n\t\t}\n\t\t* {\n\t\t\tbox-sizing: border-box;\n\t\t}\n\t\t.pitch-shell {\n\t\t\tmin-height: 100vh;\n\t\t\twidth: 100%;\n\t\t\tmax-width: 100vw;\n\t\t\tbackground: #104c23;\n\t\t\tposition: relative;\n\t\t\toverflow-x: hidden;\n\t\t\toverflow-y: hidden;\n\t\t}\n\t\t.pitch {\n\t\t\tposition: absolute;\n\t\t\tinset: 0;\n\t\t\twidth: 100%;\n\t\t\tmax-width: 100vw;\n\t\t\toverflow: visible;\n\t\t\tbackground:\n\t\t\t\tradial-gradient(circle at 50% 50%, rgba(98, 174, 22, .24), transparent 58%),\n\t\t\t\trepeating-linear-gradient(180deg, #2f8f07 0 8.333%, #1e7205 8.333% 16.666%);\n\t\t\tbox-shadow: inset 0 0 90px rgba(0,0,0,.42);\n\t\t}\n\t\t.pitch-lines {\n\t\t\tposition: absolute;\n\t\t\tinset: 52px 34px 118px;\n\t\t\tborder: 4px solid rgba(239,246,255,.82);\n\t\t\tborder-radius: 2px;\n\t\t\tpointer-events: none;\n\t\t}\n\t\t.pitch-lines:before {\n\t\t\tcontent: \"\";\n\t\t\tposition: absolute;\n\t\t\tleft: 0;\n\t\t\tright: 0;\n\t\t\ttop: 50%;\n\t\t\tborder-top: 4px solid rgba(239,246,255,.82);\n\t\t}\n\t\t.pitch-lines:after {\n\t\t\tcontent: \"\";\n\t\t\tposition: absolute;\n\t\t\twidth: min(34vw, 190px);\n\t\t\theight: min(34vw, 190px);\n\t\t\tleft: 50%;\n\t\t\ttop: 50%;\n\t\t\ttransform: translate(-50%, -50%);\n\t\t\tborder: 4px solid rgba(239,246,255,.82);\n\t\t\tborder-radius: 999px;\n\t\t}\n\t\t.pitch-dot {\n\t\t\tposition: absolute;\n\t\t\tleft: 50%;\n\t\t\ttop: 50%;\n\t\t\twidth: 12px;\n\t\t\theight: 12px;\n\t\t\ttransform: translate(-50%, -50%);\n\t\t\tborder-radius: 999px;\n\t\t\tbackground: rgba(239,246,255,.9);\n\t\t\tpointer-events: none;\n\t\t}\n\t\t.pitch-box {\n\t\t\tposition: absolute;\n\t\t\tleft: 22%;\n\t\t\twidth: 56%;\n\t\t\theight: 15%;\n\t\t\tborder: 4px solid rgba(239,246,255,.82);\n\t\t\tpointer-events: none;\n\t\t}\n\t\t.pitch-box.top { top: 0; border-top: 0; }\n\t\t.pitch-box.bottom { bottom: 0; border-bottom: 0; }\n\t\t.goal-box {\n\t\t\tposition: absolute;\n\t\t\tleft: 38%;\n\t\t\twidth: 24%;\n\t\t\theight: 7%;\n\t\t\tborder: 4px solid rgba(239,246,255,.82);\n\t\t\tpointer-events: none;\n\t\t}\n\t\t.goal-box.top { top: 0; border-top: 0; }\n\t\t.goal-box.bottom { bottom: 0; border-bottom: 0; }\n\t\t.goal-frame {\n\t\t\tposition: absolute;\n\t\t\tleft: 42%;\n\t\t\twidth: 16%;\n\t\t\theight: 34px;\n\t\t\tborder: 4px solid rgba(239,246,255,.82);\n\t\t\tpointer-events: none;\n\t\t}\n\t\t.goal-frame.top { top: -38px; }\n\t\t.goal-frame.bottom { bottom: -38px; }\n\t\t.penalty-arc {\n\t\t\tposition: absolute;\n\t\t\tleft: 50%;\n\t\t\twidth: min(30vw, 150px);\n\t\t\theight: min(30vw, 150px);\n\t\t\ttransform: translateX(-50%);\n\t\t\tborder: 4px solid rgba(239,246,255,.82);\n\t\t\tborder-radius: 999px;\n\t\t\tpointer-events: none;\n\t\t}\n\t\t.penalty-arc.top {\n\t\t\ttop: 9.5%;\n\t\t\tclip-path: inset(50% 0 0 0);\n\t\t}\n\t\t.penalty-arc.bottom {\n\t\t\tbottom: 9.5%;\n\t\t\tclip-path: inset(0 0 50% 0);\n\t\t}\n\t\t.corner {\n\t\t\tposition: absolute;\n\t\t\twidth: 36px;\n\t\t\theight: 36px;\n\t\t\tborder: 4px solid rgba(239,246,255,.82);\n\t\t\tpointer-events: none;\n\t\t}\n\t\t.corner.tl { top: -4px; left: -4px; border-right: 0; border-bottom: 0; border-radius: 0 0 36px 0; }\n\t\t.corner.tr { top: -4px; right: -4px; border-left: 0; border-bottom: 0; border-radius: 0 0 0 36px; }\n\t\t.corner.bl { bottom: -4px; left: -4px; border-right: 0; border-top: 0; border-radius: 0 36px 0 0; }\n\t\t.corner.br { bottom: -4px; right: -4px; border-left: 0; border-top: 0; border-radius: 36px 0 0 0; }\n\t\t.pitch-marker {\n\t\t\tposition: absolute;\n\t\t\ttransform: translate(-50%, -50%);\n\t\t\twidth: 92px;\n\t\t\tborder: 0;\n\t\t\tbackground: transparent;\n\t\t\tcolor: white;\n\t\t\tpadding: 0;\n\t\t\ttext-align: center;\n\t\t\ttouch-action: none;\n\t\t\ttext-shadow: 0 2px 3px rgba(0,0,0,.9);\n\t\t\tz-index: 2;\n\t\t}\n\t\t.pitch-marker.is-editing,\n\t\t.pitch-marker.is-actions-open {\n\t\t\tz-index: 60;\n\t\t}\n\t\t.pitch-marker:focus {\n\t\t\toutline: none;\n\t\t}\n\t\t.pitch-marker:focus .shirt,\n\t\t.pitch-marker:hover .shirt {\n\t\t\ttransform: translateY(-2px) scale(1.04);\n\t\t\tfilter: brightness(1.08);\n\t\t}\n\t\t.pitch-marker.unassigned .shirt {\n\t\t\tbackground: linear-gradient(180deg, #facc15 0%, #eab308 100%);\n\t\t\tbox-shadow: 0 0 0 4px rgba(250, 204, 21, .35), 0 12px 24px rgba(0,0,0,.3);\n\t\t}\n\t\t.pitch-marker.unassigned .shirt-collar {\n\t\t\tborder-color: #eab308;\n\t\t}\n\t\t.pitch-marker.unassigned .marker-caption {\n\t\t\tcolor: #fef08a;\n\t\t}\n\t\t.shirt {\n\t\t\tposition: relative;\n\t\t\twidth: 56px;\n\t\t\theight: 66px;\n\t\t\tmargin: 0 auto 4px;\n\t\t\tbackground: linear-gradient(180deg, #ef3b25 0%, #d82214 100%);\n\t\t\tborder-radius: 14px 14px 12px 12px;\n\t\t\tbox-shadow: 0 10px 20px rgba(0,0,0,.28);\n\t\t\ttransition: transform .15s ease, filter .15s ease;\n\t\t}\n\t\t.shirt:before,\n\t\t.shirt:after {\n\t\t\tcontent: \"\";\n\t\t\tposition: absolute;\n\t\t\ttop: 10px;\n\t\t\twidth: 22px;\n\t\t\theight: 30px;\n\t\t\tbackground: white;\n\t\t\tborder-radius: 8px 8px 5px 5px;\n\t\t\tz-index: -1;\n\t\t}\n\t\t.shirt:before {\n\t\t\tleft: -16px;\n\t\t\ttransform: rotate(8deg);\n\t\t}\n\t\t.shirt:after {\n\t\t\tright: -16px;\n\t\t\ttransform: rotate(-8deg);\n\t\t}\n\t\t.shirt-collar {\n\t\t\tposition: absolute;\n\t\t\tleft: 50%;\n\t\t\ttop: -5px;\n\t\t\twidth: 26px;\n\t\t\theight: 12px;\n\t\t\ttransform: translateX(-50%);\n\t\t\tbackground: white;\n\t\t\tborder: 2px solid #ef3b25;\n\t\t\tborder-radius: 0 0 999px 999px;\n\t\t}\n\t\t.shirt-number {\n\t\t\tposition: absolute;\n\t\t\tinset: 0;\n\t\t\tdisplay: flex;\n\t\t\talign-items: center;\n\t\t\tjustify-content: center;\n\t\t\tfont-size: 28px;\n\t\t\tfont-weight: 800;\n\t\t\tcolor: white;\n\t\t}\n\t\t.marker-caption {\n\t\t\tdisplay: block;\n\t\t\tfont-size: 16px;\n\t\t\tline-height: 1.05;\n\t\t\tfont-weight: 800;\n\t\t\twhite-space: nowrap;\n\t\t\tcolor: white;\n\t\t}\n\t\t.marker-subcaption {\n\t\t\tdisplay: block;\n\t\t\tmargin-top: 2px;\n\t\t\tfont-size: 11px;\n\t\t\tline-height: 1;\n\t\t\tcolor: rgba(255,255,255,.82);\n\t\t\twhite-space: nowrap;\n\t\t}\n\t\t.marker-player-stack {\n\t\t\tdisplay: flex;\n\t\t\tflex-direction: column;\n\t\t\talign-items: center;\n\t\t\tgap: 1px;\n\t\t}\n\t\t.marker-player-stack .sub-player {\n\t\t\tfont-size: 12px;\n\t\t\tline-height: 1;\n\t\t\tfont-weight: 700;\n\t\t\tcolor: rgba(255,255,255,.9);\n\t\t}\n\t\t.slot-editor-row {\n\t\t\tdisplay: grid;\n\t\t\tgrid-template-columns: minmax(0, 1fr) 64px;\n\t\t\tgap: 6px;\n\t\t\talign-items: center;\n\t\t\tmargin-top: 6px;\n\t\t}\n\t\t.slot-editor-row.hidden {\n\t\t\tdisplay: none;\n\t\t}\n\t\t.slot-editor-row input {\n\t\t\twidth: 100%;\n\t\t\tborder: 1px solid #cbd5e1;\n\t\t\tborder-radius: 10px;\n\t\t\tpadding: 8px;\n\t\t\tfont-size: 15px;\n\t\t}\n\t\t.slot-editor-row .add-sub-button {\n\t\t\tgrid-column: 1 / -1;\n\t\t\tmargin-top: 0;\n\t\t\tpadding: 8px 9px;\n\t\t\tbackground: #4b5563;\n\t\t\twhite-space: nowrap;\n\t\t\tfont-size: 14px;\n\t\t}\n\t\t.lineup-assignment-choice {\n\t\t\tborder: 1px solid #bfdbfe;\n\t\t\tborder-radius: 12px;\n\t\t\tbackground: #eff6ff;\n\t\t\tcolor: #1e3a8a;\n\t\t\tpadding: 10px;\n\t\t\tfont-size: 13px;\n\t\t}\n\t\t.lineup-assignment-choice .choice-actions {\n\t\t\tdisplay: flex;\n\t\t\tflex-wrap: wrap;\n\t\t\tgap: 8px;\n\t\t\tmargin-top: 8px;\n\t\t}\n\t\t.lineup-assignment-choice .choice-list {\n\t\t\tdisplay: grid;\n\t\t\tgap: 8px;\n\t\t\tmargin-top: 8px;\n\t\t}\n\t\t.lineup-assignment-choice .choice-row {\n\t\t\tdisplay: grid;\n\t\t\tgrid-template-columns: auto minmax(0, 1fr);\n\t\t\tgap: 8px;\n\t\t\talign-items: start;\n\t\t\tpadding: 8px;\n\t\t\tborder-radius: 9px;\n\t\t\tbackground: rgba(255,255,255,.74);\n\t\t\tborder: 1px solid #bfdbfe;\n\t\t}\n\t\t.lineup-assignment-choice .choice-row input {\n\t\t\tmargin-top: 3px;\n\t\t\twidth: 18px;\n\t\t\theight: 18px;\n\t\t}\n\t\t.lineup-assignment-choice .choice-move-hint {\n\t\t\tdisplay: block;\n\t\t\tmargin-top: 4px;\n\t\t\tcolor: #1d4ed8;\n\t\t}\n\t\t.lineup-assignment-choice button {\n\t\t\tborder-radius: 9px;\n\t\t\tfont-weight: 700;\n\t\t\tpadding: 7px 10px;\n\t\t}\n\t\t.lineup-assignment-choice .move-button {\n\t\t\tbackground: #2563eb;\n\t\t\tcolor: white;\n\t\t}\n\t\t.lineup-assignment-choice .add-button {\n\t\t\tbackground: #16a34a;\n\t\t\tcolor: white;\n\t\t}\n\t\t.lineup-assignment-choice .cancel-button {\n\t\t\tbackground: white;\n\t\t\tcolor: #1f2937;\n\t\t\tborder: 1px solid #cbd5e1;\n\t\t}\n\t\t.pitch-toast {\n\t\t\tposition: fixed;\n\t\t\tleft: 50%;\n\t\t\tbottom: 112px;\n\t\t\ttransform: translate(-50%, 16px);\n\t\t\tmax-width: min(92vw, 360px);\n\t\t\tpadding: 12px 16px;\n\t\t\tborder-radius: 999px;\n\t\t\tbackground: rgba(17,24,39,.94);\n\t\t\tcolor: white;\n\t\t\tfont-size: 14px;\n\t\t\tfont-weight: 700;\n\t\t\ttext-align: center;\n\t\t\tbox-shadow: 0 14px 34px rgba(0,0,0,.32);\n\t\t\topacity: 0;\n\t\t\tpointer-events: none;\n\t\t\ttransition: opacity .16s ease, transform .16s ease;\n\t\t\tz-index: 50;\n\t\t}\n\t\t.pitch-toast.is-visible {\n\t\t\topacity: 1;\n\t\t\ttransform: translate(-50%, 0);\n\t\t}\n\t\t.formation-settings-button {\n\t\t\tdisplay: inline-flex;\n\t\t\talign-items: center;\n\t\t\tjustify-content: center;\n\t\t\twidth: 34px;\n\t\t\theight: 34px;\n\t\t\tborder-radius: 999px;\n\t\t\tbackground: #e5e7eb;\n\t\t\tcolor: #374151;\n\t\t\tfont-size: 12px;\n\t\t\tfont-weight: 800;\n\t\t\ttransition: background .15s ease, color .15s ease, transform .15s ease;\n\t\t}\n\t\t.formation-settings-button[aria-pressed=\"true\"] {\n\t\t\tbackground: #2563eb;\n\t\t\tcolor: white;\n\t\t}\n\t\t.formation-settings-button:focus {\n\t\t\toutline: 2px solid #93c5fd;\n\t\t\toutline-offset: 2px;\n\t\t}\n\t\t.marker-editor {\n\t\t\tposition: absolute;\n\t\t\tleft: 50%;\n\t\t\ttop: 100%;\n\t\t\ttransform: translateX(-50%);\n\t\t\twidth: min(86vw, 290px);\n\t\t\tmargin-top: 8px;\n\t\t\tpadding: 10px;\n\t\t\tborder-radius: 14px;\n\t\t\tbackground: rgba(255,255,255,.96);\n\t\t\tbox-shadow: 0 12px 28px rgba(0,0,0,.34);\n\t\t\ttext-shadow: none;\n\t\t\tcolor: #111827;\n\t\t\tz-index: 70;\n\t\t}\n\t\t.marker-editor.editor-up {\n\t\t\ttop: auto;\n\t\t\tbottom: 100%;\n\t\t\tmargin-top: 0;\n\t\t\tmargin-bottom: 8px;\n\t\t}\n\t\t.marker-editor.popup-align-left,\n\t\t.match-day-marker-popup.popup-align-left {\n\t\t\tleft: 0;\n\t\t\tright: auto;\n\t\t\ttransform: none;\n\t\t}\n\t\t.marker-editor.popup-align-right,\n\t\t.match-day-marker-popup.popup-align-right {\n\t\t\tleft: auto;\n\t\t\tright: 0;\n\t\t\ttransform: none;\n\t\t}\n\t\t.marker-editor select {\n\t\t\twidth: 100%;\n\t\t\tborder: 1px solid #cbd5e1;\n\t\t\tborder-radius: 10px;\n\t\t\tpadding: 8px;\n\t\t\tfont-size: 16px;\n\t\t\tbackground: white;\n\t\t}\n\t\t.marker-editor button {\n\t\t\twidth: 100%;\n\t\t\tmargin-top: 10px;\n\t\t\tborder-radius: 12px;\n\t\t\tbackground: #16a34a;\n\t\t\tcolor: white;\n\t\t\tfont-weight: 800;\n\t\t\tfont-size: 17px;\n\t\t\tpadding: 12px;\n\t\t}\n\t\t.pitch-drawer {\n\t\t\tposition: fixed;\n\t\t\tleft: 0;\n\t\t\tright: 0;\n\t\t\tbottom: 0;\n\t\t\twidth: 100%;\n\t\t\tmax-width: 100vw;\n\t\t\toverflow-x: hidden;\n\t\t\theight: 52vh;\n\t\t\tmax-height: 88vh;\n\t\t\tbackground: white;\n\t\t\tborder-radius: 22px 22px 0 0;\n\t\t\tbox-shadow: 0 -16px 40px rgba(0,0,0,.35);\n\t\t\ttransition: height .18s ease;\n\t\t\tz-index: 20;\n\t\t\tdisplay: flex;\n\t\t\tflex-direction: column;\n\t\t}\n\t\t.pitch-drawer[data-state=\"collapsed\"] { height: 92px; }\n\t\t.pitch-drawer[data-state=\"expanded\"] {\n\t\t\theight: min(86vh, calc(100dvh - 24px));\n\t\t\tmax-height: calc(100dvh - 24px);\n\t\t\tborder-radius: 22px 22px 0 0;\n\t\t}\n\t\t.drawer-handle {\n\t\t\twidth: 100%;\n\t\t\tmin-height: 44px;\n\t\t\tdisplay: flex;\n\t\t\talign-items: center;\n\t\t\tjustify-content: center;\n\t\t\tcursor: grab;\n\t\t\ttouch-action: manipulation;\n\t\t}\n\t\t.drawer-handle:after {\n\t\t\tcontent: \"\";\n\t\t\twidth: 76px;\n\t\t\theight: 10px;\n\t\t\tborder-radius: 999px;\n\t\t\tbackground: #cbd5e1;\n\t\t}\n\t\t.drawer-body {\n\t\t\toverflow-y: auto;\n\t\t\toverflow-x: hidden;\n\t\t\t-webkit-overflow-scrolling: touch;\n\t\t\tpadding: 0 16px 24px;\n\t\t}\n\t\t.drawer-body:not([data-detail-mode=\"full\"]) [data-drawer-extended] {\n\t\t\tdisplay: none;\n\t\t}\n\t\t.drawer-body input,\n\t\t.drawer-body select,\n\t\t.drawer-body button {\n\t\t\tmin-width: 0;\n\t\t}\n\t\t.drawer-list-footer {\n\t\t\tmargin-top: 16px;\n\t\t\tpadding-top: 14px;\n\t\t\tborder-top: 1px solid #e5e7eb;\n\t\t}\n\t\t.drawer-list-nav a,\n\t\t.drawer-list-footer a {\n\t\t\tdisplay: block;\n\t\t\twidth: 100%;\n\t\t}\n\t\t.drawer-list-footer a {\n\t\t\tmargin-top: 0;\n\t\t\tmargin-bottom: 0;\n\t\t}\n\t\t.drawer-row-actions {\n\t\t\tdisplay: grid;\n\t\t\tgrid-template-columns: repeat(auto-fit, minmax(120px, 1fr));\n\t\t\tgap: 8px;\n\t\t\tmargin-top: 12px;\n\t\t}\n\t\t.drawer-row-actions form {\n\t\t\tmargin: 0;\n\t\t}\n\t\t.drawer-row-action {\n\t\t\tdisplay: block;\n\t\t\twidth: 100%;\n\t\t\tborder-radius: 8px;\n\t\t\tborder: 1px solid #bfdbfe;\n\t\t\tbackground: #eff6ff;\n\t\t\tcolor: #1d4ed8;\n\t\t\tpadding: 9px 12px;\n\t\t\ttext-align: center;\n\t\t\tfont-weight: 700;\n\t\t}\n\t\t.match-day-summary {\n\t\t\tdisplay: grid;\n\t\t\tgrid-template-columns: repeat(3, minmax(0, 1fr));\n\t\t\tgap: 8px;\n\t\t}\n\t\t.match-day-stat {\n\t\t\tborder: 1px solid #e5e7eb;\n\t\t\tborder-radius: 8px;\n\t\t\tpadding: 10px;\n\t\t\tbackground: #f9fafb;\n\t\t\ttext-align: center;\n\t\t}\n\t\t.match-day-stat-value {\n\t\t\tfont-size: 20px;\n\t\t\tline-height: 1;\n\t\t\tfont-weight: 800;\n\t\t\tcolor: #111827;\n\t\t}\n\t\t.match-day-stat-label {\n\t\t\tmargin-top: 4px;\n\t\t\tfont-size: 11px;\n\t\t\tfont-weight: 700;\n\t\t\ttext-transform: uppercase;\n\t\t\tcolor: #6b7280;\n\t\t}\n\t\t.match-day-player-row {\n\t\t\tdisplay: grid;\n\t\t\tgrid-template-columns: minmax(0, 1fr) auto;\n\t\t\tgap: 12px;\n\t\t\talign-items: center;\n\t\t\tborder: 1px solid #e5e7eb;\n\t\t\tborder-radius: 8px;\n\t\t\tpadding: 12px;\n\t\t\tbackground: white;\n\t\t}\n\t\t.match-day-player-name {\n\t\t\tfont-weight: 800;\n\t\t\tcolor: #111827;\n\t\t}\n\t\t.match-day-player-meta {\n\t\t\tmargin-top: 2px;\n\t\t\tfont-size: 13px;\n\t\t\tcolor: #6b7280;\n\t\t}\n\t\t.match-day-minutes {\n\t\t\tmin-width: 58px;\n\t\t\tborder-radius: 8px;\n\t\t\tbackground: #ecfdf5;\n\t\t\tcolor: #047857;\n\t\t\tpadding: 8px 10px;\n\t\t\ttext-align: center;\n\t\t\tfont-weight: 900;\n\t\t}\n\t\t.match-day-minutes span {\n\t\t\tdisplay: block;\n\t\t\tfont-size: 11px;\n\t\t\tfont-weight: 700;\n\t\t\tcolor: #065f46;\n\t\t}\n\t\t.match-day-current {\n\t\t\tdisplay: inline-flex;\n\t\t\talign-items: center;\n\t\t\tborder-radius: 999px;\n\t\t\tbackground: #dcfce7;\n\t\t\tcolor: #166534;\n\t\t\tpadding: 2px 8px;\n\t\t\tfont-size: 11px;\n\t\t\tfont-weight: 800;\n\t\t}\n\t\t.match-day-actions {\n\t\t\tdisplay: grid;\n\t\t\tgrid-template-columns: repeat(3, minmax(0, 1fr));\n\t\t\tgap: 6px;\n\t\t\tmargin-top: 10px;\n\t\t\tgrid-column: 1 / -1;\n\t\t}\n\t\t.match-day-action-button {\n\t\t\twidth: 100%;\n\t\t\tborder-radius: 8px;\n\t\t\tbackground: #f3f4f6;\n\t\t\tcolor: #111827;\n\t\t\tpadding: 9px 8px;\n\t\t\tfont-size: 14px;\n\t\t\tfont-weight: 800;\n\t\t}\n\t\t.match-day-action-button.primary {\n\t\t\tbackground: #dcfce7;\n\t\t\tcolor: #166534;\n\t\t}\n\t\t.match-day-action-button.warning {\n\t\t\tbackground: #fee2e2;\n\t\t\tcolor: #991b1b;\n\t\t}\n\t\t.match-day-extra-menu-button {\n\t\t\tdisplay: inline-flex;\n\t\t\talign-items: center;\n\t\t\tjustify-content: center;\n\t\t\twidth: 36px;\n\t\t\theight: 36px;\n\t\t\tborder-radius: 8px;\n\t\t\tbackground: #f3f4f6;\n\t\t\tcolor: #111827;\n\t\t\tfont-size: 18px;\n\t\t\tfont-weight: 900;\n\t\t\tline-height: 1;\n\t\t}\n\t\t.match-day-extra-events {\n\t\t\tdisplay: grid;\n\t\t\tgrid-template-columns: repeat(2, minmax(0, 1fr));\n\t\t\tgap: 6px;\n\t\t}\n\t\t.match-day-extra-events form {\n\t\t\tmargin: 0;\n\t\t}\n\t\t.match-day-sub-form {\n\t\t\tgrid-column: 1 / -1;\n\t\t\tdisplay: grid;\n\t\t\tgrid-template-columns: minmax(0, 1fr) 68px auto;\n\t\t\tgap: 6px;\n\t\t\talign-items: center;\n\t\t\tmargin-top: 8px;\n\t\t}\n\t\t.match-day-sub-form select,\n\t\t.match-day-sub-form input {\n\t\t\twidth: 100%;\n\t\t\tmin-width: 0;\n\t\t\tborder: 1px solid #cbd5e1;\n\t\t\tborder-radius: 8px;\n\t\t\tpadding: 9px 8px;\n\t\t\tfont-size: 13px;\n\t\t\tbackground: white;\n\t\t}\n\t\t.match-day-global-actions {\n\t\t\tdisplay: grid;\n\t\t\tgrid-template-columns: minmax(0, 1fr);\n\t\t\tgap: 8px;\n\t\t}\n\t\t.match-day-start-panel {\n\t\t\tborder: 1px solid #d1d5db;\n\t\t\tborder-radius: 8px;\n\t\t\tbackground: #f9fafb;\n\t\t\tpadding: 12px;\n\t\t}\n\t\t.match-day-countdown {\n\t\t\tdisplay: grid;\n\t\t\tgrid-template-columns: minmax(0, 1fr) auto;\n\t\t\tgap: 10px;\n\t\t\talign-items: center;\n\t\t\tmargin-bottom: 10px;\n\t\t}\n\t\t.match-day-countdown-label {\n\t\t\tfont-size: 12px;\n\t\t\tfont-weight: 800;\n\t\t\ttext-transform: uppercase;\n\t\t\tcolor: #6b7280;\n\t\t}\n\t\t.match-day-countdown-time {\n\t\t\tfont-size: 24px;\n\t\t\tline-height: 1;\n\t\t\tfont-weight: 900;\n\t\t\tcolor: #111827;\n\t\t\tfont-variant-numeric: tabular-nums;\n\t\t\tcursor: pointer;\n\t\t\tuser-select: none;\n\t\t}\n\t\t.match-day-countdown-meta {\n\t\t\tgrid-column: 1 / -1;\n\t\t\tfont-size: 13px;\n\t\t\tcolor: #4b5563;\n\t\t}\n\t\t.match-day-start-actions {\n\t\t\tdisplay: grid;\n\t\t\tgrid-template-columns: repeat(auto-fit, minmax(140px, 1fr));\n\t\t\tgap: 8px;\n\t\t}\n\t\t.match-day-start-at-form {\n\t\t\tdisplay: none;\n\t\t\tmargin-top: 10px;\n\t\t}\n\t\t.match-day-start-panel[data-start-at-open=\"true\"] .match-day-start-at-form {\n\t\t\tdisplay: block;\n\t\t}\n\t\t.match-day-start-input-row {\n\t\t\tdisplay: grid;\n\t\t\tgrid-template-columns: minmax(0, 1fr) auto;\n\t\t\tgap: 8px;\n\t\t}\n\t\t.match-day-start-input-row input {\n\t\t\twidth: 100%;\n\t\t\tborder: 1px solid #cbd5e1;\n\t\t\tborder-radius: 8px;\n\t\t\tpadding: 9px 8px;\n\t\t\tfont-size: 14px;\n\t\t\tbackground: white;\n\t\t}\n\t\t.match-day-start-quick {\n\t\t\tdisplay: grid;\n\t\t\tgrid-template-columns: repeat(5, minmax(0, 1fr));\n\t\t\tgap: 6px;\n\t\t\tmargin-top: 8px;\n\t\t}\n\t\t.match-day-start-quick button {\n\t\t\tborder-radius: 8px;\n\t\t\tbackground: #e5e7eb;\n\t\t\tcolor: #374151;\n\t\t\tpadding: 8px 6px;\n\t\t\tfont-size: 12px;\n\t\t\tfont-weight: 800;\n\t\t}\n\t\t.match-day-marker-popup {\n\t\t\tposition: absolute;\n\t\t\tleft: 50%;\n\t\t\ttop: 100%;\n\t\t\ttransform: translateX(-50%);\n\t\t\twidth: min(86vw, 270px);\n\t\t\tmargin-top: 8px;\n\t\t\tborder-radius: 12px;\n\t\t\tbackground: rgba(255,255,255,.98);\n\t\t\tcolor: #111827;\n\t\t\ttext-shadow: none;\n\t\t\tbox-shadow: 0 16px 34px rgba(0,0,0,.36);\n\t\t\tpadding: 10px;\n\t\t\tz-index: 70;\n\t\t\ttext-align: left;\n\t\t}\n\t\t.match-day-marker-popup.hidden {\n\t\t\tdisplay: none;\n\t\t}\n\t\t.match-day-marker-title {\n\t\t\tdisplay: flex;\n\t\t\talign-items: center;\n\t\t\tjustify-content: space-between;\n\t\t\tgap: 8px;\n\t\t\tmargin-bottom: 8px;\n\t\t\tfont-size: 15px;\n\t\t\tfont-weight: 900;\n\t\t}\n\t\t.match-day-popup-actions {\n\t\t\tdisplay: grid;\n\t\t\tgrid-template-columns: repeat(2, minmax(0, 1fr));\n\t\t\tgap: 6px;\n\t\t}\n\t\t.match-day-popup-sub-form,\n\t\t.match-day-popup-swap-form {\n\t\t\tdisplay: grid;\n\t\t\tgrid-template-columns: minmax(0, 1fr) 72px;\n\t\t\tgap: 8px;\n\t\t\tmargin-top: 8px;\n\t\t}\n\t\t.match-day-step-panel {\n\t\t\tdisplay: none;\n\t\t\tmargin-top: 8px;\n\t\t\tborder-top: 1px solid #e5e7eb;\n\t\t\tpadding-top: 8px;\n\t\t}\n\t\t.match-day-step-panel.is-open {\n\t\t\tdisplay: block;\n\t\t}\n\t\t.match-day-goal-form {\n\t\t\tdisplay: grid;\n\t\t\tgrid-template-columns: minmax(0, 1fr) auto;\n\t\t\tgap: 6px;\n\t\t\talign-items: center;\n\t\t}\n\t\t.match-day-quick-sub-options {\n\t\t\tdisplay: grid;\n\t\t\tgrid-template-columns: repeat(2, minmax(0, 1fr));\n\t\t\tgap: 6px;\n\t\t\tmargin-bottom: 8px;\n\t\t\tgrid-column: 1 / -1;\n\t\t}\n\t\t.match-day-popup-sub-form select,\n\t\t.match-day-popup-swap-form select {\n\t\t\tgrid-column: 1 / -1;\n\t\t\tfont-size: 16px;\n\t\t\tpadding: 12px;\n\t\t}\n\t\t.match-day-sub-injury-option {\n\t\t\tgrid-column: 1 / -1;\n\t\t\tdisplay: grid;\n\t\t\tgrid-template-columns: auto minmax(0, 1fr);\n\t\t\tgap: 8px;\n\t\t\talign-items: center;\n\t\t\tborder: 1px solid #fcd34d;\n\t\t\tborder-radius: 8px;\n\t\t\tbackground: #fffbeb;\n\t\t\tcolor: #92400e;\n\t\t\tpadding: 8px 10px;\n\t\t\tfont-size: 13px;\n\t\t\tfont-weight: 800;\n\t\t}\n\t\t.match-day-sub-injury-option input {\n\t\t\twidth: 18px;\n\t\t\theight: 18px;\n\t\t}\n\t\t.match-day-popup-sub-form > button[type='submit'],\n\t\t.match-day-popup-swap-form > button[type='submit'] {\n\t\t\tgrid-column: 1 / -1;\n\t\t}\n\t\t.match-day-score {\n\t\t\tdisplay: grid;\n\t\t\tgrid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);\n\t\t\tgap: 10px;\n\t\t\talign-items: center;\n\t\t\tborder: 1px solid #d1d5db;\n\t\t\tborder-radius: 8px;\n\t\t\tbackground: white;\n\t\t\tpadding: 10px;\n\t\t\ttext-align: center;\n\t\t}\n\t\t.match-day-score-team {\n\t\t\tmin-width: 0;\n\t\t\tfont-size: 12px;\n\t\t\tfont-weight: 800;\n\t\t\ttext-transform: uppercase;\n\t\t\tcolor: #6b7280;\n\t\t\toverflow-wrap: anywhere;\n\t\t}\n\t\t.match-day-score-value {\n\t\t\tfont-size: 28px;\n\t\t\tline-height: 1;\n\t\t\tfont-weight: 900;\n\t\t\tcolor: #111827;\n\t\t\tfont-variant-numeric: tabular-nums;\n\t\t}\n\t\t.match-day-edit-lineup-callout {\n\t\t\tborder: 2px solid #f59e0b;\n\t\t\tbox-shadow: 0 0 0 4px rgba(245, 158, 11, .22);\n\t\t\tborder-radius: 10px;\n\t\t\tpadding: 8px;\n\t\t\ttransition: box-shadow .18s ease, border-color .18s ease;\n\t\t}\n\t\t.match-day-edit-lineup-message {\n\t\t\tdisplay: none;\n\t\t\tmargin-bottom: 8px;\n\t\t\tborder: 1px solid #fcd34d;\n\t\t\tborder-radius: 8px;\n\t\t\tbackground: #fffbeb;\n\t\t\tcolor: #92400e;\n\t\t\tpadding: 8px 10px;\n\t\t\tfont-size: 13px;\n\t\t\tfont-weight: 800;\n\t\t}\n\t\t.match-day-edit-lineup-callout .match-day-edit-lineup-message {\n\t\t\tdisplay: block;\n\t\t}\n\t\t.match-day-popup-sub-form input[type='number'],\n\t\t.match-day-goal-form select {\n\t\t\tmin-width: 0;\n\t\t\tborder: 1px solid #cbd5e1;\n\t\t\tborder-radius: 8px;\n\t\t\tpadding: 8px;\n\t\t\tfont-size: 14px;\n\t\t\tbackground: white;\n\t\t}\n\t\t.speech-input-row {\n\t\t\tdisplay: grid;\n\t\t\tgrid-template-columns: minmax(0, 1fr) auto;\n\t\t\tgap: 8px;\n\t\t\talign-items: start;\n\t\t}\n\t\t.speech-button {\n\t\t\tmin-width: 44px;\n\t\t\tmin-height: 44px;\n\t\t\tborder-radius: 10px;\n\t\t\tbackground: #e5e7eb;\n\t\t\tcolor: #374151;\n\t\t\tfont-weight: 800;\n\t\t}\n\t\t.speech-button[aria-pressed=\"true\"] {\n\t\t\tbackground: #dc2626;\n\t\t\tcolor: white;\n\t\t}\n\t\t.speech-button[disabled] {\n\t\t\topacity: .45;\n\t\t\tcursor: not-allowed;\n\t\t}\n\t\t.drawer-body [data-formation-advanced-field] {\n\t\t\tdisplay: none;\n\t\t}\n\t\t.drawer-body[data-formation-advanced=\"true\"] [data-formation-advanced-field] {\n\t\t\tdisplay: grid;\n\t\t}\n\t\t.drawer-body [data-formation-advanced-field][hidden] {\n\t\t\tdisplay: none !important;\n\t\t}\n\t\t@media (min-width: 900px) {\n\t\t\t.pitch {\n\t\t\t\tright: auto;\n\t\t\t\twidth: calc(100vw - 420px);\n\t\t\t}\n\t\t\t.pitch-drawer {\n\t\t\t\tleft: auto;\n\t\t\t\ttop: 0;\n\t\t\t\tright: 0;\n\t\t\t\twidth: 420px;\n\t\t\t\theight: 100vh !important;\n\t\t\t\tmax-height: none;\n\t\t\t\tborder-radius: 22px 0 0 22px;\n\t\t\t}\n\t\t\t.drawer-handle,\n\t\t\t.back-to-pitch-button { display: none; }\n\t\t}\n\t\t@media (max-width: 899px) {\n\t\t\t.pitch {\n\t\t\t\twidth: 100vw;\n\t\t\t\tmax-width: 100vw;\n\t\t\t}\n\t\t\t.pitch-drawer {\n\t\t\t\tleft: 0;\n\t\t\t\tright: 0;\n\t\t\t\twidth: 100vw;\n\t\t\t\tmax-width: 100vw;\n\t\t\t}\n\t\t\t.slot-editor-row { grid-template-columns: minmax(0, 1fr) 58px; }\n\t\t}\n\t\t@media (max-width: 480px) {\n\t\t\t.match-day-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }\n\t\t\t.match-day-sub-form { grid-template-columns: minmax(0, 1fr) 58px; }\n\t\t\t.match-day-sub-form button { grid-column: 1 / -1; }\n\t\t\t.match-day-popup-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }\n\t\t\t.match-day-popup-sub-form { grid-template-columns: minmax(0, 1fr) 54px; }\n\t\t\t.match-day-popup-sub-form button { grid-column: 1 / -1; }\n\t\t\t.pitch-lines {\n\t\t\t\tinset: 36px 14px 104px;\n\t\t\t\tborder-width: 3px;\n\t\t\t}\n\t\t\t.pitch-lines:before,\n\t\t\t.pitch-lines:after,\n\t\t\t.pitch-box,\n\t\t\t.goal-box,\n\t\t\t.goal-frame,\n\t\t\t.penalty-arc,\n\t\t\t.corner {\n\t\t\t\tborder-width: 3px;\n\t\t\t}\n\t\t\t.pitch-marker {\n\t\t\t\twidth: 76px;\n\t\t\t}\n\t\t\t.shirt {\n\t\t\t\twidth: 45px;\n\t\t\t\theight: 54px;\n\t\t\t}\n\t\t\t.shirt:before,\n\t\t\t.shirt:after {\n\t\t\t\twidth: 18px;\n\t\t\t\theight: 24px;\n\t\t\t}\n\t\t\t.shirt:before { left: -13px; }\n\t\t\t.shirt:after { right: -13px; }\n\t\t\t.shirt-number {\n\t\t\t\tfont-size: 22px;\n\t\t\t}\n\t\t\t.marker-caption {\n\t\t\t\tfont-size: 13px;\n\t\t\t}\n\t\t}\n\t</style><script>\n\t\twindow.drawerStateStorageKey = \"baileys-hammer.drawer.state\";\n\t\twindow.setDrawerState = function(state) {\n\t\t\tdocument.querySelectorAll(\".pitch-drawer\").forEach(function(drawer) {\n\t\t\t\tdrawer.dataset.state = state;\n\t\t\t});\n\t\t\ttry {\n\t\t\t\twindow.sessionStorage.setItem(window.drawerStateStorageKey, state);\n\t\t\t} catch (err) {}\n\t\t};\n\t\twindow.openDrawer = function() {\n\t\t\twindow.setDrawerState(\"expanded\");\n\t\t};\n\t\twindow.restoreDrawerState = function(root) {\n\t\t\tvar drawers = (root || document).querySelectorAll(\".pitch-drawer\");\n\t\t\tif (!drawers.length) return;\n\t\t\tvar storedState = \"\";\n\t\t\ttry {\n\t\t\t\tstoredState = window.sessionStorage.getItem(window.drawerStateStorageKey) || \"\";\n\t\t\t} catch (err) {}\n\t\t\tdrawers.forEach(function(drawer) {\n\t\t\t\tif (storedState === \"expanded\" || storedState === \"collapsed\") {\n\t\t\t\t\tdrawer.dataset.state = storedState;\n\t\t\t\t}\n\t\t\t\ttry {\n\t\t\t\t\twindow.sessionStorage.setItem(window.drawerStateStorageKey, drawer.dataset.state || \"collapsed\");\n\t\t\t\t} catch (err) {}\n\t\t\t});\n\t\t};\n\t\twindow.syncDrawerDetailButton = function(button, full) {\n\t\t\tbutton.textContent = full ? \"Simple\" : \"Full\";\n\t\t\tbutton.setAttribute(\"aria-label\", full ? \"Show simple drawer details\" : \"Show full drawer details\");\n\t\t\tbutton.setAttribute(\"aria-pressed\", full ? \"true\" : \"false\");\n\t\t};\n\t\twindow.toggleDrawer = function(drawerPart) {\n\t\t\tvar drawer = drawerPart.closest(\".pitch-drawer\");\n\t\t\tif (!drawer) return;\n\t\t\twindow.setDrawerState(drawer.dataset.state === \"expanded\" ? \"collapsed\" : \"expanded\");\n\t\t};\n\t\twindow.toggleDrawerFull = function(button) {\n\t\t\tvar drawer = button.closest(\".pitch-drawer\");\n\t\t\tif (!drawer) return;\n\t\t\tvar body = drawer.querySelector(\".drawer-body\");\n\t\t\tif (!body) return;\n\t\t\tvar full = body.dataset.detailMode !== \"full\";\n\t\t\tbody.dataset.detailMode = full ? \"full\" : \"simple\";\n\t\t\twindow.syncDrawerDetailButton(button, full);\n\t\t};\n\t\twindow.showLineupToast = function(message) {\n\t\t\tvar toast = document.querySelector(\"[data-pitch-toast]\");\n\t\t\tif (!toast) {\n\t\t\t\ttoast = document.createElement(\"div\");\n\t\t\t\ttoast.dataset.pitchToast = \"true\";\n\t\t\t\ttoast.className = \"pitch-toast\";\n\t\t\t\tdocument.body.appendChild(toast);\n\t\t\t}\n\t\t\ttoast.textContent = message;\n\t\t\ttoast.classList.add(\"is-visible\");\n\t\t\twindow.clearTimeout(window.pitchToastTimer);\n\t\t\twindow.pitchToastTimer = window.setTimeout(function() {\n\t\t\t\ttoast.classList.remove(\"is-visible\");\n\t\t\t}, 2600);\n\t\t};\n\t\twindow.selectPitchSlot = function(indexNumber) {\n\t\t\tvar panel = document.querySelector(\"[data-slot-panel='\" + indexNumber + \"']\");\n\t\t\tif (panel) {\n\t\t\t\twindow.setDrawerState(\"expanded\");\n\t\t\t\tdocument.querySelectorAll(\"[data-slot-panel]\").forEach(function(panel) {\n\t\t\t\t\tpanel.classList.add(\"hidden\");\n\t\t\t\t});\n\t\t\t\tpanel.classList.remove(\"hidden\");\n\t\t\t\tpanel.scrollIntoView({ block: \"center\" });\n\t\t\t} else {\n\t\t\t\twindow.showLineupToast(\"Select a line-up or formation to edit\");\n\t\t\t}\n\t\t};\n\t\twindow.showPitchEditUnavailableToast = function() {\n\t\t\twindow.showLineupToast(\"Select a line-up or formation to edit\");\n\t\t};\n\t\twindow.copyLineupShareLink = function(button, event) {\n\t\t\tif (event) event.preventDefault();\n\t\t\tvar rawURL = button.dataset.shareUrl || window.location.href;\n\t\t\tvar shareURL = new URL(rawURL, window.location.href).href;\n\t\t\tvar copied = navigator.clipboard && navigator.clipboard.writeText\n\t\t\t\t? navigator.clipboard.writeText(shareURL)\n\t\t\t\t: Promise.reject(new Error(\"Clipboard unavailable\"));\n\t\t\tcopied.then(function() {\n\t\t\t\twindow.showLineupToast(\"Copied formation link\");\n\t\t\t}).catch(function() {\n\t\t\t\twindow.prompt(\"Copy formation link\", shareURL);\n\t\t\t});\n\t\t};\n\t\twindow.handleFormationMarkerTap = function(marker) {\n\t\t\tif (marker.dataset.editable === \"true\") {\n\t\t\t\twindow.selectPitchSlot(marker.dataset.slot);\n\t\t\t\treturn;\n\t\t\t}\n\t\t\twindow.showPitchEditUnavailableToast();\n\t\t};\n\t\t\twindow.keepPitchPopupInViewport = function(popup) {\n\t\t\t\tif (!popup) return;\n\t\t\t\tpopup.style.marginLeft = \"0px\";\n\t\t\t\tvar rect = popup.getBoundingClientRect();\n\t\t\t\tvar gutter = 10;\n\t\t\tvar offset = 0;\n\t\t\tif (rect.left < gutter) {\n\t\t\t\toffset = gutter - rect.left;\n\t\t\t} else if (rect.right > window.innerWidth - gutter) {\n\t\t\t\toffset = window.innerWidth - gutter - rect.right;\n\t\t\t}\n\t\t\tif (offset !== 0) {\n\t\t\t\t\tpopup.style.marginLeft = offset.toFixed(0) + \"px\";\n\t\t\t\t}\n\t\t\t};\n\t\t\twindow.closePitchPlayerEditors = function() {\n\t\t\t\tdocument.querySelectorAll(\"[data-marker-editor]\").forEach(function(editor) {\n\t\t\t\t\teditor.classList.add(\"hidden\");\n\t\t\t\t});\n\t\t\t\tdocument.querySelectorAll(\".pitch-marker.is-editing\").forEach(function(marker) {\n\t\t\t\t\tmarker.classList.remove(\"is-editing\");\n\t\t\t\t});\n\t\t\t};\n\t\t\twindow.showPitchPlayerEditor = function(indexNumber) {\n\t\t\t\twindow.closePitchPlayerEditors();\n\t\t\t\tdocument.querySelectorAll(\"[data-marker-view]\").forEach(function(view) {\n\t\t\t\t\tview.classList.remove(\"hidden\");\n\t\t\t\t});\n\t\t\t\tvar view = document.querySelector(\"[data-marker-view='\" + indexNumber + \"']\");\n\t\t\t\tvar editor = document.querySelector(\"[data-marker-editor='\" + indexNumber + \"']\");\n\t\t\t\tif (view && editor) {\n\t\t\t\teditor.classList.remove(\"hidden\");\n\t\t\t\tvar marker = editor.closest(\".pitch-marker\");\n\t\t\t\tif (marker) marker.classList.add(\"is-editing\");\n\t\t\t\twindow.keepPitchPopupInViewport(editor);\n\t\t\t\tvar select = editor.querySelector(\"select\");\n\t\t\t\tif (select) select.focus();\n\t\t\t} else {\n\t\t\t\twindow.showLineupToast(\"Select a line-up or formation to edit\");\n\t\t\t}\n\t\t};\n\t\twindow.toggleMatchDayActions = function(button, event) {\n\t\t\tif (event) {\n\t\t\t\tevent.preventDefault();\n\t\t\t\tevent.stopPropagation();\n\t\t\t}\n\t\t\tvar marker = button.closest(\"[data-match-day-marker]\");\n\t\t\tif (!marker) return;\n\t\t\tvar popup = marker.querySelector(\"[data-match-day-popup]\");\n\t\t\tif (!popup) {\n\t\t\t\twindow.openMatchDayLineupEditor();\n\t\t\t\treturn;\n\t\t\t}\n\t\t\tvar isHidden = popup.classList.contains(\"hidden\");\n\t\t\tdocument.querySelectorAll(\"[data-match-day-popup]\").forEach(function(otherPopup) {\n\t\t\t\totherPopup.classList.add(\"hidden\");\n\t\t\t});\n\t\t\tdocument.querySelectorAll(\".pitch-marker.is-actions-open\").forEach(function(openMarker) {\n\t\t\t\topenMarker.classList.remove(\"is-actions-open\");\n\t\t\t});\n\t\t\tif (isHidden) {\n\t\t\t\tpopup.classList.remove(\"hidden\");\n\t\t\t\tmarker.classList.add(\"is-actions-open\");\n\t\t\t\twindow.keepPitchPopupInViewport(popup);\n\t\t\t\t}\n\t\t\t};\n\t\twindow.openMatchDayLineupEditor = function() {\n\t\t\tvar drawer = document.querySelector(\".pitch-drawer\");\n\t\t\tif (drawer) {\n\t\t\t\twindow.setDrawerState(\"expanded\");\n\t\t\t}\n\t\t\tvar editLink = document.querySelector(\"[data-match-day-edit-lineup]\");\n\t\t\tif (!editLink) return;\n\t\t\tvar editTarget = editLink.closest(\"[data-match-day-edit-lineup-target]\") || editLink;\n\t\t\teditTarget.classList.add(\"match-day-edit-lineup-callout\");\n\t\t\twindow.clearTimeout(window.matchDayEditLineupHighlightTimeout);\n\t\t\twindow.matchDayEditLineupHighlightTimeout = window.setTimeout(function() {\n\t\t\t\teditTarget.classList.remove(\"match-day-edit-lineup-callout\");\n\t\t\t}, 4500);\n\t\t\teditTarget.scrollIntoView({ behavior: \"smooth\", block: \"center\" });\n\t\t\teditLink.focus({ preventScroll: true });\n\t\t};\n\t\twindow.toggleMatchDayLineupOptions = function(button) {\n\t\t\tvar options = document.querySelector(\"[data-match-day-lineup-options]\");\n\t\t\tif (!options) return;\n\t\t\tvar hidden = options.classList.toggle(\"hidden\");\n\t\t\tbutton.setAttribute(\"aria-expanded\", hidden ? \"false\" : \"true\");\n\t\t};\n\t\twindow.toggleMatchDayEvents = function(button) {\n\t\t\tvar events = document.querySelector(\"[data-match-day-events]\");\n\t\t\tif (!events) return;\n\t\t\tvar hidden = events.classList.toggle(\"hidden\");\n\t\t\tbutton.setAttribute(\"aria-expanded\", hidden ? \"false\" : \"true\");\n\t\t};\n\t\twindow.showMatchDayStepPanel = function(button, panelName) {\n\t\t\tvar popup = button.closest(\"[data-match-day-popup]\");\n\t\t\tif (!popup) return;\n\t\t\tpopup.querySelectorAll(\"[data-match-day-step-panel]\").forEach(function(panel) {\n\t\t\t\tpanel.classList.toggle(\"is-open\", panel.dataset.matchDayStepPanel === panelName);\n\t\t\t});\n\t\t\tvar panel = popup.querySelector(\"[data-match-day-step-panel='\" + panelName + \"']\");\n\t\t\tif (panel) {\n\t\t\t\twindow.keepPitchPopupInViewport(popup);\n\t\t\t\tvar focusTarget = panel.querySelector(\"select, button, input\");\n\t\t\t\tif (focusTarget) focusTarget.focus();\n\t\t\t}\n\t\t};\n\n\t\twindow.updateMatchDaySwapButton = function(select) {\n\t\t\tvar form = select.closest(\"form\");\n\t\t\tif (!form) return;\n\t\t\tvar button = form.querySelector(\"[data-match-day-swap-button]\");\n\t\t\tif (!button) return;\n\t\t\tvar playerName = select.dataset.currentPlayerName || \"player\";\n\t\t\tvar selected = select.options[select.selectedIndex];\n\t\t\tvar swapName = selected && selected.value ? (selected.dataset.playerName || selected.textContent) : \"\";\n\t\t\tbutton.classList.toggle(\"hidden\", !swapName);\n\t\t\tif (swapName) {\n\t\t\t\tbutton.textContent = \"Swap \" + playerName + \" and \" + swapName;\n\t\t\t}\n\t\t};\n\n\t\tfunction padLineupNumber(value) {\n\t\t\treturn String(value).padStart(2, \"0\");\n\t\t}\n\n\t\tfunction matchDayLocalInputValue(date) {\n\t\t\treturn date.getFullYear() + \"-\" +\n\t\t\t\tpadLineupNumber(date.getMonth() + 1) + \"-\" +\n\t\t\t\tpadLineupNumber(date.getDate()) + \"T\" +\n\t\t\t\tpadLineupNumber(date.getHours()) + \":\" +\n\t\t\t\tpadLineupNumber(date.getMinutes());\n\t\t}\n\n\t\tfunction formatMatchDayCountdown(totalSeconds) {\n\t\t\tvar absSeconds = Math.abs(totalSeconds);\n\t\t\tvar hours = Math.floor(absSeconds / 3600);\n\t\t\tvar minutes = Math.floor((absSeconds % 3600) / 60);\n\t\t\tvar seconds = absSeconds % 60;\n\t\t\tif (hours > 0) {\n\t\t\t\treturn hours + \":\" + padLineupNumber(minutes) + \":\" + padLineupNumber(seconds);\n\t\t\t}\n\t\t\treturn minutes + \":\" + padLineupNumber(seconds);\n\t\t}\n\n\t\tfunction formatMatchDayCountdownMinutes(totalSeconds) {\n\t\t\treturn Math.floor(Math.abs(totalSeconds) / 60) + \"m\";\n\t\t}\n\n\t\tfunction pluralMatchDayUnit(value, unit) {\n\t\t\treturn value + \" \" + unit + (value === 1 ? \"\" : \"s\");\n\t\t}\n\n\t\tfunction formatMatchDayCountdownLong(totalSeconds) {\n\t\t\tif (totalSeconds <= 3600) return \"\";\n\t\t\tvar seconds = Math.abs(totalSeconds);\n\t\t\tif (seconds < 7200) return \"1 hour\";\n\t\t\tif (seconds < 86400) return pluralMatchDayUnit(Math.floor(seconds / 3600), \"hour\");\n\t\t\tif (seconds < 172800) return \"1 day\";\n\t\t\tif (seconds < 604800) return pluralMatchDayUnit(Math.floor(seconds / 86400), \"day\");\n\t\t\tif (seconds < 1209600) return \"1 week\";\n\t\t\tif (seconds < 2628000) return pluralMatchDayUnit(Math.floor(seconds / 604800), \"week\");\n\t\t\tif (seconds < 5256000) return \"1 month\";\n\t\t\tif (seconds < 31536000) return pluralMatchDayUnit(Math.floor(seconds / 2628000), \"month\");\n\t\t\tif (seconds < 47304000) return \"1 year\";\n\t\t\treturn pluralMatchDayUnit(Math.floor(seconds / 31536000), \"year\");\n\t\t}\n\n\t\twindow.updateMatchDayCountdowns = function(root) {\n\t\t\t(root || document).querySelectorAll(\"[data-match-day-countdown]\").forEach(function(countdown) {\n\t\t\t\tvar targetValue = countdown.dataset.matchClockBaseAt || countdown.dataset.matchStartAt;\n\t\t\t\tvar timeEl = countdown.querySelector(\"[data-countdown-time]\");\n\t\t\t\tvar labelEl = countdown.querySelector(\"[data-countdown-label]\");\n\t\t\t\tif (!targetValue || !timeEl || !labelEl) return;\n\t\t\t\tvar target = new Date(targetValue);\n\t\t\t\tif (Number.isNaN(target.getTime())) {\n\t\t\t\t\ttimeEl.textContent = \"--:--\";\n\t\t\t\t\tlabelEl.textContent = \"Kick-off\";\n\t\t\t\t\treturn;\n\t\t\t\t}\n\t\t\t\tvar baseMinute = parseInt(countdown.dataset.matchClockBaseMinute || \"0\", 10);\n\t\t\t\tvar paused = countdown.dataset.matchClockPaused === \"true\";\n\t\t\t\tvar finished = countdown.dataset.matchClockFinished === \"true\";\n\t\t\t\tvar started = countdown.dataset.matchClockStarted === \"true\";\n\t\t\t\tif (paused || finished) {\n\t\t\t\t\ttimeEl.textContent = baseMinute + \"m\";\n\t\t\t\t\tlabelEl.textContent = countdown.dataset.matchClockLabel || (finished ? \"Game ended\" : \"Game pause\");\n\t\t\t\t\treturn;\n\t\t\t\t}\n\t\t\t\tif (started) {\n\t\t\t\t\tvar elapsedSeconds = Math.max(0, baseMinute * 60 + Math.round((Date.now() - target.getTime()) / 1000));\n\t\t\t\t\ttimeEl.textContent = countdown.dataset.hideSeconds === \"true\" ? formatMatchDayCountdownMinutes(elapsedSeconds) : formatMatchDayCountdown(elapsedSeconds);\n\t\t\t\t\tlabelEl.textContent = countdown.dataset.matchClockLabel || \"Match running\";\n\t\t\t\t\treturn;\n\t\t\t\t}\n\t\t\t\tvar diffSeconds = Math.round((target.getTime() - Date.now()) / 1000);\n\t\t\t\tvar longLabel = formatMatchDayCountdownLong(diffSeconds);\n\t\t\t\tif (longLabel) {\n\t\t\t\t\ttimeEl.textContent = longLabel;\n\t\t\t\t\tlabelEl.textContent = \"Kick-off in\";\n\t\t\t\t\treturn;\n\t\t\t\t}\n\t\t\t\ttimeEl.textContent = countdown.dataset.hideSeconds === \"true\" ? formatMatchDayCountdownMinutes(diffSeconds) : formatMatchDayCountdown(diffSeconds);\n\t\t\t\tlabelEl.textContent = diffSeconds >= 0 ? \"Kick-off in\" : \"Match running\";\n\t\t\t});\n\t\t};\n\n\t\twindow.toggleMatchDayCountdownPrecision = function(timeEl) {\n\t\t\tvar countdown = timeEl.closest(\"[data-match-day-countdown]\");\n\t\t\tif (!countdown) return;\n\t\t\tcountdown.dataset.hideSeconds = countdown.dataset.hideSeconds === \"true\" ? \"false\" : \"true\";\n\t\t\twindow.updateMatchDayCountdowns(countdown);\n\t\t};\n\n\t\twindow.toggleMatchDayStartAt = function(button) {\n\t\t\tvar panel = button.closest(\"[data-match-day-start-panel]\");\n\t\t\tif (!panel) return;\n\t\t\tvar open = panel.dataset.startAtOpen !== \"true\";\n\t\t\tpanel.dataset.startAtOpen = open ? \"true\" : \"false\";\n\t\t\tbutton.setAttribute(\"aria-expanded\", open ? \"true\" : \"false\");\n\t\t\tif (open) {\n\t\t\t\tvar input = panel.querySelector(\"input[name='startTime']\");\n\t\t\t\tif (input) input.focus();\n\t\t\t}\n\t\t};\n\n\t\twindow.setMatchDayStartMinutesAgo = function(button, minutesAgo, submit) {\n\t\t\tvar form = button.closest(\"form\");\n\t\t\tif (!form) return;\n\t\t\tvar input = form.querySelector(\"input[name='startTime']\");\n\t\t\tif (!input) return;\n\t\t\tvar startAt = new Date(Date.now() - minutesAgo * 60000);\n\t\t\tinput.value = matchDayLocalInputValue(startAt);\n\t\t\tif (submit) form.requestSubmit ? form.requestSubmit() : form.submit();\n\t\t};\n\n\t\tfunction handleMatchDayStartHotkey(event) {\n\t\t\tif (!/^[1-5]$/.test(event.key)) return;\n\t\t\tvar active = document.activeElement;\n\t\t\tif (active && [\"INPUT\", \"TEXTAREA\", \"SELECT\"].indexOf(active.tagName) >= 0) return;\n\t\t\tvar panel = document.querySelector(\"[data-match-day-start-panel][data-start-at-open='true']\");\n\t\t\tif (!panel) return;\n\t\t\tvar form = panel.querySelector(\"form[data-match-day-start-at-form]\");\n\t\t\tif (!form) return;\n\t\t\tevent.preventDefault();\n\t\t\tvar fakeButton = form.querySelector(\"[data-start-minutes-ago='\" + event.key + \"']\");\n\t\t\twindow.setMatchDayStartMinutesAgo(fakeButton || form, parseInt(event.key, 10), true);\n\t\t}\n\n\t\tdocument.addEventListener(\"keydown\", handleMatchDayStartHotkey);\n\t\twindow.matchDayCountdownInterval = window.matchDayCountdownInterval || setInterval(function() {\n\t\t\twindow.updateMatchDayCountdowns(document);\n\t\t}, 1000);\n\t\t\tdocument.addEventListener(\"click\", function(event) {\n\t\t\t\tif (!event.target.closest(\"[data-marker-editor]\") && !event.target.closest(\"[data-marker-view]\")) {\n\t\t\t\t\twindow.closePitchPlayerEditors();\n\t\t\t\t}\n\t\t\t\tif (event.target.closest(\"[data-match-day-marker]\")) return;\n\t\t\t\tdocument.querySelectorAll(\"[data-match-day-popup]\").forEach(function(popup) {\n\t\t\t\t\tpopup.classList.add(\"hidden\");\n\t\t\t\t});\n\t\t\tdocument.querySelectorAll(\".pitch-marker.is-actions-open\").forEach(function(marker) {\n\t\t\t\tmarker.classList.remove(\"is-actions-open\");\n\t\t\t});\n\t\t\t});\n\t\t\tdocument.addEventListener(\"keydown\", function(event) {\n\t\t\t\tif (event.key !== \"Escape\") return;\n\t\t\t\twindow.closePitchPlayerEditors();\n\t\t\t\tdocument.querySelectorAll(\"[data-match-day-popup]\").forEach(function(popup) {\n\t\t\t\t\tpopup.classList.add(\"hidden\");\n\t\t\t\t});\n\t\t\tdocument.querySelectorAll(\".pitch-marker.is-actions-open\").forEach(function(marker) {\n\t\t\t\tmarker.classList.remove(\"is-actions-open\");\n\t\t\t});\n\t\t});\n\t\tfunction lineupTargetIndexForSelect(select, form) {\n\t\t\tvar panel = select.closest(\"[data-slot-panel]\");\n\t\t\tif (panel) return panel.dataset.slotPanel;\n\t\t\tvar indexInput = form.querySelector(\"input[name='indexNumber']\");\n\t\t\treturn indexInput ? indexInput.value : \"\";\n\t\t}\n\n\t\tfunction lineupPositionInitialsByIndex() {\n\t\t\tvar positions = {};\n\t\t\tdocument.querySelectorAll(\"[data-lineup-position-index][data-lineup-position-initials]\").forEach(function(element) {\n\t\t\t\tif (!element.dataset.lineupPositionIndex) return;\n\t\t\t\tpositions[element.dataset.lineupPositionIndex] = element.dataset.lineupPositionInitials;\n\t\t\t});\n\t\t\treturn positions;\n\t\t}\n\n\t\tfunction lineupPositionLabel(index, positions) {\n\t\t\treturn positions[index] || (\"position \" + index);\n\t\t}\n\n\t\tfunction lineupMoveConflicts(form) {\n\t\t\tvar moved = [];\n\t\t\tvar positions = lineupPositionInitialsByIndex();\n\t\t\tform.querySelectorAll(\"select[data-player-slot]\").forEach(function(select) {\n\t\t\t\tif (!select.value) return;\n\t\t\t\tvar targetIndex = lineupTargetIndexForSelect(select, form);\n\t\t\t\tvar selected = select.options[select.selectedIndex];\n\t\t\t\tvar currentIndex = selected.dataset.currentIndex;\n\t\t\t\tif (currentIndex && currentIndex !== \"-1\" && currentIndex !== targetIndex) {\n\t\t\t\t\tmoved.push({\n\t\t\t\t\t\tselect: select,\n\t\t\t\t\t\tplayerID: select.value,\n\t\t\t\t\t\tplayerName: selected.dataset.playerName || selected.text,\n\t\t\t\t\t\tcurrentIndex: currentIndex,\n\t\t\t\t\t\ttargetIndex: targetIndex,\n\t\t\t\t\t\tcurrentPosition: lineupPositionLabel(currentIndex, positions),\n\t\t\t\t\t\ttargetPosition: lineupPositionLabel(targetIndex, positions),\n\t\t\t\t\t});\n\t\t\t\t}\n\t\t\t});\n\t\t\treturn moved;\n\t\t}\n\n\t\tfunction lineupChoiceContainer(form) {\n\t\t\tvar choice = form.querySelector(\"[data-lineup-assignment-choice]\");\n\t\t\tif (choice) return choice;\n\t\t\tchoice = document.createElement(\"div\");\n\t\t\tchoice.dataset.lineupAssignmentChoice = \"true\";\n\t\t\tchoice.className = \"lineup-assignment-choice hidden\";\n\t\t\tform.appendChild(choice);\n\t\t\treturn choice;\n\t\t}\n\n\t\tfunction escapeLineupHTML(value) {\n\t\t\treturn String(value).replace(/[&<>\"']/g, function(character) {\n\t\t\t\treturn {\n\t\t\t\t\t\"&\": \"&amp;\",\n\t\t\t\t\t\"<\": \"&lt;\",\n\t\t\t\t\t\">\": \"&gt;\",\n\t\t\t\t\t\"\\\"\": \"&quot;\",\n\t\t\t\t\t\"'\": \"&#39;\",\n\t\t\t\t}[character];\n\t\t\t});\n\t\t}\n\n\t\tfunction setLineupSubmitLoading(button, loading) {\n\t\t\tif (!button) return;\n\t\t\tif (loading) {\n\t\t\t\tbutton.dataset.originalText = button.textContent;\n\t\t\t\tbutton.textContent = \"Checking...\";\n\t\t\t\tbutton.setAttribute(\"aria-busy\", \"true\");\n\t\t\t\tbutton.classList.add(\"opacity-75\", \"cursor-wait\");\n\t\t\t} else {\n\t\t\t\tif (button.dataset.originalText) button.textContent = button.dataset.originalText;\n\t\t\t\tbutton.removeAttribute(\"aria-busy\");\n\t\t\t\tbutton.classList.remove(\"opacity-75\", \"cursor-wait\");\n\t\t\t}\n\t\t}\n\n\t\tfunction clearMovedPlayerOriginalSelections(form, conflicts) {\n\t\t\tconflicts.forEach(function(conflict) {\n\t\t\t\tform.querySelectorAll(\"select[data-player-slot]\").forEach(function(select) {\n\t\t\t\t\tif (select === conflict.select || select.value !== conflict.playerID) return;\n\t\t\t\t\tselect.value = \"\";\n\t\t\t\t\tvar row = select.closest(\"[data-lineup-slot-row]\");\n\t\t\t\t\tvar minuteInput = row ? row.querySelector(\"input[type='number']\") : null;\n\t\t\t\t\tif (minuteInput) minuteInput.value = \"0\";\n\t\t\t\t});\n\t\t\t});\n\t\t}\n\n\t\tfunction submitLineupForm(form, submitter) {\n\t\t\tform.dataset.lineupMoveResolved = \"true\";\n\t\t\tif (submitter && form.requestSubmit) {\n\t\t\t\tform.requestSubmit(submitter);\n\t\t\t} else if (form.requestSubmit) {\n\t\t\t\tform.requestSubmit();\n\t\t\t} else {\n\t\t\t\tform.submit();\n\t\t\t}\n\t\t}\n\n\t\twindow.prepareLineupSave = function(form, event) {\n\t\t\tif (form.dataset.lineupMoveResolved === \"true\") {\n\t\t\t\tdelete form.dataset.lineupMoveResolved;\n\t\t\t\treturn true;\n\t\t\t}\n\t\t\tif (event) event.preventDefault();\n\t\t\tvar submitter = event && event.submitter ? event.submitter : form.querySelector(\"[type='submit']\");\n\t\t\tform._pendingLineupSubmitter = submitter;\n\t\t\tsetLineupSubmitLoading(submitter, true);\n\t\t\tsetTimeout(function() {\n\t\t\t\tvar conflicts = lineupMoveConflicts(form);\n\t\t\t\tsetLineupSubmitLoading(submitter, false);\n\t\t\t\tif (conflicts.length === 0) {\n\t\t\t\t\tsubmitLineupForm(form, submitter);\n\t\t\t\t\treturn;\n\t\t\t\t}\n\t\t\t\tvar choice = lineupChoiceContainer(form);\n\t\t\t\tchoice.innerHTML = \"<div><strong>Player already assigned.</strong></div>\" +\n\t\t\t\t\t\"<div class='choice-list'>\" + conflicts.map(function(conflict) {\n\t\t\t\t\t\tvar playerName = escapeLineupHTML(conflict.playerName);\n\t\t\t\t\t\tvar currentPosition = escapeLineupHTML(conflict.currentPosition);\n\t\t\t\t\t\tvar targetPosition = escapeLineupHTML(conflict.targetPosition);\n\t\t\t\t\t\treturn \"<label class='choice-row'>\" +\n\t\t\t\t\t\t\t\"<input type='checkbox' name='lineupMovePlayerIds' value='\" + escapeLineupHTML(conflict.playerID) + \"' aria-label='Move \" + playerName + \" from \" + currentPosition + \" to \" + targetPosition + \"'>\" +\n\t\t\t\t\t\t\t\"<span><strong>\" + playerName + \"</strong> is already assigned at <strong>\" +\n\t\t\t\t\t\t\tcurrentPosition + \"</strong>. Tick to move them to <strong>\" +\n\t\t\t\t\t\t\ttargetPosition + \"</strong>; leave unticked to keep \" +\n\t\t\t\t\t\t\tcurrentPosition + \" and also add them here.\" +\n\t\t\t\t\t\t\t\"<span class='choice-move-hint'><strong>Move</strong> - tick to move \" + playerName + \" from \" + currentPosition + \" to \" + targetPosition + \"</span></span>\" +\n\t\t\t\t\t\t\t\"</label>\";\n\t\t\t\t\t}).join(\"\") + \"</div>\" +\n\t\t\t\t\t\"<div class='choice-actions'>\" +\n\t\t\t\t\t\"<button type='button' class='move-button' onclick=\\\"window.submitLineupAssignmentChoice(this)\\\">Apply choices</button>\" +\n\t\t\t\t\t\"<button type='button' class='cancel-button' onclick='window.cancelLineupAssignmentChoice(this)'>Cancel</button>\" +\n\t\t\t\t\t\"</div>\";\n\t\t\t\tchoice.classList.remove(\"hidden\");\n\t\t\t\tchoice.scrollIntoView({ block: \"nearest\" });\n\t\t\t}, 120);\n\t\t\treturn false;\n\t\t};\n\n\t\twindow.submitLineupAssignmentChoice = function(button) {\n\t\t\tvar form = button.closest(\"form\");\n\t\t\tif (!form) return;\n\t\t\tvar checkedPlayerIDs = {};\n\t\t\tform.querySelectorAll(\"[data-lineup-assignment-choice] input[name='lineupMovePlayerIds']:checked\").forEach(function(input) {\n\t\t\t\tcheckedPlayerIDs[input.value] = true;\n\t\t\t});\n\t\t\tclearMovedPlayerOriginalSelections(form, lineupMoveConflicts(form).filter(function(conflict) {\n\t\t\t\treturn checkedPlayerIDs[conflict.playerID];\n\t\t\t}));\n\t\t\tsubmitLineupForm(form, form._pendingLineupSubmitter);\n\t\t};\n\n\t\twindow.cancelLineupAssignmentChoice = function(button) {\n\t\t\tvar choice = button.closest(\"[data-lineup-assignment-choice]\");\n\t\t\tif (choice) choice.classList.add(\"hidden\");\n\t\t};\n\t\twindow.moveFormationMarker = function(marker, pointerEvent) {\n\t\t\tvar pitch = marker.closest(\"[data-pitch]\");\n\t\t\tvar id = marker.dataset.positionId;\n\t\t\tif (!pitch || !id) return;\n\t\t\tvar rect = pitch.getBoundingClientRect();\n\t\t\tvar x = Math.max(0, Math.min(100, ((pointerEvent.clientX - rect.left) / rect.width) * 100));\n\t\t\tvar y = Math.max(0, Math.min(100, ((pointerEvent.clientY - rect.top) / rect.height) * 100));\n\t\t\tmarker.style.left = x.toFixed(2) + \"%\";\n\t\t\tmarker.style.top = y.toFixed(2) + \"%\";\n\t\t\tvar xInput = document.querySelector(\"[name='position_\" + id + \"_x']\");\n\t\t\tvar yInput = document.querySelector(\"[name='position_\" + id + \"_y']\");\n\t\t\tif (xInput) xInput.value = x.toFixed(2);\n\t\t\tif (yInput) yInput.value = y.toFixed(2);\n\t\t};\n\t\tfunction syncFormationAdvancedFields(root, showAdvanced) {\n\t\t\troot.dataset.formationAdvanced = showAdvanced ? \"true\" : \"false\";\n\t\t\troot.querySelectorAll(\"[data-formation-advanced-field]\").forEach(function(field) {\n\t\t\t\tfield.hidden = !showAdvanced;\n\t\t\t});\n\t\t}\n\n\t\twindow.toggleFormationAdvanced = function(button) {\n\t\t\tvar drawer = button.closest(\".pitch-drawer\");\n\t\t\tvar root = drawer ? drawer.querySelector(\".drawer-body\") : button.closest(\".drawer-body\");\n\t\t\tif (!root) return;\n\t\t\tvar showAdvanced = button.getAttribute(\"aria-pressed\") !== \"true\";\n\t\t\tbutton.setAttribute(\"aria-pressed\", showAdvanced ? \"true\" : \"false\");\n\t\t\tbutton.title = showAdvanced ? \"Hide position coordinates\" : \"Show position coordinates\";\n\t\t\tbutton.setAttribute(\"aria-label\", button.title);\n\t\t\tsyncFormationAdvancedFields(root, showAdvanced);\n\t\t};\n\t\twindow.startSpeechToText = function(button) {\n\t\t\tvar targetSelector = button.dataset.speechTarget;\n\t\t\tvar target = targetSelector ? document.querySelector(targetSelector) : null;\n\t\t\tvar Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;\n\t\t\tif (!target || !Recognition) return;\n\t\t\tvar recognition = new Recognition();\n\t\t\trecognition.lang = navigator.language || \"en-NZ\";\n\t\t\trecognition.interimResults = false;\n\t\t\trecognition.maxAlternatives = 1;\n\t\t\tbutton.setAttribute(\"aria-pressed\", \"true\");\n\t\t\trecognition.onresult = function(event) {\n\t\t\t\tvar transcript = event.results && event.results[0] && event.results[0][0] ? event.results[0][0].transcript : \"\";\n\t\t\t\tif (!transcript) return;\n\t\t\t\tvar prefix = target.value && !target.value.match(/\\s$/) ? \" \" : \"\";\n\t\t\t\ttarget.value = target.value + prefix + transcript;\n\t\t\t\ttarget.dispatchEvent(new Event(\"input\", { bubbles: true }));\n\t\t\t\ttarget.focus();\n\t\t\t};\n\t\t\trecognition.onend = function() {\n\t\t\t\tbutton.setAttribute(\"aria-pressed\", \"false\");\n\t\t\t};\n\t\t\trecognition.onerror = function() {\n\t\t\t\tbutton.setAttribute(\"aria-pressed\", \"false\");\n\t\t\t};\n\t\t\trecognition.start();\n\t\t};\n\t\twindow.enableSpeechButtons = function(root) {\n\t\t\tvar supported = !!(window.SpeechRecognition || window.webkitSpeechRecognition);\n\t\t\t(root || document).querySelectorAll(\"[data-speech-target]\").forEach(function(button) {\n\t\t\t\tbutton.disabled = !supported;\n\t\t\t\tbutton.title = supported ? \"Dictate details\" : \"Speech input is not supported in this browser\";\n\t\t\t});\n\t\t};\n\t\tdocument.addEventListener(\"DOMContentLoaded\", function() {\n\t\t\twindow.restoreDrawerState(document);\n\t\t\twindow.updateMatchDayCountdowns(document);\n\t\t\twindow.enableSpeechButtons(document);\n\t\t\tdocument.querySelectorAll(\".drawer-body[data-formation-advanced]\").forEach(function(root) {\n\t\t\t\tsyncFormationAdvancedFields(root, root.dataset.formationAdvanced === \"true\");\n\t\t\t});\n\t\t});\n\t\tdocument.addEventListener(\"htmx:afterSettle\", function(event) {\n\t\t\twindow.restoreDrawerState(event.target || document);\n\t\t\twindow.updateMatchDayCountdowns(event.target || document);\n\t\t\twindow.enableSpeechButtons(event.target || document);\n\t\t\t(event.target || document).querySelectorAll(\".drawer-body[data-formation-advanced]\").forEach(function(root) {\n\t\t\t\tsyncFormationAdvancedFields(root, root.dataset.formationAdvanced === \"true\");\n\t\t\t});\n\t\t});\n\t\twindow.showNextLineupSub = function(button) {\n\t\t\tvar group = button.closest(\"[data-lineup-slot-group]\");\n\t\t\tvar slotOrder = parseInt(button.dataset.slotOrder || \"0\", 10);\n\t\t\tif (!group || slotOrder >= 3) return;\n\t\t\tvar nextRow = group.querySelector(\"[data-lineup-slot-row='\" + (slotOrder + 1) + \"']\");\n\t\t\tif (!nextRow) return;\n\t\t\tnextRow.classList.remove(\"hidden\");\n\t\t\tbutton.classList.add(\"hidden\");\n\t\t\tvar nextButton = nextRow.querySelector(\"[data-add-sub-button]\");\n\t\t\tif (nextButton) {\n\t\t\t\tnextButton.classList.remove(\"hidden\");\n\t\t\t}\n\t\t\tvar select = nextRow.querySelector(\"select\");\n\t\t\tif (select) select.focus();\n\t\t};\n\t\tdocument.addEventListener(\"pointerdown\", function(event) {\n\t\t\tvar marker = event.target.closest(\"[data-draggable-position]\");\n\t\t\tif (!marker) return;\n\t\t\tevent.preventDefault();\n\t\t\tevent.stopPropagation();\n\t\t\tmarker.dataset.dragging = \"true\";\n\t\t\tif (marker.setPointerCapture) {\n\t\t\t\tmarker.setPointerCapture(event.pointerId);\n\t\t\t}\n\t\t\twindow.moveFormationMarker(marker, event);\n\t\t});\n\t\tdocument.addEventListener(\"pointermove\", function(event) {\n\t\t\tvar marker = document.querySelector(\"[data-draggable-position][data-dragging='true']\");\n\t\t\tif (!marker) return;\n\t\t\tevent.preventDefault();\n\t\t\twindow.moveFormationMarker(marker, event);\n\t\t});\n\t\tdocument.addEventListener(\"pointerup\", function(event) {\n\t\t\tvar marker = document.querySelector(\"[data-draggable-position][data-dragging='true']\");\n\t\t\tif (!marker) return;\n\t\t\tif (marker.releasePointerCapture) {\n\t\t\t\ttry {\n\t\t\t\t\tmarker.releasePointerCapture(event.pointerId);\n\t\t\t\t} catch (err) {}\n\t\t\t}\n\t\t\tdelete marker.dataset.dragging;\n\t\t});\n\t</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "<style>\n\t\thtml,\n\t\tbody {\n\t\t\twidth: 100%;\n\t\t\tmax-width: 100%;\n\t\t\toverflow-x: hidden;\n\t\t}\n\t\t* {\n\t\t\tbox-sizing: border-box;\n\t\t}\n\t\t.pitch-shell {\n\t\t\tmin-height: 100vh;\n\t\t\twidth: 100%;\n\t\t\tmax-width: 100vw;\n\t\t\tbackground: #104c23;\n\t\t\tposition: relative;\n\t\t\toverflow-x: hidden;\n\t\t\toverflow-y: hidden;\n\t\t}\n\t\t.pitch {\n\t\t\tposition: absolute;\n\t\t\tinset: 0;\n\t\t\twidth: 100%;\n\t\t\tmax-width: 100vw;\n\t\t\toverflow: visible;\n\t\t\tbackground:\n\t\t\t\tradial-gradient(circle at 50% 50%, rgba(98, 174, 22, .24), transparent 58%),\n\t\t\t\trepeating-linear-gradient(180deg, #2f8f07 0 8.333%, #1e7205 8.333% 16.666%);\n\t\t\tbox-shadow: inset 0 0 90px rgba(0,0,0,.42);\n\t\t}\n\t\t.pitch-lines {\n\t\t\tposition: absolute;\n\t\t\tinset: 52px 34px 118px;\n\t\t\tborder: 4px solid rgba(239,246,255,.82);\n\t\t\tborder-radius: 2px;\n\t\t\tpointer-events: none;\n\t\t}\n\t\t.pitch-lines:before {\n\t\t\tcontent: \"\";\n\t\t\tposition: absolute;\n\t\t\tleft: 0;\n\t\t\tright: 0;\n\t\t\ttop: 50%;\n\t\t\tborder-top: 4px solid rgba(239,246,255,.82);\n\t\t}\n\t\t.pitch-lines:after {\n\t\t\tcontent: \"\";\n\t\t\tposition: absolute;\n\t\t\twidth: min(34vw, 190px);\n\t\t\theight: min(34vw, 190px);\n\t\t\tleft: 50%;\n\t\t\ttop: 50%;\n\t\t\ttransform: translate(-50%, -50%);\n\t\t\tborder: 4px solid rgba(239,246,255,.82);\n\t\t\tborder-radius: 999px;\n\t\t}\n\t\t.pitch-dot {\n\t\t\tposition: absolute;\n\t\t\tleft: 50%;\n\t\t\ttop: 50%;\n\t\t\twidth: 12px;\n\t\t\theight: 12px;\n\t\t\ttransform: translate(-50%, -50%);\n\t\t\tborder-radius: 999px;\n\t\t\tbackground: rgba(239,246,255,.9);\n\t\t\tpointer-events: none;\n\t\t}\n\t\t.pitch-box {\n\t\t\tposition: absolute;\n\t\t\tleft: 22%;\n\t\t\twidth: 56%;\n\t\t\theight: 15%;\n\t\t\tborder: 4px solid rgba(239,246,255,.82);\n\t\t\tpointer-events: none;\n\t\t}\n\t\t.pitch-box.top { top: 0; border-top: 0; }\n\t\t.pitch-box.bottom { bottom: 0; border-bottom: 0; }\n\t\t.goal-box {\n\t\t\tposition: absolute;\n\t\t\tleft: 38%;\n\t\t\twidth: 24%;\n\t\t\theight: 7%;\n\t\t\tborder: 4px solid rgba(239,246,255,.82);\n\t\t\tpointer-events: none;\n\t\t}\n\t\t.goal-box.top { top: 0; border-top: 0; }\n\t\t.goal-box.bottom { bottom: 0; border-bottom: 0; }\n\t\t.goal-frame {\n\t\t\tposition: absolute;\n\t\t\tleft: 42%;\n\t\t\twidth: 16%;\n\t\t\theight: 34px;\n\t\t\tborder: 4px solid rgba(239,246,255,.82);\n\t\t\tpointer-events: none;\n\t\t}\n\t\t.goal-frame.top { top: -38px; }\n\t\t.goal-frame.bottom { bottom: -38px; }\n\t\t.penalty-arc {\n\t\t\tposition: absolute;\n\t\t\tleft: 50%;\n\t\t\twidth: min(30vw, 150px);\n\t\t\theight: min(30vw, 150px);\n\t\t\ttransform: translateX(-50%);\n\t\t\tborder: 4px solid rgba(239,246,255,.82);\n\t\t\tborder-radius: 999px;\n\t\t\tpointer-events: none;\n\t\t}\n\t\t.penalty-arc.top {\n\t\t\ttop: 9.5%;\n\t\t\tclip-path: inset(50% 0 0 0);\n\t\t}\n\t\t.penalty-arc.bottom {\n\t\t\tbottom: 9.5%;\n\t\t\tclip-path: inset(0 0 50% 0);\n\t\t}\n\t\t.corner {\n\t\t\tposition: absolute;\n\t\t\twidth: 36px;\n\t\t\theight: 36px;\n\t\t\tborder: 4px solid rgba(239,246,255,.82);\n\t\t\tpointer-events: none;\n\t\t}\n\t\t.corner.tl { top: -4px; left: -4px; border-right: 0; border-bottom: 0; border-radius: 0 0 36px 0; }\n\t\t.corner.tr { top: -4px; right: -4px; border-left: 0; border-bottom: 0; border-radius: 0 0 0 36px; }\n\t\t.corner.bl { bottom: -4px; left: -4px; border-right: 0; border-top: 0; border-radius: 0 36px 0 0; }\n\t\t.corner.br { bottom: -4px; right: -4px; border-left: 0; border-top: 0; border-radius: 36px 0 0 0; }\n\t\t.pitch-marker {\n\t\t\tposition: absolute;\n\t\t\ttransform: translate(-50%, -50%);\n\t\t\twidth: 92px;\n\t\t\tborder: 0;\n\t\t\tbackground: transparent;\n\t\t\tcolor: white;\n\t\t\tpadding: 0;\n\t\t\ttext-align: center;\n\t\t\ttouch-action: none;\n\t\t\ttext-shadow: 0 2px 3px rgba(0,0,0,.9);\n\t\t\tz-index: 2;\n\t\t}\n\t\t.pitch-marker.is-editing,\n\t\t.pitch-marker.is-actions-open {\n\t\t\tz-index: 60;\n\t\t}\n\t\t.pitch-marker:focus {\n\t\t\toutline: none;\n\t\t}\n\t\t.pitch-marker:focus .shirt,\n\t\t.pitch-marker:hover .shirt {\n\t\t\ttransform: translateY(-2px) scale(1.04);\n\t\t\tfilter: brightness(1.08);\n\t\t}\n\t\t.pitch-marker.unassigned .shirt {\n\t\t\tbackground: linear-gradient(180deg, #facc15 0%, #eab308 100%);\n\t\t\tbox-shadow: 0 0 0 4px rgba(250, 204, 21, .35), 0 12px 24px rgba(0,0,0,.3);\n\t\t}\n\t\t.pitch-marker.unassigned .shirt-collar {\n\t\t\tborder-color: #eab308;\n\t\t}\n\t\t.pitch-marker.unassigned .marker-caption {\n\t\t\tcolor: #fef08a;\n\t\t}\n\t\t.shirt {\n\t\t\tposition: relative;\n\t\t\twidth: 56px;\n\t\t\theight: 66px;\n\t\t\tmargin: 0 auto 4px;\n\t\t\tbackground: linear-gradient(180deg, #ef3b25 0%, #d82214 100%);\n\t\t\tborder-radius: 14px 14px 12px 12px;\n\t\t\tbox-shadow: 0 10px 20px rgba(0,0,0,.28);\n\t\t\ttransition: transform .15s ease, filter .15s ease;\n\t\t}\n\t\t.shirt:before,\n\t\t.shirt:after {\n\t\t\tcontent: \"\";\n\t\t\tposition: absolute;\n\t\t\ttop: 10px;\n\t\t\twidth: 22px;\n\t\t\theight: 30px;\n\t\t\tbackground: white;\n\t\t\tborder-radius: 8px 8px 5px 5px;\n\t\t\tz-index: -1;\n\t\t}\n\t\t.shirt:before {\n\t\t\tleft: -16px;\n\t\t\ttransform: rotate(8deg);\n\t\t}\n\t\t.shirt:after {\n\t\t\tright: -16px;\n\t\t\ttransform: rotate(-8deg);\n\t\t}\n\t\t.shirt-collar {\n\t\t\tposition: absolute;\n\t\t\tleft: 50%;\n\t\t\ttop: -5px;\n\t\t\twidth: 26px;\n\t\t\theight: 12px;\n\t\t\ttransform: translateX(-50%);\n\t\t\tbackground: white;\n\t\t\tborder: 2px solid #ef3b25;\n\t\t\tborder-radius: 0 0 999px 999px;\n\t\t}\n\t\t.shirt-number {\n\t\t\tposition: absolute;\n\t\t\tinset: 0;\n\t\t\tdisplay: flex;\n\t\t\talign-items: center;\n\t\t\tjustify-content: center;\n\t\t\tfont-size: 28px;\n\t\t\tfont-weight: 800;\n\t\t\tcolor: white;\n\t\t}\n\t\t.marker-caption {\n\t\t\tdisplay: block;\n\t\t\tfont-size: 16px;\n\t\t\tline-height: 1.05;\n\t\t\tfont-weight: 800;\n\t\t\twhite-space: nowrap;\n\t\t\tcolor: white;\n\t\t}\n\t\t.marker-subcaption {\n\t\t\tdisplay: block;\n\t\t\tmargin-top: 2px;\n\t\t\tfont-size: 11px;\n\t\t\tline-height: 1;\n\t\t\tcolor: rgba(255,255,255,.82);\n\t\t\twhite-space: nowrap;\n\t\t}\n\t\t.marker-player-stack {\n\t\t\tdisplay: flex;\n\t\t\tflex-direction: column;\n\t\t\talign-items: center;\n\t\t\tgap: 1px;\n\t\t}\n\t\t.marker-player-stack .sub-player {\n\t\t\tfont-size: 12px;\n\t\t\tline-height: 1;\n\t\t\tfont-weight: 700;\n\t\t\tcolor: rgba(255,255,255,.9);\n\t\t}\n\t\t.slot-editor-row {\n\t\t\tdisplay: grid;\n\t\t\tgrid-template-columns: minmax(0, 1fr) 64px;\n\t\t\tgap: 6px;\n\t\t\talign-items: center;\n\t\t\tmargin-top: 6px;\n\t\t}\n\t\t.slot-editor-row.hidden {\n\t\t\tdisplay: none;\n\t\t}\n\t\t.slot-editor-row input {\n\t\t\twidth: 100%;\n\t\t\tborder: 1px solid #cbd5e1;\n\t\t\tborder-radius: 10px;\n\t\t\tpadding: 8px;\n\t\t\tfont-size: 15px;\n\t\t}\n\t\t.slot-editor-row .add-sub-button {\n\t\t\tgrid-column: 1 / -1;\n\t\t\tmargin-top: 0;\n\t\t\tpadding: 8px 9px;\n\t\t\tbackground: #4b5563;\n\t\t\twhite-space: nowrap;\n\t\t\tfont-size: 14px;\n\t\t}\n\t\t.lineup-assignment-choice {\n\t\t\tborder: 1px solid #bfdbfe;\n\t\t\tborder-radius: 12px;\n\t\t\tbackground: #eff6ff;\n\t\t\tcolor: #1e3a8a;\n\t\t\tpadding: 10px;\n\t\t\tfont-size: 13px;\n\t\t}\n\t\t.lineup-assignment-choice .choice-actions {\n\t\t\tdisplay: flex;\n\t\t\tflex-wrap: wrap;\n\t\t\tgap: 8px;\n\t\t\tmargin-top: 8px;\n\t\t}\n\t\t.lineup-assignment-choice .choice-list {\n\t\t\tdisplay: grid;\n\t\t\tgap: 8px;\n\t\t\tmargin-top: 8px;\n\t\t}\n\t\t.lineup-assignment-choice .choice-row {\n\t\t\tdisplay: grid;\n\t\t\tgrid-template-columns: auto minmax(0, 1fr);\n\t\t\tgap: 8px;\n\t\t\talign-items: start;\n\t\t\tpadding: 8px;\n\t\t\tborder-radius: 9px;\n\t\t\tbackground: rgba(255,255,255,.74);\n\t\t\tborder: 1px solid #bfdbfe;\n\t\t}\n\t\t.lineup-assignment-choice .choice-row input {\n\t\t\tmargin-top: 3px;\n\t\t\twidth: 18px;\n\t\t\theight: 18px;\n\t\t}\n\t\t.lineup-assignment-choice .choice-move-hint {\n\t\t\tdisplay: block;\n\t\t\tmargin-top: 4px;\n\t\t\tcolor: #1d4ed8;\n\t\t}\n\t\t.lineup-assignment-choice button {\n\t\t\tborder-radius: 9px;\n\t\t\tfont-weight: 700;\n\t\t\tpadding: 7px 10px;\n\t\t}\n\t\t.lineup-assignment-choice .move-button {\n\t\t\tbackground: #2563eb;\n\t\t\tcolor: white;\n\t\t}\n\t\t.lineup-assignment-choice .add-button {\n\t\t\tbackground: #16a34a;\n\t\t\tcolor: white;\n\t\t}\n\t\t.lineup-assignment-choice .cancel-button {\n\t\t\tbackground: white;\n\t\t\tcolor: #1f2937;\n\t\t\tborder: 1px solid #cbd5e1;\n\t\t}\n\t\t.pitch-toast {\n\t\t\tposition: fixed;\n\t\t\tleft: 50%;\n\t\t\tbottom: 112px;\n\t\t\ttransform: translate(-50%, 16px);\n\t\t\tmax-width: min(92vw, 360px);\n\t\t\tpadding: 12px 16px;\n\t\t\tborder-radius: 999px;\n\t\t\tbackground: rgba(17,24,39,.94);\n\t\t\tcolor: white;\n\t\t\tfont-size: 14px;\n\t\t\tfont-weight: 700;\n\t\t\ttext-align: center;\n\t\t\tbox-shadow: 0 14px 34px rgba(0,0,0,.32);\n\t\t\topacity: 0;\n\t\t\tpointer-events: none;\n\t\t\ttransition: opacity .16s ease, transform .16s ease;\n\t\t\tz-index: 50;\n\t\t}\n\t\t.pitch-toast.is-visible {\n\t\t\topacity: 1;\n\t\t\ttransform: translate(-50%, 0);\n\t\t}\n\t\t.formation-settings-button {\n\t\t\tdisplay: inline-flex;\n\t\t\talign-items: center;\n\t\t\tjustify-content: center;\n\t\t\twidth: 34px;\n\t\t\theight: 34px;\n\t\t\tborder-radius: 999px;\n\t\t\tbackground: #e5e7eb;\n\t\t\tcolor: #374151;\n\t\t\tfont-size: 12px;\n\t\t\tfont-weight: 800;\n\t\t\ttransition: background .15s ease, color .15s ease, transform .15s ease;\n\t\t}\n\t\t.formation-settings-button[aria-pressed=\"true\"] {\n\t\t\tbackground: #2563eb;\n\t\t\tcolor: white;\n\t\t}\n\t\t.formation-settings-button:focus {\n\t\t\toutline: 2px solid #93c5fd;\n\t\t\toutline-offset: 2px;\n\t\t}\n\t\t.marker-editor {\n\t\t\tposition: absolute;\n\t\t\tleft: 50%;\n\t\t\ttop: 100%;\n\t\t\ttransform: translateX(-50%);\n\t\t\twidth: min(86vw, 290px);\n\t\t\tmargin-top: 8px;\n\t\t\tpadding: 10px;\n\t\t\tborder-radius: 14px;\n\t\t\tbackground: rgba(255,255,255,.96);\n\t\t\tbox-shadow: 0 12px 28px rgba(0,0,0,.34);\n\t\t\ttext-shadow: none;\n\t\t\tcolor: #111827;\n\t\t\tz-index: 70;\n\t\t}\n\t\t.marker-editor.editor-up {\n\t\t\ttop: auto;\n\t\t\tbottom: 100%;\n\t\t\tmargin-top: 0;\n\t\t\tmargin-bottom: 8px;\n\t\t}\n\t\t.marker-editor.popup-align-left,\n\t\t.match-day-marker-popup.popup-align-left {\n\t\t\tleft: 0;\n\t\t\tright: auto;\n\t\t\ttransform: none;\n\t\t}\n\t\t.marker-editor.popup-align-right,\n\t\t.match-day-marker-popup.popup-align-right {\n\t\t\tleft: auto;\n\t\t\tright: 0;\n\t\t\ttransform: none;\n\t\t}\n\t\t.marker-editor select {\n\t\t\twidth: 100%;\n\t\t\tborder: 1px solid #cbd5e1;\n\t\t\tborder-radius: 10px;\n\t\t\tpadding: 8px;\n\t\t\tfont-size: 16px;\n\t\t\tbackground: white;\n\t\t}\n\t\t.marker-editor button {\n\t\t\twidth: 100%;\n\t\t\tmargin-top: 10px;\n\t\t\tborder-radius: 12px;\n\t\t\tbackground: #16a34a;\n\t\t\tcolor: white;\n\t\t\tfont-weight: 800;\n\t\t\tfont-size: 17px;\n\t\t\tpadding: 12px;\n\t\t}\n\t\t.pitch-drawer {\n\t\t\tposition: fixed;\n\t\t\tleft: 0;\n\t\t\tright: 0;\n\t\t\tbottom: 0;\n\t\t\twidth: 100%;\n\t\t\tmax-width: 100vw;\n\t\t\toverflow-x: hidden;\n\t\t\theight: 52vh;\n\t\t\tmax-height: 88vh;\n\t\t\tbackground: white;\n\t\t\tborder-radius: 22px 22px 0 0;\n\t\t\tbox-shadow: 0 -16px 40px rgba(0,0,0,.35);\n\t\t\ttransition: height .18s ease;\n\t\t\tz-index: 20;\n\t\t\tdisplay: flex;\n\t\t\tflex-direction: column;\n\t\t}\n\t\t.pitch-drawer[data-state=\"collapsed\"] { height: 92px; }\n\t\t.pitch-drawer[data-state=\"expanded\"] {\n\t\t\theight: min(86vh, calc(100dvh - 24px));\n\t\t\tmax-height: calc(100dvh - 24px);\n\t\t\tborder-radius: 22px 22px 0 0;\n\t\t}\n\t\t.drawer-handle {\n\t\t\twidth: 100%;\n\t\t\tmin-height: 44px;\n\t\t\tdisplay: flex;\n\t\t\talign-items: center;\n\t\t\tjustify-content: center;\n\t\t\tcursor: grab;\n\t\t\ttouch-action: manipulation;\n\t\t}\n\t\t.drawer-handle:after {\n\t\t\tcontent: \"\";\n\t\t\twidth: 76px;\n\t\t\theight: 10px;\n\t\t\tborder-radius: 999px;\n\t\t\tbackground: #cbd5e1;\n\t\t}\n\t\t.drawer-body {\n\t\t\toverflow-y: auto;\n\t\t\toverflow-x: hidden;\n\t\t\t-webkit-overflow-scrolling: touch;\n\t\t\tpadding: 0 16px 24px;\n\t\t}\n\t\t.drawer-body:not([data-detail-mode=\"full\"]) [data-drawer-extended] {\n\t\t\tdisplay: none;\n\t\t}\n\t\t.drawer-body input,\n\t\t.drawer-body select,\n\t\t.drawer-body button {\n\t\t\tmin-width: 0;\n\t\t}\n\t\t.drawer-list-footer {\n\t\t\tmargin-top: 16px;\n\t\t\tpadding-top: 14px;\n\t\t\tborder-top: 1px solid #e5e7eb;\n\t\t}\n\t\t.drawer-list-nav a,\n\t\t.drawer-list-footer a {\n\t\t\tdisplay: block;\n\t\t\twidth: 100%;\n\t\t}\n\t\t.drawer-list-footer a {\n\t\t\tmargin-top: 0;\n\t\t\tmargin-bottom: 0;\n\t\t}\n\t\t.drawer-row-actions {\n\t\t\tdisplay: grid;\n\t\t\tgrid-template-columns: repeat(auto-fit, minmax(120px, 1fr));\n\t\t\tgap: 8px;\n\t\t\tmargin-top: 12px;\n\t\t}\n\t\t.drawer-row-actions form {\n\t\t\tmargin: 0;\n\t\t}\n\t\t.drawer-row-action {\n\t\t\tdisplay: block;\n\t\t\twidth: 100%;\n\t\t\tborder-radius: 8px;\n\t\t\tborder: 1px solid #bfdbfe;\n\t\t\tbackground: #eff6ff;\n\t\t\tcolor: #1d4ed8;\n\t\t\tpadding: 9px 12px;\n\t\t\ttext-align: center;\n\t\t\tfont-weight: 700;\n\t\t}\n\t\t.drawer-row-action.compact {\n\t\t\tdisplay: inline-flex;\n\t\t\twidth: auto;\n\t\t\talign-items: center;\n\t\t\tjustify-content: center;\n\t\t\tpadding: 6px 10px;\n\t\t\tfont-size: 0.875rem;\n\t\t\tline-height: 1.15;\n\t\t\twhite-space: nowrap;\n\t\t}\n\t\t.match-day-summary {\n\t\t\tdisplay: grid;\n\t\t\tgrid-template-columns: repeat(2, minmax(0, 1fr));\n\t\t\tgap: 8px;\n\t\t}\n\t\t.match-day-stat {\n\t\t\tborder: 1px solid #e5e7eb;\n\t\t\tborder-radius: 8px;\n\t\t\tpadding: 10px;\n\t\t\tbackground: #f9fafb;\n\t\t\ttext-align: center;\n\t\t}\n\t\t.match-day-stat-value {\n\t\t\tfont-size: 20px;\n\t\t\tline-height: 1;\n\t\t\tfont-weight: 800;\n\t\t\tcolor: #111827;\n\t\t}\n\t\t.match-day-stat-label {\n\t\t\tmargin-top: 4px;\n\t\t\tfont-size: 11px;\n\t\t\tfont-weight: 700;\n\t\t\ttext-transform: uppercase;\n\t\t\tcolor: #6b7280;\n\t\t}\n\t\t.match-day-player-row {\n\t\t\tdisplay: grid;\n\t\t\tgrid-template-columns: minmax(0, 1fr) auto;\n\t\t\tgap: 12px;\n\t\t\talign-items: center;\n\t\t\tborder: 1px solid #e5e7eb;\n\t\t\tborder-radius: 8px;\n\t\t\tpadding: 12px;\n\t\t\tbackground: white;\n\t\t}\n\t\t.match-day-player-name {\n\t\t\tfont-weight: 800;\n\t\t\tcolor: #111827;\n\t\t}\n\t\t.match-day-player-meta {\n\t\t\tmargin-top: 2px;\n\t\t\tfont-size: 13px;\n\t\t\tcolor: #6b7280;\n\t\t}\n\t\t.match-day-minutes {\n\t\t\tmin-width: 58px;\n\t\t\tborder-radius: 8px;\n\t\t\tbackground: #ecfdf5;\n\t\t\tcolor: #047857;\n\t\t\tpadding: 8px 10px;\n\t\t\ttext-align: center;\n\t\t\tfont-weight: 900;\n\t\t}\n\t\t.match-day-minutes span {\n\t\t\tdisplay: block;\n\t\t\tfont-size: 11px;\n\t\t\tfont-weight: 700;\n\t\t\tcolor: #065f46;\n\t\t}\n\t\t.match-day-current {\n\t\t\tdisplay: inline-flex;\n\t\t\talign-items: center;\n\t\t\tborder-radius: 999px;\n\t\t\tbackground: #dcfce7;\n\t\t\tcolor: #166534;\n\t\t\tpadding: 2px 8px;\n\t\t\tfont-size: 11px;\n\t\t\tfont-weight: 800;\n\t\t}\n\t\t.match-day-actions {\n\t\t\tdisplay: grid;\n\t\t\tgrid-template-columns: repeat(3, minmax(0, 1fr));\n\t\t\tgap: 6px;\n\t\t\tmargin-top: 10px;\n\t\t\tgrid-column: 1 / -1;\n\t\t}\n\t\t.match-day-action-button {\n\t\t\twidth: 100%;\n\t\t\tborder-radius: 8px;\n\t\t\tbackground: #f3f4f6;\n\t\t\tcolor: #111827;\n\t\t\tpadding: 9px 8px;\n\t\t\tfont-size: 14px;\n\t\t\tfont-weight: 800;\n\t\t}\n\t\t.match-day-action-button.primary {\n\t\t\tbackground: #dcfce7;\n\t\t\tcolor: #166534;\n\t\t}\n\t\t.match-day-action-button.warning {\n\t\t\tbackground: #fee2e2;\n\t\t\tcolor: #991b1b;\n\t\t}\n\t\t.match-day-extra-menu-button {\n\t\t\tdisplay: inline-flex;\n\t\t\talign-items: center;\n\t\t\tjustify-content: center;\n\t\t\twidth: 36px;\n\t\t\theight: 36px;\n\t\t\tborder-radius: 8px;\n\t\t\tbackground: #f3f4f6;\n\t\t\tcolor: #111827;\n\t\t\tfont-size: 18px;\n\t\t\tfont-weight: 900;\n\t\t\tline-height: 1;\n\t\t}\n\t\t.match-day-extra-events {\n\t\t\tdisplay: grid;\n\t\t\tgrid-template-columns: repeat(2, minmax(0, 1fr));\n\t\t\tgap: 6px;\n\t\t}\n\t\t.match-day-extra-events form {\n\t\t\tmargin: 0;\n\t\t}\n\t\t.match-day-sub-form {\n\t\t\tgrid-column: 1 / -1;\n\t\t\tdisplay: grid;\n\t\t\tgrid-template-columns: minmax(0, 1fr) 68px auto;\n\t\t\tgap: 6px;\n\t\t\talign-items: center;\n\t\t\tmargin-top: 8px;\n\t\t}\n\t\t.match-day-sub-form select,\n\t\t.match-day-sub-form input {\n\t\t\twidth: 100%;\n\t\t\tmin-width: 0;\n\t\t\tborder: 1px solid #cbd5e1;\n\t\t\tborder-radius: 8px;\n\t\t\tpadding: 9px 8px;\n\t\t\tfont-size: 13px;\n\t\t\tbackground: white;\n\t\t}\n\t\t.match-day-global-actions {\n\t\t\tdisplay: grid;\n\t\t\tgrid-template-columns: minmax(0, 1fr);\n\t\t\tgap: 8px;\n\t\t}\n\t\t.match-day-start-panel {\n\t\t\tborder: 1px solid #d1d5db;\n\t\t\tborder-radius: 8px;\n\t\t\tbackground: #f9fafb;\n\t\t\tpadding: 12px;\n\t\t}\n\t\t.match-day-countdown {\n\t\t\tdisplay: grid;\n\t\t\tgrid-template-columns: minmax(0, 1fr) auto;\n\t\t\tgap: 10px;\n\t\t\talign-items: center;\n\t\t\tmargin-bottom: 10px;\n\t\t}\n\t\t.match-day-countdown-label {\n\t\t\tfont-size: 12px;\n\t\t\tfont-weight: 800;\n\t\t\ttext-transform: uppercase;\n\t\t\tcolor: #6b7280;\n\t\t}\n\t\t.match-day-countdown-time {\n\t\t\tfont-size: 24px;\n\t\t\tline-height: 1;\n\t\t\tfont-weight: 900;\n\t\t\tcolor: #111827;\n\t\t\tfont-variant-numeric: tabular-nums;\n\t\t\tcursor: pointer;\n\t\t\tuser-select: none;\n\t\t}\n\t\t.match-day-countdown-meta {\n\t\t\tgrid-column: 1 / -1;\n\t\t\tfont-size: 13px;\n\t\t\tcolor: #4b5563;\n\t\t}\n\t\t.match-day-start-actions {\n\t\t\tdisplay: grid;\n\t\t\tgrid-template-columns: repeat(auto-fit, minmax(140px, 1fr));\n\t\t\tgap: 8px;\n\t\t}\n\t\t.match-day-start-at-form {\n\t\t\tdisplay: none;\n\t\t\tmargin-top: 10px;\n\t\t}\n\t\t.match-day-start-panel[data-start-at-open=\"true\"] .match-day-start-at-form {\n\t\t\tdisplay: block;\n\t\t}\n\t\t.match-day-start-input-row {\n\t\t\tdisplay: grid;\n\t\t\tgrid-template-columns: minmax(0, 1fr) auto;\n\t\t\tgap: 8px;\n\t\t}\n\t\t.match-day-start-input-row input {\n\t\t\twidth: 100%;\n\t\t\tborder: 1px solid #cbd5e1;\n\t\t\tborder-radius: 8px;\n\t\t\tpadding: 9px 8px;\n\t\t\tfont-size: 14px;\n\t\t\tbackground: white;\n\t\t}\n\t\t.match-day-start-quick {\n\t\t\tdisplay: grid;\n\t\t\tgrid-template-columns: repeat(5, minmax(0, 1fr));\n\t\t\tgap: 6px;\n\t\t\tmargin-top: 8px;\n\t\t}\n\t\t.match-day-start-quick button {\n\t\t\tborder-radius: 8px;\n\t\t\tbackground: #e5e7eb;\n\t\t\tcolor: #374151;\n\t\t\tpadding: 8px 6px;\n\t\t\tfont-size: 12px;\n\t\t\tfont-weight: 800;\n\t\t}\n\t\t.match-day-marker-popup {\n\t\t\tposition: absolute;\n\t\t\tleft: 50%;\n\t\t\ttop: 100%;\n\t\t\ttransform: translateX(-50%);\n\t\t\twidth: min(86vw, 270px);\n\t\t\tmargin-top: 8px;\n\t\t\tborder-radius: 12px;\n\t\t\tbackground: rgba(255,255,255,.98);\n\t\t\tcolor: #111827;\n\t\t\ttext-shadow: none;\n\t\t\tbox-shadow: 0 16px 34px rgba(0,0,0,.36);\n\t\t\tpadding: 10px;\n\t\t\tz-index: 70;\n\t\t\ttext-align: left;\n\t\t}\n\t\t.match-day-marker-popup.hidden {\n\t\t\tdisplay: none;\n\t\t}\n\t\t.match-day-marker-title {\n\t\t\tdisplay: flex;\n\t\t\talign-items: center;\n\t\t\tjustify-content: space-between;\n\t\t\tgap: 8px;\n\t\t\tmargin-bottom: 8px;\n\t\t\tfont-size: 15px;\n\t\t\tfont-weight: 900;\n\t\t}\n\t\t.match-day-popup-actions {\n\t\t\tdisplay: grid;\n\t\t\tgrid-template-columns: repeat(2, minmax(0, 1fr));\n\t\t\tgap: 6px;\n\t\t}\n\t\t.match-day-popup-sub-form,\n\t\t.match-day-popup-swap-form {\n\t\t\tdisplay: grid;\n\t\t\tgrid-template-columns: minmax(0, 1fr) 72px;\n\t\t\tgap: 8px;\n\t\t\tmargin-top: 8px;\n\t\t}\n\t\t.match-day-step-panel {\n\t\t\tdisplay: none;\n\t\t\tmargin-top: 8px;\n\t\t\tborder-top: 1px solid #e5e7eb;\n\t\t\tpadding-top: 8px;\n\t\t}\n\t\t.match-day-step-panel.is-open {\n\t\t\tdisplay: block;\n\t\t}\n\t\t.match-day-goal-form {\n\t\t\tdisplay: grid;\n\t\t\tgrid-template-columns: minmax(0, 1fr) auto;\n\t\t\tgap: 6px;\n\t\t\talign-items: center;\n\t\t}\n\t\t.match-day-quick-sub-options {\n\t\t\tdisplay: grid;\n\t\t\tgrid-template-columns: repeat(2, minmax(0, 1fr));\n\t\t\tgap: 6px;\n\t\t\tmargin-bottom: 8px;\n\t\t\tgrid-column: 1 / -1;\n\t\t}\n\t\t.match-day-popup-sub-form select,\n\t\t.match-day-popup-swap-form select {\n\t\t\tgrid-column: 1 / -1;\n\t\t\tfont-size: 16px;\n\t\t\tpadding: 12px;\n\t\t}\n\t\t.match-day-sub-injury-option {\n\t\t\tgrid-column: 1 / -1;\n\t\t\tdisplay: grid;\n\t\t\tgrid-template-columns: auto minmax(0, 1fr);\n\t\t\tgap: 8px;\n\t\t\talign-items: center;\n\t\t\tborder: 1px solid #fcd34d;\n\t\t\tborder-radius: 8px;\n\t\t\tbackground: #fffbeb;\n\t\t\tcolor: #92400e;\n\t\t\tpadding: 8px 10px;\n\t\t\tfont-size: 13px;\n\t\t\tfont-weight: 800;\n\t\t}\n\t\t.match-day-sub-injury-option input {\n\t\t\twidth: 18px;\n\t\t\theight: 18px;\n\t\t}\n\t\t.match-day-popup-sub-form > button[type='submit'],\n\t\t.match-day-popup-swap-form > button[type='submit'] {\n\t\t\tgrid-column: 1 / -1;\n\t\t}\n\t\t.match-day-score {\n\t\t\tdisplay: grid;\n\t\t\tgrid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);\n\t\t\tgap: 10px;\n\t\t\talign-items: center;\n\t\t\tborder: 1px solid #d1d5db;\n\t\t\tborder-radius: 8px;\n\t\t\tbackground: white;\n\t\t\tpadding: 10px;\n\t\t\ttext-align: center;\n\t\t}\n\t\t.match-day-score-team {\n\t\t\tmin-width: 0;\n\t\t\tfont-size: 12px;\n\t\t\tfont-weight: 800;\n\t\t\ttext-transform: uppercase;\n\t\t\tcolor: #6b7280;\n\t\t\toverflow-wrap: anywhere;\n\t\t}\n\t\t.match-day-score-value {\n\t\t\tfont-size: 28px;\n\t\t\tline-height: 1;\n\t\t\tfont-weight: 900;\n\t\t\tcolor: #111827;\n\t\t\tfont-variant-numeric: tabular-nums;\n\t\t}\n\t\t.match-day-edit-lineup-callout {\n\t\t\tborder: 2px solid #f59e0b;\n\t\t\tbox-shadow: 0 0 0 4px rgba(245, 158, 11, .22);\n\t\t\tborder-radius: 10px;\n\t\t\tpadding: 8px;\n\t\t\ttransition: box-shadow .18s ease, border-color .18s ease;\n\t\t}\n\t\t.match-day-edit-lineup-message {\n\t\t\tdisplay: none;\n\t\t\tmargin-bottom: 8px;\n\t\t\tborder: 1px solid #fcd34d;\n\t\t\tborder-radius: 8px;\n\t\t\tbackground: #fffbeb;\n\t\t\tcolor: #92400e;\n\t\t\tpadding: 8px 10px;\n\t\t\tfont-size: 13px;\n\t\t\tfont-weight: 800;\n\t\t}\n\t\t.match-day-edit-lineup-callout .match-day-edit-lineup-message {\n\t\t\tdisplay: block;\n\t\t}\n\t\t.match-day-popup-sub-form input[type='number'],\n\t\t.match-day-goal-form select {\n\t\t\tmin-width: 0;\n\t\t\tborder: 1px solid #cbd5e1;\n\t\t\tborder-radius: 8px;\n\t\t\tpadding: 8px;\n\t\t\tfont-size: 14px;\n\t\t\tbackground: white;\n\t\t}\n\t\t.speech-input-row {\n\t\t\tdisplay: grid;\n\t\t\tgrid-template-columns: minmax(0, 1fr) auto;\n\t\t\tgap: 8px;\n\t\t\talign-items: start;\n\t\t}\n\t\t.speech-button {\n\t\t\tmin-width: 44px;\n\t\t\tmin-height: 44px;\n\t\t\tborder-radius: 10px;\n\t\t\tbackground: #e5e7eb;\n\t\t\tcolor: #374151;\n\t\t\tfont-weight: 800;\n\t\t}\n\t\t.speech-button[aria-pressed=\"true\"] {\n\t\t\tbackground: #dc2626;\n\t\t\tcolor: white;\n\t\t}\n\t\t.speech-button[disabled] {\n\t\t\topacity: .45;\n\t\t\tcursor: not-allowed;\n\t\t}\n\t\t.drawer-body [data-formation-advanced-field] {\n\t\t\tdisplay: none;\n\t\t}\n\t\t.drawer-body[data-formation-advanced=\"true\"] [data-formation-advanced-field] {\n\t\t\tdisplay: grid;\n\t\t}\n\t\t.drawer-body [data-formation-advanced-field][hidden] {\n\t\t\tdisplay: none !important;\n\t\t}\n\t\t@media (min-width: 900px) {\n\t\t\t.pitch {\n\t\t\t\tright: auto;\n\t\t\t\twidth: calc(100vw - 420px);\n\t\t\t}\n\t\t\t.pitch-drawer {\n\t\t\t\tleft: auto;\n\t\t\t\ttop: 0;\n\t\t\t\tright: 0;\n\t\t\t\twidth: 420px;\n\t\t\t\theight: 100vh !important;\n\t\t\t\tmax-height: none;\n\t\t\t\tborder-radius: 22px 0 0 22px;\n\t\t\t}\n\t\t\t.drawer-handle,\n\t\t\t.back-to-pitch-button { display: none; }\n\t\t}\n\t\t@media (max-width: 899px) {\n\t\t\t.pitch {\n\t\t\t\twidth: 100vw;\n\t\t\t\tmax-width: 100vw;\n\t\t\t}\n\t\t\t.pitch-drawer {\n\t\t\t\tleft: 0;\n\t\t\t\tright: 0;\n\t\t\t\twidth: 100vw;\n\t\t\t\tmax-width: 100vw;\n\t\t\t}\n\t\t\t.slot-editor-row { grid-template-columns: minmax(0, 1fr) 58px; }\n\t\t}\n\t\t@media (max-width: 480px) {\n\t\t\t.match-day-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }\n\t\t\t.match-day-sub-form { grid-template-columns: minmax(0, 1fr) 58px; }\n\t\t\t.match-day-sub-form button { grid-column: 1 / -1; }\n\t\t\t.match-day-popup-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }\n\t\t\t.match-day-popup-sub-form { grid-template-columns: minmax(0, 1fr) 54px; }\n\t\t\t.match-day-popup-sub-form button { grid-column: 1 / -1; }\n\t\t\t.pitch-lines {\n\t\t\t\tinset: 36px 14px 104px;\n\t\t\t\tborder-width: 3px;\n\t\t\t}\n\t\t\t.pitch-lines:before,\n\t\t\t.pitch-lines:after,\n\t\t\t.pitch-box,\n\t\t\t.goal-box,\n\t\t\t.goal-frame,\n\t\t\t.penalty-arc,\n\t\t\t.corner {\n\t\t\t\tborder-width: 3px;\n\t\t\t}\n\t\t\t.pitch-marker {\n\t\t\t\twidth: 76px;\n\t\t\t}\n\t\t\t.shirt {\n\t\t\t\twidth: 45px;\n\t\t\t\theight: 54px;\n\t\t\t}\n\t\t\t.shirt:before,\n\t\t\t.shirt:after {\n\t\t\t\twidth: 18px;\n\t\t\t\theight: 24px;\n\t\t\t}\n\t\t\t.shirt:before { left: -13px; }\n\t\t\t.shirt:after { right: -13px; }\n\t\t\t.shirt-number {\n\t\t\t\tfont-size: 22px;\n\t\t\t}\n\t\t\t.marker-caption {\n\t\t\t\tfont-size: 13px;\n\t\t\t}\n\t\t}\n\t</style><script>\n\t\twindow.drawerStateStorageKey = \"baileys-hammer.drawer.state\";\n\t\twindow.setDrawerState = function(state) {\n\t\t\tdocument.querySelectorAll(\".pitch-drawer\").forEach(function(drawer) {\n\t\t\t\tdrawer.dataset.state = state;\n\t\t\t});\n\t\t\ttry {\n\t\t\t\twindow.sessionStorage.setItem(window.drawerStateStorageKey, state);\n\t\t\t} catch (err) {}\n\t\t};\n\t\twindow.openDrawer = function() {\n\t\t\twindow.setDrawerState(\"expanded\");\n\t\t};\n\t\twindow.restoreDrawerState = function(root) {\n\t\t\tvar drawers = (root || document).querySelectorAll(\".pitch-drawer\");\n\t\t\tif (!drawers.length) return;\n\t\t\tvar storedState = \"\";\n\t\t\ttry {\n\t\t\t\tstoredState = window.sessionStorage.getItem(window.drawerStateStorageKey) || \"\";\n\t\t\t} catch (err) {}\n\t\t\tdrawers.forEach(function(drawer) {\n\t\t\t\tif (storedState === \"expanded\" || storedState === \"collapsed\") {\n\t\t\t\t\tdrawer.dataset.state = storedState;\n\t\t\t\t}\n\t\t\t\ttry {\n\t\t\t\t\twindow.sessionStorage.setItem(window.drawerStateStorageKey, drawer.dataset.state || \"collapsed\");\n\t\t\t\t} catch (err) {}\n\t\t\t});\n\t\t};\n\t\twindow.syncDrawerDetailButton = function(button, full) {\n\t\t\tbutton.textContent = full ? \"Simple\" : \"Full\";\n\t\t\tbutton.setAttribute(\"aria-label\", full ? \"Show simple drawer details\" : \"Show full drawer details\");\n\t\t\tbutton.setAttribute(\"aria-pressed\", full ? \"true\" : \"false\");\n\t\t};\n\t\twindow.toggleDrawer = function(drawerPart) {\n\t\t\tvar drawer = drawerPart.closest(\".pitch-drawer\");\n\t\t\tif (!drawer) return;\n\t\t\twindow.setDrawerState(drawer.dataset.state === \"expanded\" ? \"collapsed\" : \"expanded\");\n\t\t};\n\t\twindow.toggleDrawerFull = function(button) {\n\t\t\tvar drawer = button.closest(\".pitch-drawer\");\n\t\t\tif (!drawer) return;\n\t\t\tvar body = drawer.querySelector(\".drawer-body\");\n\t\t\tif (!body) return;\n\t\t\tvar full = body.dataset.detailMode !== \"full\";\n\t\t\tbody.dataset.detailMode = full ? \"full\" : \"simple\";\n\t\t\twindow.syncDrawerDetailButton(button, full);\n\t\t};\n\t\twindow.showLineupToast = function(message) {\n\t\t\tvar toast = document.querySelector(\"[data-pitch-toast]\");\n\t\t\tif (!toast) {\n\t\t\t\ttoast = document.createElement(\"div\");\n\t\t\t\ttoast.dataset.pitchToast = \"true\";\n\t\t\t\ttoast.className = \"pitch-toast\";\n\t\t\t\tdocument.body.appendChild(toast);\n\t\t\t}\n\t\t\ttoast.textContent = message;\n\t\t\ttoast.classList.add(\"is-visible\");\n\t\t\twindow.clearTimeout(window.pitchToastTimer);\n\t\t\twindow.pitchToastTimer = window.setTimeout(function() {\n\t\t\t\ttoast.classList.remove(\"is-visible\");\n\t\t\t}, 2600);\n\t\t};\n\t\twindow.selectPitchSlot = function(indexNumber) {\n\t\t\tvar panel = document.querySelector(\"[data-slot-panel='\" + indexNumber + \"']\");\n\t\t\tif (panel) {\n\t\t\t\twindow.setDrawerState(\"expanded\");\n\t\t\t\tdocument.querySelectorAll(\"[data-slot-panel]\").forEach(function(panel) {\n\t\t\t\t\tpanel.classList.add(\"hidden\");\n\t\t\t\t});\n\t\t\t\tpanel.classList.remove(\"hidden\");\n\t\t\t\tpanel.scrollIntoView({ block: \"center\" });\n\t\t\t} else {\n\t\t\t\twindow.showLineupToast(\"Select a line-up or formation to edit\");\n\t\t\t}\n\t\t};\n\t\twindow.showPitchEditUnavailableToast = function() {\n\t\t\twindow.showLineupToast(\"Select a line-up or formation to edit\");\n\t\t};\n\t\twindow.copyLineupShareLink = function(button, event) {\n\t\t\tif (event) event.preventDefault();\n\t\t\tvar rawURL = button.dataset.shareUrl || window.location.href;\n\t\t\tvar shareURL = new URL(rawURL, window.location.href).href;\n\t\t\tvar copied = navigator.clipboard && navigator.clipboard.writeText\n\t\t\t\t? navigator.clipboard.writeText(shareURL)\n\t\t\t\t: Promise.reject(new Error(\"Clipboard unavailable\"));\n\t\t\tcopied.then(function() {\n\t\t\t\twindow.showLineupToast(\"Copied formation link\");\n\t\t\t}).catch(function() {\n\t\t\t\twindow.prompt(\"Copy formation link\", shareURL);\n\t\t\t});\n\t\t};\n\t\twindow.handleFormationMarkerTap = function(marker) {\n\t\t\tif (marker.dataset.editable === \"true\") {\n\t\t\t\twindow.selectPitchSlot(marker.dataset.slot);\n\t\t\t\treturn;\n\t\t\t}\n\t\t\twindow.showPitchEditUnavailableToast();\n\t\t};\n\t\t\twindow.keepPitchPopupInViewport = function(popup) {\n\t\t\t\tif (!popup) return;\n\t\t\t\tpopup.style.marginLeft = \"0px\";\n\t\t\t\tvar rect = popup.getBoundingClientRect();\n\t\t\t\tvar gutter = 10;\n\t\t\tvar offset = 0;\n\t\t\tif (rect.left < gutter) {\n\t\t\t\toffset = gutter - rect.left;\n\t\t\t} else if (rect.right > window.innerWidth - gutter) {\n\t\t\t\toffset = window.innerWidth - gutter - rect.right;\n\t\t\t}\n\t\t\tif (offset !== 0) {\n\t\t\t\t\tpopup.style.marginLeft = offset.toFixed(0) + \"px\";\n\t\t\t\t}\n\t\t\t};\n\t\t\twindow.closePitchPlayerEditors = function() {\n\t\t\t\tdocument.querySelectorAll(\"[data-marker-editor]\").forEach(function(editor) {\n\t\t\t\t\teditor.classList.add(\"hidden\");\n\t\t\t\t});\n\t\t\t\tdocument.querySelectorAll(\".pitch-marker.is-editing\").forEach(function(marker) {\n\t\t\t\t\tmarker.classList.remove(\"is-editing\");\n\t\t\t\t});\n\t\t\t};\n\t\t\twindow.showPitchPlayerEditor = function(indexNumber) {\n\t\t\t\twindow.closePitchPlayerEditors();\n\t\t\t\tdocument.querySelectorAll(\"[data-marker-view]\").forEach(function(view) {\n\t\t\t\t\tview.classList.remove(\"hidden\");\n\t\t\t\t});\n\t\t\t\tvar view = document.querySelector(\"[data-marker-view='\" + indexNumber + \"']\");\n\t\t\t\tvar editor = document.querySelector(\"[data-marker-editor='\" + indexNumber + \"']\");\n\t\t\t\tif (view && editor) {\n\t\t\t\teditor.classList.remove(\"hidden\");\n\t\t\t\tvar marker = editor.closest(\".pitch-marker\");\n\t\t\t\tif (marker) marker.classList.add(\"is-editing\");\n\t\t\t\twindow.keepPitchPopupInViewport(editor);\n\t\t\t\tvar select = editor.querySelector(\"select\");\n\t\t\t\tif (select) select.focus();\n\t\t\t} else {\n\t\t\t\twindow.showLineupToast(\"Select a line-up or formation to edit\");\n\t\t\t}\n\t\t};\n\t\twindow.toggleMatchDayActions = function(button, event) {\n\t\t\tif (event) {\n\t\t\t\tevent.preventDefault();\n\t\t\t\tevent.stopPropagation();\n\t\t\t}\n\t\t\tvar marker = button.closest(\"[data-match-day-marker]\");\n\t\t\tif (!marker) return;\n\t\t\tvar popup = marker.querySelector(\"[data-match-day-popup]\");\n\t\t\tif (!popup) {\n\t\t\t\twindow.openMatchDayLineupEditor();\n\t\t\t\treturn;\n\t\t\t}\n\t\t\tvar isHidden = popup.classList.contains(\"hidden\");\n\t\t\tdocument.querySelectorAll(\"[data-match-day-popup]\").forEach(function(otherPopup) {\n\t\t\t\totherPopup.classList.add(\"hidden\");\n\t\t\t});\n\t\t\tdocument.querySelectorAll(\".pitch-marker.is-actions-open\").forEach(function(openMarker) {\n\t\t\t\topenMarker.classList.remove(\"is-actions-open\");\n\t\t\t});\n\t\t\tif (isHidden) {\n\t\t\t\tpopup.classList.remove(\"hidden\");\n\t\t\t\tmarker.classList.add(\"is-actions-open\");\n\t\t\t\twindow.keepPitchPopupInViewport(popup);\n\t\t\t\t}\n\t\t\t};\n\t\twindow.openMatchDayLineupEditor = function() {\n\t\t\tvar drawer = document.querySelector(\".pitch-drawer\");\n\t\t\tif (drawer) {\n\t\t\t\twindow.setDrawerState(\"expanded\");\n\t\t\t}\n\t\t\tvar editLink = document.querySelector(\"[data-match-day-edit-lineup]\");\n\t\t\tif (!editLink) return;\n\t\t\tvar editTarget = editLink.closest(\"[data-match-day-edit-lineup-target]\") || editLink;\n\t\t\teditTarget.classList.add(\"match-day-edit-lineup-callout\");\n\t\t\twindow.clearTimeout(window.matchDayEditLineupHighlightTimeout);\n\t\t\twindow.matchDayEditLineupHighlightTimeout = window.setTimeout(function() {\n\t\t\t\teditTarget.classList.remove(\"match-day-edit-lineup-callout\");\n\t\t\t}, 4500);\n\t\t\teditTarget.scrollIntoView({ behavior: \"smooth\", block: \"center\" });\n\t\t\teditLink.focus({ preventScroll: true });\n\t\t};\n\t\twindow.toggleMatchDayLineupOptions = function(button) {\n\t\t\tvar options = document.querySelector(\"[data-match-day-lineup-options]\");\n\t\t\tif (!options) return;\n\t\t\tvar hidden = options.classList.toggle(\"hidden\");\n\t\t\tbutton.setAttribute(\"aria-expanded\", hidden ? \"false\" : \"true\");\n\t\t};\n\t\twindow.toggleMatchDayEvents = function(button) {\n\t\t\tvar events = document.querySelector(\"[data-match-day-events]\");\n\t\t\tif (!events) return;\n\t\t\tvar hidden = events.classList.toggle(\"hidden\");\n\t\t\tbutton.setAttribute(\"aria-expanded\", hidden ? \"false\" : \"true\");\n\t\t};\n\t\twindow.showMatchDayStepPanel = function(button, panelName) {\n\t\t\tvar popup = button.closest(\"[data-match-day-popup]\");\n\t\t\tif (!popup) return;\n\t\t\tpopup.querySelectorAll(\"[data-match-day-step-panel]\").forEach(function(panel) {\n\t\t\t\tpanel.classList.toggle(\"is-open\", panel.dataset.matchDayStepPanel === panelName);\n\t\t\t});\n\t\t\tvar panel = popup.querySelector(\"[data-match-day-step-panel='\" + panelName + \"']\");\n\t\t\tif (panel) {\n\t\t\t\twindow.keepPitchPopupInViewport(popup);\n\t\t\t\tvar focusTarget = panel.querySelector(\"select, button, input\");\n\t\t\t\tif (focusTarget) focusTarget.focus();\n\t\t\t}\n\t\t};\n\n\t\twindow.updateMatchDaySwapButton = function(select) {\n\t\t\tvar form = select.closest(\"form\");\n\t\t\tif (!form) return;\n\t\t\tvar button = form.querySelector(\"[data-match-day-swap-button]\");\n\t\t\tif (!button) return;\n\t\t\tvar playerName = select.dataset.currentPlayerName || \"player\";\n\t\t\tvar selected = select.options[select.selectedIndex];\n\t\t\tvar swapName = selected && selected.value ? (selected.dataset.playerName || selected.textContent) : \"\";\n\t\t\tbutton.classList.toggle(\"hidden\", !swapName);\n\t\t\tif (swapName) {\n\t\t\t\tbutton.textContent = \"Swap \" + playerName + \" and \" + swapName;\n\t\t\t}\n\t\t};\n\n\t\tfunction padLineupNumber(value) {\n\t\t\treturn String(value).padStart(2, \"0\");\n\t\t}\n\n\t\tfunction matchDayLocalInputValue(date) {\n\t\t\treturn date.getFullYear() + \"-\" +\n\t\t\t\tpadLineupNumber(date.getMonth() + 1) + \"-\" +\n\t\t\t\tpadLineupNumber(date.getDate()) + \"T\" +\n\t\t\t\tpadLineupNumber(date.getHours()) + \":\" +\n\t\t\t\tpadLineupNumber(date.getMinutes());\n\t\t}\n\n\t\tfunction formatMatchDayCountdown(totalSeconds) {\n\t\t\tvar absSeconds = Math.abs(totalSeconds);\n\t\t\tvar hours = Math.floor(absSeconds / 3600);\n\t\t\tvar minutes = Math.floor((absSeconds % 3600) / 60);\n\t\t\tvar seconds = absSeconds % 60;\n\t\t\tif (hours > 0) {\n\t\t\t\treturn hours + \":\" + padLineupNumber(minutes) + \":\" + padLineupNumber(seconds);\n\t\t\t}\n\t\t\treturn minutes + \":\" + padLineupNumber(seconds);\n\t\t}\n\n\t\tfunction formatMatchDayCountdownMinutes(totalSeconds) {\n\t\t\treturn Math.floor(Math.abs(totalSeconds) / 60) + \"m\";\n\t\t}\n\n\t\tfunction pluralMatchDayUnit(value, unit) {\n\t\t\treturn value + \" \" + unit + (value === 1 ? \"\" : \"s\");\n\t\t}\n\n\t\tfunction formatMatchDayCountdownLong(totalSeconds) {\n\t\t\tif (totalSeconds <= 3600) return \"\";\n\t\t\tvar seconds = Math.abs(totalSeconds);\n\t\t\tif (seconds < 7200) return \"1 hour\";\n\t\t\tif (seconds < 86400) return pluralMatchDayUnit(Math.floor(seconds / 3600), \"hour\");\n\t\t\tif (seconds < 172800) return \"1 day\";\n\t\t\tif (seconds < 604800) return pluralMatchDayUnit(Math.floor(seconds / 86400), \"day\");\n\t\t\tif (seconds < 1209600) return \"1 week\";\n\t\t\tif (seconds < 2628000) return pluralMatchDayUnit(Math.floor(seconds / 604800), \"week\");\n\t\t\tif (seconds < 5256000) return \"1 month\";\n\t\t\tif (seconds < 31536000) return pluralMatchDayUnit(Math.floor(seconds / 2628000), \"month\");\n\t\t\tif (seconds < 47304000) return \"1 year\";\n\t\t\treturn pluralMatchDayUnit(Math.floor(seconds / 31536000), \"year\");\n\t\t}\n\n\t\twindow.updateMatchDayCountdowns = function(root) {\n\t\t\t(root || document).querySelectorAll(\"[data-match-day-countdown]\").forEach(function(countdown) {\n\t\t\t\tvar targetValue = countdown.dataset.matchClockBaseAt || countdown.dataset.matchStartAt;\n\t\t\t\tvar timeEl = countdown.querySelector(\"[data-countdown-time]\");\n\t\t\t\tvar labelEl = countdown.querySelector(\"[data-countdown-label]\");\n\t\t\t\tif (!targetValue || !timeEl || !labelEl) return;\n\t\t\t\tvar target = new Date(targetValue);\n\t\t\t\tif (Number.isNaN(target.getTime())) {\n\t\t\t\t\ttimeEl.textContent = \"--:--\";\n\t\t\t\t\tlabelEl.textContent = \"Kick-off\";\n\t\t\t\t\treturn;\n\t\t\t\t}\n\t\t\t\tvar baseMinute = parseInt(countdown.dataset.matchClockBaseMinute || \"0\", 10);\n\t\t\t\tvar paused = countdown.dataset.matchClockPaused === \"true\";\n\t\t\t\tvar finished = countdown.dataset.matchClockFinished === \"true\";\n\t\t\t\tvar started = countdown.dataset.matchClockStarted === \"true\";\n\t\t\t\tif (paused || finished) {\n\t\t\t\t\ttimeEl.textContent = baseMinute + \"m\";\n\t\t\t\t\tlabelEl.textContent = countdown.dataset.matchClockLabel || (finished ? \"Game ended\" : \"Game pause\");\n\t\t\t\t\treturn;\n\t\t\t\t}\n\t\t\t\tif (started) {\n\t\t\t\t\tvar elapsedSeconds = Math.max(0, baseMinute * 60 + Math.round((Date.now() - target.getTime()) / 1000));\n\t\t\t\t\ttimeEl.textContent = countdown.dataset.hideSeconds === \"true\" ? formatMatchDayCountdownMinutes(elapsedSeconds) : formatMatchDayCountdown(elapsedSeconds);\n\t\t\t\t\tlabelEl.textContent = countdown.dataset.matchClockLabel || \"Match running\";\n\t\t\t\t\treturn;\n\t\t\t\t}\n\t\t\t\tvar diffSeconds = Math.round((target.getTime() - Date.now()) / 1000);\n\t\t\t\tvar longLabel = formatMatchDayCountdownLong(diffSeconds);\n\t\t\t\tif (longLabel) {\n\t\t\t\t\ttimeEl.textContent = longLabel;\n\t\t\t\t\tlabelEl.textContent = \"Kick-off in\";\n\t\t\t\t\treturn;\n\t\t\t\t}\n\t\t\t\ttimeEl.textContent = countdown.dataset.hideSeconds === \"true\" ? formatMatchDayCountdownMinutes(diffSeconds) : formatMatchDayCountdown(diffSeconds);\n\t\t\t\tlabelEl.textContent = diffSeconds >= 0 ? \"Kick-off in\" : \"Match running\";\n\t\t\t});\n\t\t};\n\n\t\twindow.toggleMatchDayCountdownPrecision = function(timeEl) {\n\t\t\tvar countdown = timeEl.closest(\"[data-match-day-countdown]\");\n\t\t\tif (!countdown) return;\n\t\t\tcountdown.dataset.hideSeconds = countdown.dataset.hideSeconds === \"true\" ? \"false\" : \"true\";\n\t\t\twindow.updateMatchDayCountdowns(countdown);\n\t\t};\n\n\t\twindow.toggleMatchDayStartAt = function(button) {\n\t\t\tvar panel = button.closest(\"[data-match-day-start-panel]\");\n\t\t\tif (!panel) return;\n\t\t\tvar open = panel.dataset.startAtOpen !== \"true\";\n\t\t\tpanel.dataset.startAtOpen = open ? \"true\" : \"false\";\n\t\t\tbutton.setAttribute(\"aria-expanded\", open ? \"true\" : \"false\");\n\t\t\tif (open) {\n\t\t\t\tvar input = panel.querySelector(\"input[name='startTime']\");\n\t\t\t\tif (input) input.focus();\n\t\t\t}\n\t\t};\n\n\t\twindow.setMatchDayStartMinutesAgo = function(button, minutesAgo, submit) {\n\t\t\tvar form = button.closest(\"form\");\n\t\t\tif (!form) return;\n\t\t\tvar input = form.querySelector(\"input[name='startTime']\");\n\t\t\tif (!input) return;\n\t\t\tvar startAt = new Date(Date.now() - minutesAgo * 60000);\n\t\t\tinput.value = matchDayLocalInputValue(startAt);\n\t\t\tif (submit) form.requestSubmit ? form.requestSubmit() : form.submit();\n\t\t};\n\n\t\tfunction handleMatchDayStartHotkey(event) {\n\t\t\tif (!/^[1-5]$/.test(event.key)) return;\n\t\t\tvar active = document.activeElement;\n\t\t\tif (active && [\"INPUT\", \"TEXTAREA\", \"SELECT\"].indexOf(active.tagName) >= 0) return;\n\t\t\tvar panel = document.querySelector(\"[data-match-day-start-panel][data-start-at-open='true']\");\n\t\t\tif (!panel) return;\n\t\t\tvar form = panel.querySelector(\"form[data-match-day-start-at-form]\");\n\t\t\tif (!form) return;\n\t\t\tevent.preventDefault();\n\t\t\tvar fakeButton = form.querySelector(\"[data-start-minutes-ago='\" + event.key + \"']\");\n\t\t\twindow.setMatchDayStartMinutesAgo(fakeButton || form, parseInt(event.key, 10), true);\n\t\t}\n\n\t\tdocument.addEventListener(\"keydown\", handleMatchDayStartHotkey);\n\t\twindow.matchDayCountdownInterval = window.matchDayCountdownInterval || setInterval(function() {\n\t\t\twindow.updateMatchDayCountdowns(document);\n\t\t}, 1000);\n\t\t\tdocument.addEventListener(\"click\", function(event) {\n\t\t\t\tif (!event.target.closest(\"[data-marker-editor]\") && !event.target.closest(\"[data-marker-view]\")) {\n\t\t\t\t\twindow.closePitchPlayerEditors();\n\t\t\t\t}\n\t\t\t\tif (event.target.closest(\"[data-match-day-marker]\")) return;\n\t\t\t\tdocument.querySelectorAll(\"[data-match-day-popup]\").forEach(function(popup) {\n\t\t\t\t\tpopup.classList.add(\"hidden\");\n\t\t\t\t});\n\t\t\tdocument.querySelectorAll(\".pitch-marker.is-actions-open\").forEach(function(marker) {\n\t\t\t\tmarker.classList.remove(\"is-actions-open\");\n\t\t\t});\n\t\t\t});\n\t\t\tdocument.addEventListener(\"keydown\", function(event) {\n\t\t\t\tif (event.key !== \"Escape\") return;\n\t\t\t\twindow.closePitchPlayerEditors();\n\t\t\t\tdocument.querySelectorAll(\"[data-match-day-popup]\").forEach(function(popup) {\n\t\t\t\t\tpopup.classList.add(\"hidden\");\n\t\t\t\t});\n\t\t\tdocument.querySelectorAll(\".pitch-marker.is-actions-open\").forEach(function(marker) {\n\t\t\t\tmarker.classList.remove(\"is-actions-open\");\n\t\t\t});\n\t\t});\n\t\tfunction lineupTargetIndexForSelect(select, form) {\n\t\t\tvar panel = select.closest(\"[data-slot-panel]\");\n\t\t\tif (panel) return panel.dataset.slotPanel;\n\t\t\tvar indexInput = form.querySelector(\"input[name='indexNumber']\");\n\t\t\treturn indexInput ? indexInput.value : \"\";\n\t\t}\n\n\t\tfunction lineupPositionInitialsByIndex() {\n\t\t\tvar positions = {};\n\t\t\tdocument.querySelectorAll(\"[data-lineup-position-index][data-lineup-position-initials]\").forEach(function(element) {\n\t\t\t\tif (!element.dataset.lineupPositionIndex) return;\n\t\t\t\tpositions[element.dataset.lineupPositionIndex] = element.dataset.lineupPositionInitials;\n\t\t\t});\n\t\t\treturn positions;\n\t\t}\n\n\t\tfunction lineupPositionLabel(index, positions) {\n\t\t\treturn positions[index] || (\"position \" + index);\n\t\t}\n\n\t\tfunction lineupMoveConflicts(form) {\n\t\t\tvar moved = [];\n\t\t\tvar positions = lineupPositionInitialsByIndex();\n\t\t\tform.querySelectorAll(\"select[data-player-slot]\").forEach(function(select) {\n\t\t\t\tif (!select.value) return;\n\t\t\t\tvar targetIndex = lineupTargetIndexForSelect(select, form);\n\t\t\t\tvar selected = select.options[select.selectedIndex];\n\t\t\t\tvar currentIndex = selected.dataset.currentIndex;\n\t\t\t\tif (currentIndex && currentIndex !== \"-1\" && currentIndex !== targetIndex) {\n\t\t\t\t\tmoved.push({\n\t\t\t\t\t\tselect: select,\n\t\t\t\t\t\tplayerID: select.value,\n\t\t\t\t\t\tplayerName: selected.dataset.playerName || selected.text,\n\t\t\t\t\t\tcurrentIndex: currentIndex,\n\t\t\t\t\t\ttargetIndex: targetIndex,\n\t\t\t\t\t\tcurrentPosition: lineupPositionLabel(currentIndex, positions),\n\t\t\t\t\t\ttargetPosition: lineupPositionLabel(targetIndex, positions),\n\t\t\t\t\t});\n\t\t\t\t}\n\t\t\t});\n\t\t\treturn moved;\n\t\t}\n\n\t\tfunction lineupChoiceContainer(form) {\n\t\t\tvar choice = form.querySelector(\"[data-lineup-assignment-choice]\");\n\t\t\tif (choice) return choice;\n\t\t\tchoice = document.createElement(\"div\");\n\t\t\tchoice.dataset.lineupAssignmentChoice = \"true\";\n\t\t\tchoice.className = \"lineup-assignment-choice hidden\";\n\t\t\tform.appendChild(choice);\n\t\t\treturn choice;\n\t\t}\n\n\t\tfunction escapeLineupHTML(value) {\n\t\t\treturn String(value).replace(/[&<>\"']/g, function(character) {\n\t\t\t\treturn {\n\t\t\t\t\t\"&\": \"&amp;\",\n\t\t\t\t\t\"<\": \"&lt;\",\n\t\t\t\t\t\">\": \"&gt;\",\n\t\t\t\t\t\"\\\"\": \"&quot;\",\n\t\t\t\t\t\"'\": \"&#39;\",\n\t\t\t\t}[character];\n\t\t\t});\n\t\t}\n\n\t\tfunction setLineupSubmitLoading(button, loading) {\n\t\t\tif (!button) return;\n\t\t\tif (loading) {\n\t\t\t\tbutton.dataset.originalText = button.textContent;\n\t\t\t\tbutton.textContent = \"Checking...\";\n\t\t\t\tbutton.setAttribute(\"aria-busy\", \"true\");\n\t\t\t\tbutton.classList.add(\"opacity-75\", \"cursor-wait\");\n\t\t\t} else {\n\t\t\t\tif (button.dataset.originalText) button.textContent = button.dataset.originalText;\n\t\t\t\tbutton.removeAttribute(\"aria-busy\");\n\t\t\t\tbutton.classList.remove(\"opacity-75\", \"cursor-wait\");\n\t\t\t}\n\t\t}\n\n\t\tfunction clearMovedPlayerOriginalSelections(form, conflicts) {\n\t\t\tconflicts.forEach(function(conflict) {\n\t\t\t\tform.querySelectorAll(\"select[data-player-slot]\").forEach(function(select) {\n\t\t\t\t\tif (select === conflict.select || select.value !== conflict.playerID) return;\n\t\t\t\t\tselect.value = \"\";\n\t\t\t\t\tvar row = select.closest(\"[data-lineup-slot-row]\");\n\t\t\t\t\tvar minuteInput = row ? row.querySelector(\"input[type='number']\") : null;\n\t\t\t\t\tif (minuteInput) minuteInput.value = \"0\";\n\t\t\t\t});\n\t\t\t});\n\t\t}\n\n\t\tfunction submitLineupForm(form, submitter) {\n\t\t\tform.dataset.lineupMoveResolved = \"true\";\n\t\t\tif (submitter && form.requestSubmit) {\n\t\t\t\tform.requestSubmit(submitter);\n\t\t\t} else if (form.requestSubmit) {\n\t\t\t\tform.requestSubmit();\n\t\t\t} else {\n\t\t\t\tform.submit();\n\t\t\t}\n\t\t}\n\n\t\twindow.prepareLineupSave = function(form, event) {\n\t\t\tif (form.dataset.lineupMoveResolved === \"true\") {\n\t\t\t\tdelete form.dataset.lineupMoveResolved;\n\t\t\t\treturn true;\n\t\t\t}\n\t\t\tif (event) event.preventDefault();\n\t\t\tvar submitter = event && event.submitter ? event.submitter : form.querySelector(\"[type='submit']\");\n\t\t\tform._pendingLineupSubmitter = submitter;\n\t\t\tsetLineupSubmitLoading(submitter, true);\n\t\t\tsetTimeout(function() {\n\t\t\t\tvar conflicts = lineupMoveConflicts(form);\n\t\t\t\tsetLineupSubmitLoading(submitter, false);\n\t\t\t\tif (conflicts.length === 0) {\n\t\t\t\t\tsubmitLineupForm(form, submitter);\n\t\t\t\t\treturn;\n\t\t\t\t}\n\t\t\t\tvar choice = lineupChoiceContainer(form);\n\t\t\t\tchoice.innerHTML = \"<div><strong>Player already assigned.</strong></div>\" +\n\t\t\t\t\t\"<div class='choice-list'>\" + conflicts.map(function(conflict) {\n\t\t\t\t\t\tvar playerName = escapeLineupHTML(conflict.playerName);\n\t\t\t\t\t\tvar currentPosition = escapeLineupHTML(conflict.currentPosition);\n\t\t\t\t\t\tvar targetPosition = escapeLineupHTML(conflict.targetPosition);\n\t\t\t\t\t\treturn \"<label class='choice-row'>\" +\n\t\t\t\t\t\t\t\"<input type='checkbox' name='lineupMovePlayerIds' value='\" + escapeLineupHTML(conflict.playerID) + \"' aria-label='Move \" + playerName + \" from \" + currentPosition + \" to \" + targetPosition + \"'>\" +\n\t\t\t\t\t\t\t\"<span><strong>\" + playerName + \"</strong> is already assigned at <strong>\" +\n\t\t\t\t\t\t\tcurrentPosition + \"</strong>. Tick to move them to <strong>\" +\n\t\t\t\t\t\t\ttargetPosition + \"</strong>; leave unticked to keep \" +\n\t\t\t\t\t\t\tcurrentPosition + \" and also add them here.\" +\n\t\t\t\t\t\t\t\"<span class='choice-move-hint'><strong>Move</strong> - tick to move \" + playerName + \" from \" + currentPosition + \" to \" + targetPosition + \"</span></span>\" +\n\t\t\t\t\t\t\t\"</label>\";\n\t\t\t\t\t}).join(\"\") + \"</div>\" +\n\t\t\t\t\t\"<div class='choice-actions'>\" +\n\t\t\t\t\t\"<button type='button' class='move-button' onclick=\\\"window.submitLineupAssignmentChoice(this)\\\">Apply choices</button>\" +\n\t\t\t\t\t\"<button type='button' class='cancel-button' onclick='window.cancelLineupAssignmentChoice(this)'>Cancel</button>\" +\n\t\t\t\t\t\"</div>\";\n\t\t\t\tchoice.classList.remove(\"hidden\");\n\t\t\t\tchoice.scrollIntoView({ block: \"nearest\" });\n\t\t\t}, 120);\n\t\t\treturn false;\n\t\t};\n\n\t\twindow.submitLineupAssignmentChoice = function(button) {\n\t\t\tvar form = button.closest(\"form\");\n\t\t\tif (!form) return;\n\t\t\tvar checkedPlayerIDs = {};\n\t\t\tform.querySelectorAll(\"[data-lineup-assignment-choice] input[name='lineupMovePlayerIds']:checked\").forEach(function(input) {\n\t\t\t\tcheckedPlayerIDs[input.value] = true;\n\t\t\t});\n\t\t\tclearMovedPlayerOriginalSelections(form, lineupMoveConflicts(form).filter(function(conflict) {\n\t\t\t\treturn checkedPlayerIDs[conflict.playerID];\n\t\t\t}));\n\t\t\tsubmitLineupForm(form, form._pendingLineupSubmitter);\n\t\t};\n\n\t\twindow.cancelLineupAssignmentChoice = function(button) {\n\t\t\tvar choice = button.closest(\"[data-lineup-assignment-choice]\");\n\t\t\tif (choice) choice.classList.add(\"hidden\");\n\t\t};\n\t\twindow.moveFormationMarker = function(marker, pointerEvent) {\n\t\t\tvar pitch = marker.closest(\"[data-pitch]\");\n\t\t\tvar id = marker.dataset.positionId;\n\t\t\tif (!pitch || !id) return;\n\t\t\tvar rect = pitch.getBoundingClientRect();\n\t\t\tvar x = Math.max(0, Math.min(100, ((pointerEvent.clientX - rect.left) / rect.width) * 100));\n\t\t\tvar y = Math.max(0, Math.min(100, ((pointerEvent.clientY - rect.top) / rect.height) * 100));\n\t\t\tmarker.style.left = x.toFixed(2) + \"%\";\n\t\t\tmarker.style.top = y.toFixed(2) + \"%\";\n\t\t\tvar xInput = document.querySelector(\"[name='position_\" + id + \"_x']\");\n\t\t\tvar yInput = document.querySelector(\"[name='position_\" + id + \"_y']\");\n\t\t\tif (xInput) xInput.value = x.toFixed(2);\n\t\t\tif (yInput) yInput.value = y.toFixed(2);\n\t\t};\n\t\tfunction syncFormationAdvancedFields(root, showAdvanced) {\n\t\t\troot.dataset.formationAdvanced = showAdvanced ? \"true\" : \"false\";\n\t\t\troot.querySelectorAll(\"[data-formation-advanced-field]\").forEach(function(field) {\n\t\t\t\tfield.hidden = !showAdvanced;\n\t\t\t});\n\t\t}\n\n\t\twindow.toggleFormationAdvanced = function(button) {\n\t\t\tvar drawer = button.closest(\".pitch-drawer\");\n\t\t\tvar root = drawer ? drawer.querySelector(\".drawer-body\") : button.closest(\".drawer-body\");\n\t\t\tif (!root) return;\n\t\t\tvar showAdvanced = button.getAttribute(\"aria-pressed\") !== \"true\";\n\t\t\tbutton.setAttribute(\"aria-pressed\", showAdvanced ? \"true\" : \"false\");\n\t\t\tbutton.title = showAdvanced ? \"Hide position coordinates\" : \"Show position coordinates\";\n\t\t\tbutton.setAttribute(\"aria-label\", button.title);\n\t\t\tsyncFormationAdvancedFields(root, showAdvanced);\n\t\t};\n\t\twindow.startSpeechToText = function(button) {\n\t\t\tvar targetSelector = button.dataset.speechTarget;\n\t\t\tvar target = targetSelector ? document.querySelector(targetSelector) : null;\n\t\t\tvar Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;\n\t\t\tif (!target || !Recognition) return;\n\t\t\tvar recognition = new Recognition();\n\t\t\trecognition.lang = navigator.language || \"en-NZ\";\n\t\t\trecognition.interimResults = false;\n\t\t\trecognition.maxAlternatives = 1;\n\t\t\tbutton.setAttribute(\"aria-pressed\", \"true\");\n\t\t\trecognition.onresult = function(event) {\n\t\t\t\tvar transcript = event.results && event.results[0] && event.results[0][0] ? event.results[0][0].transcript : \"\";\n\t\t\t\tif (!transcript) return;\n\t\t\t\tvar prefix = target.value && !target.value.match(/\\s$/) ? \" \" : \"\";\n\t\t\t\ttarget.value = target.value + prefix + transcript;\n\t\t\t\ttarget.dispatchEvent(new Event(\"input\", { bubbles: true }));\n\t\t\t\ttarget.focus();\n\t\t\t};\n\t\t\trecognition.onend = function() {\n\t\t\t\tbutton.setAttribute(\"aria-pressed\", \"false\");\n\t\t\t};\n\t\t\trecognition.onerror = function() {\n\t\t\t\tbutton.setAttribute(\"aria-pressed\", \"false\");\n\t\t\t};\n\t\t\trecognition.start();\n\t\t};\n\t\twindow.enableSpeechButtons = function(root) {\n\t\t\tvar supported = !!(window.SpeechRecognition || window.webkitSpeechRecognition);\n\t\t\t(root || document).querySelectorAll(\"[data-speech-target]\").forEach(function(button) {\n\t\t\t\tbutton.disabled = !supported;\n\t\t\t\tbutton.title = supported ? \"Dictate details\" : \"Speech input is not supported in this browser\";\n\t\t\t});\n\t\t};\n\t\tdocument.addEventListener(\"DOMContentLoaded\", function() {\n\t\t\twindow.restoreDrawerState(document);\n\t\t\twindow.updateMatchDayCountdowns(document);\n\t\t\twindow.enableSpeechButtons(document);\n\t\t\tdocument.querySelectorAll(\".drawer-body[data-formation-advanced]\").forEach(function(root) {\n\t\t\t\tsyncFormationAdvancedFields(root, root.dataset.formationAdvanced === \"true\");\n\t\t\t});\n\t\t});\n\t\tdocument.addEventListener(\"htmx:afterSettle\", function(event) {\n\t\t\twindow.restoreDrawerState(event.target || document);\n\t\t\twindow.updateMatchDayCountdowns(event.target || document);\n\t\t\twindow.enableSpeechButtons(event.target || document);\n\t\t\t(event.target || document).querySelectorAll(\".drawer-body[data-formation-advanced]\").forEach(function(root) {\n\t\t\t\tsyncFormationAdvancedFields(root, root.dataset.formationAdvanced === \"true\");\n\t\t\t});\n\t\t});\n\t\twindow.showNextLineupSub = function(button) {\n\t\t\tvar group = button.closest(\"[data-lineup-slot-group]\");\n\t\t\tvar slotOrder = parseInt(button.dataset.slotOrder || \"0\", 10);\n\t\t\tif (!group || slotOrder >= 3) return;\n\t\t\tvar nextRow = group.querySelector(\"[data-lineup-slot-row='\" + (slotOrder + 1) + \"']\");\n\t\t\tif (!nextRow) return;\n\t\t\tnextRow.classList.remove(\"hidden\");\n\t\t\tbutton.classList.add(\"hidden\");\n\t\t\tvar nextButton = nextRow.querySelector(\"[data-add-sub-button]\");\n\t\t\tif (nextButton) {\n\t\t\t\tnextButton.classList.remove(\"hidden\");\n\t\t\t}\n\t\t\tvar select = nextRow.querySelector(\"select\");\n\t\t\tif (select) select.focus();\n\t\t};\n\t\tdocument.addEventListener(\"pointerdown\", function(event) {\n\t\t\tvar marker = event.target.closest(\"[data-draggable-position]\");\n\t\t\tif (!marker) return;\n\t\t\tevent.preventDefault();\n\t\t\tevent.stopPropagation();\n\t\t\tmarker.dataset.dragging = \"true\";\n\t\t\tif (marker.setPointerCapture) {\n\t\t\t\tmarker.setPointerCapture(event.pointerId);\n\t\t\t}\n\t\t\twindow.moveFormationMarker(marker, event);\n\t\t});\n\t\tdocument.addEventListener(\"pointermove\", function(event) {\n\t\t\tvar marker = document.querySelector(\"[data-draggable-position][data-dragging='true']\");\n\t\t\tif (!marker) return;\n\t\t\tevent.preventDefault();\n\t\t\twindow.moveFormationMarker(marker, event);\n\t\t});\n\t\tdocument.addEventListener(\"pointerup\", function(event) {\n\t\t\tvar marker = document.querySelector(\"[data-draggable-position][data-dragging='true']\");\n\t\t\tif (!marker) return;\n\t\t\tif (marker.releasePointerCapture) {\n\t\t\t\ttry {\n\t\t\t\t\tmarker.releasePointerCapture(event.pointerId);\n\t\t\t\t} catch (err) {}\n\t\t\t}\n\t\t\tdelete marker.dataset.dragging;\n\t\t});\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -697,7 +749,7 @@ func dirtyFormScript() templ.Component {
 	})
 }
 
-func lineupLoginPage(msg string) templ.Component {
+func lineupLoginPage(msg string, googleClientID string, teamID uint) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -734,29 +786,61 @@ func lineupLoginPage(msg string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "<form method=\"POST\" action=\"/lineups/login\" class=\"space-y-4\"><label class=\"block\">Team key <input name=\"teamKey\" required class=\"w-full border rounded-lg p-3 mt-1\"></label> <label class=\"block\">Team member password <input name=\"teamMemberPass\" type=\"password\" required class=\"w-full border rounded-lg p-3 mt-1\"></label> <label class=\"block\">Display name <input name=\"displayName\" required class=\"w-full border rounded-lg p-3 mt-1\"></label> ")
+		if googleClientID != "" && teamID > 0 {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "<div class=\"mb-6 rounded-lg border border-blue-100 bg-blue-50 p-4\"><div class=\"mb-3 font-bold text-blue-950\">Google access</div><script src=\"https://accounts.google.com/gsi/client\" async defer></script><form id=\"google-lineup-auth-form\" method=\"POST\" action=\"/lineups/login\" class=\"space-y-3\"><input type=\"hidden\" name=\"credential\" id=\"google-lineup-credential\"> <input type=\"hidden\" name=\"teamId\" value=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var17 string
+			templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", teamID))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2219, Col: 75}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var17)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "\"><div id=\"g_id_onload\" data-client_id=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var18 string
+			templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.ResolveAttributeValue(googleClientID)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2222, Col: 39}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var18)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "\" data-callback=\"handleGoogleLineupCredential\" data-auto_prompt=\"false\"></div><div class=\"g_id_signin\" data-type=\"standard\" data-size=\"large\" data-theme=\"outline\" data-text=\"signin_with\" data-shape=\"rectangular\" data-logo_alignment=\"left\"></div><div class=\"text-sm text-blue-900\">Sign in to request line-up and formation access for this team. A team admin or super admin can approve it.</div></form><script>\n\t\t\t\t\t\t\twindow.handleGoogleLineupCredential = function(response) {\n\t\t\t\t\t\t\t\tvar credentialInput = document.getElementById(\"google-lineup-credential\");\n\t\t\t\t\t\t\t\tvar form = document.getElementById(\"google-lineup-auth-form\");\n\t\t\t\t\t\t\t\tif (!credentialInput || !form || !response || !response.credential) return;\n\t\t\t\t\t\t\t\tcredentialInput.value = response.credential;\n\t\t\t\t\t\t\t\tform.submit();\n\t\t\t\t\t\t\t};\n\t\t\t\t\t\t</script></div>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "<form method=\"POST\" action=\"/lineups/login\" class=\"space-y-4\"><label class=\"block\">Team key <input name=\"teamKey\" required class=\"w-full border rounded-lg p-3 mt-1\"></label> <label class=\"block\">Team member password <input name=\"teamMemberPass\" type=\"password\" required class=\"w-full border rounded-lg p-3 mt-1\"></label> <label class=\"block\">Display name <input name=\"displayName\" required class=\"w-full border rounded-lg p-3 mt-1\"></label> ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var17 = []any{bigPri}
-		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var17...)
+		var templ_7745c5c3_Var19 = []any{bigPri}
+		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var19...)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "<button class=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "<button class=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var18 string
-		templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var17).String())
+		var templ_7745c5c3_Var20 string
+		templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var19).String())
 		if templ_7745c5c3_Err != nil {
 			return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 1, Col: 0}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var18)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var20)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "\" type=\"submit\">Continue</button></form></div></body></html>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "\" type=\"submit\">Continue</button></form></div></body></html>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -780,12 +864,12 @@ func lineupPreviewPitch(lineup *Lineup) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var19 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var19 == nil {
-			templ_7745c5c3_Var19 = templ.NopComponent
+		templ_7745c5c3_Var21 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var21 == nil {
+			templ_7745c5c3_Var21 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "<div class=\"pitch\" data-pitch>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "<div class=\"pitch\" data-pitch>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -795,169 +879,197 @@ func lineupPreviewPitch(lineup *Lineup) templ.Component {
 		}
 		if lineup != nil {
 			for _, pp := range lineupPitchPlayers(lineup) {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "<button type=\"button\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "<button type=\"button\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				if len(pp.Players) == 0 {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, " class=\"pitch-marker unassigned\"")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, " class=\"pitch-marker unassigned\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				} else {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, " class=\"pitch-marker\"")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, " class=\"pitch-marker\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, " data-slot=\"")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var20 string
-				templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", pp.Position.IndexNumber))
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2179, Col: 59}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var20)
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "\" style=\"")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var21 string
-				templ_7745c5c3_Var21, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues(fmt.Sprintf("left:%.2f%%; top:%.2f%%;", pp.Position.X, pp.Position.Y))
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2180, Col: 82}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "\" onclick=\"window.showPitchEditUnavailableToast()\"><div class=\"shirt\"><span class=\"shirt-collar\"></span> <span class=\"shirt-number\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, " data-slot=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var22 string
-				templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", pp.Position.IndexNumber))
+				templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", pp.Position.IndexNumber))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2185, Col: 77}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2268, Col: 59}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var22)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "</span></div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "\" style=\"")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var23 string
+				templ_7745c5c3_Var23, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues(fmt.Sprintf("left:%.2f%%; top:%.2f%%;", pp.Position.X, pp.Position.Y))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2269, Col: 82}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "\" onclick=\"window.showPitchEditUnavailableToast()\"><div class=\"shirt\"><span class=\"shirt-collar\"></span> ")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				if len(pp.Players) > 0 {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "<div class=\"marker-player-stack\">")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, "<span class=\"shirt-number\">")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					var templ_7745c5c3_Var24 string
+					templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.JoinStringErrs(playerPitchShirtNumber(pp.Players[0].Player, pp.Position.IndexNumber))
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2275, Col: 105}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var24))
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, "</span>")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+				} else {
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 38, "<span class=\"shirt-number\">")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					var templ_7745c5c3_Var25 string
+					templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", pp.Position.IndexNumber))
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2277, Col: 78}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var25))
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 39, "</span>")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 40, "</div>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				if len(pp.Players) > 0 {
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 41, "<div class=\"marker-player-stack\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					for i, assigned := range pp.Players {
 						if i == 0 {
-							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "<span class=\"marker-caption\">")
-							if templ_7745c5c3_Err != nil {
-								return templ_7745c5c3_Err
-							}
-							var templ_7745c5c3_Var23 string
-							templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(assigned.Player.Name)
-							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2191, Col: 60}
-							}
-							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
-							if templ_7745c5c3_Err != nil {
-								return templ_7745c5c3_Err
-							}
-							var templ_7745c5c3_Var24 string
-							templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.JoinStringErrs(lineupSubMinuteLabel(assigned.SubMinute))
-							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2191, Col: 104}
-							}
-							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var24))
-							if templ_7745c5c3_Err != nil {
-								return templ_7745c5c3_Err
-							}
-							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, "</span>")
-							if templ_7745c5c3_Err != nil {
-								return templ_7745c5c3_Err
-							}
-						} else {
-							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, "<span class=\"sub-player\">")
-							if templ_7745c5c3_Err != nil {
-								return templ_7745c5c3_Err
-							}
-							var templ_7745c5c3_Var25 string
-							templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.JoinStringErrs(assigned.Player.Name)
-							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2193, Col: 56}
-							}
-							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var25))
+							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 42, "<span class=\"marker-caption\">")
 							if templ_7745c5c3_Err != nil {
 								return templ_7745c5c3_Err
 							}
 							var templ_7745c5c3_Var26 string
-							templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinStringErrs(lineupSubMinuteLabel(assigned.SubMinute))
+							templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinStringErrs(playerPitchLabel(assigned.Player))
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2193, Col: 100}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2284, Col: 73}
 							}
 							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var26))
 							if templ_7745c5c3_Err != nil {
 								return templ_7745c5c3_Err
 							}
-							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 38, "</span>")
+							var templ_7745c5c3_Var27 string
+							templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs(lineupSubMinuteLabel(assigned.SubMinute))
+							if templ_7745c5c3_Err != nil {
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2284, Col: 117}
+							}
+							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var27))
+							if templ_7745c5c3_Err != nil {
+								return templ_7745c5c3_Err
+							}
+							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 43, "</span>")
+							if templ_7745c5c3_Err != nil {
+								return templ_7745c5c3_Err
+							}
+						} else {
+							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 44, "<span class=\"sub-player\">")
+							if templ_7745c5c3_Err != nil {
+								return templ_7745c5c3_Err
+							}
+							var templ_7745c5c3_Var28 string
+							templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs(playerPitchLabel(assigned.Player))
+							if templ_7745c5c3_Err != nil {
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2286, Col: 69}
+							}
+							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var28))
+							if templ_7745c5c3_Err != nil {
+								return templ_7745c5c3_Err
+							}
+							var templ_7745c5c3_Var29 string
+							templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.JoinStringErrs(lineupSubMinuteLabel(assigned.SubMinute))
+							if templ_7745c5c3_Err != nil {
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2286, Col: 113}
+							}
+							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var29))
+							if templ_7745c5c3_Err != nil {
+								return templ_7745c5c3_Err
+							}
+							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 45, "</span>")
 							if templ_7745c5c3_Err != nil {
 								return templ_7745c5c3_Err
 							}
 						}
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 39, "</div><span class=\"marker-subcaption\">")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 46, "</div><span class=\"marker-subcaption\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					var templ_7745c5c3_Var27 string
-					templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs(pp.Position.PositionName)
+					var templ_7745c5c3_Var30 string
+					templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.JoinStringErrs(pp.Position.PositionName)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2197, Col: 64}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2290, Col: 64}
 					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var27))
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var30))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 40, "</span>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 47, "</span>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				} else {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 41, "<span class=\"marker-caption\">Tap to edit</span> <span class=\"marker-subcaption\">")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 48, "<span class=\"marker-caption\">Tap to edit</span> <span class=\"marker-subcaption\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					var templ_7745c5c3_Var28 string
-					templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs(pp.Position.PositionName)
+					var templ_7745c5c3_Var31 string
+					templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.JoinStringErrs(pp.Position.PositionName)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2200, Col: 64}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2293, Col: 64}
 					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var28))
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var31))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 42, "</span>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 49, "</span>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 43, "</button>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 50, "</button>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 44, "</div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 51, "</div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -981,12 +1093,12 @@ func matchDayPitch(lineup *Lineup, playerTimes []MatchDayPlayerTime, players []P
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var29 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var29 == nil {
-			templ_7745c5c3_Var29 = templ.NopComponent
+		templ_7745c5c3_Var32 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var32 == nil {
+			templ_7745c5c3_Var32 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 45, "<div class=\"pitch\" data-pitch>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 52, "<div class=\"pitch\" data-pitch>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -997,282 +1109,328 @@ func matchDayPitch(lineup *Lineup, playerTimes []MatchDayPlayerTime, players []P
 		if lineup != nil {
 			for _, pp := range lineupPitchPlayers(lineup) {
 				currentPlayer := currentMatchDayPlayerForPosition(playerTimes, pp.Position.IndexNumber)
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 46, "<div")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 53, "<div")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				if len(pp.Players) == 0 {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 47, " class=\"pitch-marker unassigned\"")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 54, " class=\"pitch-marker unassigned\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				} else {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 48, " class=\"pitch-marker\"")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 55, " class=\"pitch-marker\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 49, " data-match-day-marker data-slot=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 56, " data-match-day-marker data-slot=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var30 string
-				templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", pp.Position.IndexNumber))
+				var templ_7745c5c3_Var33 string
+				templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", pp.Position.IndexNumber))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2221, Col: 59}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2314, Col: 59}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var30)
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 50, "\" style=\"")
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var33)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var31 string
-				templ_7745c5c3_Var31, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues(fmt.Sprintf("left:%.2f%%; top:%.2f%%;", pp.Position.X, pp.Position.Y))
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2222, Col: 82}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var31))
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 57, "\" style=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 51, "\"><button type=\"button\" class=\"w-full text-white\" onclick=\"window.toggleMatchDayActions(this, event)\"><div class=\"shirt\"><span class=\"shirt-collar\"></span> <span class=\"shirt-number\">")
+				var templ_7745c5c3_Var34 string
+				templ_7745c5c3_Var34, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues(fmt.Sprintf("left:%.2f%%; top:%.2f%%;", pp.Position.X, pp.Position.Y))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2315, Col: 82}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var34))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var32 string
-				templ_7745c5c3_Var32, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", pp.Position.IndexNumber))
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2227, Col: 78}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var32))
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 58, "\"><button type=\"button\" class=\"w-full text-white\" onclick=\"window.toggleMatchDayActions(this, event)\"><div class=\"shirt\"><span class=\"shirt-collar\"></span> ")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 52, "</span></div>")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				if len(pp.Players) > 0 {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 53, "<div class=\"marker-player-stack\">")
+				if currentPlayer.Player.ID > 0 {
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 59, "<span class=\"shirt-number\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					for i, assigned := range pp.Players {
-						if i == 0 {
-							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 54, "<span class=\"marker-caption\">")
-							if templ_7745c5c3_Err != nil {
-								return templ_7745c5c3_Err
-							}
-							var templ_7745c5c3_Var33 string
-							templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.JoinStringErrs(assigned.Player.Name)
-							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2233, Col: 61}
-							}
-							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var33))
-							if templ_7745c5c3_Err != nil {
-								return templ_7745c5c3_Err
-							}
-							var templ_7745c5c3_Var34 string
-							templ_7745c5c3_Var34, templ_7745c5c3_Err = templ.JoinStringErrs(lineupSubMinuteLabel(assigned.SubMinute))
-							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2233, Col: 105}
-							}
-							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var34))
-							if templ_7745c5c3_Err != nil {
-								return templ_7745c5c3_Err
-							}
-							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 55, "</span>")
-							if templ_7745c5c3_Err != nil {
-								return templ_7745c5c3_Err
-							}
-						} else {
-							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 56, "<span class=\"sub-player\">")
-							if templ_7745c5c3_Err != nil {
-								return templ_7745c5c3_Err
-							}
-							var templ_7745c5c3_Var35 string
-							templ_7745c5c3_Var35, templ_7745c5c3_Err = templ.JoinStringErrs(assigned.Player.Name)
-							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2235, Col: 57}
-							}
-							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var35))
-							if templ_7745c5c3_Err != nil {
-								return templ_7745c5c3_Err
-							}
-							var templ_7745c5c3_Var36 string
-							templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.JoinStringErrs(lineupSubMinuteLabel(assigned.SubMinute))
-							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2235, Col: 101}
-							}
-							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var36))
-							if templ_7745c5c3_Err != nil {
-								return templ_7745c5c3_Err
-							}
-							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 57, "</span>")
-							if templ_7745c5c3_Err != nil {
-								return templ_7745c5c3_Err
-							}
-						}
+					var templ_7745c5c3_Var35 string
+					templ_7745c5c3_Var35, templ_7745c5c3_Err = templ.JoinStringErrs(playerPitchShirtNumber(currentPlayer.Player, pp.Position.IndexNumber))
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2321, Col: 106}
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 58, "</div><span class=\"marker-subcaption\">")
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var35))
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 60, "</span>")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+				} else if len(pp.Players) > 0 {
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 61, "<span class=\"shirt-number\">")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					var templ_7745c5c3_Var36 string
+					templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.JoinStringErrs(playerPitchShirtNumber(pp.Players[0].Player, pp.Position.IndexNumber))
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2323, Col: 106}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var36))
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 62, "</span>")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+				} else {
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 63, "<span class=\"shirt-number\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var37 string
-					templ_7745c5c3_Var37, templ_7745c5c3_Err = templ.JoinStringErrs(pp.Position.PositionName)
+					templ_7745c5c3_Var37, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", pp.Position.IndexNumber))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2240, Col: 34}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2325, Col: 79}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var37))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 59, " ")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					if matchDayLiveMinuteLabel(lineup.Match, currentPlayer) != "" {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 60, "- ")
-						if templ_7745c5c3_Err != nil {
-							return templ_7745c5c3_Err
-						}
-						var templ_7745c5c3_Var38 string
-						templ_7745c5c3_Var38, templ_7745c5c3_Err = templ.JoinStringErrs(matchDayLiveMinuteLabel(lineup.Match, currentPlayer))
-						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2242, Col: 65}
-						}
-						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var38))
-						if templ_7745c5c3_Err != nil {
-							return templ_7745c5c3_Err
-						}
-					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 61, "</span>")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-				} else {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 62, "<span class=\"marker-caption\">Unassigned</span> <span class=\"marker-subcaption\">")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					var templ_7745c5c3_Var39 string
-					templ_7745c5c3_Var39, templ_7745c5c3_Err = templ.JoinStringErrs(pp.Position.PositionName)
-					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2247, Col: 65}
-					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var39))
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 63, "</span>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 64, "</span>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 64, "</button> ")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 65, "</div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				if currentPlayer.Player.ID > 0 && lineupMatchID(lineup) > 0 && matchDayCanLogLiveEvent(lineup.Match) {
-					var templ_7745c5c3_Var40 = []any{matchDayMarkerPopupClass(pp.Position)}
-					templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var40...)
+				if len(pp.Players) > 0 {
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 66, "<div class=\"marker-player-stack\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 65, "<div class=\"")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
+					for i, assigned := range pp.Players {
+						if i == 0 {
+							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 67, "<span class=\"marker-caption\">")
+							if templ_7745c5c3_Err != nil {
+								return templ_7745c5c3_Err
+							}
+							var templ_7745c5c3_Var38 string
+							templ_7745c5c3_Var38, templ_7745c5c3_Err = templ.JoinStringErrs(playerPitchLabel(assigned.Player))
+							if templ_7745c5c3_Err != nil {
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2332, Col: 74}
+							}
+							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var38))
+							if templ_7745c5c3_Err != nil {
+								return templ_7745c5c3_Err
+							}
+							var templ_7745c5c3_Var39 string
+							templ_7745c5c3_Var39, templ_7745c5c3_Err = templ.JoinStringErrs(lineupSubMinuteLabel(assigned.SubMinute))
+							if templ_7745c5c3_Err != nil {
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2332, Col: 118}
+							}
+							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var39))
+							if templ_7745c5c3_Err != nil {
+								return templ_7745c5c3_Err
+							}
+							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 68, "</span>")
+							if templ_7745c5c3_Err != nil {
+								return templ_7745c5c3_Err
+							}
+						} else {
+							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 69, "<span class=\"sub-player\">")
+							if templ_7745c5c3_Err != nil {
+								return templ_7745c5c3_Err
+							}
+							var templ_7745c5c3_Var40 string
+							templ_7745c5c3_Var40, templ_7745c5c3_Err = templ.JoinStringErrs(playerPitchLabel(assigned.Player))
+							if templ_7745c5c3_Err != nil {
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2334, Col: 70}
+							}
+							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var40))
+							if templ_7745c5c3_Err != nil {
+								return templ_7745c5c3_Err
+							}
+							var templ_7745c5c3_Var41 string
+							templ_7745c5c3_Var41, templ_7745c5c3_Err = templ.JoinStringErrs(lineupSubMinuteLabel(assigned.SubMinute))
+							if templ_7745c5c3_Err != nil {
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2334, Col: 114}
+							}
+							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var41))
+							if templ_7745c5c3_Err != nil {
+								return templ_7745c5c3_Err
+							}
+							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 70, "</span>")
+							if templ_7745c5c3_Err != nil {
+								return templ_7745c5c3_Err
+							}
+						}
 					}
-					var templ_7745c5c3_Var41 string
-					templ_7745c5c3_Var41, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var40).String())
-					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 1, Col: 0}
-					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var41)
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 66, "\" data-match-day-popup onclick=\"event.stopPropagation()\"><div class=\"match-day-marker-title\"><span>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 71, "</div><span class=\"marker-subcaption\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var42 string
-					templ_7745c5c3_Var42, templ_7745c5c3_Err = templ.JoinStringErrs(currentPlayer.Player.Name)
+					templ_7745c5c3_Var42, templ_7745c5c3_Err = templ.JoinStringErrs(pp.Position.PositionName)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2253, Col: 41}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2339, Col: 34}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var42))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 67, "</span><div class=\"flex items-center gap-2\">")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 72, " ")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					if matchDayLiveMinuteLabel(lineup.Match, currentPlayer) != "" {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 68, "<span>")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 73, "- ")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 						var templ_7745c5c3_Var43 string
 						templ_7745c5c3_Var43, templ_7745c5c3_Err = templ.JoinStringErrs(matchDayLiveMinuteLabel(lineup.Match, currentPlayer))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2256, Col: 70}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2341, Col: 65}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var43))
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 69, "</span> ")
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 74, "</span>")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+				} else {
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 75, "<span class=\"marker-caption\">Unassigned</span> <span class=\"marker-subcaption\">")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					var templ_7745c5c3_Var44 string
+					templ_7745c5c3_Var44, templ_7745c5c3_Err = templ.JoinStringErrs(pp.Position.PositionName)
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2346, Col: 65}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var44))
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 76, "</span>")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 77, "</button> ")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				if currentPlayer.Player.ID > 0 && lineupMatchID(lineup) > 0 && matchDayCanLogLiveEvent(lineup.Match) {
+					var templ_7745c5c3_Var45 = []any{matchDayMarkerPopupClass(pp.Position)}
+					templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var45...)
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 78, "<div class=\"")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					var templ_7745c5c3_Var46 string
+					templ_7745c5c3_Var46, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var45).String())
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 1, Col: 0}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var46)
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 79, "\" data-match-day-popup onclick=\"event.stopPropagation()\"><div class=\"match-day-marker-title\"><span>")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					var templ_7745c5c3_Var47 string
+					templ_7745c5c3_Var47, templ_7745c5c3_Err = templ.JoinStringErrs(currentPlayer.Player.Name)
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2352, Col: 41}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var47))
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 80, "</span><div class=\"flex items-center gap-2\">")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					if matchDayLiveMinuteLabel(lineup.Match, currentPlayer) != "" {
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 81, "<span>")
+						if templ_7745c5c3_Err != nil {
+							return templ_7745c5c3_Err
+						}
+						var templ_7745c5c3_Var48 string
+						templ_7745c5c3_Var48, templ_7745c5c3_Err = templ.JoinStringErrs(matchDayLiveMinuteLabel(lineup.Match, currentPlayer))
+						if templ_7745c5c3_Err != nil {
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2355, Col: 70}
+						}
+						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var48))
+						if templ_7745c5c3_Err != nil {
+							return templ_7745c5c3_Err
+						}
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 82, "</span> ")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 					} else {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 70, "<span>")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 83, "<span>")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						var templ_7745c5c3_Var44 string
-						templ_7745c5c3_Var44, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d min", currentPlayer.Minutes))
+						var templ_7745c5c3_Var49 string
+						templ_7745c5c3_Var49, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d min", currentPlayer.Minutes))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2258, Col: 62}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2357, Col: 62}
 						}
-						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var44))
+						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var49))
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 71, "</span> ")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 84, "</span> ")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 72, "<button type=\"button\" class=\"match-day-extra-menu-button\" aria-label=\"")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 85, "<button type=\"button\" class=\"match-day-extra-menu-button\" aria-label=\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					var templ_7745c5c3_Var45 string
-					templ_7745c5c3_Var45, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("Extra match events for %s", currentPlayer.Player.Name))
+					var templ_7745c5c3_Var50 string
+					templ_7745c5c3_Var50, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("Extra match events for %s", currentPlayer.Player.Name))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2263, Col: 90}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2362, Col: 90}
 					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var45)
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var50)
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 73, "\" title=\"Extra match events\" onclick=\"window.showMatchDayStepPanel(this, 'extra')\">☰</button></div></div><div class=\"match-day-popup-actions\"><button type=\"button\" class=\"match-day-action-button primary\" onclick=\"window.showMatchDayStepPanel(this, 'goal')\">Add goal</button> <button type=\"button\" class=\"match-day-action-button\" onclick=\"window.showMatchDayStepPanel(this, 'swap')\">Swap</button> ")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 86, "\" title=\"Extra match events\" onclick=\"window.showMatchDayStepPanel(this, 'extra')\">☰</button></div></div><div class=\"match-day-popup-actions\"><button type=\"button\" class=\"match-day-action-button primary\" onclick=\"window.showMatchDayStepPanel(this, 'goal')\">Add goal</button> <button type=\"button\" class=\"match-day-action-button\" onclick=\"window.showMatchDayStepPanel(this, 'swap')\">Swap</button> ")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					if !lineup.Locked {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 74, "<button type=\"button\" class=\"match-day-action-button\" onclick=\"window.showMatchDayStepPanel(this, 'sub')\">Sub player</button>")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 87, "<button type=\"button\" class=\"match-day-action-button\" onclick=\"window.showMatchDayStepPanel(this, 'sub')\">Sub player</button>")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 75, "</div><div class=\"match-day-step-panel\" data-match-day-step-panel=\"extra\"><div class=\"match-day-extra-events\">")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 88, "</div><div class=\"match-day-step-panel\" data-match-day-step-panel=\"extra\"><div class=\"match-day-extra-events\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
@@ -1286,490 +1444,623 @@ func matchDayPitch(lineup *Lineup, playerTimes []MatchDayPlayerTime, players []P
 						{"gave-away-penalty", "Gave away pen", false},
 						{"injury", "Injury", false},
 					} {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 76, "<form method=\"POST\" action=\"")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 89, "<form method=\"POST\" action=\"")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						var templ_7745c5c3_Var46 templ.SafeURL
-						templ_7745c5c3_Var46, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/match-day/%d/action", lineup.ID))
+						var templ_7745c5c3_Var51 templ.SafeURL
+						templ_7745c5c3_Var51, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/match-day/%d/action", lineup.ID))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2284, Col: 85}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2383, Col: 85}
 						}
-						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var46))
-						if templ_7745c5c3_Err != nil {
-							return templ_7745c5c3_Err
-						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 77, "\"><input type=\"hidden\" name=\"action\" value=\"")
+						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var51))
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						var templ_7745c5c3_Var47 string
-						templ_7745c5c3_Var47, templ_7745c5c3_Err = templ.ResolveAttributeValue(extraEvent.Action)
-						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2285, Col: 71}
-						}
-						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var47)
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 90, "\"><input type=\"hidden\" name=\"action\" value=\"")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 78, "\"> <input type=\"hidden\" name=\"playerId\" value=\"")
+						var templ_7745c5c3_Var52 string
+						templ_7745c5c3_Var52, templ_7745c5c3_Err = templ.ResolveAttributeValue(extraEvent.Action)
+						if templ_7745c5c3_Err != nil {
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2384, Col: 71}
+						}
+						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var52)
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						var templ_7745c5c3_Var48 string
-						templ_7745c5c3_Var48, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", currentPlayer.Player.ID))
-						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2286, Col: 98}
-						}
-						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var48)
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 91, "\"> <input type=\"hidden\" name=\"playerId\" value=\"")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 79, "\"> <input type=\"hidden\" name=\"minute\" value=\"")
+						var templ_7745c5c3_Var53 string
+						templ_7745c5c3_Var53, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", currentPlayer.Player.ID))
+						if templ_7745c5c3_Err != nil {
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2385, Col: 98}
+						}
+						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var53)
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						var templ_7745c5c3_Var49 string
-						templ_7745c5c3_Var49, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", matchDayMinute(lineup.Match)))
-						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2287, Col: 101}
-						}
-						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var49)
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 92, "\"> <input type=\"hidden\" name=\"minute\" value=\"")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 80, "\"> <button type=\"submit\"")
+						var templ_7745c5c3_Var54 string
+						templ_7745c5c3_Var54, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", matchDayMinute(lineup.Match)))
+						if templ_7745c5c3_Err != nil {
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2386, Col: 101}
+						}
+						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var54)
+						if templ_7745c5c3_Err != nil {
+							return templ_7745c5c3_Err
+						}
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 93, "\"> <button type=\"submit\"")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 						if extraEvent.Warning {
-							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 81, " class=\"match-day-action-button warning\"")
+							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 94, " class=\"match-day-action-button warning\"")
 							if templ_7745c5c3_Err != nil {
 								return templ_7745c5c3_Err
 							}
 						} else {
-							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 82, " class=\"match-day-action-button\"")
+							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 95, " class=\"match-day-action-button\"")
 							if templ_7745c5c3_Err != nil {
 								return templ_7745c5c3_Err
 							}
 						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 83, ">")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 96, ">")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						var templ_7745c5c3_Var50 string
-						templ_7745c5c3_Var50, templ_7745c5c3_Err = templ.JoinStringErrs(extraEvent.Label)
+						var templ_7745c5c3_Var55 string
+						templ_7745c5c3_Var55, templ_7745c5c3_Err = templ.JoinStringErrs(extraEvent.Label)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2295, Col: 30}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2394, Col: 30}
 						}
-						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var50))
-						if templ_7745c5c3_Err != nil {
-							return templ_7745c5c3_Err
-						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 84, "</button></form>")
+						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var55))
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 85, "</div></div><div class=\"match-day-step-panel\" data-match-day-step-panel=\"goal\"><form method=\"POST\" action=\"")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					var templ_7745c5c3_Var51 templ.SafeURL
-					templ_7745c5c3_Var51, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/match-day/%d/action", lineup.ID))
-					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2301, Col: 83}
-					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var51))
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 86, "\" class=\"match-day-goal-form\"><input type=\"hidden\" name=\"action\" value=\"goal\"> <input type=\"hidden\" name=\"playerId\" value=\"")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					var templ_7745c5c3_Var52 string
-					templ_7745c5c3_Var52, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", currentPlayer.Player.ID))
-					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2303, Col: 96}
-					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var52)
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 87, "\"> <input type=\"hidden\" name=\"minute\" value=\"")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					var templ_7745c5c3_Var53 string
-					templ_7745c5c3_Var53, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", matchDayMinute(lineup.Match)))
-					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2304, Col: 99}
-					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var53)
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 88, "\"> <select name=\"assisterPlayerId\" aria-label=\"")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					var templ_7745c5c3_Var54 string
-					templ_7745c5c3_Var54, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("Assist for %s goal", currentPlayer.Player.Name))
-					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2305, Col: 114}
-					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var54)
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 89, "\"><option value=\"\">No assist</option> ")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					for _, playerTime := range playerTimes {
-						if playerTime.Current && playerTime.Player.ID != currentPlayer.Player.ID {
-							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 90, "<option value=\"")
-							if templ_7745c5c3_Err != nil {
-								return templ_7745c5c3_Err
-							}
-							var templ_7745c5c3_Var55 string
-							templ_7745c5c3_Var55, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", playerTime.Player.ID))
-							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2309, Col: 67}
-							}
-							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var55)
-							if templ_7745c5c3_Err != nil {
-								return templ_7745c5c3_Err
-							}
-							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 91, "\">")
-							if templ_7745c5c3_Err != nil {
-								return templ_7745c5c3_Err
-							}
-							var templ_7745c5c3_Var56 string
-							templ_7745c5c3_Var56, templ_7745c5c3_Err = templ.JoinStringErrs(playerTime.Player.Name)
-							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2309, Col: 94}
-							}
-							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var56))
-							if templ_7745c5c3_Err != nil {
-								return templ_7745c5c3_Err
-							}
-							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 92, "</option>")
-							if templ_7745c5c3_Err != nil {
-								return templ_7745c5c3_Err
-							}
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 97, "</button></form>")
+						if templ_7745c5c3_Err != nil {
+							return templ_7745c5c3_Err
 						}
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 93, "</select> <button type=\"submit\" class=\"match-day-action-button primary\">Add goal</button></form></div><div class=\"match-day-step-panel\" data-match-day-step-panel=\"swap\"><form method=\"POST\" action=\"")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 98, "</div></div><div class=\"match-day-step-panel\" data-match-day-step-panel=\"goal\"><form method=\"POST\" action=\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					var templ_7745c5c3_Var57 templ.SafeURL
-					templ_7745c5c3_Var57, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/match-day/%d/action", lineup.ID))
+					var templ_7745c5c3_Var56 templ.SafeURL
+					templ_7745c5c3_Var56, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/match-day/%d/action", lineup.ID))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2317, Col: 83}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2400, Col: 83}
 					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var57))
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var56))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 94, "\" class=\"match-day-popup-swap-form\"><input type=\"hidden\" name=\"action\" value=\"swap\"> <input type=\"hidden\" name=\"playerId\" value=\"")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 99, "\" class=\"match-day-goal-form\"><input type=\"hidden\" name=\"action\" value=\"goal\"> <input type=\"hidden\" name=\"playerId\" value=\"")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					var templ_7745c5c3_Var57 string
+					templ_7745c5c3_Var57, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", currentPlayer.Player.ID))
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2402, Col: 96}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var57)
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 100, "\"> <input type=\"hidden\" name=\"minute\" value=\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var58 string
-					templ_7745c5c3_Var58, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", currentPlayer.Player.ID))
+					templ_7745c5c3_Var58, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", matchDayMinute(lineup.Match)))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2319, Col: 96}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2403, Col: 99}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var58)
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 95, "\"> <input type=\"hidden\" name=\"minute\" value=\"")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 101, "\"> <select name=\"assisterPlayerId\" aria-label=\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var59 string
-					templ_7745c5c3_Var59, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", matchDayMinute(lineup.Match)))
+					templ_7745c5c3_Var59, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("Assist for %s goal", currentPlayer.Player.Name))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2320, Col: 99}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2404, Col: 114}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var59)
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 96, "\"> <select name=\"swapPlayerId\" aria-label=\"")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					var templ_7745c5c3_Var60 string
-					templ_7745c5c3_Var60, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("Swap %s with", currentPlayer.Player.Name))
-					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2321, Col: 104}
-					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var60)
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 97, "\" data-current-player-name=\"")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					var templ_7745c5c3_Var61 string
-					templ_7745c5c3_Var61, templ_7745c5c3_Err = templ.ResolveAttributeValue(currentPlayer.Player.Name)
-					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2321, Col: 159}
-					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var61)
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 98, "\" onchange=\"window.updateMatchDaySwapButton(this)\" required><option value=\"\">Swap with player</option> ")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 102, "\"><option value=\"\">No assist</option> ")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					for _, playerTime := range playerTimes {
 						if playerTime.Current && playerTime.Player.ID != currentPlayer.Player.ID {
-							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 99, "<option value=\"")
+							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 103, "<option value=\"")
 							if templ_7745c5c3_Err != nil {
 								return templ_7745c5c3_Err
 							}
-							var templ_7745c5c3_Var62 string
-							templ_7745c5c3_Var62, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", playerTime.Player.ID))
+							var templ_7745c5c3_Var60 string
+							templ_7745c5c3_Var60, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", playerTime.Player.ID))
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2325, Col: 67}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2408, Col: 67}
 							}
-							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var62)
-							if templ_7745c5c3_Err != nil {
-								return templ_7745c5c3_Err
-							}
-							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 100, "\" data-player-name=\"")
+							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var60)
 							if templ_7745c5c3_Err != nil {
 								return templ_7745c5c3_Err
 							}
-							var templ_7745c5c3_Var63 string
-							templ_7745c5c3_Var63, templ_7745c5c3_Err = templ.ResolveAttributeValue(playerTime.Player.Name)
-							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2325, Col: 111}
-							}
-							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var63)
+							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 104, "\">")
 							if templ_7745c5c3_Err != nil {
 								return templ_7745c5c3_Err
 							}
-							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 101, "\">")
+							var templ_7745c5c3_Var61 string
+							templ_7745c5c3_Var61, templ_7745c5c3_Err = templ.JoinStringErrs(playerTime.Player.Name)
+							if templ_7745c5c3_Err != nil {
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2408, Col: 94}
+							}
+							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var61))
 							if templ_7745c5c3_Err != nil {
 								return templ_7745c5c3_Err
 							}
-							var templ_7745c5c3_Var64 string
-							templ_7745c5c3_Var64, templ_7745c5c3_Err = templ.JoinStringErrs(playerTime.Player.Name)
-							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2325, Col: 138}
-							}
-							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var64))
-							if templ_7745c5c3_Err != nil {
-								return templ_7745c5c3_Err
-							}
-							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 102, "</option>")
+							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 105, "</option>")
 							if templ_7745c5c3_Err != nil {
 								return templ_7745c5c3_Err
 							}
 						}
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 103, "</select> <button type=\"submit\" class=\"match-day-action-button primary hidden\" data-match-day-swap-button>Swap</button></form></div>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 106, "</select> <button type=\"submit\" class=\"match-day-action-button primary\">Add goal</button></form></div><div class=\"match-day-step-panel\" data-match-day-step-panel=\"swap\"><form method=\"POST\" action=\"")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					var templ_7745c5c3_Var62 templ.SafeURL
+					templ_7745c5c3_Var62, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/match-day/%d/action", lineup.ID))
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2416, Col: 83}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var62))
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 107, "\" class=\"match-day-popup-swap-form\"><input type=\"hidden\" name=\"action\" value=\"swap\"> <input type=\"hidden\" name=\"playerId\" value=\"")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					var templ_7745c5c3_Var63 string
+					templ_7745c5c3_Var63, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", currentPlayer.Player.ID))
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2418, Col: 96}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var63)
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 108, "\"> <input type=\"hidden\" name=\"minute\" value=\"")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					var templ_7745c5c3_Var64 string
+					templ_7745c5c3_Var64, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", matchDayMinute(lineup.Match)))
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2419, Col: 99}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var64)
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 109, "\"> <select name=\"swapPlayerId\" aria-label=\"")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					var templ_7745c5c3_Var65 string
+					templ_7745c5c3_Var65, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("Swap %s with", currentPlayer.Player.Name))
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2420, Col: 104}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var65)
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 110, "\" data-current-player-name=\"")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					var templ_7745c5c3_Var66 string
+					templ_7745c5c3_Var66, templ_7745c5c3_Err = templ.ResolveAttributeValue(currentPlayer.Player.Name)
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2420, Col: 159}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var66)
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 111, "\" onchange=\"window.updateMatchDaySwapButton(this)\" required><option value=\"\">Swap with player</option> ")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					for _, playerTime := range playerTimes {
+						if playerTime.Current && playerTime.Player.ID != currentPlayer.Player.ID {
+							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 112, "<option value=\"")
+							if templ_7745c5c3_Err != nil {
+								return templ_7745c5c3_Err
+							}
+							var templ_7745c5c3_Var67 string
+							templ_7745c5c3_Var67, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", playerTime.Player.ID))
+							if templ_7745c5c3_Err != nil {
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2424, Col: 67}
+							}
+							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var67)
+							if templ_7745c5c3_Err != nil {
+								return templ_7745c5c3_Err
+							}
+							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 113, "\" data-player-name=\"")
+							if templ_7745c5c3_Err != nil {
+								return templ_7745c5c3_Err
+							}
+							var templ_7745c5c3_Var68 string
+							templ_7745c5c3_Var68, templ_7745c5c3_Err = templ.ResolveAttributeValue(playerTime.Player.Name)
+							if templ_7745c5c3_Err != nil {
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2424, Col: 111}
+							}
+							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var68)
+							if templ_7745c5c3_Err != nil {
+								return templ_7745c5c3_Err
+							}
+							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 114, "\">")
+							if templ_7745c5c3_Err != nil {
+								return templ_7745c5c3_Err
+							}
+							var templ_7745c5c3_Var69 string
+							templ_7745c5c3_Var69, templ_7745c5c3_Err = templ.JoinStringErrs(playerTime.Player.Name)
+							if templ_7745c5c3_Err != nil {
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2424, Col: 138}
+							}
+							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var69))
+							if templ_7745c5c3_Err != nil {
+								return templ_7745c5c3_Err
+							}
+							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 115, "</option>")
+							if templ_7745c5c3_Err != nil {
+								return templ_7745c5c3_Err
+							}
+						}
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 116, "</select> <button type=\"submit\" class=\"match-day-action-button primary hidden\" data-match-day-swap-button>Swap</button></form></div>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					if !lineup.Locked {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 104, "<div class=\"match-day-step-panel\" data-match-day-step-panel=\"sub\">")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 117, "<div class=\"match-day-step-panel\" data-match-day-step-panel=\"sub\">")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 						quickSubCandidateIDs := matchDayQuickSubCandidateIDs(pp.Players, currentPlayer.Player.ID, playerTimes, unavailablePlayerIDs)
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 105, "<form method=\"POST\" action=\"")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 118, "<form method=\"POST\" action=\"")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						var templ_7745c5c3_Var65 templ.SafeURL
-						templ_7745c5c3_Var65, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/match-day/%d/action", lineup.ID))
+						var templ_7745c5c3_Var70 templ.SafeURL
+						templ_7745c5c3_Var70, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/match-day/%d/action", lineup.ID))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2335, Col: 85}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2434, Col: 85}
 						}
-						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var65))
-						if templ_7745c5c3_Err != nil {
-							return templ_7745c5c3_Err
-						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 106, "\" class=\"match-day-popup-sub-form\"><input type=\"hidden\" name=\"action\" value=\"sub\"> <input type=\"hidden\" name=\"playerId\" value=\"")
+						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var70))
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						var templ_7745c5c3_Var66 string
-						templ_7745c5c3_Var66, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", currentPlayer.Player.ID))
-						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2337, Col: 98}
-						}
-						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var66)
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 119, "\" class=\"match-day-popup-sub-form\"><input type=\"hidden\" name=\"action\" value=\"sub\"> <input type=\"hidden\" name=\"playerId\" value=\"")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 107, "\"> <input type=\"hidden\" name=\"indexNumber\" value=\"")
+						var templ_7745c5c3_Var71 string
+						templ_7745c5c3_Var71, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", currentPlayer.Player.ID))
+						if templ_7745c5c3_Err != nil {
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2436, Col: 98}
+						}
+						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var71)
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						var templ_7745c5c3_Var67 string
-						templ_7745c5c3_Var67, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", currentPlayer.CurrentIndexNumber))
-						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2338, Col: 110}
-						}
-						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var67)
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 120, "\"> <input type=\"hidden\" name=\"indexNumber\" value=\"")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 108, "\"> ")
+						var templ_7745c5c3_Var72 string
+						templ_7745c5c3_Var72, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", currentPlayer.CurrentIndexNumber))
+						if templ_7745c5c3_Err != nil {
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2437, Col: 110}
+						}
+						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var72)
+						if templ_7745c5c3_Err != nil {
+							return templ_7745c5c3_Err
+						}
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 121, "\"> ")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 						if len(quickSubCandidateIDs) > 0 {
-							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 109, "<div class=\"match-day-quick-sub-options\">")
+							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 122, "<div class=\"match-day-quick-sub-options\">")
 							if templ_7745c5c3_Err != nil {
 								return templ_7745c5c3_Err
 							}
 							for _, assigned := range pp.Players {
 								if quickSubCandidateIDs[assigned.PlayerID] {
-									templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 110, "<button type=\"submit\" name=\"replacementPlayerId\" value=\"")
+									templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 123, "<button type=\"submit\" name=\"replacementPlayerId\" value=\"")
 									if templ_7745c5c3_Err != nil {
 										return templ_7745c5c3_Err
 									}
-									var templ_7745c5c3_Var68 string
-									templ_7745c5c3_Var68, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", assigned.PlayerID))
+									var templ_7745c5c3_Var73 string
+									templ_7745c5c3_Var73, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", assigned.PlayerID))
 									if templ_7745c5c3_Err != nil {
-										return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2343, Col: 108}
+										return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2442, Col: 108}
 									}
-									_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var68)
-									if templ_7745c5c3_Err != nil {
-										return templ_7745c5c3_Err
-									}
-									templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 111, "\" class=\"match-day-action-button primary\" formnovalidate>")
+									_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var73)
 									if templ_7745c5c3_Err != nil {
 										return templ_7745c5c3_Err
 									}
-									var templ_7745c5c3_Var69 string
-									templ_7745c5c3_Var69, templ_7745c5c3_Err = templ.JoinStringErrs(assigned.Player.Name)
-									if templ_7745c5c3_Err != nil {
-										return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2343, Col: 188}
-									}
-									_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var69))
+									templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 124, "\" class=\"match-day-action-button primary\" formnovalidate>")
 									if templ_7745c5c3_Err != nil {
 										return templ_7745c5c3_Err
 									}
-									templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 112, "</button>")
+									var templ_7745c5c3_Var74 string
+									templ_7745c5c3_Var74, templ_7745c5c3_Err = templ.JoinStringErrs(assigned.Player.Name)
+									if templ_7745c5c3_Err != nil {
+										return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2442, Col: 188}
+									}
+									_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var74))
+									if templ_7745c5c3_Err != nil {
+										return templ_7745c5c3_Err
+									}
+									templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 125, "</button>")
 									if templ_7745c5c3_Err != nil {
 										return templ_7745c5c3_Err
 									}
 								}
 							}
-							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 113, "</div>")
+							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 126, "</div>")
 							if templ_7745c5c3_Err != nil {
 								return templ_7745c5c3_Err
 							}
 						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 114, "<select name=\"replacementPlayerId\" aria-label=\"")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 127, "<select name=\"replacementPlayerId\" aria-label=\"")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						var templ_7745c5c3_Var70 string
-						templ_7745c5c3_Var70, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("Sub for %s", currentPlayer.Player.Name))
+						var templ_7745c5c3_Var75 string
+						templ_7745c5c3_Var75, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("Sub for %s", currentPlayer.Player.Name))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2348, Col: 111}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2447, Col: 111}
 						}
-						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var70)
+						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var75)
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 115, "\" required><option value=\"\">Other player</option> ")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 128, "\" required><option value=\"\">Other player</option> ")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 						for _, player := range players {
 							if !quickSubCandidateIDs[player.ID] && !matchDayPlayerCurrentlyOn(playerTimes, player.ID) && !playerUnavailableForMatch(unavailablePlayerIDs, player.ID) {
-								templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 116, "<option value=\"")
+								templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 129, "<option value=\"")
 								if templ_7745c5c3_Err != nil {
 									return templ_7745c5c3_Err
 								}
-								var templ_7745c5c3_Var71 string
-								templ_7745c5c3_Var71, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", player.ID))
+								var templ_7745c5c3_Var76 string
+								templ_7745c5c3_Var76, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", player.ID))
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2352, Col: 58}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2451, Col: 58}
 								}
-								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var71)
-								if templ_7745c5c3_Err != nil {
-									return templ_7745c5c3_Err
-								}
-								templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 117, "\">")
+								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var76)
 								if templ_7745c5c3_Err != nil {
 									return templ_7745c5c3_Err
 								}
-								var templ_7745c5c3_Var72 string
-								templ_7745c5c3_Var72, templ_7745c5c3_Err = templ.JoinStringErrs(player.Name)
-								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2352, Col: 74}
-								}
-								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var72))
+								templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 130, "\">")
 								if templ_7745c5c3_Err != nil {
 									return templ_7745c5c3_Err
 								}
-								templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 118, "</option>")
+								var templ_7745c5c3_Var77 string
+								templ_7745c5c3_Var77, templ_7745c5c3_Err = templ.JoinStringErrs(player.Name)
+								if templ_7745c5c3_Err != nil {
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2451, Col: 74}
+								}
+								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var77))
+								if templ_7745c5c3_Err != nil {
+									return templ_7745c5c3_Err
+								}
+								templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 131, "</option>")
 								if templ_7745c5c3_Err != nil {
 									return templ_7745c5c3_Err
 								}
 							}
 						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 119, "</select> <input type=\"number\" min=\"0\" max=\"120\" name=\"minute\" value=\"")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 132, "</select> <input type=\"number\" min=\"0\" max=\"120\" name=\"minute\" value=\"")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						var templ_7745c5c3_Var73 string
-						templ_7745c5c3_Var73, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", matchDayMinute(lineup.Match)))
+						var templ_7745c5c3_Var78 string
+						templ_7745c5c3_Var78, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", matchDayMinute(lineup.Match)))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2356, Col: 119}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2455, Col: 119}
 						}
-						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var73)
-						if templ_7745c5c3_Err != nil {
-							return templ_7745c5c3_Err
-						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 120, "\" aria-label=\"Sub minute\"> <label class=\"match-day-sub-injury-option\"><input type=\"checkbox\" name=\"markInjured\" value=\"on\"> <span>Mark ")
+						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var78)
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						var templ_7745c5c3_Var74 string
-						templ_7745c5c3_Var74, templ_7745c5c3_Err = templ.JoinStringErrs(currentPlayer.Player.Name)
-						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2359, Col: 50}
-						}
-						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var74))
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 133, "\" aria-label=\"Sub minute\"> <label class=\"match-day-sub-injury-option\"><input type=\"checkbox\" name=\"markInjured\" value=\"on\"> <span>Mark ")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 121, " as injured</span></label> <button type=\"submit\" class=\"match-day-action-button primary\">Sub</button></form></div>")
+						var templ_7745c5c3_Var79 string
+						templ_7745c5c3_Var79, templ_7745c5c3_Err = templ.JoinStringErrs(currentPlayer.Player.Name)
+						if templ_7745c5c3_Err != nil {
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2458, Col: 50}
+						}
+						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var79))
+						if templ_7745c5c3_Err != nil {
+							return templ_7745c5c3_Err
+						}
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 134, " as injured</span></label> <button type=\"submit\" class=\"match-day-action-button primary\">Sub</button></form></div>")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 122, "</div>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 135, "</div>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 123, "</div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 136, "</div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 124, "</div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 137, "</div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
+		}
+		return nil
+	})
+}
+
+func matchDaySuggestedSubsPanel(lineup *Lineup, unavailablePlayerIDs map[uint]bool) templ.Component {
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
+			return templ_7745c5c3_CtxErr
+		}
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+		if !templ_7745c5c3_IsBuffer {
+			defer func() {
+				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err == nil {
+					templ_7745c5c3_Err = templ_7745c5c3_BufErr
+				}
+			}()
+		}
+		ctx = templ.InitializeContext(ctx)
+		templ_7745c5c3_Var80 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var80 == nil {
+			templ_7745c5c3_Var80 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		suggestedSubs := matchDaySuggestedSubs(lineup, unavailablePlayerIDs)
+		if len(suggestedSubs) > 0 {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 138, "<div class=\"space-y-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950\"><div class=\"font-bold\">Suggested subs</div>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			for _, suggestedSub := range suggestedSubs {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 139, "<form method=\"POST\" action=\"")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var81 templ.SafeURL
+				templ_7745c5c3_Var81, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/match-day/%d/action", lineup.ID))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2478, Col: 79}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var81))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 140, "\" class=\"grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-lg bg-white/70 p-2 ring-1 ring-amber-100\"><input type=\"hidden\" name=\"action\" value=\"sub\"> <input type=\"hidden\" name=\"playerId\" value=\"")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var82 string
+				templ_7745c5c3_Var82, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", suggestedSub.CurrentPlayer.ID))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2480, Col: 98}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var82)
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 141, "\"> <input type=\"hidden\" name=\"replacementPlayerId\" value=\"")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var83 string
+				templ_7745c5c3_Var83, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", suggestedSub.ReplacementPlayer.ID))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2481, Col: 113}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var83)
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 142, "\"> <input type=\"hidden\" name=\"indexNumber\" value=\"")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var84 string
+				templ_7745c5c3_Var84, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", suggestedSub.PositionIndex))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2482, Col: 98}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var84)
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 143, "\"> <input type=\"hidden\" name=\"minute\" value=\"")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var85 string
+				templ_7745c5c3_Var85, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", matchDayMinute(lineup.Match)))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2483, Col: 95}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var85)
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 144, "\"><div class=\"min-w-0\"><div class=\"font-semibold\">")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var86 string
+				templ_7745c5c3_Var86, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%s for %s", suggestedSub.ReplacementPlayer.Name, suggestedSub.CurrentPlayer.Name))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2485, Col: 129}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var86))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 145, "</div><div class=\"text-xs font-semibold uppercase tracking-wide text-amber-800\">")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var87 string
+				templ_7745c5c3_Var87, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%s - due %d'", suggestedSub.PositionName, suggestedSub.DueMinute))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2486, Col: 160}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var87))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 146, "</div></div><button type=\"submit\" class=\"match-day-action-button primary\">Sub now</button></form>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 147, "</div>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
 		}
 		return nil
 	})
@@ -1791,12 +2082,12 @@ func lineupEditablePitch(lineup *Lineup, players []Player, unavailablePlayerIDs 
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var75 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var75 == nil {
-			templ_7745c5c3_Var75 = templ.NopComponent
+		templ_7745c5c3_Var88 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var88 == nil {
+			templ_7745c5c3_Var88 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 125, "<div class=\"pitch\" data-pitch>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 148, "<div class=\"pitch\" data-pitch>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1806,482 +2097,510 @@ func lineupEditablePitch(lineup *Lineup, players []Player, unavailablePlayerIDs 
 		}
 		if lineup != nil {
 			for _, pp := range lineupPitchPlayers(lineup) {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 126, "<div")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 149, "<div")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				if len(pp.Players) == 0 {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 127, " class=\"pitch-marker unassigned\"")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 150, " class=\"pitch-marker unassigned\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				} else {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 128, " class=\"pitch-marker\"")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 151, " class=\"pitch-marker\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 129, " style=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 152, " style=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var76 string
-				templ_7745c5c3_Var76, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues(fmt.Sprintf("left:%.2f%%; top:%.2f%%;", pp.Position.X, pp.Position.Y))
+				var templ_7745c5c3_Var89 string
+				templ_7745c5c3_Var89, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues(fmt.Sprintf("left:%.2f%%; top:%.2f%%;", pp.Position.X, pp.Position.Y))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2384, Col: 82}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2506, Col: 82}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var76))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 130, "\"><button type=\"button\" data-marker-view=\"")
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var89))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var77 string
-				templ_7745c5c3_Var77, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", pp.Position.IndexNumber))
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2386, Col: 88}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var77)
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 153, "\"><button type=\"button\" data-marker-view=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 131, "\" onclick=\"window.showPitchPlayerEditor(this.dataset.markerView)\"><div class=\"shirt\"><span class=\"shirt-collar\"></span> <span class=\"shirt-number\">")
+				var templ_7745c5c3_Var90 string
+				templ_7745c5c3_Var90, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", pp.Position.IndexNumber))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2508, Col: 88}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var90)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var78 string
-				templ_7745c5c3_Var78, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", pp.Position.IndexNumber))
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2389, Col: 78}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var78))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 132, "</span></div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 154, "\" onclick=\"window.showPitchPlayerEditor(this.dataset.markerView)\"><div class=\"shirt\"><span class=\"shirt-collar\"></span> ")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				if len(pp.Players) > 0 {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 133, "<div class=\"marker-player-stack\">")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 155, "<span class=\"shirt-number\">")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					var templ_7745c5c3_Var91 string
+					templ_7745c5c3_Var91, templ_7745c5c3_Err = templ.JoinStringErrs(playerPitchShirtNumber(pp.Players[0].Player, pp.Position.IndexNumber))
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2512, Col: 106}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var91))
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 156, "</span>")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+				} else {
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 157, "<span class=\"shirt-number\">")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					var templ_7745c5c3_Var92 string
+					templ_7745c5c3_Var92, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", pp.Position.IndexNumber))
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2514, Col: 79}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var92))
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 158, "</span>")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 159, "</div>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				if len(pp.Players) > 0 {
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 160, "<div class=\"marker-player-stack\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					for i, assigned := range pp.Players {
 						if i == 0 {
-							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 134, "<span class=\"marker-caption\">")
+							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 161, "<span class=\"marker-caption\">")
 							if templ_7745c5c3_Err != nil {
 								return templ_7745c5c3_Err
 							}
-							var templ_7745c5c3_Var79 string
-							templ_7745c5c3_Var79, templ_7745c5c3_Err = templ.JoinStringErrs(assigned.Player.Name)
+							var templ_7745c5c3_Var93 string
+							templ_7745c5c3_Var93, templ_7745c5c3_Err = templ.JoinStringErrs(playerPitchLabel(assigned.Player))
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2395, Col: 61}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2521, Col: 74}
 							}
-							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var79))
-							if templ_7745c5c3_Err != nil {
-								return templ_7745c5c3_Err
-							}
-							var templ_7745c5c3_Var80 string
-							templ_7745c5c3_Var80, templ_7745c5c3_Err = templ.JoinStringErrs(lineupSubMinuteLabel(assigned.SubMinute))
-							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2395, Col: 105}
-							}
-							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var80))
+							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var93))
 							if templ_7745c5c3_Err != nil {
 								return templ_7745c5c3_Err
 							}
-							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 135, "</span>")
+							var templ_7745c5c3_Var94 string
+							templ_7745c5c3_Var94, templ_7745c5c3_Err = templ.JoinStringErrs(lineupSubMinuteLabel(assigned.SubMinute))
+							if templ_7745c5c3_Err != nil {
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2521, Col: 118}
+							}
+							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var94))
+							if templ_7745c5c3_Err != nil {
+								return templ_7745c5c3_Err
+							}
+							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 162, "</span>")
 							if templ_7745c5c3_Err != nil {
 								return templ_7745c5c3_Err
 							}
 						} else {
-							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 136, "<span class=\"sub-player\">")
+							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 163, "<span class=\"sub-player\">")
 							if templ_7745c5c3_Err != nil {
 								return templ_7745c5c3_Err
 							}
-							var templ_7745c5c3_Var81 string
-							templ_7745c5c3_Var81, templ_7745c5c3_Err = templ.JoinStringErrs(assigned.Player.Name)
+							var templ_7745c5c3_Var95 string
+							templ_7745c5c3_Var95, templ_7745c5c3_Err = templ.JoinStringErrs(playerPitchLabel(assigned.Player))
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2397, Col: 57}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2523, Col: 70}
 							}
-							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var81))
-							if templ_7745c5c3_Err != nil {
-								return templ_7745c5c3_Err
-							}
-							var templ_7745c5c3_Var82 string
-							templ_7745c5c3_Var82, templ_7745c5c3_Err = templ.JoinStringErrs(lineupSubMinuteLabel(assigned.SubMinute))
-							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2397, Col: 101}
-							}
-							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var82))
+							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var95))
 							if templ_7745c5c3_Err != nil {
 								return templ_7745c5c3_Err
 							}
-							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 137, "</span>")
+							var templ_7745c5c3_Var96 string
+							templ_7745c5c3_Var96, templ_7745c5c3_Err = templ.JoinStringErrs(lineupSubMinuteLabel(assigned.SubMinute))
+							if templ_7745c5c3_Err != nil {
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2523, Col: 114}
+							}
+							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var96))
+							if templ_7745c5c3_Err != nil {
+								return templ_7745c5c3_Err
+							}
+							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 164, "</span>")
 							if templ_7745c5c3_Err != nil {
 								return templ_7745c5c3_Err
 							}
 						}
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 138, "</div><span class=\"marker-subcaption\">")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 165, "</div><span class=\"marker-subcaption\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					var templ_7745c5c3_Var83 string
-					templ_7745c5c3_Var83, templ_7745c5c3_Err = templ.JoinStringErrs(pp.Position.PositionName)
+					var templ_7745c5c3_Var97 string
+					templ_7745c5c3_Var97, templ_7745c5c3_Err = templ.JoinStringErrs(pp.Position.PositionName)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2401, Col: 65}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2527, Col: 65}
 					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var83))
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var97))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 139, "</span>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 166, "</span>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				} else {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 140, "<span class=\"marker-caption\">Tap to edit</span> <span class=\"marker-subcaption\">")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 167, "<span class=\"marker-caption\">Tap to edit</span> <span class=\"marker-subcaption\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					var templ_7745c5c3_Var84 string
-					templ_7745c5c3_Var84, templ_7745c5c3_Err = templ.JoinStringErrs(pp.Position.PositionName)
+					var templ_7745c5c3_Var98 string
+					templ_7745c5c3_Var98, templ_7745c5c3_Err = templ.JoinStringErrs(pp.Position.PositionName)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2404, Col: 65}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2530, Col: 65}
 					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var84))
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 141, "</span>")
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var98))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 168, "</span>")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 142, "</button>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 169, "</button>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var85 = []any{markerEditorClass(pp.Position)}
-				templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var85...)
+				var templ_7745c5c3_Var99 = []any{markerEditorClass(pp.Position)}
+				templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var99...)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 143, "<form method=\"POST\" action=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 170, "<form method=\"POST\" action=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var86 templ.SafeURL
-				templ_7745c5c3_Var86, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/lineups/%d/slot", lineup.ID))
+				var templ_7745c5c3_Var100 templ.SafeURL
+				templ_7745c5c3_Var100, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/lineups/%d/slot", lineup.ID))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2409, Col: 57}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2535, Col: 57}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var86))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 144, "\" class=\"")
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var100))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var87 string
-				templ_7745c5c3_Var87, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var85).String())
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 171, "\" class=\"")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var101 string
+				templ_7745c5c3_Var101, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var99).String())
 				if templ_7745c5c3_Err != nil {
 					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 1, Col: 0}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var87)
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var101)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 145, "\" data-marker-editor=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 172, "\" data-marker-editor=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var88 string
-				templ_7745c5c3_Var88, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", pp.Position.IndexNumber))
+				var templ_7745c5c3_Var102 string
+				templ_7745c5c3_Var102, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", pp.Position.IndexNumber))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2411, Col: 69}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2537, Col: 69}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var88)
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 146, "\" data-dirty-check=\"true\" onsubmit=\"return window.prepareLineupSave(this, event)\"><input type=\"hidden\" name=\"indexNumber\" value=\"")
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var102)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var89 string
-				templ_7745c5c3_Var89, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", pp.Position.IndexNumber))
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2415, Col: 96}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var89)
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 173, "\" data-dirty-check=\"true\" onsubmit=\"return window.prepareLineupSave(this, event)\"><input type=\"hidden\" name=\"indexNumber\" value=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 147, "\"> <input type=\"hidden\" name=\"lineupAssignmentMode\" value=\"move\"><div class=\"text-md font-bold mb-2\">")
+				var templ_7745c5c3_Var103 string
+				templ_7745c5c3_Var103, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", pp.Position.IndexNumber))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2541, Col: 96}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var103)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var90 string
-				templ_7745c5c3_Var90, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d - %s", pp.Position.IndexNumber, pp.Position.PositionName))
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2417, Col: 117}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var90))
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 174, "\"> <input type=\"hidden\" name=\"lineupAssignmentMode\" value=\"move\"><div class=\"text-md font-bold mb-2\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 148, "</div><div data-lineup-slot-group data-lineup-position-index=\"")
+				var templ_7745c5c3_Var104 string
+				templ_7745c5c3_Var104, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d - %s", pp.Position.IndexNumber, pp.Position.PositionName))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2543, Col: 117}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var104))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var91 string
-				templ_7745c5c3_Var91, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", pp.Position.IndexNumber))
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2420, Col: 78}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var91)
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 175, "</div><div data-lineup-slot-group data-lineup-position-index=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 149, "\" data-lineup-position-initials=\"")
+				var templ_7745c5c3_Var105 string
+				templ_7745c5c3_Var105, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", pp.Position.IndexNumber))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2546, Col: 78}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var105)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var92 string
-				templ_7745c5c3_Var92, templ_7745c5c3_Err = templ.ResolveAttributeValue(lineupPositionInitials(pp.Position.PositionName))
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2421, Col: 87}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var92)
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 176, "\" data-lineup-position-initials=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 150, "\">")
+				var templ_7745c5c3_Var106 string
+				templ_7745c5c3_Var106, templ_7745c5c3_Err = templ.ResolveAttributeValue(lineupPositionInitials(pp.Position.PositionName))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2547, Col: 87}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var106)
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 177, "\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				for slotOrder := 0; slotOrder < 4; slotOrder++ {
 					selectedPlayerID := lineupPlayerIDAtSlot(lineup.Players, pp.Position.IndexNumber, slotOrder)
 					playerOptions := lineupPlayerSelectOptions(players, lineup.Players, lineup.Formation.Positions, pp.Position.IndexNumber, pp.Position.PositionName, selectedPlayerID, unavailablePlayerIDs)
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 151, "<div data-lineup-slot-row=\"")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 178, "<div data-lineup-slot-row=\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					var templ_7745c5c3_Var93 string
-					templ_7745c5c3_Var93, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", slotOrder))
+					var templ_7745c5c3_Var107 string
+					templ_7745c5c3_Var107, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", slotOrder))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2427, Col: 59}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2553, Col: 59}
 					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var93)
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var107)
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 152, "\"")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 179, "\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					if slotOrder > lineupLastAssignedSlot(lineup.Players, pp.Position.IndexNumber) {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 153, " class=\"slot-editor-row hidden\"")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 180, " class=\"slot-editor-row hidden\"")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 					} else {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 154, " class=\"slot-editor-row\"")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 181, " class=\"slot-editor-row\"")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 155, "><select name=\"")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 182, "><select name=\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					var templ_7745c5c3_Var94 string
-					templ_7745c5c3_Var94, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("playerId_%d", slotOrder))
+					var templ_7745c5c3_Var108 string
+					templ_7745c5c3_Var108, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("playerId_%d", slotOrder))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2434, Col: 60}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2560, Col: 60}
 					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var94)
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 156, "\" data-player-slot=\"")
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var108)
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					var templ_7745c5c3_Var95 string
-					templ_7745c5c3_Var95, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", slotOrder))
-					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2434, Col: 110}
-					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var95)
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 183, "\" data-player-slot=\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 157, "\">")
+					var templ_7745c5c3_Var109 string
+					templ_7745c5c3_Var109, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", slotOrder))
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2560, Col: 110}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var109)
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 184, "\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					if slotOrder == 0 {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 158, "<option value=\"\">Unassigned starter</option> ")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 185, "<option value=\"\">Unassigned starter</option> ")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 					} else {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 159, "<option value=\"\">No sub</option> ")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 186, "<option value=\"\">No sub</option> ")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 					}
 					for _, option := range playerOptions {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 160, "<option value=\"")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 187, "<option value=\"")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						var templ_7745c5c3_Var96 string
-						templ_7745c5c3_Var96, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", option.Player.ID))
+						var templ_7745c5c3_Var110 string
+						templ_7745c5c3_Var110, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", option.Player.ID))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2442, Col: 54}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2568, Col: 54}
 						}
-						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var96)
-						if templ_7745c5c3_Err != nil {
-							return templ_7745c5c3_Err
-						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 161, "\" data-current-index=\"")
+						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var110)
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						var templ_7745c5c3_Var97 string
-						templ_7745c5c3_Var97, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", option.CurrentIndex))
-						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2443, Col: 70}
-						}
-						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var97)
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 188, "\" data-current-index=\"")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 162, "\" data-player-name=\"")
+						var templ_7745c5c3_Var111 string
+						templ_7745c5c3_Var111, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", option.CurrentIndex))
+						if templ_7745c5c3_Err != nil {
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2569, Col: 70}
+						}
+						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var111)
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						var templ_7745c5c3_Var98 string
-						templ_7745c5c3_Var98, templ_7745c5c3_Err = templ.ResolveAttributeValue(option.Player.Name)
-						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2444, Col: 48}
-						}
-						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var98)
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 189, "\" data-player-name=\"")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 163, "\"")
+						var templ_7745c5c3_Var112 string
+						templ_7745c5c3_Var112, templ_7745c5c3_Err = templ.ResolveAttributeValue(option.Player.Name)
+						if templ_7745c5c3_Err != nil {
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2570, Col: 48}
+						}
+						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var112)
+						if templ_7745c5c3_Err != nil {
+							return templ_7745c5c3_Err
+						}
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 190, "\"")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 						if option.Player.ID == selectedPlayerID {
-							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 164, " selected")
+							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 191, " selected")
 							if templ_7745c5c3_Err != nil {
 								return templ_7745c5c3_Err
 							}
 						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 165, ">")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 192, ">")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						var templ_7745c5c3_Var99 string
-						templ_7745c5c3_Var99, templ_7745c5c3_Err = templ.JoinStringErrs(option.Label)
+						var templ_7745c5c3_Var113 string
+						templ_7745c5c3_Var113, templ_7745c5c3_Err = templ.JoinStringErrs(option.Label)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2446, Col: 25}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2572, Col: 25}
 						}
-						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var99))
-						if templ_7745c5c3_Err != nil {
-							return templ_7745c5c3_Err
-						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 166, "</option>")
+						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var113))
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 193, "</option>")
+						if templ_7745c5c3_Err != nil {
+							return templ_7745c5c3_Err
+						}
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 167, "</select> <input type=\"number\" min=\"0\" name=\"")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 194, "</select> <input type=\"number\" min=\"0\" name=\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					var templ_7745c5c3_Var100 string
-					templ_7745c5c3_Var100, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("subMinute_%d", slotOrder))
+					var templ_7745c5c3_Var114 string
+					templ_7745c5c3_Var114, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("subMinute_%d", slotOrder))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2452, Col: 54}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2578, Col: 54}
 					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var100)
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 168, "\" value=\"")
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var114)
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					var templ_7745c5c3_Var101 string
-					templ_7745c5c3_Var101, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", lineupSubMinuteAtSlot(lineup.Players, pp.Position.IndexNumber, slotOrder)))
-					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2453, Col: 109}
-					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var101)
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 195, "\" value=\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 169, "\" placeholder=\"Min\" class=\"border rounded-lg p-2\"> ")
+					var templ_7745c5c3_Var115 string
+					templ_7745c5c3_Var115, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", lineupSubMinuteAtSlot(lineup.Players, pp.Position.IndexNumber, slotOrder)))
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2579, Col: 109}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var115)
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 196, "\" placeholder=\"Min\" class=\"border rounded-lg p-2\"> ")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					if slotOrder < 3 {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 170, "<button type=\"button\" data-add-sub-button data-slot-order=\"")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 197, "<button type=\"button\" data-add-sub-button data-slot-order=\"")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						var templ_7745c5c3_Var102 string
-						templ_7745c5c3_Var102, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", slotOrder))
+						var templ_7745c5c3_Var116 string
+						templ_7745c5c3_Var116, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", slotOrder))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2461, Col: 56}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2587, Col: 56}
 						}
-						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var102)
+						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var116)
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 171, "\" onclick=\"window.showNextLineupSub(this)\"")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 198, "\" onclick=\"window.showNextLineupSub(this)\"")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 						if slotOrder == lineupLastAssignedSlot(lineup.Players, pp.Position.IndexNumber) {
-							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 172, " class=\"add-sub-button\"")
+							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 199, " class=\"add-sub-button\"")
 							if templ_7745c5c3_Err != nil {
 								return templ_7745c5c3_Err
 							}
 						} else {
-							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 173, " class=\"add-sub-button hidden\"")
+							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 200, " class=\"add-sub-button hidden\"")
 							if templ_7745c5c3_Err != nil {
 								return templ_7745c5c3_Err
 							}
 						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 174, ">Add sub</button>")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 201, ">Add sub</button>")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 175, "</div>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 202, "</div>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 176, "</div><button type=\"submit\">Save players</button></form></div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 203, "</div><button type=\"submit\">Save players</button></form></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 177, "</div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 204, "</div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -2305,12 +2624,12 @@ func formationPreviewPitch(formation *Formation, editable bool) templ.Component 
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var103 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var103 == nil {
-			templ_7745c5c3_Var103 = templ.NopComponent
+		templ_7745c5c3_Var117 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var117 == nil {
+			templ_7745c5c3_Var117 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 178, "<div class=\"pitch\" data-pitch>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 205, "<div class=\"pitch\" data-pitch>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -2320,116 +2639,116 @@ func formationPreviewPitch(formation *Formation, editable bool) templ.Component 
 		}
 		if formation != nil {
 			for _, pos := range formation.Positions {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 179, "<button type=\"button\" class=\"pitch-marker\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 206, "<button type=\"button\" class=\"pitch-marker\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				if editable {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 180, " data-draggable-position")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 207, " data-draggable-position")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 181, " data-position-id=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 208, " data-position-id=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var104 string
-				templ_7745c5c3_Var104, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", pos.ID))
+				var templ_7745c5c3_Var118 string
+				templ_7745c5c3_Var118, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", pos.ID))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2490, Col: 49}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2616, Col: 49}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var104)
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 182, "\" style=\"")
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var118)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var105 string
-				templ_7745c5c3_Var105, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues(fmt.Sprintf("left:%.2f%%; top:%.2f%%;", pos.X, pos.Y))
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2491, Col: 66}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var105))
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 209, "\" style=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 183, "\" data-slot=\"")
+				var templ_7745c5c3_Var119 string
+				templ_7745c5c3_Var119, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues(fmt.Sprintf("left:%.2f%%; top:%.2f%%;", pos.X, pos.Y))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2617, Col: 66}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var119))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var106 string
-				templ_7745c5c3_Var106, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", pos.ID))
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2492, Col: 42}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var106)
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 210, "\" data-slot=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 184, "\" data-editable=\"")
+				var templ_7745c5c3_Var120 string
+				templ_7745c5c3_Var120, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", pos.ID))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2618, Col: 42}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var120)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var107 string
-				templ_7745c5c3_Var107, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%t", editable))
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2493, Col: 48}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var107)
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 211, "\" data-editable=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 185, "\" onclick=\"window.handleFormationMarkerTap(this)\"><div class=\"shirt\"><span class=\"shirt-collar\"></span> <span class=\"shirt-number\">")
+				var templ_7745c5c3_Var121 string
+				templ_7745c5c3_Var121, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%t", editable))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2619, Col: 48}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var121)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var108 string
-				templ_7745c5c3_Var108, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", pos.IndexNumber))
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2498, Col: 69}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var108))
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 212, "\" onclick=\"window.handleFormationMarkerTap(this)\"><div class=\"shirt\"><span class=\"shirt-collar\"></span> <span class=\"shirt-number\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 186, "</span></div><span class=\"marker-caption\">")
+				var templ_7745c5c3_Var122 string
+				templ_7745c5c3_Var122, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", pos.IndexNumber))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2624, Col: 69}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var122))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var109 string
-				templ_7745c5c3_Var109, templ_7745c5c3_Err = templ.JoinStringErrs(pos.PositionName)
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2500, Col: 52}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var109))
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 213, "</span></div><span class=\"marker-caption\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 187, "</span> ")
+				var templ_7745c5c3_Var123 string
+				templ_7745c5c3_Var123, templ_7745c5c3_Err = templ.JoinStringErrs(pos.PositionName)
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2626, Col: 52}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var123))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 214, "</span> ")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				if editable {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 188, "<span class=\"marker-subcaption\">Tap or drag</span>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 215, "<span class=\"marker-subcaption\">Tap or drag</span>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				} else {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 189, "<span class=\"marker-subcaption\">Position</span>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 216, "<span class=\"marker-subcaption\">Position</span>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 190, "</button>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 217, "</button>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 191, "</div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 218, "</div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -2453,12 +2772,12 @@ func pitchMarkings() templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var110 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var110 == nil {
-			templ_7745c5c3_Var110 = templ.NopComponent
+		templ_7745c5c3_Var124 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var124 == nil {
+			templ_7745c5c3_Var124 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 192, "<div class=\"pitch-lines\"><div class=\"goal-frame top\"></div><div class=\"goal-frame bottom\"></div><div class=\"pitch-box top\"></div><div class=\"pitch-box bottom\"></div><div class=\"goal-box top\"></div><div class=\"goal-box bottom\"></div><div class=\"penalty-arc top\"></div><div class=\"penalty-arc bottom\"></div><div class=\"corner tl\"></div><div class=\"corner tr\"></div><div class=\"corner bl\"></div><div class=\"corner br\"></div><div class=\"pitch-dot\"></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 219, "<div class=\"pitch-lines\"><div class=\"goal-frame top\"></div><div class=\"goal-frame bottom\"></div><div class=\"pitch-box top\"></div><div class=\"pitch-box bottom\"></div><div class=\"goal-box top\"></div><div class=\"goal-box bottom\"></div><div class=\"penalty-arc top\"></div><div class=\"penalty-arc bottom\"></div><div class=\"corner tl\"></div><div class=\"corner tr\"></div><div class=\"corner bl\"></div><div class=\"corner br\"></div><div class=\"pitch-dot\"></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -2489,119 +2808,119 @@ func drawerTopNav(active string, matchDayLineupID uint) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var111 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var111 == nil {
-			templ_7745c5c3_Var111 = templ.NopComponent
+		templ_7745c5c3_Var125 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var125 == nil {
+			templ_7745c5c3_Var125 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 193, "<div class=\"flex w-full flex-wrap gap-2 text-sm pb-2\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 220, "<div class=\"flex w-full flex-wrap gap-2 text-sm pb-2\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var112 = []any{drawerNavButtonClass(active == "home")}
-		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var112...)
+		var templ_7745c5c3_Var126 = []any{drawerNavButtonClass(active == "home")}
+		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var126...)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 194, "<a href=\"/\" class=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 221, "<a href=\"/\" class=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var113 string
-		templ_7745c5c3_Var113, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var112).String())
+		var templ_7745c5c3_Var127 string
+		templ_7745c5c3_Var127, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var126).String())
 		if templ_7745c5c3_Err != nil {
 			return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 1, Col: 0}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var113)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var127)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 195, "\" onclick=\"event.stopPropagation()\">Home</a> ")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 222, "\" onclick=\"event.stopPropagation()\">Home</a> ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var114 = []any{drawerNavButtonClass(active == "formations")}
-		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var114...)
+		var templ_7745c5c3_Var128 = []any{drawerNavButtonClass(active == "formations")}
+		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var128...)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 196, "<a href=\"/formations\" class=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 223, "<a href=\"/formations\" class=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var115 string
-		templ_7745c5c3_Var115, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var114).String())
+		var templ_7745c5c3_Var129 string
+		templ_7745c5c3_Var129, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var128).String())
 		if templ_7745c5c3_Err != nil {
 			return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 1, Col: 0}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var115)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var129)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 197, "\" onclick=\"event.stopPropagation()\">Formations</a> ")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 224, "\" onclick=\"event.stopPropagation(); window.setDrawerState('expanded')\">Formations</a> ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var116 = []any{drawerNavButtonClass(active == "lineups")}
-		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var116...)
+		var templ_7745c5c3_Var130 = []any{drawerNavButtonClass(active == "lineups")}
+		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var130...)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 198, "<a href=\"/lineups\" class=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 225, "<a href=\"/lineups\" class=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var117 string
-		templ_7745c5c3_Var117, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var116).String())
+		var templ_7745c5c3_Var131 string
+		templ_7745c5c3_Var131, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var130).String())
 		if templ_7745c5c3_Err != nil {
 			return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 1, Col: 0}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var117)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var131)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 199, "\" onclick=\"event.stopPropagation()\">Line-ups</a> ")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 226, "\" onclick=\"event.stopPropagation(); window.setDrawerState('expanded')\">Line-ups</a> ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if matchDayLineupID > 0 {
-			var templ_7745c5c3_Var118 = []any{drawerNavButtonClass(active == "match-day")}
-			templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var118...)
+			var templ_7745c5c3_Var132 = []any{drawerNavButtonClass(active == "match-day")}
+			templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var132...)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 200, "<a href=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 227, "<a href=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var119 templ.SafeURL
-			templ_7745c5c3_Var119, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/match-day/%d", matchDayLineupID))
+			var templ_7745c5c3_Var133 templ.SafeURL
+			templ_7745c5c3_Var133, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/match-day/%d", matchDayLineupID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2543, Col: 59}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2669, Col: 59}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var119))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 201, "\" class=\"")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var133))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var120 string
-			templ_7745c5c3_Var120, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var118).String())
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 228, "\" class=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var134 string
+			templ_7745c5c3_Var134, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var132).String())
 			if templ_7745c5c3_Err != nil {
 				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 1, Col: 0}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var120)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var134)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 202, "\" onclick=\"event.stopPropagation()\">Match day</a>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 229, "\" onclick=\"event.stopPropagation()\">Match day</a>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 203, "</div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 230, "</div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -2625,13 +2944,13 @@ func modeBadge(isAdmin bool) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var121 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var121 == nil {
-			templ_7745c5c3_Var121 = templ.NopComponent
+		templ_7745c5c3_Var135 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var135 == nil {
+			templ_7745c5c3_Var135 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
 		if isAdmin {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 204, "<div class=\"rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-800\">admin mode</div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 231, "<div class=\"rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-800\">admin mode</div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -2656,12 +2975,12 @@ func drawerChrome(title string, active string, matchDayLineupID uint) templ.Comp
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var122 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var122 == nil {
-			templ_7745c5c3_Var122 = templ.NopComponent
+		templ_7745c5c3_Var136 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var136 == nil {
+			templ_7745c5c3_Var136 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 205, "<div class=\"drawer-handle\" onclick=\"window.toggleDrawer(this)\"></div><div class=\"px-4 pb-3 border-b bg-white sticky top-0 z-10 cursor-pointer\" onclick=\"window.openDrawer()\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 232, "<div class=\"drawer-handle\" onclick=\"window.toggleDrawer(this)\"></div><div class=\"px-4 pb-3 border-b bg-white sticky top-0 z-10 cursor-pointer\" onclick=\"window.openDrawer()\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -2669,20 +2988,20 @@ func drawerChrome(title string, active string, matchDayLineupID uint) templ.Comp
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 206, "<div class=\"flex items-center justify-between\"><h1 class=\"text-xl font-bold\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 233, "<div class=\"flex items-center justify-between\"><h1 class=\"text-xl font-bold\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var123 string
-		templ_7745c5c3_Var123, templ_7745c5c3_Err = templ.JoinStringErrs(title)
+		var templ_7745c5c3_Var137 string
+		templ_7745c5c3_Var137, templ_7745c5c3_Err = templ.JoinStringErrs(title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2559, Col: 40}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2685, Col: 40}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var123))
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var137))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 207, "</h1><div class=\"flex gap-2 text-sm\"><button type=\"button\" class=\"back-to-pitch-button px-3 py-1 rounded bg-gray-200\" onclick=\"event.stopPropagation(); window.setDrawerState('collapsed')\">Back to pitch</button> <button type=\"button\" class=\"px-3 py-1 rounded bg-gray-200\" data-drawer-full-button aria-label=\"Show full drawer details\" aria-pressed=\"false\" onclick=\"event.stopPropagation(); window.toggleDrawerFull(this)\">Full</button></div></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 234, "</h1><div class=\"flex gap-2 text-sm\"><button type=\"button\" class=\"back-to-pitch-button px-3 py-1 rounded bg-gray-200\" onclick=\"event.stopPropagation(); window.setDrawerState('collapsed')\">Back to pitch</button> <button type=\"button\" class=\"px-3 py-1 rounded bg-gray-200\" data-drawer-full-button aria-label=\"Show full drawer details\" aria-pressed=\"false\" onclick=\"event.stopPropagation(); window.toggleDrawerFull(this)\">Full</button></div></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -2706,12 +3025,12 @@ func formationDrawerChrome(title string, showCoordinateToggle bool, active strin
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var124 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var124 == nil {
-			templ_7745c5c3_Var124 = templ.NopComponent
+		templ_7745c5c3_Var138 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var138 == nil {
+			templ_7745c5c3_Var138 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 208, "<div class=\"drawer-handle\" onclick=\"window.toggleDrawer(this)\"></div><div class=\"px-4 pb-3 border-b bg-white sticky top-0 z-10 cursor-pointer\" onclick=\"window.openDrawer()\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 235, "<div class=\"drawer-handle\" onclick=\"window.toggleDrawer(this)\"></div><div class=\"px-4 pb-3 border-b bg-white sticky top-0 z-10 cursor-pointer\" onclick=\"window.openDrawer()\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -2719,30 +3038,30 @@ func formationDrawerChrome(title string, showCoordinateToggle bool, active strin
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 209, "<div class=\"flex items-center justify-between\"><h1 class=\"text-xl font-bold\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 236, "<div class=\"flex items-center justify-between\"><h1 class=\"text-xl font-bold\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var125 string
-		templ_7745c5c3_Var125, templ_7745c5c3_Err = templ.JoinStringErrs(title)
+		var templ_7745c5c3_Var139 string
+		templ_7745c5c3_Var139, templ_7745c5c3_Err = templ.JoinStringErrs(title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2573, Col: 40}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2699, Col: 40}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var125))
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var139))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 210, "</h1><div class=\"flex gap-2 text-sm\"><button type=\"button\" class=\"back-to-pitch-button px-3 py-1 rounded bg-gray-200\" onclick=\"event.stopPropagation(); window.setDrawerState('collapsed')\">Back to pitch</button> ")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 237, "</h1><div class=\"flex gap-2 text-sm\"><button type=\"button\" class=\"back-to-pitch-button px-3 py-1 rounded bg-gray-200\" onclick=\"event.stopPropagation(); window.setDrawerState('collapsed')\">Back to pitch</button> ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if showCoordinateToggle {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 211, "<button type=\"button\" class=\"formation-settings-button\" aria-label=\"Show position coordinates\" title=\"Show position coordinates\" aria-pressed=\"false\" onclick=\"event.stopPropagation(); window.toggleFormationAdvanced(this)\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.25\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"3\"></circle> <path d=\"M19.4 15a1.8 1.8 0 0 0 .4 2l.1.1a2.1 2.1 0 0 1-3 3l-.1-.1a1.8 1.8 0 0 0-2-.4 1.8 1.8 0 0 0-1 1.6V21a2.1 2.1 0 0 1-4.2 0v-.2a1.8 1.8 0 0 0-1-1.6 1.8 1.8 0 0 0-2 .4l-.1.1a2.1 2.1 0 0 1-3-3l.1-.1a1.8 1.8 0 0 0 .4-2 1.8 1.8 0 0 0-1.6-1H3a2.1 2.1 0 0 1 0-4.2h.2a1.8 1.8 0 0 0 1.6-1 1.8 1.8 0 0 0-.4-2l-.1-.1a2.1 2.1 0 0 1 3-3l.1.1a1.8 1.8 0 0 0 2 .4 1.8 1.8 0 0 0 1-1.6V3a2.1 2.1 0 0 1 4.2 0v.2a1.8 1.8 0 0 0 1 1.6 1.8 1.8 0 0 0 2-.4l.1-.1a2.1 2.1 0 0 1 3 3l-.1.1a1.8 1.8 0 0 0-.4 2 1.8 1.8 0 0 0 1.6 1h.2a2.1 2.1 0 0 1 0 4.2h-.2a1.8 1.8 0 0 0-1.6 1Z\"></path></svg></button>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 238, "<button type=\"button\" class=\"formation-settings-button\" aria-label=\"Show position coordinates\" title=\"Show position coordinates\" aria-pressed=\"false\" onclick=\"event.stopPropagation(); window.toggleFormationAdvanced(this)\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.25\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"3\"></circle> <path d=\"M19.4 15a1.8 1.8 0 0 0 .4 2l.1.1a2.1 2.1 0 0 1-3 3l-.1-.1a1.8 1.8 0 0 0-2-.4 1.8 1.8 0 0 0-1 1.6V21a2.1 2.1 0 0 1-4.2 0v-.2a1.8 1.8 0 0 0-1-1.6 1.8 1.8 0 0 0-2 .4l-.1.1a2.1 2.1 0 0 1-3-3l.1-.1a1.8 1.8 0 0 0 .4-2 1.8 1.8 0 0 0-1.6-1H3a2.1 2.1 0 0 1 0-4.2h.2a1.8 1.8 0 0 0 1.6-1 1.8 1.8 0 0 0-.4-2l-.1-.1a2.1 2.1 0 0 1 3-3l.1.1a1.8 1.8 0 0 0 2 .4 1.8 1.8 0 0 0 1-1.6V3a2.1 2.1 0 0 1 4.2 0v.2a1.8 1.8 0 0 0 1 1.6 1.8 1.8 0 0 0 2-.4l.1-.1a2.1 2.1 0 0 1 3 3l-.1.1a1.8 1.8 0 0 0-.4 2 1.8 1.8 0 0 0 1.6 1h.2a2.1 2.1 0 0 1 0 4.2h-.2a1.8 1.8 0 0 0-1.6 1Z\"></path></svg></button>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 212, "</div></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 239, "</div></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -2766,12 +3085,12 @@ func lineupListPage(lineups []Lineup, formations []Formation, selected *Lineup, 
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var126 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var126 == nil {
-			templ_7745c5c3_Var126 = templ.NopComponent
+		templ_7745c5c3_Var140 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var140 == nil {
+			templ_7745c5c3_Var140 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 213, "<!doctype html><html>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 240, "<!doctype html><html>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -2783,7 +3102,7 @@ func lineupListPage(lineups []Lineup, formations []Formation, selected *Lineup, 
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 214, "<body><div class=\"pitch-shell\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 241, "<body><div class=\"pitch-shell\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -2791,7 +3110,7 @@ func lineupListPage(lineups []Lineup, formations []Formation, selected *Lineup, 
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 215, "<section class=\"pitch-drawer\" data-state=\"collapsed\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 242, "<section class=\"pitch-drawer\" data-state=\"collapsed\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -2799,7 +3118,7 @@ func lineupListPage(lineups []Lineup, formations []Formation, selected *Lineup, 
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 216, "<div class=\"drawer-body space-y-4\" data-detail-mode=\"simple\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 243, "<div class=\"drawer-body space-y-4\" data-detail-mode=\"simple\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -2807,7 +3126,7 @@ func lineupListPage(lineups []Lineup, formations []Formation, selected *Lineup, 
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 217, "<p class=\"text-sm text-gray-500 leading-snug\" data-drawer-extended>Line-ups are which players are assigned which position. Each line-up has one formation. Each Match has a line-up. </p>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 244, "<p class=\"text-sm text-gray-500 leading-snug\" data-drawer-extended>Line-ups are which players are assigned which position. Each line-up has one formation. Each Match has a line-up. </p>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -2816,29 +3135,29 @@ func lineupListPage(lineups []Lineup, formations []Formation, selected *Lineup, 
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 218, " ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 245, " ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var127 = []any{bigPri}
-			templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var127...)
+			var templ_7745c5c3_Var141 = []any{bigPri}
+			templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var141...)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 219, "<a href=\"/lineups/login\" class=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 246, "<a href=\"/lineups/login\" class=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var128 string
-			templ_7745c5c3_Var128, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var127).String())
+			var templ_7745c5c3_Var142 string
+			templ_7745c5c3_Var142, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var141).String())
 			if templ_7745c5c3_Err != nil {
 				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 1, Col: 0}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var128)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var142)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 220, "\">Line-up login</a> ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 247, "\">Line-up login</a> ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -2850,168 +3169,202 @@ func lineupListPage(lineups []Lineup, formations []Formation, selected *Lineup, 
 			}
 		}
 		for _, lineup := range lineups {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 221, "<div class=\"border rounded-lg p-3 shadow-sm\"><div><div class=\"font-bold\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 248, "<div class=\"border rounded-lg p-3 shadow-sm\"><div class=\"flex items-start justify-between gap-3\"><div class=\"min-w-0\"><div class=\"truncate font-bold\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var129 string
-			templ_7745c5c3_Var129, templ_7745c5c3_Err = templ.JoinStringErrs(lineup.Name)
+			var templ_7745c5c3_Var143 string
+			templ_7745c5c3_Var143, templ_7745c5c3_Err = templ.JoinStringErrs(lineup.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2619, Col: 45}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2746, Col: 55}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var129))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 222, "</div><div class=\"text-sm text-gray-600\" data-drawer-extended>")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var143))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var130 string
-			templ_7745c5c3_Var130, templ_7745c5c3_Err = templ.JoinStringErrs(lineup.Status)
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2620, Col: 80}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var130))
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 249, "</div><div class=\"truncate text-sm text-gray-600\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 223, " - ")
+			var templ_7745c5c3_Var144 string
+			templ_7745c5c3_Var144, templ_7745c5c3_Err = templ.JoinStringErrs(lineup.Status)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2748, Col: 26}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var144))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var131 string
-			templ_7745c5c3_Var131, templ_7745c5c3_Err = templ.JoinStringErrs(lineup.Formation.Name)
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2620, Col: 108}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var131))
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 250, " ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 224, "</div>")
+			if lineupAuthorLabel(lineup) != "" {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 251, "- ")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var145 string
+				templ_7745c5c3_Var145, templ_7745c5c3_Err = templ.JoinStringErrs(lineupAuthorLabel(lineup))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2750, Col: 41}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var145))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 252, " ")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 253, "- ")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var146 string
+			templ_7745c5c3_Var146, templ_7745c5c3_Err = templ.JoinStringErrs(lineup.Formation.Name)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2752, Col: 36}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var146))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 254, "</div></div><a href=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var147 templ.SafeURL
+			templ_7745c5c3_Var147, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/lineups/%d", lineup.ID))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2755, Col: 56}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var147))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 255, "\" class=\"drawer-row-action compact\" onclick=\"window.setDrawerState('collapsed')\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			if actorCanEditLineup(actor, lineup) {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 256, "Edit")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			} else {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 257, "Open")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 258, "</a></div><div data-drawer-extended>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if lineup.Details != "" {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 225, "<div class=\"mt-2 text-sm text-gray-700\" data-drawer-extended>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 259, "<div class=\"mt-2 text-sm text-gray-700\" data-drawer-extended>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var132 string
-				templ_7745c5c3_Var132, templ_7745c5c3_Err = templ.JoinStringErrs(lineup.Details)
+				var templ_7745c5c3_Var148 string
+				templ_7745c5c3_Var148, templ_7745c5c3_Err = templ.JoinStringErrs(lineup.Details)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2622, Col: 87}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2765, Col: 87}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var132))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 226, "</div>")
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var148))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 227, "</div><div class=\"drawer-row-actions\"><a href=\"")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var133 templ.SafeURL
-			templ_7745c5c3_Var133, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/lineups/%d", lineup.ID))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2626, Col: 56}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var133))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 228, "\" class=\"drawer-row-action\" onclick=\"window.setDrawerState('collapsed')\">Open</a> ")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 260, "</div>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
 			}
 			if lineup.Status != lineupStatusDraft {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 229, "<button type=\"button\" class=\"drawer-row-action\" data-share-url=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 261, "<button type=\"button\" class=\"drawer-row-action compact mt-2\" data-share-url=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var134 string
-				templ_7745c5c3_Var134, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("/lineups/%d/share", lineup.ID))
+				var templ_7745c5c3_Var149 string
+				templ_7745c5c3_Var149, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("/lineups/%d/share", lineup.ID))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2631, Col: 71}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2771, Col: 71}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var134)
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var149)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 230, "\" onclick=\"window.copyLineupShareLink(this, event)\">Share view</button>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 262, "\" onclick=\"window.copyLineupShareLink(this, event)\">Share view</button>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 231, "</div></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 263, "</div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 232, "<div class=\"pt-4 border-t\" data-drawer-extended><h2 class=\"font-bold\">Visible formations</h2>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 264, "<div class=\"pt-4 border-t\" data-drawer-extended><h2 class=\"font-bold\">Visible formations</h2>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		for _, f := range formations {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 233, "<div class=\"text-sm py-1\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 265, "<div class=\"text-sm py-1\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var135 string
-			templ_7745c5c3_Var135, templ_7745c5c3_Err = templ.JoinStringErrs(f.Name)
+			var templ_7745c5c3_Var150 string
+			templ_7745c5c3_Var150, templ_7745c5c3_Err = templ.JoinStringErrs(f.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2641, Col: 42}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2781, Col: 42}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var135))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 234, " - ")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var150))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var136 string
-			templ_7745c5c3_Var136, templ_7745c5c3_Err = templ.JoinStringErrs(f.Status)
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2641, Col: 57}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var136))
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 266, " - ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 235, "</div>")
+			var templ_7745c5c3_Var151 string
+			templ_7745c5c3_Var151, templ_7745c5c3_Err = templ.JoinStringErrs(f.Status)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2781, Col: 57}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var151))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 267, "</div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 236, "</div><div class=\"drawer-list-footer\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 268, "</div><div class=\"drawer-list-footer\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var137 = []any{bigAdd}
-		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var137...)
+		var templ_7745c5c3_Var152 = []any{bigAdd}
+		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var152...)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 237, "<a href=\"/lineups/new\" class=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 269, "<a href=\"/lineups/new\" class=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var138 string
-		templ_7745c5c3_Var138, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var137).String())
+		var templ_7745c5c3_Var153 string
+		templ_7745c5c3_Var153, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var152).String())
 		if templ_7745c5c3_Err != nil {
 			return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 1, Col: 0}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var138)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var153)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 238, "\">New line-up</a></div></div></section></div></body></html>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 270, "\">New line-up</a></div></div></section></div></body></html>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -3035,12 +3388,12 @@ func lineupNewPage(formations []Formation, matches []Match, selected *Formation,
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var139 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var139 == nil {
-			templ_7745c5c3_Var139 = templ.NopComponent
+		templ_7745c5c3_Var154 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var154 == nil {
+			templ_7745c5c3_Var154 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 239, "<!doctype html><html>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 271, "<!doctype html><html>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -3052,7 +3405,7 @@ func lineupNewPage(formations []Formation, matches []Match, selected *Formation,
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 240, "<body><div class=\"pitch-shell\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 272, "<body><div class=\"pitch-shell\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -3060,22 +3413,22 @@ func lineupNewPage(formations []Formation, matches []Match, selected *Formation,
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 241, "<section class=\"pitch-drawer\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 273, "<section class=\"pitch-drawer\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if selected != nil {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 242, " data-state=\"expanded\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 274, " data-state=\"expanded\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 243, " data-state=\"collapsed\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 275, " data-state=\"collapsed\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 244, ">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 276, ">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -3083,7 +3436,7 @@ func lineupNewPage(formations []Formation, matches []Match, selected *Formation,
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 245, "<div class=\"drawer-body\" data-detail-mode=\"simple\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 277, "<div class=\"drawer-body\" data-detail-mode=\"simple\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -3095,159 +3448,159 @@ func lineupNewPage(formations []Formation, matches []Match, selected *Formation,
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 246, "<form method=\"POST\" action=\"/lineups/new\" class=\"space-y-4\" data-dirty-check=\"true\"><label class=\"block\">Name <input name=\"name\" class=\"w-full border rounded-lg p-3 mt-1\" placeholder=\"Sunday starting XI\"></label> <label class=\"block\" data-drawer-extended>Details<div class=\"speech-input-row mt-1\"><textarea id=\"lineup-new-details\" name=\"details\" class=\"w-full border rounded-lg p-3\" rows=\"4\" placeholder=\"Notes, availability, plan, reminders\"></textarea> <button type=\"button\" class=\"speech-button\" aria-label=\"Dictate details\" aria-pressed=\"false\" data-speech-target=\"#lineup-new-details\" onclick=\"window.startSpeechToText(this)\">Mic</button></div></label> <label class=\"block\" data-drawer-extended>Match <select name=\"matchId\" class=\"w-full border rounded-lg p-3 mt-1\"><option value=\"\">No match</option> ")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 278, "<form method=\"POST\" action=\"/lineups/new\" class=\"space-y-4\" data-dirty-check=\"true\"><label class=\"block\">Name <input name=\"name\" class=\"w-full border rounded-lg p-3 mt-1\" placeholder=\"Sunday starting XI\"></label> <label class=\"block\" data-drawer-extended>Details<div class=\"speech-input-row mt-1\"><textarea id=\"lineup-new-details\" name=\"details\" class=\"w-full border rounded-lg p-3\" rows=\"4\" placeholder=\"Notes, availability, plan, reminders\"></textarea> <button type=\"button\" class=\"speech-button\" aria-label=\"Dictate details\" aria-pressed=\"false\" data-speech-target=\"#lineup-new-details\" onclick=\"window.startSpeechToText(this)\">Mic</button></div></label> <label class=\"block\" data-drawer-extended>Match <select name=\"matchId\" class=\"w-full border rounded-lg p-3 mt-1\"><option value=\"\">No match</option> ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		for _, m := range matches {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 247, "<option value=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 279, "<option value=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var140 string
-			templ_7745c5c3_Var140, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", m.ID))
+			var templ_7745c5c3_Var155 string
+			templ_7745c5c3_Var155, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", m.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2688, Col: 49}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2828, Col: 49}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var140)
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 248, "\">")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var155)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var141 string
-			templ_7745c5c3_Var141, templ_7745c5c3_Err = templ.JoinStringErrs(m.Opponent)
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2688, Col: 64}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var141))
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 280, "\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 249, " - ")
+			var templ_7745c5c3_Var156 string
+			templ_7745c5c3_Var156, templ_7745c5c3_Err = templ.JoinStringErrs(m.Opponent)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2828, Col: 64}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var156))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var142 string
-			templ_7745c5c3_Var142, templ_7745c5c3_Err = templ.JoinStringErrs(m.Location)
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2688, Col: 81}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var142))
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 281, " - ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 250, "</option>")
+			var templ_7745c5c3_Var157 string
+			templ_7745c5c3_Var157, templ_7745c5c3_Err = templ.JoinStringErrs(m.Location)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2828, Col: 81}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var157))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 282, "</option>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 251, "</select></label> <label class=\"block\" data-drawer-extended>Formation <select name=\"formationId\" class=\"w-full border rounded-lg p-3 mt-1\"><option value=\"\">No formation yet</option> ")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 283, "</select></label> <label class=\"block\" data-drawer-extended>Formation <select name=\"formationId\" class=\"w-full border rounded-lg p-3 mt-1\"><option value=\"\">No formation yet</option> ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		for _, f := range formations {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 252, "<option value=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 284, "<option value=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var143 string
-			templ_7745c5c3_Var143, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", f.ID))
+			var templ_7745c5c3_Var158 string
+			templ_7745c5c3_Var158, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", f.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2696, Col: 49}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2836, Col: 49}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var143)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var158)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 253, "\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 285, "\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if selected != nil && f.ID == selected.ID {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 254, " selected")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 286, " selected")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 255, ">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 287, ">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var144 string
-			templ_7745c5c3_Var144, templ_7745c5c3_Err = templ.JoinStringErrs(f.Name)
+			var templ_7745c5c3_Var159 string
+			templ_7745c5c3_Var159, templ_7745c5c3_Err = templ.JoinStringErrs(f.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2696, Col: 113}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2836, Col: 113}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var144))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 256, " - ")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var159))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var145 string
-			templ_7745c5c3_Var145, templ_7745c5c3_Err = templ.JoinStringErrs(f.Status)
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2696, Col: 128}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var145))
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 288, " - ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 257, "</option>")
+			var templ_7745c5c3_Var160 string
+			templ_7745c5c3_Var160, templ_7745c5c3_Err = templ.JoinStringErrs(f.Status)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2836, Col: 128}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var160))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 289, "</option>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 258, "</select></label> ")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 290, "</select></label> ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var146 = []any{bigAdd}
-		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var146...)
+		var templ_7745c5c3_Var161 = []any{bigAdd}
+		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var161...)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 259, "<button type=\"submit\" class=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 291, "<button type=\"submit\" class=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var147 string
-		templ_7745c5c3_Var147, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var146).String())
+		var templ_7745c5c3_Var162 string
+		templ_7745c5c3_Var162, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var161).String())
 		if templ_7745c5c3_Err != nil {
 			return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 1, Col: 0}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var147)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var162)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 260, "\">Create draft</button> ")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 292, "\">Create draft</button> ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var148 = []any{bigPri}
-		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var148...)
+		var templ_7745c5c3_Var163 = []any{bigPri}
+		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var163...)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 261, "<a href=\"/lineups\" class=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 293, "<a href=\"/lineups\" class=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var149 string
-		templ_7745c5c3_Var149, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var148).String())
+		var templ_7745c5c3_Var164 string
+		templ_7745c5c3_Var164, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var163).String())
 		if templ_7745c5c3_Err != nil {
 			return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 1, Col: 0}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var149)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var164)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 262, "\" onclick=\"window.dirtyFormNavigationAllowedUntil = Date.now() + 2000\">Cancel</a></form></div></section></div></body></html>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 294, "\" onclick=\"window.dirtyFormNavigationAllowedUntil = Date.now() + 2000\">Cancel</a></form></div></section></div></body></html>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -3271,140 +3624,140 @@ func statusActionButtonRow(lineup *Lineup, formation *Formation, isAdmin bool, a
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var150 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var150 == nil {
-			templ_7745c5c3_Var150 = templ.NopComponent
+		templ_7745c5c3_Var165 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var165 == nil {
+			templ_7745c5c3_Var165 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 263, "<div class=\"grid grid-cols-1 gap-2 sm:grid-cols-2\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 295, "<div class=\"grid grid-cols-1 gap-2 sm:grid-cols-2\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if lineup != nil {
 			if lineup.Status == lineupStatusDraft {
-				var templ_7745c5c3_Var151 = []any{bigPri}
-				templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var151...)
+				var templ_7745c5c3_Var166 = []any{bigPri}
+				templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var166...)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 264, "<button type=\"submit\" name=\"lineupAction\" value=\"publish\" class=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 296, "<button type=\"submit\" name=\"lineupAction\" value=\"publish\" class=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var152 string
-				templ_7745c5c3_Var152, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var151).String())
+				var templ_7745c5c3_Var167 string
+				templ_7745c5c3_Var167, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var166).String())
 				if templ_7745c5c3_Err != nil {
 					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 1, Col: 0}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var152)
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var167)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 265, "\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 297, "\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				if isAdmin {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 266, "Publish line-up")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 298, "Publish line-up")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				} else {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 267, "Submit line-up")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 299, "Submit line-up")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 268, "</button>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 300, "</button>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 269, " ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 301, " ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if lineup.Status == lineupStatusLive && isAdmin && activeMatch != nil {
-				var templ_7745c5c3_Var153 = []any{bigPri + " sm:col-span-2 text-2xl leading-tight"}
-				templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var153...)
+				var templ_7745c5c3_Var168 = []any{bigPri + " sm:col-span-2 text-2xl leading-tight"}
+				templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var168...)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 270, "<button type=\"submit\" name=\"lineupAction\" value=\"set-active-match-lineup\" class=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 302, "<button type=\"submit\" name=\"lineupAction\" value=\"set-active-match-lineup\" class=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var154 string
-				templ_7745c5c3_Var154, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var153).String())
+				var templ_7745c5c3_Var169 string
+				templ_7745c5c3_Var169, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var168).String())
 				if templ_7745c5c3_Err != nil {
 					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 1, Col: 0}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var154)
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var169)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 271, "\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 303, "\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				if hasActiveMatchLineup {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 272, "Replace existing selected line-up for ")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 304, "Replace existing selected line-up for ")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					var templ_7745c5c3_Var155 string
-					templ_7745c5c3_Var155, templ_7745c5c3_Err = templ.JoinStringErrs(matchDayMatchOptionLabel(*activeMatch))
+					var templ_7745c5c3_Var170 string
+					templ_7745c5c3_Var170, templ_7745c5c3_Err = templ.JoinStringErrs(matchDayMatchOptionLabel(*activeMatch))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2725, Col: 84}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2865, Col: 84}
 					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var155))
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var170))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				} else {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 273, "Set as selected line-up for ")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 305, "Set as selected line-up for ")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					var templ_7745c5c3_Var156 string
-					templ_7745c5c3_Var156, templ_7745c5c3_Err = templ.JoinStringErrs(matchDayMatchOptionLabel(*activeMatch))
+					var templ_7745c5c3_Var171 string
+					templ_7745c5c3_Var171, templ_7745c5c3_Err = templ.JoinStringErrs(matchDayMatchOptionLabel(*activeMatch))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2727, Col: 74}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2867, Col: 74}
 					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var156))
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var171))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 274, "</button>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 306, "</button>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 275, " ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 307, " ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if lineup.Status == lineupStatusSelected && isAdmin {
-				var templ_7745c5c3_Var157 = []any{bigSec}
-				templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var157...)
+				var templ_7745c5c3_Var172 = []any{bigSec}
+				templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var172...)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 276, "<button type=\"submit\" name=\"lineupAction\" value=\"unselect\" class=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 308, "<button type=\"submit\" name=\"lineupAction\" value=\"unselect\" class=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var158 string
-				templ_7745c5c3_Var158, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var157).String())
+				var templ_7745c5c3_Var173 string
+				templ_7745c5c3_Var173, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var172).String())
 				if templ_7745c5c3_Err != nil {
 					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 1, Col: 0}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var158)
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var173)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 277, "\">Unselect this line-up</button> ")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 309, "\">Unselect this line-up</button> ")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -3412,107 +3765,107 @@ func statusActionButtonRow(lineup *Lineup, formation *Formation, isAdmin bool, a
 		}
 		if formation != nil {
 			if formation.Status == formationStatusDraft {
-				var templ_7745c5c3_Var159 = []any{bigPri}
-				templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var159...)
+				var templ_7745c5c3_Var174 = []any{bigPri}
+				templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var174...)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 278, "<button type=\"submit\" name=\"formationAction\" value=\"publish\" class=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 310, "<button type=\"submit\" name=\"formationAction\" value=\"publish\" class=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var160 string
-				templ_7745c5c3_Var160, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var159).String())
+				var templ_7745c5c3_Var175 string
+				templ_7745c5c3_Var175, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var174).String())
 				if templ_7745c5c3_Err != nil {
 					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 1, Col: 0}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var160)
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var175)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 279, "\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 311, "\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				if isAdmin {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 280, "Publish formation")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 312, "Publish formation")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				} else {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 281, "Submit formation")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 313, "Submit formation")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 282, "</button>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 314, "</button>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 283, " ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 315, " ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if formation.Status == formationStatusLive && isAdmin && activeMatch != nil {
-				var templ_7745c5c3_Var161 = []any{bigPri + " sm:col-span-2 text-2xl leading-tight"}
-				templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var161...)
+				var templ_7745c5c3_Var176 = []any{bigPri + " sm:col-span-2 text-2xl leading-tight"}
+				templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var176...)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 284, "<button type=\"submit\" name=\"formationAction\" value=\"set-active-match-lineup\" class=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 316, "<button type=\"submit\" name=\"formationAction\" value=\"set-active-match-lineup\" class=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var162 string
-				templ_7745c5c3_Var162, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var161).String())
+				var templ_7745c5c3_Var177 string
+				templ_7745c5c3_Var177, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var176).String())
 				if templ_7745c5c3_Err != nil {
 					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 1, Col: 0}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var162)
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var177)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 285, "\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 317, "\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				if hasActiveMatchLineup {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 286, "Replace existing selected line-up for ")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 318, "Replace existing selected line-up for ")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					var templ_7745c5c3_Var163 string
-					templ_7745c5c3_Var163, templ_7745c5c3_Err = templ.JoinStringErrs(matchDayMatchOptionLabel(*activeMatch))
+					var templ_7745c5c3_Var178 string
+					templ_7745c5c3_Var178, templ_7745c5c3_Err = templ.JoinStringErrs(matchDayMatchOptionLabel(*activeMatch))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2748, Col: 84}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2888, Col: 84}
 					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var163))
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var178))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				} else {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 287, "Set as selected line-up for ")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 319, "Set as selected line-up for ")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					var templ_7745c5c3_Var164 string
-					templ_7745c5c3_Var164, templ_7745c5c3_Err = templ.JoinStringErrs(matchDayMatchOptionLabel(*activeMatch))
+					var templ_7745c5c3_Var179 string
+					templ_7745c5c3_Var179, templ_7745c5c3_Err = templ.JoinStringErrs(matchDayMatchOptionLabel(*activeMatch))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2750, Col: 74}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2890, Col: 74}
 					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var164))
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var179))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 288, "</button>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 320, "</button>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 289, "</div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 321, "</div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -3536,78 +3889,78 @@ func lineupLockControl(lineup *Lineup, canLock bool, canUnlock bool) templ.Compo
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var165 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var165 == nil {
-			templ_7745c5c3_Var165 = templ.NopComponent
+		templ_7745c5c3_Var180 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var180 == nil {
+			templ_7745c5c3_Var180 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
 		if lineup.Locked || canLock {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 290, "<div class=\"flex items-center justify-end gap-2\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 322, "<div class=\"flex items-center justify-end gap-2\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if lineup.Locked && lineup.LockedByName != "" {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 291, "<div class=\"min-w-0 truncate text-xs font-semibold uppercase tracking-wide text-amber-700\">Locked by ")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 323, "<div class=\"min-w-0 truncate text-xs font-semibold uppercase tracking-wide text-amber-700\">Locked by ")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var166 string
-				templ_7745c5c3_Var166, templ_7745c5c3_Err = templ.JoinStringErrs(lineup.LockedByName)
+				var templ_7745c5c3_Var181 string
+				templ_7745c5c3_Var181, templ_7745c5c3_Err = templ.JoinStringErrs(lineup.LockedByName)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2762, Col: 126}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2902, Col: 126}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var166))
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var181))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 292, "</div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 324, "</div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
 			if lineup.Locked && canUnlock {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 293, "<form method=\"POST\" action=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 325, "<form method=\"POST\" action=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var167 templ.SafeURL
-				templ_7745c5c3_Var167, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/lineups/%d", lineup.ID))
+				var templ_7745c5c3_Var182 templ.SafeURL
+				templ_7745c5c3_Var182, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/lineups/%d", lineup.ID))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2765, Col: 70}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2905, Col: 70}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var167))
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var182))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 294, "\"><button type=\"submit\" name=\"lineupAction\" value=\"unlock\" class=\"inline-flex h-9 w-9 items-center justify-center rounded-full border border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100 focus:outline-none focus:ring-2 focus:ring-amber-300\" title=\"Unlock line-up\" aria-label=\"Unlock line-up\" onclick=\"return confirm('this line-up is locked, are you sure you want to unlock it')\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.25\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect width=\"18\" height=\"11\" x=\"3\" y=\"11\" rx=\"2\"></rect> <path d=\"M7 11V7a5 5 0 0 1 9.9-1\"></path></svg></button></form>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 326, "\"><button type=\"submit\" name=\"lineupAction\" value=\"unlock\" class=\"inline-flex h-9 w-9 items-center justify-center rounded-full border border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100 focus:outline-none focus:ring-2 focus:ring-amber-300\" title=\"Unlock line-up\" aria-label=\"Unlock line-up\" onclick=\"return confirm('this line-up is locked, are you sure you want to unlock it')\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.25\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect width=\"18\" height=\"11\" x=\"3\" y=\"11\" rx=\"2\"></rect> <path d=\"M7 11V7a5 5 0 0 1 9.9-1\"></path></svg></button></form>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			} else if lineup.Locked {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 295, "<span class=\"inline-flex h-9 w-9 items-center justify-center rounded-full border border-amber-200 bg-amber-50 text-amber-800\" title=\"Line-up locked\" aria-label=\"Line-up locked\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.25\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect width=\"18\" height=\"11\" x=\"3\" y=\"11\" rx=\"2\"></rect> <path d=\"M7 11V7a5 5 0 0 1 10 0v4\"></path></svg></span>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 327, "<span class=\"inline-flex h-9 w-9 items-center justify-center rounded-full border border-amber-200 bg-amber-50 text-amber-800\" title=\"Line-up locked\" aria-label=\"Line-up locked\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.25\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect width=\"18\" height=\"11\" x=\"3\" y=\"11\" rx=\"2\"></rect> <path d=\"M7 11V7a5 5 0 0 1 10 0v4\"></path></svg></span>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			} else if canLock {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 296, "<form method=\"POST\" action=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 328, "<form method=\"POST\" action=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var168 templ.SafeURL
-				templ_7745c5c3_Var168, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/lineups/%d", lineup.ID))
+				var templ_7745c5c3_Var183 templ.SafeURL
+				templ_7745c5c3_Var183, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/lineups/%d", lineup.ID))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2789, Col: 70}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2929, Col: 70}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var168))
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var183))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 297, "\"><button type=\"submit\" name=\"lineupAction\" value=\"lock\" class=\"inline-flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 hover:bg-gray-50 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-300\" title=\"Lock line-up\" aria-label=\"Lock line-up\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.25\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect width=\"18\" height=\"11\" x=\"3\" y=\"11\" rx=\"2\"></rect> <path d=\"M7 11V7a5 5 0 0 1 10 0v4\"></path></svg></button></form>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 329, "\"><button type=\"submit\" name=\"lineupAction\" value=\"lock\" class=\"inline-flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 hover:bg-gray-50 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-300\" title=\"Lock line-up\" aria-label=\"Lock line-up\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.25\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect width=\"18\" height=\"11\" x=\"3\" y=\"11\" rx=\"2\"></rect> <path d=\"M7 11V7a5 5 0 0 1 10 0v4\"></path></svg></button></form>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 298, "</div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 330, "</div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -3632,12 +3985,12 @@ func lineupEditPage(lineup *Lineup, players []Player, formations []Formation, ma
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var169 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var169 == nil {
-			templ_7745c5c3_Var169 = templ.NopComponent
+		templ_7745c5c3_Var184 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var184 == nil {
+			templ_7745c5c3_Var184 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 299, "<!doctype html><html>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 331, "<!doctype html><html>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -3649,7 +4002,7 @@ func lineupEditPage(lineup *Lineup, players []Player, formations []Formation, ma
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 300, "<body><div class=\"pitch-shell\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 332, "<body><div class=\"pitch-shell\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -3664,7 +4017,7 @@ func lineupEditPage(lineup *Lineup, players []Player, formations []Formation, ma
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 301, "<section class=\"pitch-drawer\" data-state=\"collapsed\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 333, "<section class=\"pitch-drawer\" data-state=\"collapsed\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -3672,7 +4025,7 @@ func lineupEditPage(lineup *Lineup, players []Player, formations []Formation, ma
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 302, "<div class=\"drawer-body\" data-detail-mode=\"simple\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 334, "<div class=\"drawer-body\" data-detail-mode=\"simple\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -3688,250 +4041,250 @@ func lineupEditPage(lineup *Lineup, players []Player, formations []Formation, ma
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 303, "<div hx-get=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 335, "<div hx-get=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var170 string
-		templ_7745c5c3_Var170, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("/lineups/%d/errors", lineup.ID))
+		var templ_7745c5c3_Var185 string
+		templ_7745c5c3_Var185, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("/lineups/%d/errors", lineup.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2827, Col: 64}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2967, Col: 64}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var170)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var185)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 304, "\" hx-trigger=\"load once\" hx-swap=\"outerHTML\"></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 336, "\" hx-trigger=\"load once\" hx-swap=\"outerHTML\"></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if canEdit {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 305, "<form method=\"POST\" action=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 337, "<form method=\"POST\" action=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var171 templ.SafeURL
-			templ_7745c5c3_Var171, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/lineups/%d", lineup.ID))
+			var templ_7745c5c3_Var186 templ.SafeURL
+			templ_7745c5c3_Var186, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/lineups/%d", lineup.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2829, Col: 73}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2969, Col: 73}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var171))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 306, "\" class=\"space-y-4\" data-dirty-check=\"true\" onsubmit=\"return window.prepareLineupSave(this, event)\"><input type=\"hidden\" name=\"lineupAssignmentMode\" value=\"move\"> <label class=\"block\">Name <input name=\"name\" value=\"")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var186))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var172 string
-			templ_7745c5c3_Var172, templ_7745c5c3_Err = templ.ResolveAttributeValue(lineup.Name)
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2832, Col: 47}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var172)
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 338, "\" class=\"space-y-4\" data-dirty-check=\"true\" onsubmit=\"return window.prepareLineupSave(this, event)\"><input type=\"hidden\" name=\"lineupAssignmentMode\" value=\"move\"> <label class=\"block\">Name <input name=\"name\" value=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 307, "\" class=\"w-full border rounded-lg p-3 mt-1\"></label> <label class=\"block\" data-drawer-extended>Details<div class=\"speech-input-row mt-1\"><textarea id=\"lineup-details\" name=\"details\" class=\"w-full border rounded-lg p-3\" rows=\"4\" placeholder=\"Notes, availability, plan, reminders\">")
+			var templ_7745c5c3_Var187 string
+			templ_7745c5c3_Var187, templ_7745c5c3_Err = templ.ResolveAttributeValue(lineup.Name)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2972, Col: 47}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var187)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var173 string
-			templ_7745c5c3_Var173, templ_7745c5c3_Err = templ.JoinStringErrs(lineup.Details)
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2836, Col: 168}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var173))
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 339, "\" class=\"w-full border rounded-lg p-3 mt-1\"></label> <label class=\"block\" data-drawer-extended>Details<div class=\"speech-input-row mt-1\"><textarea id=\"lineup-details\" name=\"details\" class=\"w-full border rounded-lg p-3\" rows=\"4\" placeholder=\"Notes, availability, plan, reminders\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 308, "</textarea> <button type=\"button\" class=\"speech-button\" aria-label=\"Dictate details\" aria-pressed=\"false\" data-speech-target=\"#lineup-details\" onclick=\"window.startSpeechToText(this)\">Mic</button></div></label> <label class=\"block\" data-drawer-extended>Status <select name=\"status\" class=\"w-full border rounded-lg p-3 mt-1\">")
+			var templ_7745c5c3_Var188 string
+			templ_7745c5c3_Var188, templ_7745c5c3_Err = templ.JoinStringErrs(lineup.Details)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2976, Col: 168}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var188))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 340, "</textarea> <button type=\"button\" class=\"speech-button\" aria-label=\"Dictate details\" aria-pressed=\"false\" data-speech-target=\"#lineup-details\" onclick=\"window.startSpeechToText(this)\">Mic</button></div></label> <label class=\"block\" data-drawer-extended>Status <select name=\"status\" class=\"w-full border rounded-lg p-3 mt-1\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			for _, status := range lineupStatusesForActor(LineupActor{IsAdmin: isAdmin}) {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 309, "<option value=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 341, "<option value=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var174 string
-				templ_7745c5c3_Var174, templ_7745c5c3_Err = templ.ResolveAttributeValue(status)
+				var templ_7745c5c3_Var189 string
+				templ_7745c5c3_Var189, templ_7745c5c3_Err = templ.ResolveAttributeValue(status)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2843, Col: 33}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2983, Col: 33}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var174)
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var189)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 310, "\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 342, "\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				if status == lineup.Status {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 311, " selected")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 343, " selected")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 312, ">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 344, ">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var175 string
-				templ_7745c5c3_Var175, templ_7745c5c3_Err = templ.JoinStringErrs(status)
+				var templ_7745c5c3_Var190 string
+				templ_7745c5c3_Var190, templ_7745c5c3_Err = templ.JoinStringErrs(status)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2843, Col: 82}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2983, Col: 82}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var175))
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var190))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 313, "</option>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 345, "</option>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 314, "</select></label> <label class=\"block\" data-drawer-extended>Match <select name=\"matchId\" class=\"w-full border rounded-lg p-3 mt-1\"><option value=\"\">No match</option> ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 346, "</select></label> <label class=\"block\" data-drawer-extended>Match <select name=\"matchId\" class=\"w-full border rounded-lg p-3 mt-1\"><option value=\"\">No match</option> ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			for _, m := range matches {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 315, "<option value=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 347, "<option value=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var176 string
-				templ_7745c5c3_Var176, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", m.ID))
+				var templ_7745c5c3_Var191 string
+				templ_7745c5c3_Var191, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", m.ID))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2851, Col: 50}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2991, Col: 50}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var176)
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var191)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 316, "\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 348, "\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				if m.ID == lineupMatchID(lineup) {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 317, " selected")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 349, " selected")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 318, ">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 350, ">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var177 string
-				templ_7745c5c3_Var177, templ_7745c5c3_Err = templ.JoinStringErrs(m.Opponent)
+				var templ_7745c5c3_Var192 string
+				templ_7745c5c3_Var192, templ_7745c5c3_Err = templ.JoinStringErrs(m.Opponent)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2851, Col: 109}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2991, Col: 109}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var177))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 319, " - ")
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var192))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var178 string
-				templ_7745c5c3_Var178, templ_7745c5c3_Err = templ.JoinStringErrs(m.Location)
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2851, Col: 126}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var178))
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 351, " - ")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 320, "</option>")
+				var templ_7745c5c3_Var193 string
+				templ_7745c5c3_Var193, templ_7745c5c3_Err = templ.JoinStringErrs(m.Location)
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2991, Col: 126}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var193))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 352, "</option>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 321, "</select></label> <label class=\"block\" data-drawer-extended>Formation <select name=\"formationId\" class=\"w-full border rounded-lg p-3 mt-1\"><option value=\"\">No formation</option> ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 353, "</select></label> <label class=\"block\" data-drawer-extended>Formation <select name=\"formationId\" class=\"w-full border rounded-lg p-3 mt-1\"><option value=\"\">No formation</option> ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			for _, f := range formations {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 322, "<option value=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 354, "<option value=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var179 string
-				templ_7745c5c3_Var179, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", f.ID))
+				var templ_7745c5c3_Var194 string
+				templ_7745c5c3_Var194, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", f.ID))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2859, Col: 51}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2999, Col: 51}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var179)
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var194)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 323, "\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 355, "\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				if f.ID == lineup.FormationID {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 324, " selected")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 356, " selected")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 325, ">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 357, ">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var180 string
-				templ_7745c5c3_Var180, templ_7745c5c3_Err = templ.JoinStringErrs(f.Name)
+				var templ_7745c5c3_Var195 string
+				templ_7745c5c3_Var195, templ_7745c5c3_Err = templ.JoinStringErrs(f.Name)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2859, Col: 103}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2999, Col: 103}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var180))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 326, " - ")
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var195))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var181 string
-				templ_7745c5c3_Var181, templ_7745c5c3_Err = templ.JoinStringErrs(f.Status)
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2859, Col: 118}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var181))
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 358, " - ")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 327, "</option>")
+				var templ_7745c5c3_Var196 string
+				templ_7745c5c3_Var196, templ_7745c5c3_Err = templ.JoinStringErrs(f.Status)
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2999, Col: 118}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var196))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 359, "</option>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 328, "</select></label> ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 360, "</select></label> ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var182 = []any{bigAdd}
-			templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var182...)
+			var templ_7745c5c3_Var197 = []any{bigAdd}
+			templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var197...)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 329, "<button type=\"submit\" class=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 361, "<button type=\"submit\" class=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var183 string
-			templ_7745c5c3_Var183, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var182).String())
+			var templ_7745c5c3_Var198 string
+			templ_7745c5c3_Var198, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var197).String())
 			if templ_7745c5c3_Err != nil {
 				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 1, Col: 0}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var183)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var198)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 330, "\">Save this line-up</button> ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 362, "\">Save this line-up</button> ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -3942,305 +4295,305 @@ func lineupEditPage(lineup *Lineup, players []Player, formations []Formation, ma
 				}
 			}
 			for _, pos := range lineup.Formation.Positions {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 331, "<div class=\"border rounded-lg p-3\" data-slot-panel=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 363, "<div class=\"border rounded-lg p-3\" data-slot-panel=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var184 string
-				templ_7745c5c3_Var184, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", pos.IndexNumber))
+				var templ_7745c5c3_Var199 string
+				templ_7745c5c3_Var199, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", pos.IndexNumber))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2870, Col: 62}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3010, Col: 62}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var184)
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 332, "\" data-lineup-slot-group data-lineup-position-index=\"")
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var199)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var185 string
-				templ_7745c5c3_Var185, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", pos.IndexNumber))
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2872, Col: 73}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var185)
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 364, "\" data-lineup-slot-group data-lineup-position-index=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 333, "\" data-lineup-position-initials=\"")
+				var templ_7745c5c3_Var200 string
+				templ_7745c5c3_Var200, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", pos.IndexNumber))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3012, Col: 73}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var200)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var186 string
-				templ_7745c5c3_Var186, templ_7745c5c3_Err = templ.ResolveAttributeValue(lineupPositionInitials(pos.PositionName))
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2873, Col: 82}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var186)
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 365, "\" data-lineup-position-initials=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 334, "\"><div class=\"font-bold\">")
+				var templ_7745c5c3_Var201 string
+				templ_7745c5c3_Var201, templ_7745c5c3_Err = templ.ResolveAttributeValue(lineupPositionInitials(pos.PositionName))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3013, Col: 82}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var201)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var187 string
-				templ_7745c5c3_Var187, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d - %s", pos.IndexNumber, pos.PositionName))
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2875, Col: 92}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var187))
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 366, "\"><div class=\"font-bold\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 335, "</div><input type=\"hidden\" name=\"indexNumber\" value=\"")
+				var templ_7745c5c3_Var202 string
+				templ_7745c5c3_Var202, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d - %s", pos.IndexNumber, pos.PositionName))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3015, Col: 92}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var202))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var188 string
-				templ_7745c5c3_Var188, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", pos.IndexNumber))
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2876, Col: 92}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var188)
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 367, "</div><input type=\"hidden\" name=\"indexNumber\" value=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 336, "\"> ")
+				var templ_7745c5c3_Var203 string
+				templ_7745c5c3_Var203, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", pos.IndexNumber))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3016, Col: 92}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var203)
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 368, "\"> ")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				for slotOrder := 0; slotOrder < 4; slotOrder++ {
 					selectedPlayerID := lineupPlayerIDAtSlot(lineup.Players, pos.IndexNumber, slotOrder)
 					playerOptions := lineupPlayerSelectOptions(players, lineup.Players, lineup.Formation.Positions, pos.IndexNumber, pos.PositionName, selectedPlayerID, unavailablePlayerIDs)
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 337, "<div data-lineup-slot-row=\"")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 369, "<div data-lineup-slot-row=\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					var templ_7745c5c3_Var189 string
-					templ_7745c5c3_Var189, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", slotOrder))
+					var templ_7745c5c3_Var204 string
+					templ_7745c5c3_Var204, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", slotOrder))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2881, Col: 63}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3021, Col: 63}
 					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var189)
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var204)
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 338, "\"")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 370, "\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					if slotOrder > lineupLastAssignedSlot(lineup.Players, pos.IndexNumber) {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 339, " class=\"mt-3 hidden\"")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 371, " class=\"mt-3 hidden\"")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 					} else {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 340, " class=\"mt-3\"")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 372, " class=\"mt-3\"")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 341, "><label class=\"text-sm font-semibold text-gray-700\">")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 373, "><label class=\"text-sm font-semibold text-gray-700\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					if slotOrder == 0 {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 342, "Starter")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 374, "Starter")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 					} else {
-						var templ_7745c5c3_Var190 string
-						templ_7745c5c3_Var190, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("Sub %d", slotOrder))
+						var templ_7745c5c3_Var205 string
+						templ_7745c5c3_Var205, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("Sub %d", slotOrder))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2892, Col: 48}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3032, Col: 48}
 						}
-						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var190))
+						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var205))
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 343, "</label><div class=\"grid grid-cols-[minmax(0,1fr)_80px] gap-2 mt-1\"><select name=\"")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 375, "</label><div class=\"grid grid-cols-[minmax(0,1fr)_80px] gap-2 mt-1\"><select name=\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					var templ_7745c5c3_Var191 string
-					templ_7745c5c3_Var191, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("player_%d_%d", pos.IndexNumber, slotOrder))
+					var templ_7745c5c3_Var206 string
+					templ_7745c5c3_Var206, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("player_%d_%d", pos.IndexNumber, slotOrder))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2897, Col: 76}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3037, Col: 76}
 					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var191)
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 344, "\" data-player-slot=\"")
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var206)
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					var templ_7745c5c3_Var192 string
-					templ_7745c5c3_Var192, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", slotOrder))
-					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2898, Col: 61}
-					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var192)
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 376, "\" data-player-slot=\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 345, "\" class=\"w-full border rounded-lg p-3\">")
+					var templ_7745c5c3_Var207 string
+					templ_7745c5c3_Var207, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", slotOrder))
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3038, Col: 61}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var207)
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 377, "\" class=\"w-full border rounded-lg p-3\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					if slotOrder == 0 {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 346, "<option value=\"\">Unassigned starter</option> ")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 378, "<option value=\"\">Unassigned starter</option> ")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 					} else {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 347, "<option value=\"\">No sub</option> ")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 379, "<option value=\"\">No sub</option> ")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 					}
 					for _, option := range playerOptions {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 348, "<option value=\"")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 380, "<option value=\"")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						var templ_7745c5c3_Var193 string
-						templ_7745c5c3_Var193, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", option.Player.ID))
+						var templ_7745c5c3_Var208 string
+						templ_7745c5c3_Var208, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", option.Player.ID))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2908, Col: 59}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3048, Col: 59}
 						}
-						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var193)
-						if templ_7745c5c3_Err != nil {
-							return templ_7745c5c3_Err
-						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 349, "\" data-current-index=\"")
+						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var208)
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						var templ_7745c5c3_Var194 string
-						templ_7745c5c3_Var194, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", option.CurrentIndex))
-						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2909, Col: 75}
-						}
-						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var194)
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 381, "\" data-current-index=\"")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 350, "\" data-player-name=\"")
+						var templ_7745c5c3_Var209 string
+						templ_7745c5c3_Var209, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", option.CurrentIndex))
+						if templ_7745c5c3_Err != nil {
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3049, Col: 75}
+						}
+						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var209)
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						var templ_7745c5c3_Var195 string
-						templ_7745c5c3_Var195, templ_7745c5c3_Err = templ.ResolveAttributeValue(option.Player.Name)
-						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2910, Col: 53}
-						}
-						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var195)
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 382, "\" data-player-name=\"")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 351, "\"")
+						var templ_7745c5c3_Var210 string
+						templ_7745c5c3_Var210, templ_7745c5c3_Err = templ.ResolveAttributeValue(option.Player.Name)
+						if templ_7745c5c3_Err != nil {
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3050, Col: 53}
+						}
+						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var210)
+						if templ_7745c5c3_Err != nil {
+							return templ_7745c5c3_Err
+						}
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 383, "\"")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 						if option.Player.ID == selectedPlayerID {
-							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 352, " selected")
+							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 384, " selected")
 							if templ_7745c5c3_Err != nil {
 								return templ_7745c5c3_Err
 							}
 						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 353, ">")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 385, ">")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						var templ_7745c5c3_Var196 string
-						templ_7745c5c3_Var196, templ_7745c5c3_Err = templ.JoinStringErrs(option.Label)
+						var templ_7745c5c3_Var211 string
+						templ_7745c5c3_Var211, templ_7745c5c3_Err = templ.JoinStringErrs(option.Label)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2912, Col: 30}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3052, Col: 30}
 						}
-						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var196))
-						if templ_7745c5c3_Err != nil {
-							return templ_7745c5c3_Err
-						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 354, "</option>")
+						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var211))
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 386, "</option>")
+						if templ_7745c5c3_Err != nil {
+							return templ_7745c5c3_Err
+						}
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 355, "</select> <input type=\"number\" min=\"0\" name=\"")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 387, "</select> <input type=\"number\" min=\"0\" name=\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					var templ_7745c5c3_Var197 string
-					templ_7745c5c3_Var197, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("minute_%d_%d", pos.IndexNumber, slotOrder))
+					var templ_7745c5c3_Var212 string
+					templ_7745c5c3_Var212, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("minute_%d_%d", pos.IndexNumber, slotOrder))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2918, Col: 76}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3058, Col: 76}
 					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var197)
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 356, "\" value=\"")
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var212)
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					var templ_7745c5c3_Var198 string
-					templ_7745c5c3_Var198, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", lineupSubMinuteAtSlot(lineup.Players, pos.IndexNumber, slotOrder)))
-					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2919, Col: 106}
-					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var198)
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 388, "\" value=\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 357, "\" placeholder=\"Min\" class=\"w-full border rounded-lg p-3\"> ")
+					var templ_7745c5c3_Var213 string
+					templ_7745c5c3_Var213, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", lineupSubMinuteAtSlot(lineup.Players, pos.IndexNumber, slotOrder)))
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3059, Col: 106}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var213)
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 389, "\" placeholder=\"Min\" class=\"w-full border rounded-lg p-3\"> ")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					if slotOrder < 3 {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 358, "<button type=\"button\" data-add-sub-button data-slot-order=\"")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 390, "<button type=\"button\" data-add-sub-button data-slot-order=\"")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						var templ_7745c5c3_Var199 string
-						templ_7745c5c3_Var199, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", slotOrder))
+						var templ_7745c5c3_Var214 string
+						templ_7745c5c3_Var214, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", slotOrder))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2927, Col: 61}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3067, Col: 61}
 						}
-						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var199)
+						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var214)
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 359, "\" onclick=\"window.showNextLineupSub(this)\"")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 391, "\" onclick=\"window.showNextLineupSub(this)\"")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 						if slotOrder == lineupLastAssignedSlot(lineup.Players, pos.IndexNumber) {
-							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 360, " class=\"col-span-2 rounded-lg bg-gray-500 px-3 py-2 text-sm font-semibold text-white hover:bg-gray-600\"")
+							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 392, " class=\"col-span-2 rounded-lg bg-gray-500 px-3 py-2 text-sm font-semibold text-white hover:bg-gray-600\"")
 							if templ_7745c5c3_Err != nil {
 								return templ_7745c5c3_Err
 							}
 						} else {
-							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 361, " class=\"hidden col-span-2 rounded-lg bg-gray-500 px-3 py-2 text-sm font-semibold text-white hover:bg-gray-600\"")
+							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 393, " class=\"hidden col-span-2 rounded-lg bg-gray-500 px-3 py-2 text-sm font-semibold text-white hover:bg-gray-600\"")
 							if templ_7745c5c3_Err != nil {
 								return templ_7745c5c3_Err
 							}
 						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 362, ">Add sub</button>")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 394, ">Add sub</button>")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 363, "</div></div>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 395, "</div></div>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 364, "</div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 396, "</div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -4249,162 +4602,162 @@ func lineupEditPage(lineup *Lineup, players []Player, formations []Formation, ma
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var200 = []any{bigAdd}
-			templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var200...)
+			var templ_7745c5c3_Var215 = []any{bigAdd}
+			templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var215...)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 365, "<button type=\"submit\" class=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 397, "<button type=\"submit\" class=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var201 string
-			templ_7745c5c3_Var201, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var200).String())
+			var templ_7745c5c3_Var216 string
+			templ_7745c5c3_Var216, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var215).String())
 			if templ_7745c5c3_Err != nil {
 				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 1, Col: 0}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var201)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var216)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 366, "\">Save this line-up</button> ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 398, "\">Save this line-up</button> ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var202 = []any{bigAdd}
-			templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var202...)
+			var templ_7745c5c3_Var217 = []any{bigAdd}
+			templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var217...)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 367, "<button type=\"submit\" formaction=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 399, "<button type=\"submit\" formaction=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var203 string
-			templ_7745c5c3_Var203, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("/lineups/%d/copy", lineup.ID))
+			var templ_7745c5c3_Var218 string
+			templ_7745c5c3_Var218, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("/lineups/%d/copy", lineup.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2943, Col: 85}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3083, Col: 85}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var203)
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 368, "\" class=\"")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var218)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var204 string
-			templ_7745c5c3_Var204, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var202).String())
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 400, "\" class=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var219 string
+			templ_7745c5c3_Var219, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var217).String())
 			if templ_7745c5c3_Err != nil {
 				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 1, Col: 0}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var204)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var219)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 369, "\">Save a new copy</button> ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 401, "\">Save a new copy</button> ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var205 = []any{bigPri}
-			templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var205...)
+			var templ_7745c5c3_Var220 = []any{bigPri}
+			templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var220...)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 370, "<a href=\"/lineups\" class=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 402, "<a href=\"/lineups\" class=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var206 string
-			templ_7745c5c3_Var206, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var205).String())
+			var templ_7745c5c3_Var221 string
+			templ_7745c5c3_Var221, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var220).String())
 			if templ_7745c5c3_Err != nil {
 				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 1, Col: 0}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var206)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var221)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 371, "\" onclick=\"window.dirtyFormNavigationAllowedUntil = Date.now() + 2000\">Cancel</a> ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 403, "\" onclick=\"window.dirtyFormNavigationAllowedUntil = Date.now() + 2000\">Cancel</a> ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if lineup.Status != lineupStatusDraft {
-				var templ_7745c5c3_Var207 = []any{bigPri}
-				templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var207...)
+				var templ_7745c5c3_Var222 = []any{bigPri}
+				templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var222...)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 372, "<button type=\"button\" class=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 404, "<button type=\"button\" class=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var208 string
-				templ_7745c5c3_Var208, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var207).String())
+				var templ_7745c5c3_Var223 string
+				templ_7745c5c3_Var223, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var222).String())
 				if templ_7745c5c3_Err != nil {
 					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 1, Col: 0}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var208)
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var223)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 373, "\" data-share-url=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 405, "\" data-share-url=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var209 string
-				templ_7745c5c3_Var209, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("/lineups/%d/share", lineup.ID))
+				var templ_7745c5c3_Var224 string
+				templ_7745c5c3_Var224, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("/lineups/%d/share", lineup.ID))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2949, Col: 70}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3089, Col: 70}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var209)
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 374, "\" onclick=\"window.copyLineupShareLink(this, event)\">Share view</button> ")
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var224)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 406, "\" onclick=\"window.copyLineupShareLink(this, event)\">Share view</button> ")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 375, "<button type=\"button\" hx-delete=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 407, "<button type=\"button\" hx-delete=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var210 string
-			templ_7745c5c3_Var210, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("/lineups/%d", lineup.ID))
+			var templ_7745c5c3_Var225 string
+			templ_7745c5c3_Var225, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("/lineups/%d", lineup.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2955, Col: 58}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3095, Col: 58}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var210)
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 376, "\" hx-confirm=\"")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var225)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var211 string
-			templ_7745c5c3_Var211, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("Delete this line-up - %s?", lineup.Name))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2956, Col: 75}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var211)
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 408, "\" hx-confirm=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 377, "\" class=\"w-full rounded-lg bg-red-600 px-4 py-3 font-bold text-white\">Delete this line-up - ")
+			var templ_7745c5c3_Var226 string
+			templ_7745c5c3_Var226, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("Delete this line-up - %s?", lineup.Name))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3096, Col: 75}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var226)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var212 string
-			templ_7745c5c3_Var212, templ_7745c5c3_Err = templ.JoinStringErrs(lineup.Name)
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2958, Col: 44}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var212))
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 409, "\" class=\"w-full rounded-lg bg-red-600 px-4 py-3 font-bold text-white\">Delete this line-up - ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 378, "</button></form>")
+			var templ_7745c5c3_Var227 string
+			templ_7745c5c3_Var227, templ_7745c5c3_Err = templ.JoinStringErrs(lineup.Name)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3098, Col: 44}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var227))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 410, "</button></form>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -4413,53 +4766,53 @@ func lineupEditPage(lineup *Lineup, players []Player, formations []Formation, ma
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 379, " ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 411, " ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if canCopy {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 380, "<form method=\"POST\" action=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 412, "<form method=\"POST\" action=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var213 templ.SafeURL
-				templ_7745c5c3_Var213, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/lineups/%d/copy", lineup.ID))
+				var templ_7745c5c3_Var228 templ.SafeURL
+				templ_7745c5c3_Var228, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/lineups/%d/copy", lineup.ID))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2963, Col: 80}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3103, Col: 80}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var213))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 381, "\" class=\"mt-4\">")
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var228))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var214 = []any{bigAdd}
-				templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var214...)
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 413, "\" class=\"mt-4\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 382, "<button type=\"submit\" class=\"")
+				var templ_7745c5c3_Var229 = []any{bigAdd}
+				templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var229...)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var215 string
-				templ_7745c5c3_Var215, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var214).String())
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 414, "<button type=\"submit\" class=\"")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var230 string
+				templ_7745c5c3_Var230, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var229).String())
 				if templ_7745c5c3_Err != nil {
 					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 1, Col: 0}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var215)
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var230)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 383, "\">Save a new copy</button></form>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 415, "\">Save a new copy</button></form>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 384, "</div></section></div></body></html>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 416, "</div></section></div></body></html>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -4483,18 +4836,18 @@ func lineupProblemBadge(level string) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var216 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var216 == nil {
-			templ_7745c5c3_Var216 = templ.NopComponent
+		templ_7745c5c3_Var231 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var231 == nil {
+			templ_7745c5c3_Var231 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
 		if level == "error" {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 385, "<span class=\"rounded bg-red-100 px-2 py-1 text-xs font-bold uppercase text-red-800\">error</span>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 417, "<span class=\"rounded bg-red-100 px-2 py-1 text-xs font-bold uppercase text-red-800\">error</span>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 386, "<span class=\"rounded bg-yellow-100 px-2 py-1 text-xs font-bold uppercase text-yellow-800\">warn</span>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 418, "<span class=\"rounded bg-yellow-100 px-2 py-1 text-xs font-bold uppercase text-yellow-800\">warn</span>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -4519,74 +4872,74 @@ func lineupSaveWarning(lineup *Lineup, canEdit bool, isAdmin bool, msg string) t
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var217 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var217 == nil {
-			templ_7745c5c3_Var217 = templ.NopComponent
+		templ_7745c5c3_Var232 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var232 == nil {
+			templ_7745c5c3_Var232 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
 		if msg == sharedLineupLiveFormationError && lineup != nil && lineup.FormationID > 0 && lineup.Formation.Status != formationStatusLive && canEdit && isAdmin {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 387, "<div class=\"p-4 mb-4 text-red-900 border border-red-500 rounded-lg bg-red-200 dark:bg-red-700 dark:text-red-100 dark:border-red-600\"><p class=\"text-lg font-semibold\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 419, "<div class=\"p-4 mb-4 text-red-900 border border-red-500 rounded-lg bg-red-200 dark:bg-red-700 dark:text-red-100 dark:border-red-600\"><p class=\"text-lg font-semibold\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var218 string
-			templ_7745c5c3_Var218, templ_7745c5c3_Err = templ.JoinStringErrs(msg)
+			var templ_7745c5c3_Var233 string
+			templ_7745c5c3_Var233, templ_7745c5c3_Err = templ.JoinStringErrs(msg)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2986, Col: 41}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3126, Col: 41}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var218))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 388, "</p><form method=\"POST\" action=\"")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var233))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var219 templ.SafeURL
-			templ_7745c5c3_Var219, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/formations/%d/live", lineup.FormationID))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2987, Col: 86}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var219))
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 420, "</p><form method=\"POST\" action=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 389, "\" class=\"mt-3\"><input type=\"hidden\" name=\"returnTo\" value=\"")
+			var templ_7745c5c3_Var234 templ.SafeURL
+			templ_7745c5c3_Var234, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/formations/%d/live", lineup.FormationID))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3127, Col: 86}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var234))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var220 string
-			templ_7745c5c3_Var220, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("/lineups/%d", lineup.ID))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 2988, Col: 86}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var220)
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 421, "\" class=\"mt-3\"><input type=\"hidden\" name=\"returnTo\" value=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 390, "\"> ")
+			var templ_7745c5c3_Var235 string
+			templ_7745c5c3_Var235, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("/lineups/%d", lineup.ID))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3128, Col: 86}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var235)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var221 = []any{bigAdd}
-			templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var221...)
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 422, "\"> ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 391, "<button type=\"submit\" class=\"")
+			var templ_7745c5c3_Var236 = []any{bigAdd}
+			templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var236...)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var222 string
-			templ_7745c5c3_Var222, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var221).String())
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 423, "<button type=\"submit\" class=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var237 string
+			templ_7745c5c3_Var237, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var236).String())
 			if templ_7745c5c3_Err != nil {
 				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 1, Col: 0}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var222)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var237)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 392, "\">Make this formation live</button></form></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 424, "\">Make this formation live</button></form></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -4616,42 +4969,42 @@ func lineupProblemsPanel(problems []LineupProblem) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var223 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var223 == nil {
-			templ_7745c5c3_Var223 = templ.NopComponent
+		templ_7745c5c3_Var238 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var238 == nil {
+			templ_7745c5c3_Var238 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 393, "<div class=\"mb-4 rounded-lg border border-gray-200 bg-white p-3 shadow-sm\"><div class=\"mb-2 text-sm font-bold uppercase text-gray-500\">Line-up checks</div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 425, "<div class=\"mb-4 rounded-lg border border-gray-200 bg-white p-3 shadow-sm\"><div class=\"mb-2 text-sm font-bold uppercase text-gray-500\">Line-up checks</div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if len(problems) == 0 {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 394, "<div class=\"rounded border border-green-200 bg-green-50 px-3 py-2 text-sm font-semibold text-green-800\">No pending problems.</div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 426, "<div class=\"rounded border border-green-200 bg-green-50 px-3 py-2 text-sm font-semibold text-green-800\">No pending problems.</div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 395, "<div class=\"space-y-2\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 427, "<div class=\"space-y-2\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			for _, problem := range problems {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 396, "<div")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 428, "<div")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				if problem.Level == "error" {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 397, " class=\"flex items-start gap-3 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-900\"")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 429, " class=\"flex items-start gap-3 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-900\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				} else {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 398, " class=\"flex items-start gap-3 rounded border border-yellow-200 bg-yellow-50 px-3 py-2 text-sm text-yellow-900\"")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 430, " class=\"flex items-start gap-3 rounded border border-yellow-200 bg-yellow-50 px-3 py-2 text-sm text-yellow-900\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 399, ">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 431, ">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -4659,30 +5012,30 @@ func lineupProblemsPanel(problems []LineupProblem) templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 400, "<div class=\"font-semibold\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 432, "<div class=\"font-semibold\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var224 string
-				templ_7745c5c3_Var224, templ_7745c5c3_Err = templ.JoinStringErrs(problem.Msg)
+				var templ_7745c5c3_Var239 string
+				templ_7745c5c3_Var239, templ_7745c5c3_Err = templ.JoinStringErrs(problem.Msg)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3013, Col: 46}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3153, Col: 46}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var224))
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var239))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 401, "</div></div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 433, "</div></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 402, "</div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 434, "</div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 403, "</div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 435, "</div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -4706,42 +5059,42 @@ func matchDayProblemsPanel(problems []LineupProblem) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var225 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var225 == nil {
-			templ_7745c5c3_Var225 = templ.NopComponent
+		templ_7745c5c3_Var240 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var240 == nil {
+			templ_7745c5c3_Var240 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 404, "<div class=\"mb-4 rounded-lg border border-gray-200 bg-white p-3 shadow-sm\"><div class=\"mb-2 text-sm font-bold uppercase text-gray-500\">Match-day checks</div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 436, "<div class=\"mb-4 rounded-lg border border-gray-200 bg-white p-3 shadow-sm\"><div class=\"mb-2 text-sm font-bold uppercase text-gray-500\">Match-day checks</div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if len(problems) == 0 {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 405, "<div class=\"rounded border border-green-200 bg-green-50 px-3 py-2 text-sm font-semibold text-green-800\">No pending problems.</div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 437, "<div class=\"rounded border border-green-200 bg-green-50 px-3 py-2 text-sm font-semibold text-green-800\">No pending problems.</div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 406, "<div class=\"space-y-2\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 438, "<div class=\"space-y-2\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			for _, problem := range problems {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 407, "<div")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 439, "<div")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				if problem.Level == "error" {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 408, " class=\"flex items-start gap-3 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-900\"")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 440, " class=\"flex items-start gap-3 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-900\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				} else {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 409, " class=\"flex items-start gap-3 rounded border border-yellow-200 bg-yellow-50 px-3 py-2 text-sm text-yellow-900\"")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 441, " class=\"flex items-start gap-3 rounded border border-yellow-200 bg-yellow-50 px-3 py-2 text-sm text-yellow-900\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 410, ">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 442, ">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -4749,30 +5102,30 @@ func matchDayProblemsPanel(problems []LineupProblem) templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 411, "<div class=\"font-semibold\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 443, "<div class=\"font-semibold\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var226 string
-				templ_7745c5c3_Var226, templ_7745c5c3_Err = templ.JoinStringErrs(problem.Msg)
+				var templ_7745c5c3_Var241 string
+				templ_7745c5c3_Var241, templ_7745c5c3_Err = templ.JoinStringErrs(problem.Msg)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3037, Col: 46}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3177, Col: 46}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var226))
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var241))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 412, "</div></div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 444, "</div></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 413, "</div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 445, "</div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 414, "</div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 446, "</div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -4796,193 +5149,193 @@ func lineupReadOnlyDrawer(lineup *Lineup) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var227 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var227 == nil {
-			templ_7745c5c3_Var227 = templ.NopComponent
+		templ_7745c5c3_Var242 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var242 == nil {
+			templ_7745c5c3_Var242 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 415, "<div class=\"space-y-4\"><div class=\"text-sm uppercase tracking-wide text-gray-500\" data-drawer-extended>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 447, "<div class=\"space-y-4\"><div class=\"text-sm uppercase tracking-wide text-gray-500\" data-drawer-extended>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var228 string
-		templ_7745c5c3_Var228, templ_7745c5c3_Err = templ.JoinStringErrs(lineup.Status)
+		var templ_7745c5c3_Var243 string
+		templ_7745c5c3_Var243, templ_7745c5c3_Err = templ.JoinStringErrs(lineup.Status)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3047, Col: 97}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3187, Col: 97}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var228))
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var243))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 416, "</div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 448, "</div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if lineup.Match.ID > 0 {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 417, "<div data-drawer-extended>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 449, "<div data-drawer-extended>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var229 string
-			templ_7745c5c3_Var229, templ_7745c5c3_Err = templ.JoinStringErrs(lineup.Match.Opponent)
+			var templ_7745c5c3_Var244 string
+			templ_7745c5c3_Var244, templ_7745c5c3_Err = templ.JoinStringErrs(lineup.Match.Opponent)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3049, Col: 52}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3189, Col: 52}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var229))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 418, " - ")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var244))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var230 string
-			templ_7745c5c3_Var230, templ_7745c5c3_Err = templ.JoinStringErrs(lineup.Match.Location)
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3049, Col: 80}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var230))
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 450, " - ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 419, "</div>")
+			var templ_7745c5c3_Var245 string
+			templ_7745c5c3_Var245, templ_7745c5c3_Err = templ.JoinStringErrs(lineup.Match.Location)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3189, Col: 80}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var245))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 451, "</div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 420, "<div data-drawer-extended>Formation: ")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 452, "<div data-drawer-extended>Formation: ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var231 string
-		templ_7745c5c3_Var231, templ_7745c5c3_Err = templ.JoinStringErrs(lineup.Formation.Name)
+		var templ_7745c5c3_Var246 string
+		templ_7745c5c3_Var246, templ_7745c5c3_Err = templ.JoinStringErrs(lineup.Formation.Name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3051, Col: 62}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3191, Col: 62}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var231))
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var246))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 421, "</div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 453, "</div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if lineup.Details != "" {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 422, "<div class=\"rounded-lg border bg-gray-50 p-3 text-sm text-gray-700 whitespace-pre-wrap\" data-drawer-extended>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 454, "<div class=\"rounded-lg border bg-gray-50 p-3 text-sm text-gray-700 whitespace-pre-wrap\" data-drawer-extended>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var232 string
-			templ_7745c5c3_Var232, templ_7745c5c3_Err = templ.JoinStringErrs(lineup.Details)
+			var templ_7745c5c3_Var247 string
+			templ_7745c5c3_Var247, templ_7745c5c3_Err = templ.JoinStringErrs(lineup.Details)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3053, Col: 128}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3193, Col: 128}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var232))
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var247))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 423, "</div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 455, "</div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
 		pitchPlayers := lineupPitchPlayers(lineup)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 424, "<details class=\"rounded-lg border border-gray-200 bg-white shadow-sm\"><summary class=\"cursor-pointer px-4 py-3 text-sm font-bold uppercase text-gray-500\">Players by position (")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 456, "<details class=\"rounded-lg border border-gray-200 bg-white shadow-sm\"><summary class=\"cursor-pointer px-4 py-3 text-sm font-bold uppercase text-gray-500\">Players by position (")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var233 string
-		templ_7745c5c3_Var233, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", len(pitchPlayers)))
+		var templ_7745c5c3_Var248 string
+		templ_7745c5c3_Var248, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", len(pitchPlayers)))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3058, Col: 63}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3198, Col: 63}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var233))
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var248))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 425, ")</summary><div class=\"divide-y divide-gray-100\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 457, ")</summary><div class=\"divide-y divide-gray-100\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		for _, pp := range pitchPlayers {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 426, "<div class=\"p-3\"><div class=\"font-bold\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 458, "<div class=\"p-3\"><div class=\"font-bold\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var234 string
-			templ_7745c5c3_Var234, templ_7745c5c3_Err = templ.JoinStringErrs(pp.Position.PositionName)
+			var templ_7745c5c3_Var249 string
+			templ_7745c5c3_Var249, templ_7745c5c3_Err = templ.JoinStringErrs(pp.Position.PositionName)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3063, Col: 55}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3203, Col: 55}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var234))
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var249))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 427, "</div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 459, "</div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if len(pp.Players) > 0 {
 				for i, assigned := range pp.Players {
 					if i == 0 {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 428, "<div>")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 460, "<div>")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						var templ_7745c5c3_Var235 string
-						templ_7745c5c3_Var235, templ_7745c5c3_Err = templ.JoinStringErrs(assigned.Player.Name)
+						var templ_7745c5c3_Var250 string
+						templ_7745c5c3_Var250, templ_7745c5c3_Err = templ.JoinStringErrs(assigned.Player.Name)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3067, Col: 36}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3207, Col: 36}
 						}
-						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var235))
+						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var250))
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 429, "</div>")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 461, "</div>")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 					} else {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 430, "<div class=\"text-sm text-gray-600\">")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 462, "<div class=\"text-sm text-gray-600\">")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						var templ_7745c5c3_Var236 string
-						templ_7745c5c3_Var236, templ_7745c5c3_Err = templ.JoinStringErrs(assigned.Player.Name)
+						var templ_7745c5c3_Var251 string
+						templ_7745c5c3_Var251, templ_7745c5c3_Err = templ.JoinStringErrs(assigned.Player.Name)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3069, Col: 66}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3209, Col: 66}
 						}
-						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var236))
-						if templ_7745c5c3_Err != nil {
-							return templ_7745c5c3_Err
-						}
-						var templ_7745c5c3_Var237 string
-						templ_7745c5c3_Var237, templ_7745c5c3_Err = templ.JoinStringErrs(lineupSubMinuteLabel(assigned.SubMinute))
-						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3069, Col: 110}
-						}
-						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var237))
+						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var251))
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 431, "</div>")
+						var templ_7745c5c3_Var252 string
+						templ_7745c5c3_Var252, templ_7745c5c3_Err = templ.JoinStringErrs(lineupSubMinuteLabel(assigned.SubMinute))
+						if templ_7745c5c3_Err != nil {
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3209, Col: 110}
+						}
+						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var252))
+						if templ_7745c5c3_Err != nil {
+							return templ_7745c5c3_Err
+						}
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 463, "</div>")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 					}
 				}
 			} else {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 432, "<div class=\"text-gray-500\">Unassigned</div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 464, "<div class=\"text-gray-500\">Unassigned</div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 433, "</div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 465, "</div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 434, "</div></details></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 466, "</div></details></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -5006,12 +5359,12 @@ func lineupSharePage(lineup *Lineup, matchDayLineupID uint) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var238 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var238 == nil {
-			templ_7745c5c3_Var238 = templ.NopComponent
+		templ_7745c5c3_Var253 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var253 == nil {
+			templ_7745c5c3_Var253 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 435, "<!doctype html><html>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 467, "<!doctype html><html>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -5023,7 +5376,7 @@ func lineupSharePage(lineup *Lineup, matchDayLineupID uint) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 436, "<body><div class=\"pitch-shell\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 468, "<body><div class=\"pitch-shell\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -5031,7 +5384,7 @@ func lineupSharePage(lineup *Lineup, matchDayLineupID uint) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 437, "<section class=\"pitch-drawer\" data-state=\"collapsed\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 469, "<section class=\"pitch-drawer\" data-state=\"collapsed\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -5039,42 +5392,42 @@ func lineupSharePage(lineup *Lineup, matchDayLineupID uint) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 438, "<div class=\"drawer-body\" data-detail-mode=\"simple\"><div hx-get=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 470, "<div class=\"drawer-body\" data-detail-mode=\"simple\"><div hx-get=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var239 string
-		templ_7745c5c3_Var239, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("/lineups/%d/errors", lineup.ID))
+		var templ_7745c5c3_Var254 string
+		templ_7745c5c3_Var254, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("/lineups/%d/errors", lineup.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3093, Col: 64}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3233, Col: 64}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var239)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 439, "\" hx-trigger=\"load once\" hx-swap=\"outerHTML\"></div>")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var254)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var240 = []any{bigPri}
-		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var240...)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 471, "\" hx-trigger=\"load once\" hx-swap=\"outerHTML\"></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 440, "<button type=\"button\" class=\"")
+		var templ_7745c5c3_Var255 = []any{bigPri}
+		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var255...)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var241 string
-		templ_7745c5c3_Var241, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var240).String())
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 472, "<button type=\"button\" class=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var256 string
+		templ_7745c5c3_Var256, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var255).String())
 		if templ_7745c5c3_Err != nil {
 			return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 1, Col: 0}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var241)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var256)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 441, "\" onclick=\"window.copyLineupShareLink(this, event)\">Share view</button>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 473, "\" onclick=\"window.copyLineupShareLink(this, event)\">Share view</button>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -5082,7 +5435,7 @@ func lineupSharePage(lineup *Lineup, matchDayLineupID uint) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 442, "</div></section></div></body></html>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 474, "</div></section></div></body></html>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -5106,140 +5459,140 @@ func matchDayRedoEventForm(lineup *Lineup, event *MatchEvent) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var242 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var242 == nil {
-			templ_7745c5c3_Var242 = templ.NopComponent
+		templ_7745c5c3_Var257 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var257 == nil {
+			templ_7745c5c3_Var257 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
 		if lineup != nil && event != nil {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 443, "<form method=\"POST\" action=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 475, "<form method=\"POST\" action=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var243 templ.SafeURL
-			templ_7745c5c3_Var243, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/match-day/%d/action", lineup.ID))
+			var templ_7745c5c3_Var258 templ.SafeURL
+			templ_7745c5c3_Var258, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/match-day/%d/action", lineup.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3105, Col: 77}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3245, Col: 77}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var243))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 444, "\" class=\"rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-950\"><input type=\"hidden\" name=\"action\" value=\"redo-event\"> <input type=\"hidden\" name=\"eventName\" value=\"")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var258))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var244 string
-			templ_7745c5c3_Var244, templ_7745c5c3_Err = templ.ResolveAttributeValue(event.EventName)
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3107, Col: 64}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var244)
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 476, "\" class=\"rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-950\"><input type=\"hidden\" name=\"action\" value=\"redo-event\"> <input type=\"hidden\" name=\"eventName\" value=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 445, "\"> <input type=\"hidden\" name=\"eventType\" value=\"")
+			var templ_7745c5c3_Var259 string
+			templ_7745c5c3_Var259, templ_7745c5c3_Err = templ.ResolveAttributeValue(event.EventName)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3247, Col: 64}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var259)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var245 string
-			templ_7745c5c3_Var245, templ_7745c5c3_Err = templ.ResolveAttributeValue(event.EventType)
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3108, Col: 64}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var245)
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 477, "\"> <input type=\"hidden\" name=\"eventType\" value=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 446, "\"> <input type=\"hidden\" name=\"playerId\" value=\"")
+			var templ_7745c5c3_Var260 string
+			templ_7745c5c3_Var260, templ_7745c5c3_Err = templ.ResolveAttributeValue(event.EventType)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3248, Col: 64}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var260)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var246 string
-			templ_7745c5c3_Var246, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", event.PlayerId))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3109, Col: 81}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var246)
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 478, "\"> <input type=\"hidden\" name=\"playerId\" value=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 447, "\"> <input type=\"hidden\" name=\"minute\" value=\"")
+			var templ_7745c5c3_Var261 string
+			templ_7745c5c3_Var261, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", event.PlayerId))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3249, Col: 81}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var261)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var247 string
-			templ_7745c5c3_Var247, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", event.EventMinute))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3110, Col: 82}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var247)
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 479, "\"> <input type=\"hidden\" name=\"minute\" value=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 448, "\"> ")
+			var templ_7745c5c3_Var262 string
+			templ_7745c5c3_Var262, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", event.EventMinute))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3250, Col: 82}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var262)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 480, "\"> ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if event.EventTime != nil {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 449, "<input type=\"hidden\" name=\"eventTime\" value=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 481, "<input type=\"hidden\" name=\"eventTime\" value=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var248 string
-				templ_7745c5c3_Var248, templ_7745c5c3_Err = templ.ResolveAttributeValue(event.EventTime.Format(time.RFC3339Nano))
+				var templ_7745c5c3_Var263 string
+				templ_7745c5c3_Var263, templ_7745c5c3_Err = templ.ResolveAttributeValue(event.EventTime.Format(time.RFC3339Nano))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3112, Col: 90}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3252, Col: 90}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var248)
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 450, "\">")
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var263)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 482, "\">")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 451, "<div class=\"flex items-center justify-between gap-3\"><div><div class=\"font-semibold\">Re-do ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 483, "<div class=\"flex items-center justify-between gap-3\"><div><div class=\"font-semibold\">Re-do ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var249 string
-			templ_7745c5c3_Var249, templ_7745c5c3_Err = templ.JoinStringErrs(matchDayEventLabel(*event))
+			var templ_7745c5c3_Var264 string
+			templ_7745c5c3_Var264, templ_7745c5c3_Err = templ.JoinStringErrs(matchDayEventLabel(*event))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3116, Col: 66}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3256, Col: 66}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var249))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 452, "</div><div class=\"text-emerald-800\">")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var264))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var250 string
-			templ_7745c5c3_Var250, templ_7745c5c3_Err = templ.JoinStringErrs(event.EventType)
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3117, Col: 52}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var250))
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 484, "</div><div class=\"text-emerald-800\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 453, " - ")
+			var templ_7745c5c3_Var265 string
+			templ_7745c5c3_Var265, templ_7745c5c3_Err = templ.JoinStringErrs(event.EventType)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3257, Col: 52}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var265))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var251 string
-			templ_7745c5c3_Var251, templ_7745c5c3_Err = templ.JoinStringErrs(matchDayEventWhenLabel(*event))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3117, Col: 89}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var251))
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 485, " - ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 454, "</div></div><button type=\"submit\" class=\"rounded-lg bg-emerald-700 px-3 py-2 font-bold text-white\">Re-do</button></div></form>")
+			var templ_7745c5c3_Var266 string
+			templ_7745c5c3_Var266, templ_7745c5c3_Err = templ.JoinStringErrs(matchDayEventWhenLabel(*event))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3257, Col: 89}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var266))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 486, "</div></div><button type=\"submit\" class=\"rounded-lg bg-emerald-700 px-3 py-2 font-bold text-white\">Re-do</button></div></form>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -5264,57 +5617,57 @@ func matchDayAdjacentButton(label string, lineup *Lineup) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var252 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var252 == nil {
-			templ_7745c5c3_Var252 = templ.NopComponent
+		templ_7745c5c3_Var267 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var267 == nil {
+			templ_7745c5c3_Var267 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
 		if lineup != nil {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 455, "<a href=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 487, "<a href=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var253 templ.SafeURL
-			templ_7745c5c3_Var253, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/match-day/%d", lineup.ID))
+			var templ_7745c5c3_Var268 templ.SafeURL
+			templ_7745c5c3_Var268, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/match-day/%d", lineup.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3127, Col: 51}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3267, Col: 51}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var253))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 456, "\" class=\"block rounded-lg bg-gray-100 px-3 py-2 text-center text-sm font-bold text-gray-800 ring-1 ring-gray-200 hover:bg-gray-200\">")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var268))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var254 string
-			templ_7745c5c3_Var254, templ_7745c5c3_Err = templ.JoinStringErrs(label)
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3128, Col: 10}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var254))
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 488, "\" class=\"block rounded-lg bg-gray-100 px-3 py-2 text-center text-sm font-bold text-gray-800 ring-1 ring-gray-200 hover:bg-gray-200\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 457, "</a>")
+			var templ_7745c5c3_Var269 string
+			templ_7745c5c3_Var269, templ_7745c5c3_Err = templ.JoinStringErrs(label)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3268, Col: 10}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var269))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 489, "</a>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 458, "<span class=\"block rounded-lg bg-gray-50 px-3 py-2 text-center text-sm font-bold text-gray-400 ring-1 ring-gray-100\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 490, "<span class=\"block rounded-lg bg-gray-50 px-3 py-2 text-center text-sm font-bold text-gray-400 ring-1 ring-gray-100\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var255 string
-			templ_7745c5c3_Var255, templ_7745c5c3_Err = templ.JoinStringErrs(label)
+			var templ_7745c5c3_Var270 string
+			templ_7745c5c3_Var270, templ_7745c5c3_Err = templ.JoinStringErrs(label)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3132, Col: 10}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3272, Col: 10}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var255))
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var270))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 459, "</span>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 491, "</span>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -5339,12 +5692,12 @@ func matchDayAdjacentNav(adjacentLineups MatchDayAdjacentLineups) templ.Componen
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var256 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var256 == nil {
-			templ_7745c5c3_Var256 = templ.NopComponent
+		templ_7745c5c3_Var271 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var271 == nil {
+			templ_7745c5c3_Var271 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 460, "<div class=\"grid grid-cols-2 gap-2\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 492, "<div class=\"grid grid-cols-2 gap-2\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -5356,7 +5709,7 @@ func matchDayAdjacentNav(adjacentLineups MatchDayAdjacentLineups) templ.Componen
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 461, "</div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 493, "</div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -5380,111 +5733,111 @@ func matchDayCustomEventForm(lineup *Lineup, players []Player) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var257 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var257 == nil {
-			templ_7745c5c3_Var257 = templ.NopComponent
+		templ_7745c5c3_Var272 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var272 == nil {
+			templ_7745c5c3_Var272 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
 		if lineup != nil {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 462, "<details class=\"rounded-lg border border-gray-200 bg-white p-3\"><summary class=\"cursor-pointer text-sm font-bold text-gray-800\">Add custom match event</summary><form method=\"POST\" action=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 494, "<details class=\"rounded-lg border border-gray-200 bg-white p-3\"><summary class=\"cursor-pointer text-sm font-bold text-gray-800\">Add custom match event</summary><form method=\"POST\" action=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var258 templ.SafeURL
-			templ_7745c5c3_Var258, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/match-day/%d/action", lineup.ID))
+			var templ_7745c5c3_Var273 templ.SafeURL
+			templ_7745c5c3_Var273, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/match-day/%d/action", lineup.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3148, Col: 78}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3288, Col: 78}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var258))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 463, "\" class=\"mt-3 grid gap-2\"><input type=\"hidden\" name=\"action\" value=\"custom-event\"><div class=\"grid grid-cols-1 gap-2 sm:grid-cols-2\"><label class=\"grid gap-1 text-sm font-semibold text-gray-700\"><span>Event type</span> <input list=\"match-day-custom-event-types\" name=\"eventType\" required placeholder=\"yellow-card\" class=\"rounded-lg border border-gray-300 p-2 text-gray-900\"></label> <label class=\"grid gap-1 text-sm font-semibold text-gray-700\"><span>Minute</span> <input type=\"number\" name=\"minute\" min=\"0\" max=\"")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var273))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var259 string
-			templ_7745c5c3_Var259, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", matchDayOverrunWarnMinute))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3157, Col: 99}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var259)
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 495, "\" class=\"mt-3 grid gap-2\"><input type=\"hidden\" name=\"action\" value=\"custom-event\"><div class=\"grid grid-cols-1 gap-2 sm:grid-cols-2\"><label class=\"grid gap-1 text-sm font-semibold text-gray-700\"><span>Event type</span> <input list=\"match-day-custom-event-types\" name=\"eventType\" required placeholder=\"yellow-card\" class=\"rounded-lg border border-gray-300 p-2 text-gray-900\"></label> <label class=\"grid gap-1 text-sm font-semibold text-gray-700\"><span>Minute</span> <input type=\"number\" name=\"minute\" min=\"0\" max=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 464, "\" value=\"")
+			var templ_7745c5c3_Var274 string
+			templ_7745c5c3_Var274, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", matchDayOverrunWarnMinute))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3297, Col: 99}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var274)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var260 string
-			templ_7745c5c3_Var260, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", matchDayMinute(lineup.Match)))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3157, Col: 157}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var260)
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 496, "\" value=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 465, "\" class=\"rounded-lg border border-gray-300 p-2 text-gray-900\"></label></div><datalist id=\"match-day-custom-event-types\">")
+			var templ_7745c5c3_Var275 string
+			templ_7745c5c3_Var275, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", matchDayMinute(lineup.Match)))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3297, Col: 157}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var275)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 497, "\" class=\"rounded-lg border border-gray-300 p-2 text-gray-900\"></label></div><datalist id=\"match-day-custom-event-types\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			for _, eventType := range []string{"goal", "assist", "conceded-goal", "own-goal", "subbed-on", "subbed-off", "yellow-card", "red-card", "injury", "gave-away-penalty", "half-time", "match-resumed", "match-finished"} {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 466, "<option value=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 498, "<option value=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var261 string
-				templ_7745c5c3_Var261, templ_7745c5c3_Err = templ.ResolveAttributeValue(eventType)
+				var templ_7745c5c3_Var276 string
+				templ_7745c5c3_Var276, templ_7745c5c3_Err = templ.ResolveAttributeValue(eventType)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3162, Col: 31}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3302, Col: 31}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var261)
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var276)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 467, "\"></option>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 499, "\"></option>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 468, "</datalist> <label class=\"grid gap-1 text-sm font-semibold text-gray-700\"><span>Event label</span> <input type=\"text\" name=\"eventName\" placeholder=\"What happened?\" class=\"rounded-lg border border-gray-300 p-2 text-gray-900\"></label> <label class=\"grid gap-1 text-sm font-semibold text-gray-700\"><span>Player</span> <select name=\"playerId\" class=\"rounded-lg border border-gray-300 p-2 text-gray-900\"><option value=\"\">No player</option> ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 500, "</datalist> <label class=\"grid gap-1 text-sm font-semibold text-gray-700\"><span>Event label</span> <input type=\"text\" name=\"eventName\" placeholder=\"What happened?\" class=\"rounded-lg border border-gray-300 p-2 text-gray-900\"></label> <label class=\"grid gap-1 text-sm font-semibold text-gray-700\"><span>Player</span> <select name=\"playerId\" class=\"rounded-lg border border-gray-300 p-2 text-gray-900\"><option value=\"\">No player</option> ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			for _, player := range players {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 469, "<option value=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 501, "<option value=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var262 string
-				templ_7745c5c3_Var262, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", player.ID))
+				var templ_7745c5c3_Var277 string
+				templ_7745c5c3_Var277, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", player.ID))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3174, Col: 51}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3314, Col: 51}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var262)
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 470, "\">")
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var277)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var263 string
-				templ_7745c5c3_Var263, templ_7745c5c3_Err = templ.JoinStringErrs(player.Name)
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3174, Col: 67}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var263))
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 502, "\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 471, "</option>")
+				var templ_7745c5c3_Var278 string
+				templ_7745c5c3_Var278, templ_7745c5c3_Err = templ.JoinStringErrs(player.Name)
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3314, Col: 67}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var278))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 503, "</option>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 472, "</select></label> <button type=\"submit\" class=\"match-day-action-button primary\">Add event</button></form></details>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 504, "</select></label> <button type=\"submit\" class=\"match-day-action-button primary\">Add event</button></form></details>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -5509,111 +5862,111 @@ func matchDayResetPreview(lineup *Lineup, events []MatchEvent) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var264 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var264 == nil {
-			templ_7745c5c3_Var264 = templ.NopComponent
+		templ_7745c5c3_Var279 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var279 == nil {
+			templ_7745c5c3_Var279 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
 		if lineup != nil {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 473, "<div class=\"rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-950\"><div class=\"font-bold\">Reset match?</div><div class=\"mt-1\">This will delete ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 505, "<div class=\"rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-950\"><div class=\"font-bold\">Reset match?</div><div class=\"mt-1\">This will delete ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var265 string
-			templ_7745c5c3_Var265, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", len(events)))
+			var templ_7745c5c3_Var280 string
+			templ_7745c5c3_Var280, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", len(events)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3188, Col: 70}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3328, Col: 70}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var265))
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var280))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 474, " match events.</div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 506, " match events.</div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if len(events) > 0 {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 475, "<div class=\"mt-3 space-y-2\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 507, "<div class=\"mt-3 space-y-2\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				for _, event := range events {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 476, "<div class=\"rounded-md border border-red-100 bg-white px-3 py-2\"><div class=\"font-semibold\">")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 508, "<div class=\"rounded-md border border-red-100 bg-white px-3 py-2\"><div class=\"font-semibold\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					var templ_7745c5c3_Var266 string
-					templ_7745c5c3_Var266, templ_7745c5c3_Err = templ.JoinStringErrs(matchDayEventLabel(event))
+					var templ_7745c5c3_Var281 string
+					templ_7745c5c3_Var281, templ_7745c5c3_Err = templ.JoinStringErrs(matchDayEventLabel(event))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3193, Col: 61}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3333, Col: 61}
 					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var266))
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 477, "</div><div class=\"text-red-800\">")
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var281))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					var templ_7745c5c3_Var267 string
-					templ_7745c5c3_Var267, templ_7745c5c3_Err = templ.JoinStringErrs(event.EventType)
-					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3194, Col: 50}
-					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var267))
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 509, "</div><div class=\"text-red-800\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 478, " - ")
+					var templ_7745c5c3_Var282 string
+					templ_7745c5c3_Var282, templ_7745c5c3_Err = templ.JoinStringErrs(event.EventType)
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3334, Col: 50}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var282))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					var templ_7745c5c3_Var268 string
-					templ_7745c5c3_Var268, templ_7745c5c3_Err = templ.JoinStringErrs(matchDayEventWhenLabel(event))
-					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3194, Col: 86}
-					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var268))
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 510, " - ")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 479, "</div></div>")
+					var templ_7745c5c3_Var283 string
+					templ_7745c5c3_Var283, templ_7745c5c3_Err = templ.JoinStringErrs(matchDayEventWhenLabel(event))
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3334, Col: 86}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var283))
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 511, "</div></div>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 480, "</div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 512, "</div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 481, "<div class=\"mt-3 grid grid-cols-2 gap-2\"><a href=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 513, "<div class=\"mt-3 grid grid-cols-2 gap-2\"><a href=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var269 templ.SafeURL
-			templ_7745c5c3_Var269, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/match-day/%d", lineup.ID))
+			var templ_7745c5c3_Var284 templ.SafeURL
+			templ_7745c5c3_Var284, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/match-day/%d", lineup.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3200, Col: 53}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3340, Col: 53}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var269))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 482, "\" class=\"rounded-lg bg-white px-3 py-2 text-center font-bold text-gray-800 ring-1 ring-gray-200\">Cancel</a><form method=\"POST\" action=\"")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var284))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var270 templ.SafeURL
-			templ_7745c5c3_Var270, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/match-day/%d/action", lineup.ID))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3201, Col: 79}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var270))
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 514, "\" class=\"rounded-lg bg-white px-3 py-2 text-center font-bold text-gray-800 ring-1 ring-gray-200\">Cancel</a><form method=\"POST\" action=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 483, "\"><input type=\"hidden\" name=\"action\" value=\"reset-match\"> <input type=\"hidden\" name=\"confirmReset\" value=\"delete-events\"> <button type=\"submit\" class=\"w-full rounded-lg bg-red-700 px-3 py-2 font-bold text-white\">Delete events</button></form></div></div>")
+			var templ_7745c5c3_Var285 templ.SafeURL
+			templ_7745c5c3_Var285, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/match-day/%d/action", lineup.ID))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3341, Col: 79}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var285))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 515, "\"><input type=\"hidden\" name=\"action\" value=\"reset-match\"> <input type=\"hidden\" name=\"confirmReset\" value=\"delete-events\"> <button type=\"submit\" class=\"w-full rounded-lg bg-red-700 px-3 py-2 font-bold text-white\">Delete events</button></form></div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -5638,12 +5991,12 @@ func matchDayPage(lineups []Lineup, selected *Lineup, playerTimes []MatchDayPlay
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var271 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var271 == nil {
-			templ_7745c5c3_Var271 = templ.NopComponent
+		templ_7745c5c3_Var286 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var286 == nil {
+			templ_7745c5c3_Var286 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 484, "<!doctype html><html>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 516, "<!doctype html><html>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -5655,7 +6008,7 @@ func matchDayPage(lineups []Lineup, selected *Lineup, playerTimes []MatchDayPlay
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 485, "<body><div class=\"pitch-shell\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 517, "<body><div class=\"pitch-shell\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -5663,7 +6016,7 @@ func matchDayPage(lineups []Lineup, selected *Lineup, playerTimes []MatchDayPlay
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 486, "<section class=\"pitch-drawer\" data-state=\"collapsed\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 518, "<section class=\"pitch-drawer\" data-state=\"collapsed\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -5671,11 +6024,15 @@ func matchDayPage(lineups []Lineup, selected *Lineup, playerTimes []MatchDayPlay
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 487, "<div class=\"drawer-body space-y-4\" data-detail-mode=\"simple\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 519, "<div class=\"drawer-body space-y-4\" data-detail-mode=\"simple\"><div data-drawer-extended>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		templ_7745c5c3_Err = modeBadge(isAdmin).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 520, "</div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -5684,62 +6041,62 @@ func matchDayPage(lineups []Lineup, selected *Lineup, playerTimes []MatchDayPlay
 			return templ_7745c5c3_Err
 		}
 		if selected == nil {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 488, "<div><div class=\"text-sm uppercase tracking-wide text-gray-500\">Step 1</div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 521, "<div><div class=\"text-sm uppercase tracking-wide text-gray-500\">Step 1</div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if isAdmin && activeMatch != nil {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 489, "<h2 class=\"text-lg font-bold\">Assign a line-up to this match</h2>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 522, "<h2 class=\"text-lg font-bold\">Assign a line-up to this match</h2>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			} else {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 490, "<h2 class=\"text-lg font-bold\">Select a line-up</h2>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 523, "<h2 class=\"text-lg font-bold\">Select a line-up</h2>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 491, "</div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 524, "</div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if isAdmin && activeMatch == nil {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 492, "<div class=\"rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-900\">No upcoming match is ready for match day.</div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 525, "<div class=\"rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-900\">No upcoming match is ready for match day.</div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var272 = []any{bigPri}
-				templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var272...)
+				var templ_7745c5c3_Var287 = []any{bigPri}
+				templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var287...)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 493, "<a href=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 526, "<a href=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var273 templ.SafeURL
-				templ_7745c5c3_Var273, templ_7745c5c3_Err = templ.JoinURLErrs(makeSafeUrlWithAnchorV2("/finemaster", "manage-matches", true))
+				var templ_7745c5c3_Var288 templ.SafeURL
+				templ_7745c5c3_Var288, templ_7745c5c3_Err = templ.JoinURLErrs(makeSafeUrlWithAnchorV2("/finemaster", "manage-matches", true))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3237, Col: 80}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3379, Col: 80}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var273))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 494, "\" class=\"")
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var288))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var274 string
-				templ_7745c5c3_Var274, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var272).String())
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 527, "\" class=\"")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var289 string
+				templ_7745c5c3_Var289, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var287).String())
 				if templ_7745c5c3_Err != nil {
 					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 1, Col: 0}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var274)
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var289)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 495, "\">Manage matches</a> ")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 528, "\">Manage matches</a> ")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -5748,53 +6105,53 @@ func matchDayPage(lineups []Lineup, selected *Lineup, playerTimes []MatchDayPlay
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 496, " ")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 529, " ")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var275 = []any{bigAdd}
-				templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var275...)
+				var templ_7745c5c3_Var290 = []any{bigAdd}
+				templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var290...)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 497, "<a href=\"/lineups/new\" class=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 530, "<a href=\"/lineups/new\" class=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var276 string
-				templ_7745c5c3_Var276, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var275).String())
+				var templ_7745c5c3_Var291 string
+				templ_7745c5c3_Var291, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var290).String())
 				if templ_7745c5c3_Err != nil {
 					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 1, Col: 0}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var276)
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var291)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 498, "\">New line-up</a> ")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 531, "\">New line-up</a> ")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			} else {
 				if isAdmin && activeMatch != nil {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 499, "<div class=\"rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900\"><div class=\"font-semibold\">")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 532, "<div class=\"rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900\"><div class=\"font-semibold\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					var templ_7745c5c3_Var277 string
-					templ_7745c5c3_Var277, templ_7745c5c3_Err = templ.JoinStringErrs(matchDayMatchOptionLabel(*activeMatch))
+					var templ_7745c5c3_Var292 string
+					templ_7745c5c3_Var292, templ_7745c5c3_Err = templ.JoinStringErrs(matchDayMatchOptionLabel(*activeMatch))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3244, Col: 77}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3386, Col: 77}
 					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var277))
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var292))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 500, "</div><div>Choose a line-up to assign to this match.</div></div>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 533, "</div><div>Choose a line-up to assign to this match.</div></div>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 501, " <div class=\"space-y-2\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 534, " <div class=\"space-y-2\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -5811,29 +6168,29 @@ func matchDayPage(lineups []Lineup, selected *Lineup, playerTimes []MatchDayPlay
 						}
 					}
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 502, "</div><div class=\"drawer-list-footer\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 535, "</div><div class=\"drawer-list-footer\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var278 = []any{bigAdd}
-				templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var278...)
+				var templ_7745c5c3_Var293 = []any{bigAdd}
+				templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var293...)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 503, "<a href=\"/lineups/new\" class=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 536, "<a href=\"/lineups/new\" class=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var279 string
-				templ_7745c5c3_Var279, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var278).String())
+				var templ_7745c5c3_Var294 string
+				templ_7745c5c3_Var294, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var293).String())
 				if templ_7745c5c3_Err != nil {
 					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 1, Col: 0}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var279)
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var294)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 504, "\">New line-up</a></div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 537, "\">New line-up</a></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -5844,7 +6201,7 @@ func matchDayPage(lineups []Lineup, selected *Lineup, playerTimes []MatchDayPlay
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 505, " ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 538, " ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -5854,7 +6211,7 @@ func matchDayPage(lineups []Lineup, selected *Lineup, playerTimes []MatchDayPlay
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 506, " <div data-drawer-extended>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 539, " <div data-drawer-extended>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -5862,70 +6219,70 @@ func matchDayPage(lineups []Lineup, selected *Lineup, playerTimes []MatchDayPlay
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 507, "</div><div><div class=\"text-sm uppercase tracking-wide text-gray-500\" data-drawer-extended>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 540, "</div><div><div class=\"text-sm uppercase tracking-wide text-gray-500\" data-drawer-extended>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var280 string
-			templ_7745c5c3_Var280, templ_7745c5c3_Err = templ.JoinStringErrs(selected.Status)
+			var templ_7745c5c3_Var295 string
+			templ_7745c5c3_Var295, templ_7745c5c3_Err = templ.JoinStringErrs(selected.Status)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3271, Col: 105}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3413, Col: 105}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var280))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 508, "</div><h2 class=\"text-lg font-bold\">")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var295))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var281 string
-			templ_7745c5c3_Var281, templ_7745c5c3_Err = templ.JoinStringErrs(selected.Name)
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3272, Col: 53}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var281))
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 541, "</div><h2 class=\"text-lg font-bold\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 509, "</h2>")
+			var templ_7745c5c3_Var296 string
+			templ_7745c5c3_Var296, templ_7745c5c3_Err = templ.JoinStringErrs(selected.Name)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3414, Col: 53}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var296))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 542, "</h2>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if isHistoricalMatch {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 510, "<div class=\"mt-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-900\">You are viewing an old match.</div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 543, "<div class=\"mt-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-900\">You are viewing an old match.</div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
 			if selected.Match.ID > 0 {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 511, "<div class=\"text-sm text-gray-600\" data-drawer-extended>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 544, "<div class=\"text-sm text-gray-600\" data-drawer-extended>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var282 string
-				templ_7745c5c3_Var282, templ_7745c5c3_Err = templ.JoinStringErrs(selected.Match.Opponent)
+				var templ_7745c5c3_Var297 string
+				templ_7745c5c3_Var297, templ_7745c5c3_Err = templ.JoinStringErrs(selected.Match.Opponent)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3279, Col: 90}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3421, Col: 90}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var282))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 512, " - ")
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var297))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var283 string
-				templ_7745c5c3_Var283, templ_7745c5c3_Err = templ.JoinStringErrs(selected.Match.Location)
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3279, Col: 120}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var283))
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 545, " - ")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 513, "</div>")
+				var templ_7745c5c3_Var298 string
+				templ_7745c5c3_Var298, templ_7745c5c3_Err = templ.JoinStringErrs(selected.Match.Location)
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3421, Col: 120}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var298))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 546, "</div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -5934,7 +6291,7 @@ func matchDayPage(lineups []Lineup, selected *Lineup, playerTimes []MatchDayPlay
 					return templ_7745c5c3_Err
 				}
 			} else {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 514, "<div class=\"rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900\"><div class=\"font-semibold\">This match does not have a line-up. Add one to continue</div><div class=\"mt-3 space-y-2\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 547, "<div class=\"rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900\"><div class=\"font-semibold\">This match does not have a line-up. Add one to continue</div><div class=\"mt-3 space-y-2\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -5944,100 +6301,100 @@ func matchDayPage(lineups []Lineup, selected *Lineup, playerTimes []MatchDayPlay
 						return templ_7745c5c3_Err
 					}
 				} else if isAdmin {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 515, "<form method=\"POST\" action=\"")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 548, "<form method=\"POST\" action=\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					var templ_7745c5c3_Var284 templ.SafeURL
-					templ_7745c5c3_Var284, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/match-day/%d/action", selected.ID))
+					var templ_7745c5c3_Var299 templ.SafeURL
+					templ_7745c5c3_Var299, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/match-day/%d/action", selected.ID))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3288, Col: 89}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3430, Col: 89}
 					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var284))
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var299))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 516, "\" class=\"grid grid-cols-[minmax(0,1fr)_auto] gap-2\"><input type=\"hidden\" name=\"action\" value=\"set-match\"> <select name=\"matchId\" class=\"min-w-0 rounded-lg border border-blue-200 bg-white p-2 text-gray-900\" required><option value=\"\">Choose match</option> ")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 549, "\" class=\"grid grid-cols-[minmax(0,1fr)_auto] gap-2\"><input type=\"hidden\" name=\"action\" value=\"set-match\"> <select name=\"matchId\" class=\"min-w-0 rounded-lg border border-blue-200 bg-white p-2 text-gray-900\" required><option value=\"\">Choose match</option> ")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					for _, match := range matches {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 517, "<option value=\"")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 550, "<option value=\"")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						var templ_7745c5c3_Var285 string
-						templ_7745c5c3_Var285, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", match.ID))
+						var templ_7745c5c3_Var300 string
+						templ_7745c5c3_Var300, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", match.ID))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3293, Col: 58}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3435, Col: 58}
 						}
-						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var285)
-						if templ_7745c5c3_Err != nil {
-							return templ_7745c5c3_Err
-						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 518, "\">")
+						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var300)
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						var templ_7745c5c3_Var286 string
-						templ_7745c5c3_Var286, templ_7745c5c3_Err = templ.JoinStringErrs(matchDayMatchOptionLabel(match))
-						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3293, Col: 94}
-						}
-						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var286))
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 551, "\">")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 519, "</option>")
+						var templ_7745c5c3_Var301 string
+						templ_7745c5c3_Var301, templ_7745c5c3_Err = templ.JoinStringErrs(matchDayMatchOptionLabel(match))
+						if templ_7745c5c3_Err != nil {
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3435, Col: 94}
+						}
+						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var301))
+						if templ_7745c5c3_Err != nil {
+							return templ_7745c5c3_Err
+						}
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 552, "</option>")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 520, "</select> <button type=\"submit\" class=\"rounded-lg bg-blue-600 px-3 py-2 font-bold text-white\">Set</button></form>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 553, "</select> <button type=\"submit\" class=\"rounded-lg bg-blue-600 px-3 py-2 font-bold text-white\">Set</button></form>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					if activeMatch != nil {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 521, "<form method=\"POST\" action=\"")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 554, "<form method=\"POST\" action=\"")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						var templ_7745c5c3_Var287 templ.SafeURL
-						templ_7745c5c3_Var287, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/match-day/%d/action", selected.ID))
+						var templ_7745c5c3_Var302 templ.SafeURL
+						templ_7745c5c3_Var302, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/match-day/%d/action", selected.ID))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3299, Col: 90}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3441, Col: 90}
 						}
-						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var287))
-						if templ_7745c5c3_Err != nil {
-							return templ_7745c5c3_Err
-						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 522, "\"><input type=\"hidden\" name=\"action\" value=\"set-match\"> <input type=\"hidden\" name=\"matchId\" value=\"")
+						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var302))
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						var templ_7745c5c3_Var288 string
-						templ_7745c5c3_Var288, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", activeMatch.ID))
-						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3301, Col: 91}
-						}
-						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var288)
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 555, "\"><input type=\"hidden\" name=\"action\" value=\"set-match\"> <input type=\"hidden\" name=\"matchId\" value=\"")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 523, "\"> <button type=\"submit\" class=\"w-full rounded-lg bg-white px-3 py-2 font-bold text-blue-800 ring-1 ring-blue-200\">Use active match: ")
+						var templ_7745c5c3_Var303 string
+						templ_7745c5c3_Var303, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", activeMatch.ID))
+						if templ_7745c5c3_Err != nil {
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3443, Col: 91}
+						}
+						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var303)
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						var templ_7745c5c3_Var289 string
-						templ_7745c5c3_Var289, templ_7745c5c3_Err = templ.JoinStringErrs(matchDayMatchOptionLabel(*activeMatch))
-						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3303, Col: 73}
-						}
-						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var289))
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 556, "\"> <button type=\"submit\" class=\"w-full rounded-lg bg-white px-3 py-2 font-bold text-blue-800 ring-1 ring-blue-200\">Use active match: ")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 524, "</button></form>")
+						var templ_7745c5c3_Var304 string
+						templ_7745c5c3_Var304, templ_7745c5c3_Err = templ.JoinStringErrs(matchDayMatchOptionLabel(*activeMatch))
+						if templ_7745c5c3_Err != nil {
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3445, Col: 73}
+						}
+						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var304))
+						if templ_7745c5c3_Err != nil {
+							return templ_7745c5c3_Err
+						}
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 557, "</button></form>")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
@@ -6048,44 +6405,44 @@ func matchDayPage(lineups []Lineup, selected *Lineup, playerTimes []MatchDayPlay
 						return templ_7745c5c3_Err
 					}
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 525, "</div></div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 558, "</div></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 526, "</div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 559, "</div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if selected.Match.ID > 0 {
 				scoreFor, scoreAgainst := matchDayScore(selected.Match)
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 527, "<div class=\"match-day-score\"><div class=\"match-day-score-team\">Us</div><div class=\"match-day-score-value\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 560, "<div class=\"match-day-score\"><div class=\"match-day-score-team\">Us</div><div class=\"match-day-score-value\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var290 string
-				templ_7745c5c3_Var290, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d - %d", scoreFor, scoreAgainst))
+				var templ_7745c5c3_Var305 string
+				templ_7745c5c3_Var305, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d - %d", scoreFor, scoreAgainst))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3318, Col: 92}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3460, Col: 92}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var290))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 528, "</div><div class=\"match-day-score-team\">")
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var305))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var291 string
-				templ_7745c5c3_Var291, templ_7745c5c3_Err = templ.JoinStringErrs(selected.Match.Opponent)
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3319, Col: 68}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var291))
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 561, "</div><div class=\"match-day-score-team\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 529, "</div></div>")
+				var templ_7745c5c3_Var306 string
+				templ_7745c5c3_Var306, templ_7745c5c3_Err = templ.JoinStringErrs(selected.Match.Opponent)
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3461, Col: 68}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var306))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 562, "</div></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -6093,521 +6450,543 @@ func matchDayPage(lineups []Lineup, selected *Lineup, playerTimes []MatchDayPlay
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 530, " <div class=\"match-day-start-panel\" data-match-day-start-panel data-start-at-open=\"false\"><div class=\"match-day-countdown\" data-match-day-countdown data-match-start-at=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 563, " <div class=\"match-day-start-panel\" data-match-day-start-panel data-start-at-open=\"false\"><div class=\"match-day-countdown\" data-match-day-countdown data-match-start-at=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var292 string
-				templ_7745c5c3_Var292, templ_7745c5c3_Err = templ.ResolveAttributeValue(matchDayStartDataValue(selected.Match))
+				var templ_7745c5c3_Var307 string
+				templ_7745c5c3_Var307, templ_7745c5c3_Err = templ.ResolveAttributeValue(matchDayStartDataValue(selected.Match))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3330, Col: 70}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3472, Col: 70}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var292)
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 531, "\" data-match-clock-base-at=\"")
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var307)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var293 string
-				templ_7745c5c3_Var293, templ_7745c5c3_Err = templ.ResolveAttributeValue(matchDayClockBaseDataValue(selected.Match))
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3331, Col: 79}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var293)
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 564, "\" data-match-clock-base-at=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 532, "\" data-match-clock-base-minute=\"")
+				var templ_7745c5c3_Var308 string
+				templ_7745c5c3_Var308, templ_7745c5c3_Err = templ.ResolveAttributeValue(matchDayClockBaseDataValue(selected.Match))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3473, Col: 79}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var308)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var294 string
-				templ_7745c5c3_Var294, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", matchDayClockStateForMatch(selected.Match).BaseMinute))
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3332, Col: 113}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var294)
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 565, "\" data-match-clock-base-minute=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 533, "\" data-match-clock-paused=\"")
+				var templ_7745c5c3_Var309 string
+				templ_7745c5c3_Var309, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", matchDayClockStateForMatch(selected.Match).BaseMinute))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3474, Col: 113}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var309)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var295 string
-				templ_7745c5c3_Var295, templ_7745c5c3_Err = templ.ResolveAttributeValue(matchDayClockDataBool(matchDayClockStateForMatch(selected.Match).Paused))
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3333, Col: 108}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var295)
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 566, "\" data-match-clock-paused=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 534, "\" data-match-clock-finished=\"")
+				var templ_7745c5c3_Var310 string
+				templ_7745c5c3_Var310, templ_7745c5c3_Err = templ.ResolveAttributeValue(matchDayClockDataBool(matchDayClockStateForMatch(selected.Match).Paused))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3475, Col: 108}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var310)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var296 string
-				templ_7745c5c3_Var296, templ_7745c5c3_Err = templ.ResolveAttributeValue(matchDayClockDataBool(matchDayClockStateForMatch(selected.Match).Finished))
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3334, Col: 112}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var296)
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 567, "\" data-match-clock-finished=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 535, "\" data-match-clock-started=\"")
+				var templ_7745c5c3_Var311 string
+				templ_7745c5c3_Var311, templ_7745c5c3_Err = templ.ResolveAttributeValue(matchDayClockDataBool(matchDayClockStateForMatch(selected.Match).Finished))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3476, Col: 112}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var311)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var297 string
-				templ_7745c5c3_Var297, templ_7745c5c3_Err = templ.ResolveAttributeValue(matchDayClockDataBool(matchDayClockStateForMatch(selected.Match).Started))
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3335, Col: 110}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var297)
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 568, "\" data-match-clock-started=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 536, "\" data-match-clock-label=\"")
+				var templ_7745c5c3_Var312 string
+				templ_7745c5c3_Var312, templ_7745c5c3_Err = templ.ResolveAttributeValue(matchDayClockDataBool(matchDayClockStateForMatch(selected.Match).Started))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3477, Col: 110}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var312)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var298 string
-				templ_7745c5c3_Var298, templ_7745c5c3_Err = templ.ResolveAttributeValue(matchDayClockStatusLabel(selected.Match))
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3336, Col: 75}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var298)
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 569, "\" data-match-clock-label=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 537, "\"><div><div class=\"match-day-countdown-label\" data-countdown-label>Kick-off</div><div class=\"match-day-countdown-meta\">")
+				var templ_7745c5c3_Var313 string
+				templ_7745c5c3_Var313, templ_7745c5c3_Err = templ.ResolveAttributeValue(matchDayClockStatusLabel(selected.Match))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3478, Col: 75}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var313)
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 570, "\"><div><div class=\"match-day-countdown-label\" data-countdown-label>Kick-off</div><div class=\"match-day-countdown-meta\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				if matchDayStartTime(selected.Match) != nil {
-					var templ_7745c5c3_Var299 string
-					templ_7745c5c3_Var299, templ_7745c5c3_Err = templ.JoinStringErrs(matchDayStartTime(selected.Match).Format("Mon 2 Jan, 3:04 PM"))
+					var templ_7745c5c3_Var314 string
+					templ_7745c5c3_Var314, templ_7745c5c3_Err = templ.JoinStringErrs(matchDayStartTime(selected.Match).Format("Mon 2 Jan, 3:04 PM"))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3342, Col: 77}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3484, Col: 77}
 					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var299))
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var314))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				} else {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 538, "No scheduled start time")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 571, "No scheduled start time")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 539, "</div></div><div class=\"match-day-countdown-time\" data-countdown-time role=\"button\" tabindex=\"0\" title=\"Toggle seconds\" onclick=\"window.toggleMatchDayCountdownPrecision(this)\" onkeydown=\"if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); window.toggleMatchDayCountdownPrecision(this); }\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 572, "</div></div><div class=\"match-day-countdown-time\" data-countdown-time role=\"button\" tabindex=\"0\" title=\"Toggle seconds\" onclick=\"window.toggleMatchDayCountdownPrecision(this)\" onkeydown=\"if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); window.toggleMatchDayCountdownPrecision(this); }\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				if matchDayKickoffLongLabel(selected.Match) != "" {
-					var templ_7745c5c3_Var300 string
-					templ_7745c5c3_Var300, templ_7745c5c3_Err = templ.JoinStringErrs(matchDayKickoffLongLabel(selected.Match))
+					var templ_7745c5c3_Var315 string
+					templ_7745c5c3_Var315, templ_7745c5c3_Err = templ.JoinStringErrs(matchDayKickoffLongLabel(selected.Match))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3358, Col: 54}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3500, Col: 54}
 					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var300))
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var315))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				} else {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 540, "--:--")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 573, "--:--")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 541, "</div></div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 574, "</div></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				if isAdmin {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 542, "<div class=\"match-day-start-actions\">")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 575, "<div class=\"match-day-start-actions\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					if !matchDayClockStarted(selected.Match) {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 543, "<form method=\"POST\" action=\"")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 576, "<form method=\"POST\" action=\"")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						var templ_7745c5c3_Var301 templ.SafeURL
-						templ_7745c5c3_Var301, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/match-day/%d/action", selected.ID))
+						var templ_7745c5c3_Var316 templ.SafeURL
+						templ_7745c5c3_Var316, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/match-day/%d/action", selected.ID))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3367, Col: 89}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3509, Col: 89}
 						}
-						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var301))
+						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var316))
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 544, "\"><input type=\"hidden\" name=\"action\" value=\"start-match-now\"> <button type=\"submit\" class=\"match-day-action-button primary\">Start match now</button></form>")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 577, "\"><input type=\"hidden\" name=\"action\" value=\"start-match-now\"> <button type=\"submit\" class=\"match-day-action-button primary\">Start match now</button></form>")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 545, "<button type=\"button\" class=\"match-day-action-button\" aria-expanded=\"false\" onclick=\"window.toggleMatchDayStartAt(this)\">")
+					if !matchDayClockStateForMatch(selected.Match).Finished {
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 578, "<button type=\"button\" class=\"match-day-action-button\" aria-expanded=\"false\" onclick=\"window.toggleMatchDayStartAt(this)\">")
+						if templ_7745c5c3_Err != nil {
+							return templ_7745c5c3_Err
+						}
+						if matchDayClockStarted(selected.Match) {
+							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 579, "Adjust start time")
+							if templ_7745c5c3_Err != nil {
+								return templ_7745c5c3_Err
+							}
+						} else {
+							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 580, "Start match at")
+							if templ_7745c5c3_Err != nil {
+								return templ_7745c5c3_Err
+							}
+						}
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 581, "</button>")
+						if templ_7745c5c3_Err != nil {
+							return templ_7745c5c3_Err
+						}
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 582, "</div>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					if matchDayClockStarted(selected.Match) {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 546, "Adjust start time")
+					if !matchDayClockStateForMatch(selected.Match).Finished {
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 583, "<form method=\"POST\" action=\"")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-					} else {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 547, "Start match at")
+						var templ_7745c5c3_Var317 templ.SafeURL
+						templ_7745c5c3_Var317, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/match-day/%d/action", selected.ID))
+						if templ_7745c5c3_Err != nil {
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3532, Col: 69}
+						}
+						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var317))
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 548, "</button></div><form method=\"POST\" action=\"")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					var templ_7745c5c3_Var302 templ.SafeURL
-					templ_7745c5c3_Var302, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/match-day/%d/action", selected.ID))
-					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3387, Col: 68}
-					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var302))
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 549, "\" class=\"match-day-start-at-form\" data-match-day-start-at-form><input type=\"hidden\" name=\"action\" value=\"start-match-at\"><div class=\"match-day-start-input-row\"><input type=\"datetime-local\" name=\"startTime\" value=\"")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					var templ_7745c5c3_Var303 string
-					templ_7745c5c3_Var303, templ_7745c5c3_Err = templ.ResolveAttributeValue(matchDayStartInputValue(selected.Match))
-					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3393, Col: 105}
-					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var303)
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 550, "\" required> <button type=\"submit\" class=\"match-day-action-button primary\">Set</button></div><div class=\"match-day-start-quick\" aria-label=\"Start minutes ago\">")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					for _, minutesAgo := range []int{1, 2, 3, 4, 5} {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 551, "<button type=\"button\" data-start-minutes-ago=\"")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 584, "\" class=\"match-day-start-at-form\" data-match-day-start-at-form><input type=\"hidden\" name=\"action\" value=\"start-match-at\"><div class=\"match-day-start-input-row\"><input type=\"datetime-local\" name=\"startTime\" value=\"")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						var templ_7745c5c3_Var304 string
-						templ_7745c5c3_Var304, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", minutesAgo))
+						var templ_7745c5c3_Var318 string
+						templ_7745c5c3_Var318, templ_7745c5c3_Err = templ.ResolveAttributeValue(matchDayStartInputValue(selected.Match))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3400, Col: 68}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3538, Col: 106}
 						}
-						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var304)
-						if templ_7745c5c3_Err != nil {
-							return templ_7745c5c3_Err
-						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 552, "\" onclick=\"window.setMatchDayStartMinutesAgo(this, parseInt(this.dataset.startMinutesAgo, 10), true)\">")
+						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var318)
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						var templ_7745c5c3_Var305 string
-						templ_7745c5c3_Var305, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", minutesAgo))
-						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3402, Col: 45}
-						}
-						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var305))
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 585, "\" required> <button type=\"submit\" class=\"match-day-action-button primary\">Set</button></div><div class=\"match-day-start-quick\" aria-label=\"Start minutes ago\">")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 553, "m</button>")
+						for _, minutesAgo := range []int{1, 2, 3, 4, 5} {
+							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 586, "<button type=\"button\" data-start-minutes-ago=\"")
+							if templ_7745c5c3_Err != nil {
+								return templ_7745c5c3_Err
+							}
+							var templ_7745c5c3_Var319 string
+							templ_7745c5c3_Var319, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", minutesAgo))
+							if templ_7745c5c3_Err != nil {
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3545, Col: 69}
+							}
+							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var319)
+							if templ_7745c5c3_Err != nil {
+								return templ_7745c5c3_Err
+							}
+							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 587, "\" onclick=\"window.setMatchDayStartMinutesAgo(this, parseInt(this.dataset.startMinutesAgo, 10), true)\">")
+							if templ_7745c5c3_Err != nil {
+								return templ_7745c5c3_Err
+							}
+							var templ_7745c5c3_Var320 string
+							templ_7745c5c3_Var320, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", minutesAgo))
+							if templ_7745c5c3_Err != nil {
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3547, Col: 46}
+							}
+							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var320))
+							if templ_7745c5c3_Err != nil {
+								return templ_7745c5c3_Err
+							}
+							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 588, "m</button>")
+							if templ_7745c5c3_Err != nil {
+								return templ_7745c5c3_Err
+							}
+						}
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 589, "</div></form>")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 554, "</div></form>")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
 					}
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 555, "</div><div class=\"match-day-global-actions\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 590, "</div><div class=\"match-day-global-actions\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				if isAdmin && matchDayCanShowResume(selected.Match) {
 					for _, minutesAgo := range []int{0, 1, 2, 3, 4, 5} {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 556, "<form method=\"POST\" action=\"")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 591, "<form method=\"POST\" action=\"")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						var templ_7745c5c3_Var306 templ.SafeURL
-						templ_7745c5c3_Var306, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/match-day/%d/action", selected.ID))
+						var templ_7745c5c3_Var321 templ.SafeURL
+						templ_7745c5c3_Var321, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/match-day/%d/action", selected.ID))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3411, Col: 88}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3557, Col: 88}
 						}
-						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var306))
-						if templ_7745c5c3_Err != nil {
-							return templ_7745c5c3_Err
-						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 557, "\"><input type=\"hidden\" name=\"action\" value=\"match-resumed\"> <input type=\"hidden\" name=\"minute\" value=\"")
+						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var321))
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						var templ_7745c5c3_Var307 string
-						templ_7745c5c3_Var307, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", matchDayResumeMinute(selected.Match)))
-						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3413, Col: 110}
-						}
-						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var307)
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 592, "\"><input type=\"hidden\" name=\"action\" value=\"match-resumed\"> <input type=\"hidden\" name=\"minute\" value=\"")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 558, "\"> <input type=\"hidden\" name=\"minutesAgo\" value=\"")
+						var templ_7745c5c3_Var322 string
+						templ_7745c5c3_Var322, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", matchDayResumeMinute(selected.Match)))
+						if templ_7745c5c3_Err != nil {
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3559, Col: 110}
+						}
+						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var322)
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						var templ_7745c5c3_Var308 string
-						templ_7745c5c3_Var308, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", minutesAgo))
-						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3414, Col: 88}
-						}
-						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var308)
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 593, "\"> <input type=\"hidden\" name=\"minutesAgo\" value=\"")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 559, "\"> <button type=\"submit\" class=\"match-day-action-button primary\">")
+						var templ_7745c5c3_Var323 string
+						templ_7745c5c3_Var323, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", minutesAgo))
+						if templ_7745c5c3_Err != nil {
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3560, Col: 88}
+						}
+						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var323)
+						if templ_7745c5c3_Err != nil {
+							return templ_7745c5c3_Err
+						}
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 594, "\"> <button type=\"submit\" class=\"match-day-action-button primary\">")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 						if minutesAgo == 0 {
-							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 560, "Game resumed now")
+							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 595, "Game resumed now")
 							if templ_7745c5c3_Err != nil {
 								return templ_7745c5c3_Err
 							}
 						} else if minutesAgo == 1 {
-							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 561, "Game resumed 1 min ago")
+							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 596, "Game resumed 1 min ago")
 							if templ_7745c5c3_Err != nil {
 								return templ_7745c5c3_Err
 							}
 						} else {
-							var templ_7745c5c3_Var309 string
-							templ_7745c5c3_Var309, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("Game resumed %d mins ago", minutesAgo))
+							var templ_7745c5c3_Var324 string
+							templ_7745c5c3_Var324, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("Game resumed %d mins ago", minutesAgo))
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3421, Col: 67}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3567, Col: 67}
 							}
-							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var309))
+							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var324))
 							if templ_7745c5c3_Err != nil {
 								return templ_7745c5c3_Err
 							}
 						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 562, "</button></form>")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 597, "</button></form>")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 					}
 				}
 				if matchDayCanShowOverrunWarning(selected.Match) {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 563, "<div class=\"rounded-lg border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-900\">Match has been running for ")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 598, "<div class=\"rounded-lg border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-900\">Match has been running for ")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					var templ_7745c5c3_Var310 string
-					templ_7745c5c3_Var310, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", matchDayRawMinute(selected.Match)))
+					var templ_7745c5c3_Var325 string
+					templ_7745c5c3_Var325, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", matchDayRawMinute(selected.Match)))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3429, Col: 92}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3575, Col: 92}
 					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var310))
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var325))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 564, " minutes.</div>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 599, " minutes.</div>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				}
 				if isAdmin && matchDayCanShowHalfTime(selected.Match) {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 565, "<form method=\"POST\" action=\"")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 600, "<form method=\"POST\" action=\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					var templ_7745c5c3_Var311 templ.SafeURL
-					templ_7745c5c3_Var311, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/match-day/%d/action", selected.ID))
+					var templ_7745c5c3_Var326 templ.SafeURL
+					templ_7745c5c3_Var326, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/match-day/%d/action", selected.ID))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3433, Col: 87}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3579, Col: 87}
 					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var311))
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 566, "\"><input type=\"hidden\" name=\"action\" value=\"half-time\"> <input type=\"hidden\" name=\"minute\" value=\"")
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var326))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					var templ_7745c5c3_Var312 string
-					templ_7745c5c3_Var312, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", matchDayMinute(selected.Match)))
-					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3435, Col: 103}
-					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var312)
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 601, "\"><input type=\"hidden\" name=\"action\" value=\"half-time\"> <input type=\"hidden\" name=\"minute\" value=\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 567, "\"> <button type=\"submit\" class=\"match-day-action-button primary\">Half-time</button></form>")
+					var templ_7745c5c3_Var327 string
+					templ_7745c5c3_Var327, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", matchDayMinute(selected.Match)))
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3581, Col: 103}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var327)
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 602, "\"> <button type=\"submit\" class=\"match-day-action-button primary\">Half-time</button></form>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				}
 				if isAdmin && matchDayCanShowExtraTimeStart(selected.Match) {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 568, "<form method=\"POST\" action=\"")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 603, "<form method=\"POST\" action=\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					var templ_7745c5c3_Var313 templ.SafeURL
-					templ_7745c5c3_Var313, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/match-day/%d/action", selected.ID))
+					var templ_7745c5c3_Var328 templ.SafeURL
+					templ_7745c5c3_Var328, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/match-day/%d/action", selected.ID))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3440, Col: 87}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3586, Col: 87}
 					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var313))
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var328))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 569, "\"><input type=\"hidden\" name=\"action\" value=\"match-extra-time-start\"> <button type=\"submit\" class=\"match-day-action-button primary\">Start extra time</button></form>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 604, "\"><input type=\"hidden\" name=\"action\" value=\"match-extra-time-start\"> <button type=\"submit\" class=\"match-day-action-button primary\">Start extra time</button></form>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				}
 				if isAdmin && matchDayCanShowMatchFinished(selected.Match) {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 570, "<form method=\"POST\" action=\"")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 605, "<form method=\"POST\" action=\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					var templ_7745c5c3_Var314 templ.SafeURL
-					templ_7745c5c3_Var314, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/match-day/%d/action", selected.ID))
+					var templ_7745c5c3_Var329 templ.SafeURL
+					templ_7745c5c3_Var329, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/match-day/%d/action", selected.ID))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3446, Col: 87}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3592, Col: 87}
 					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var314))
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 571, "\"><input type=\"hidden\" name=\"action\" value=\"match-finished\"> <input type=\"hidden\" name=\"minute\" value=\"")
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var329))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					var templ_7745c5c3_Var315 string
-					templ_7745c5c3_Var315, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", matchDayMinute(selected.Match)))
-					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3448, Col: 103}
-					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var315)
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 606, "\"><input type=\"hidden\" name=\"action\" value=\"match-finished\"> <input type=\"hidden\" name=\"minute\" value=\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 572, "\"> <button type=\"submit\" class=\"match-day-action-button warning\">")
+					var templ_7745c5c3_Var330 string
+					templ_7745c5c3_Var330, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", matchDayMinute(selected.Match)))
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3594, Col: 103}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var330)
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 607, "\"> <button type=\"submit\" class=\"match-day-action-button warning\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					if matchDayCanShowOverrunWarning(selected.Match) {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 573, "End match")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 608, "End match")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 					} else {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 574, "Match finished")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 609, "Match finished")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 575, "</button></form>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 610, "</button></form>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				}
 				if matchDayCanLogLiveEvent(selected.Match) {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 576, "<form method=\"POST\" action=\"")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 611, "<form method=\"POST\" action=\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					var templ_7745c5c3_Var316 templ.SafeURL
-					templ_7745c5c3_Var316, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/match-day/%d/action", selected.ID))
+					var templ_7745c5c3_Var331 templ.SafeURL
+					templ_7745c5c3_Var331, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/match-day/%d/action", selected.ID))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3459, Col: 87}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3605, Col: 87}
 					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var316))
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 577, "\"><input type=\"hidden\" name=\"action\" value=\"goal-against\"> <input type=\"hidden\" name=\"minute\" value=\"")
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var331))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					var templ_7745c5c3_Var317 string
-					templ_7745c5c3_Var317, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", matchDayMinute(selected.Match)))
-					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3461, Col: 103}
-					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var317)
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 612, "\"><input type=\"hidden\" name=\"action\" value=\"goal-against\"> <input type=\"hidden\" name=\"minute\" value=\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 578, "\"> <button type=\"submit\" class=\"match-day-action-button warning\">+ Goal them</button></form>")
+					var templ_7745c5c3_Var332 string
+					templ_7745c5c3_Var332, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", matchDayMinute(selected.Match)))
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3607, Col: 103}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var332)
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 613, "\"> <button type=\"submit\" class=\"match-day-action-button warning\">+ Goal them</button></form>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 579, "</div><div class=\"space-y-2\" data-drawer-extended>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 614, "</div>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				if isAdmin {
+					templ_7745c5c3_Err = matchDaySuggestedSubsPanel(selected, unavailablePlayerIDs).Render(ctx, templ_7745c5c3_Buffer)
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 615, " <div class=\"space-y-2\" data-drawer-extended>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				matchEvents := matchDaySortedEvents(selected.Match)
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 580, "<button type=\"button\" class=\"match-day-action-button\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 616, "<button type=\"button\" class=\"match-day-action-button\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				if resetPreview {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 581, " aria-expanded=\"true\"")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 617, " aria-expanded=\"true\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				} else {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 582, " aria-expanded=\"false\"")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 618, " aria-expanded=\"false\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 583, " onclick=\"window.toggleMatchDayEvents(this)\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 619, " onclick=\"window.toggleMatchDayEvents(this)\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var318 string
-				templ_7745c5c3_Var318, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("Match events (%d)", len(matchEvents)))
+				var templ_7745c5c3_Var333 string
+				templ_7745c5c3_Var333, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("Match events (%d)", len(matchEvents)))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3477, Col: 62}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3626, Col: 62}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var318))
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var333))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 584, "</button><div")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 620, "</button><div")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				if resetPreview {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 585, " class=\"space-y-2\"")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 621, " class=\"space-y-2\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				} else {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 586, " class=\"hidden space-y-2\"")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 622, " class=\"hidden space-y-2\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 587, " data-match-day-events>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 623, " data-match-day-events>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -6616,7 +6995,7 @@ func matchDayPage(lineups []Lineup, selected *Lineup, playerTimes []MatchDayPlay
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 588, " ")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 624, " ")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
@@ -6626,20 +7005,20 @@ func matchDayPage(lineups []Lineup, selected *Lineup, playerTimes []MatchDayPlay
 							return templ_7745c5c3_Err
 						}
 					} else {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 589, "<form method=\"POST\" action=\"")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 625, "<form method=\"POST\" action=\"")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						var templ_7745c5c3_Var319 templ.SafeURL
-						templ_7745c5c3_Var319, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/match-day/%d/action", selected.ID))
+						var templ_7745c5c3_Var334 templ.SafeURL
+						templ_7745c5c3_Var334, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/match-day/%d/action", selected.ID))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3491, Col: 89}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3640, Col: 89}
 						}
-						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var319))
+						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var334))
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 590, "\"><input type=\"hidden\" name=\"action\" value=\"preview-reset-match\"> <button type=\"submit\" class=\"match-day-action-button warning\">Reset match</button></form>")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 626, "\"><input type=\"hidden\" name=\"action\" value=\"preview-reset-match\"> <button type=\"submit\" class=\"match-day-action-button warning\">Reset match</button></form>")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
@@ -6652,141 +7031,128 @@ func matchDayPage(lineups []Lineup, selected *Lineup, playerTimes []MatchDayPlay
 					}
 				}
 				for _, event := range matchEvents {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 591, "<div class=\"match-day-player-row\"><div><div class=\"match-day-player-name\">")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 627, "<div class=\"match-day-player-row\"><div><div class=\"match-day-player-name\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					var templ_7745c5c3_Var320 string
-					templ_7745c5c3_Var320, templ_7745c5c3_Err = templ.JoinStringErrs(matchDayEventLabel(event))
+					var templ_7745c5c3_Var335 string
+					templ_7745c5c3_Var335, templ_7745c5c3_Err = templ.JoinStringErrs(matchDayEventLabel(event))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3503, Col: 75}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3652, Col: 75}
 					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var320))
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 592, "</div><div class=\"match-day-player-meta\"><span>")
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var335))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					var templ_7745c5c3_Var321 string
-					templ_7745c5c3_Var321, templ_7745c5c3_Err = templ.JoinStringErrs(event.EventType)
-					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3505, Col: 37}
-					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var321))
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 628, "</div><div class=\"match-day-player-meta\"><span>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 593, "</span> <span>")
+					var templ_7745c5c3_Var336 string
+					templ_7745c5c3_Var336, templ_7745c5c3_Err = templ.JoinStringErrs(event.EventType)
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3654, Col: 37}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var336))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					var templ_7745c5c3_Var322 string
-					templ_7745c5c3_Var322, templ_7745c5c3_Err = templ.JoinStringErrs(matchDayEventWhenLabel(event))
-					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3506, Col: 51}
-					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var322))
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 629, "</span> <span>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 594, "</span></div></div>")
+					var templ_7745c5c3_Var337 string
+					templ_7745c5c3_Var337, templ_7745c5c3_Err = templ.JoinStringErrs(matchDayEventWhenLabel(event))
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3655, Col: 51}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var337))
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 630, "</span></div></div>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					if isAdmin {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 595, "<form method=\"POST\" action=\"")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 631, "<form method=\"POST\" action=\"")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						var templ_7745c5c3_Var323 templ.SafeURL
-						templ_7745c5c3_Var323, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/match-day/%d/action", selected.ID))
+						var templ_7745c5c3_Var338 templ.SafeURL
+						templ_7745c5c3_Var338, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/match-day/%d/action", selected.ID))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3510, Col: 90}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3659, Col: 90}
 						}
-						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var323))
-						if templ_7745c5c3_Err != nil {
-							return templ_7745c5c3_Err
-						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 596, "\"><input type=\"hidden\" name=\"action\" value=\"undo-event\"> <input type=\"hidden\" name=\"eventId\" value=\"")
+						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var338))
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						var templ_7745c5c3_Var324 string
-						templ_7745c5c3_Var324, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", event.ID))
-						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3512, Col: 85}
-						}
-						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var324)
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 632, "\"><input type=\"hidden\" name=\"action\" value=\"undo-event\"> <input type=\"hidden\" name=\"eventId\" value=\"")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 597, "\"> <button type=\"submit\" class=\"rounded-lg bg-red-100 px-3 py-2 text-sm font-bold text-red-800\" onclick=\"return confirm('Undo this match event?')\">Undo</button></form>")
+						var templ_7745c5c3_Var339 string
+						templ_7745c5c3_Var339, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", event.ID))
+						if templ_7745c5c3_Err != nil {
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3661, Col: 85}
+						}
+						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var339)
+						if templ_7745c5c3_Err != nil {
+							return templ_7745c5c3_Err
+						}
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 633, "\"> <button type=\"submit\" class=\"rounded-lg bg-red-100 px-3 py-2 text-sm font-bold text-red-800\" onclick=\"return confirm('Undo this match event?')\">Undo</button></form>")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 598, "</div>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 634, "</div>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 599, "</div></div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 635, "</div></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 600, " <div class=\"match-day-summary\"><div class=\"match-day-stat\"><div class=\"match-day-stat-value\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 636, " <div class=\"match-day-summary\"><div class=\"match-day-stat\"><div class=\"match-day-stat-value\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var325 string
-			templ_7745c5c3_Var325, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", len(playerTimes)))
+			var templ_7745c5c3_Var340 string
+			templ_7745c5c3_Var340, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", len(playerTimes)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3527, Col: 80}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3676, Col: 80}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var325))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 601, "</div><div class=\"match-day-stat-label\">Players</div></div><div class=\"match-day-stat\"><div class=\"match-day-stat-value\">")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var340))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var326 string
-			templ_7745c5c3_Var326, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", currentMatchDayPlayerCount(playerTimes)))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3531, Col: 103}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var326))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 602, "</div><div class=\"match-day-stat-label\">On pitch</div></div><div class=\"match-day-stat\"><div class=\"match-day-stat-value\">90</div><div class=\"match-day-stat-label\">Mins</div></div></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 637, "</div><div class=\"match-day-stat-label\">Players</div></div><div class=\"match-day-stat\"><div class=\"match-day-stat-value\">90</div><div class=\"match-day-stat-label\">Mins</div></div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if selected.Details != "" {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 603, "<div class=\"rounded-lg border bg-gray-50 p-3 text-sm text-gray-700 whitespace-pre-wrap\" data-drawer-extended>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 638, "<div class=\"rounded-lg border bg-gray-50 p-3 text-sm text-gray-700 whitespace-pre-wrap\" data-drawer-extended>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var327 string
-				templ_7745c5c3_Var327, templ_7745c5c3_Err = templ.JoinStringErrs(selected.Details)
+				var templ_7745c5c3_Var341 string
+				templ_7745c5c3_Var341, templ_7745c5c3_Err = templ.JoinStringErrs(selected.Details)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3540, Col: 135}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3685, Col: 135}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var327))
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var341))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 604, "</div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 639, "</div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 605, " <div class=\"space-y-2\" data-drawer-extended><h2 class=\"font-bold\">Player minutes</h2>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 640, " <div class=\"space-y-2\" data-drawer-extended><h2 class=\"font-bold\">Player minutes</h2>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -6797,105 +7163,105 @@ func matchDayPage(lineups []Lineup, selected *Lineup, playerTimes []MatchDayPlay
 				}
 			}
 			for _, playerTime := range playerTimes {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 606, "<div class=\"match-day-player-row\"><div><div class=\"match-day-player-name\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 641, "<div class=\"match-day-player-row\"><div><div class=\"match-day-player-name\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var328 string
-				templ_7745c5c3_Var328, templ_7745c5c3_Err = templ.JoinStringErrs(playerTime.Player.Name)
+				var templ_7745c5c3_Var342 string
+				templ_7745c5c3_Var342, templ_7745c5c3_Err = templ.JoinStringErrs(playerTime.Player.Name)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3550, Col: 70}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3695, Col: 70}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var328))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 607, "</div><div class=\"match-day-player-meta\">")
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var342))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var329 string
-				templ_7745c5c3_Var329, templ_7745c5c3_Err = templ.JoinStringErrs(strings.Join(playerTime.Positions, ", "))
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3552, Col: 54}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var329))
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 642, "</div><div class=\"match-day-player-meta\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 608, " ")
+				var templ_7745c5c3_Var343 string
+				templ_7745c5c3_Var343, templ_7745c5c3_Err = templ.JoinStringErrs(strings.Join(playerTime.Positions, ", "))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3697, Col: 54}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var343))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 643, " ")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				if playerTime.Current {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 609, "<span class=\"match-day-current\">On</span> ")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 644, "<span class=\"match-day-current\">On</span> ")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					if matchDayLiveMinuteLabel(selected.Match, playerTime) != "" {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 610, "<span class=\"match-day-current\">")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 645, "<span class=\"match-day-current\">")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						var templ_7745c5c3_Var330 string
-						templ_7745c5c3_Var330, templ_7745c5c3_Err = templ.JoinStringErrs(matchDayLiveMinuteLabel(selected.Match, playerTime))
+						var templ_7745c5c3_Var344 string
+						templ_7745c5c3_Var344, templ_7745c5c3_Err = templ.JoinStringErrs(matchDayLiveMinuteLabel(selected.Match, playerTime))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3556, Col: 99}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3701, Col: 99}
 						}
-						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var330))
+						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var344))
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 611, "</span>")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 646, "</span>")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 					}
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 612, "</div></div><div class=\"match-day-minutes\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 647, "</div></div><div class=\"match-day-minutes\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				if matchDayLiveMinuteLabel(selected.Match, playerTime) != "" {
-					var templ_7745c5c3_Var331 string
-					templ_7745c5c3_Var331, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", playerTime.LiveMinutes))
+					var templ_7745c5c3_Var345 string
+					templ_7745c5c3_Var345, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", playerTime.LiveMinutes))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3563, Col: 55}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3708, Col: 55}
 					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var331))
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var345))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 613, " ")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 648, " ")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				} else {
-					var templ_7745c5c3_Var332 string
-					templ_7745c5c3_Var332, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", playerTime.Minutes))
+					var templ_7745c5c3_Var346 string
+					templ_7745c5c3_Var346, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", playerTime.Minutes))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3565, Col: 51}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3710, Col: 51}
 					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var332))
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var346))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 614, " ")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 649, " ")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 615, "<span>min</span></div></div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 650, "<span>min</span></div></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 616, "</div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 651, "</div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if isAdmin {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 617, "<div class=\"pt-4 border-t space-y-2\"><button type=\"button\" class=\"match-day-action-button\" aria-expanded=\"false\" onclick=\"window.toggleMatchDayLineupOptions(this)\">Change selected line-up</button><div class=\"hidden space-y-2\" data-match-day-lineup-options>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 652, "<div class=\"pt-4 border-t space-y-2\"><button type=\"button\" class=\"match-day-action-button\" aria-expanded=\"false\" onclick=\"window.toggleMatchDayLineupOptions(this)\">Change selected line-up</button><div class=\"hidden space-y-2\" data-match-day-lineup-options>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -6905,128 +7271,128 @@ func matchDayPage(lineups []Lineup, selected *Lineup, playerTimes []MatchDayPlay
 						return templ_7745c5c3_Err
 					}
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 618, "</div></div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 653, "</div></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 619, " ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 654, " ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if isAdmin && !matchDayClockStarted(selected.Match) {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 620, "<div class=\"drawer-list-footer space-y-2\" data-match-day-edit-lineup-target><div class=\"match-day-edit-lineup-message\">Edit line up to change players</div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 655, "<div class=\"drawer-list-footer space-y-2\" data-match-day-edit-lineup-target><div class=\"match-day-edit-lineup-message\">Edit line up to change players</div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var333 = []any{bigPri}
-				templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var333...)
+				var templ_7745c5c3_Var347 = []any{bigPri}
+				templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var347...)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 621, "<a href=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 656, "<a href=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var334 templ.SafeURL
-				templ_7745c5c3_Var334, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/lineups/%d", selected.ID))
+				var templ_7745c5c3_Var348 templ.SafeURL
+				templ_7745c5c3_Var348, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/lineups/%d", selected.ID))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3585, Col: 58}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3730, Col: 58}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var334))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 622, "\" class=\"")
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var348))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var335 string
-				templ_7745c5c3_Var335, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var333).String())
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 657, "\" class=\"")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var349 string
+				templ_7745c5c3_Var349, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var347).String())
 				if templ_7745c5c3_Err != nil {
 					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 1, Col: 0}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var335)
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var349)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 623, "\" data-match-day-edit-lineup onclick=\"window.setDrawerState('collapsed')\">Edit line-up</a></div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 658, "\" data-match-day-edit-lineup onclick=\"window.setDrawerState('collapsed')\">Edit line-up</a></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
 		}
 		if FooterTeam(ctx).EnablePublicFeedbackForm {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 624, "<div class=\"drawer-list-footer\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 659, "<div class=\"drawer-list-footer\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if publicFeedbackURL != "" {
-				var templ_7745c5c3_Var336 = []any{bigPri}
-				templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var336...)
+				var templ_7745c5c3_Var350 = []any{bigPri}
+				templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var350...)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 625, "<a href=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 660, "<a href=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var337 templ.SafeURL
-				templ_7745c5c3_Var337, templ_7745c5c3_Err = templ.JoinURLErrs(publicFeedbackURL)
+				var templ_7745c5c3_Var351 templ.SafeURL
+				templ_7745c5c3_Var351, templ_7745c5c3_Err = templ.JoinURLErrs(publicFeedbackURL)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3592, Col: 36}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3737, Col: 36}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var337))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 626, "\" class=\"")
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var351))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var338 string
-				templ_7745c5c3_Var338, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var336).String())
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 661, "\" class=\"")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var352 string
+				templ_7745c5c3_Var352, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var350).String())
 				if templ_7745c5c3_Err != nil {
 					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 1, Col: 0}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var338)
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var352)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 627, "\">Feedback</a>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 662, "\">Feedback</a>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			} else {
-				var templ_7745c5c3_Var339 = []any{bigPri}
-				templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var339...)
+				var templ_7745c5c3_Var353 = []any{bigPri}
+				templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var353...)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 628, "<a href=\"/feedback\" class=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 663, "<a href=\"/feedback\" class=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var340 string
-				templ_7745c5c3_Var340, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var339).String())
+				var templ_7745c5c3_Var354 string
+				templ_7745c5c3_Var354, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var353).String())
 				if templ_7745c5c3_Err != nil {
 					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 1, Col: 0}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var340)
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var354)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 629, "\">Feedback</a>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 664, "\">Feedback</a>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 630, "</div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 665, "</div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 631, "</div></section></div></body></html>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 666, "</div></section></div></body></html>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -7050,44 +7416,44 @@ func matchDayFocusPoints(data NotesPageData) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var341 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var341 == nil {
-			templ_7745c5c3_Var341 = templ.NopComponent
+		templ_7745c5c3_Var355 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var355 == nil {
+			templ_7745c5c3_Var355 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
 		if len(data.Notes) > 0 || data.ShowAdminNotes {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 632, "<div class=\"rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-emerald-950\"><div class=\"flex items-start justify-between gap-3\"><div><div class=\"text-xs font-bold uppercase tracking-wide text-emerald-700\">Focus points</div><div class=\"text-sm text-emerald-900\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 667, "<div class=\"rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-emerald-950\"><div class=\"flex items-start justify-between gap-3\"><div><div class=\"text-xs font-bold uppercase tracking-wide text-emerald-700\">Focus points</div><div class=\"text-sm text-emerald-900\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var342 string
-			templ_7745c5c3_Var342, templ_7745c5c3_Err = templ.JoinStringErrs(noteTargetLabel(data.Selected))
+			var templ_7745c5c3_Var356 string
+			templ_7745c5c3_Var356, templ_7745c5c3_Err = templ.JoinStringErrs(noteTargetLabel(data.Selected))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3611, Col: 75}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3756, Col: 75}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var342))
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var356))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 633, "</div></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 668, "</div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if data.ShowAdminNotes {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 634, "<details class=\"text-sm\"><summary class=\"cursor-pointer rounded-md bg-white px-3 py-2 font-bold text-emerald-900 ring-1 ring-emerald-200\">Configure</summary><div class=\"mt-3 w-full min-w-[260px] space-y-3 rounded-lg bg-white p-3 text-gray-900 shadow ring-1 ring-emerald-100\"><form method=\"POST\" action=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 669, "<details class=\"text-sm\"><summary class=\"cursor-pointer rounded-md bg-white px-3 py-2 font-bold text-emerald-900 ring-1 ring-emerald-200\"><i class=\"fas fa-plus\"></i></summary><div class=\"mt-3 w-full min-w-[260px] space-y-3 rounded-lg bg-white p-3 text-gray-900 shadow ring-1 ring-emerald-100\"><form method=\"POST\" action=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var343 templ.SafeURL
-				templ_7745c5c3_Var343, templ_7745c5c3_Err = templ.JoinURLErrs(noteActionURL("/notes", data.ReturnTo))
+				var templ_7745c5c3_Var357 templ.SafeURL
+				templ_7745c5c3_Var357, templ_7745c5c3_Err = templ.JoinURLErrs(noteActionURL("/notes", data.ReturnTo))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3617, Col: 74}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3762, Col: 74}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var343))
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var357))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 635, "\" class=\"space-y-3\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 670, "\" class=\"space-y-3\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -7095,82 +7461,82 @@ func matchDayFocusPoints(data NotesPageData) templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 636, "<input type=\"hidden\" name=\"type\" value=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 671, "<input type=\"hidden\" name=\"type\" value=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var344 string
-				templ_7745c5c3_Var344, templ_7745c5c3_Err = templ.ResolveAttributeValue(noteTypeFocus)
+				var templ_7745c5c3_Var358 string
+				templ_7745c5c3_Var358, templ_7745c5c3_Err = templ.ResolveAttributeValue(noteTypeFocus)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3619, Col: 62}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3764, Col: 62}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var344)
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 637, "\"><div class=\"grid grid-cols-[minmax(0,1fr)_5rem] gap-2\"><label class=\"block text-xs font-semibold text-gray-700\">Focus point <textarea name=\"note\" rows=\"3\" required class=\"mt-1 block w-full rounded-md border border-gray-300 px-3 py-2\"></textarea></label> <label class=\"block text-xs font-semibold text-gray-700\">Priority <input type=\"number\" min=\"0\" max=\"10\" name=\"priority\" value=\"")
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var358)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var345 string
-				templ_7745c5c3_Var345, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", data.Selected.Priority))
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3625, Col: 113}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var345)
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 672, "\"><div class=\"grid grid-cols-[minmax(0,1fr)_5rem] gap-2\"><label class=\"block text-xs font-semibold text-gray-700\">Focus point <textarea name=\"note\" rows=\"3\" required class=\"mt-1 block w-full rounded-md border border-gray-300 px-3 py-2\"></textarea></label> <label class=\"block text-xs font-semibold text-gray-700\">Priority <input type=\"number\" min=\"0\" max=\"10\" name=\"priority\" value=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 638, "\" class=\"mt-1 block w-full rounded-md border border-gray-300 px-2 py-2\"></label></div><input type=\"hidden\" name=\"creator\" value=\"admin\"> <button type=\"submit\" class=\"rounded-lg bg-emerald-700 px-3 py-2 text-sm font-bold text-white\">Add focus point</button></form>")
+				var templ_7745c5c3_Var359 string
+				templ_7745c5c3_Var359, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", data.Selected.Priority))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3770, Col: 113}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var359)
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 673, "\" class=\"mt-1 block w-full rounded-md border border-gray-300 px-2 py-2\"></label></div><input type=\"hidden\" name=\"creator\" value=\"admin\"> <button type=\"submit\" class=\"rounded-lg bg-emerald-700 px-3 py-2 text-sm font-bold text-white\">Add focus point</button></form>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				if len(data.Notes) > 0 {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 639, "<div class=\"space-y-2\">")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 674, "<div class=\"space-y-2\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					for _, note := range data.Notes {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 640, "<div class=\"rounded-lg border border-gray-200 p-2\"><div class=\"flex items-center justify-between gap-2 text-xs text-gray-600\"><span>Priority ")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 675, "<div class=\"rounded-lg border border-gray-200 p-2\"><div class=\"flex items-center justify-between gap-2 text-xs text-gray-600\"><span>Priority ")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						var templ_7745c5c3_Var346 string
-						templ_7745c5c3_Var346, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", note.Priority))
+						var templ_7745c5c3_Var360 string
+						templ_7745c5c3_Var360, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", note.Priority))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3636, Col: 61}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3781, Col: 61}
 						}
-						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var346))
-						if templ_7745c5c3_Err != nil {
-							return templ_7745c5c3_Err
-						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 641, "</span> <button type=\"button\" hx-delete=\"")
+						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var360))
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						var templ_7745c5c3_Var347 string
-						templ_7745c5c3_Var347, templ_7745c5c3_Err = templ.ResolveAttributeValue(noteActionURL(fmt.Sprintf("/notes/%d", note.ID), data.ReturnTo))
-						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3637, Col: 109}
-						}
-						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var347)
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 676, "</span> <button type=\"button\" hx-delete=\"")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 642, "\" hx-confirm=\"Delete this focus point?\" class=\"rounded-md bg-red-100 px-2 py-1 font-bold text-red-800\">Delete</button></div><details class=\"mt-2\"><summary class=\"cursor-pointer text-xs font-bold text-emerald-800\">Edit</summary><form method=\"POST\" action=\"")
+						var templ_7745c5c3_Var361 string
+						templ_7745c5c3_Var361, templ_7745c5c3_Err = templ.ResolveAttributeValue(noteActionURL(fmt.Sprintf("/notes/%d", note.ID), data.ReturnTo))
+						if templ_7745c5c3_Err != nil {
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3782, Col: 109}
+						}
+						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var361)
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						var templ_7745c5c3_Var348 templ.SafeURL
-						templ_7745c5c3_Var348, templ_7745c5c3_Err = templ.JoinURLErrs(noteActionURL(fmt.Sprintf("/notes/%d", note.ID), data.ReturnTo))
-						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3641, Col: 104}
-						}
-						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var348))
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 677, "\" hx-confirm=\"Delete this focus point?\" class=\"rounded-md bg-red-100 px-2 py-1 font-bold text-red-800\">Delete</button></div><details class=\"mt-2\"><summary class=\"cursor-pointer text-xs font-bold text-emerald-800\">Edit</summary><form method=\"POST\" action=\"")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 643, "\" class=\"mt-2 space-y-2\">")
+						var templ_7745c5c3_Var362 templ.SafeURL
+						templ_7745c5c3_Var362, templ_7745c5c3_Err = templ.JoinURLErrs(noteActionURL(fmt.Sprintf("/notes/%d", note.ID), data.ReturnTo))
+						if templ_7745c5c3_Err != nil {
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3786, Col: 104}
+						}
+						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var362))
+						if templ_7745c5c3_Err != nil {
+							return templ_7745c5c3_Err
+						}
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 678, "\" class=\"mt-2 space-y-2\">")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
@@ -7178,112 +7544,107 @@ func matchDayFocusPoints(data NotesPageData) templ.Component {
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 644, "<input type=\"hidden\" name=\"type\" value=\"")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 679, "<input type=\"hidden\" name=\"type\" value=\"")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						var templ_7745c5c3_Var349 string
-						templ_7745c5c3_Var349, templ_7745c5c3_Err = templ.ResolveAttributeValue(noteTypeFocus)
+						var templ_7745c5c3_Var363 string
+						templ_7745c5c3_Var363, templ_7745c5c3_Err = templ.ResolveAttributeValue(noteTypeFocus)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3643, Col: 67}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3788, Col: 67}
 						}
-						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var349)
-						if templ_7745c5c3_Err != nil {
-							return templ_7745c5c3_Err
-						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 645, "\"> <label class=\"block text-xs font-semibold text-gray-700\">Focus point <textarea name=\"note\" rows=\"3\" required class=\"mt-1 block w-full rounded-md border border-gray-300 px-3 py-2\">")
+						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var363)
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						var templ_7745c5c3_Var350 string
-						templ_7745c5c3_Var350, templ_7745c5c3_Err = templ.JoinStringErrs(note.Note)
-						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3645, Col: 135}
-						}
-						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var350))
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 680, "\"> <label class=\"block text-xs font-semibold text-gray-700\">Focus point <textarea name=\"note\" rows=\"3\" required class=\"mt-1 block w-full rounded-md border border-gray-300 px-3 py-2\">")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 646, "</textarea></label> <label class=\"block text-xs font-semibold text-gray-700\">Priority <input type=\"number\" min=\"0\" max=\"10\" name=\"priority\" value=\"")
+						var templ_7745c5c3_Var364 string
+						templ_7745c5c3_Var364, templ_7745c5c3_Err = templ.JoinStringErrs(note.Note)
+						if templ_7745c5c3_Err != nil {
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3790, Col: 135}
+						}
+						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var364))
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						var templ_7745c5c3_Var351 string
-						templ_7745c5c3_Var351, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", note.Priority))
-						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3648, Col: 108}
-						}
-						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var351)
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 681, "</textarea></label> <label class=\"block text-xs font-semibold text-gray-700\">Priority <input type=\"number\" min=\"0\" max=\"10\" name=\"priority\" value=\"")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 647, "\" class=\"mt-1 block w-20 rounded-md border border-gray-300 px-2 py-2\"></label> <input type=\"hidden\" name=\"creator\" value=\"")
+						var templ_7745c5c3_Var365 string
+						templ_7745c5c3_Var365, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", note.Priority))
+						if templ_7745c5c3_Err != nil {
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3793, Col: 108}
+						}
+						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var365)
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						var templ_7745c5c3_Var352 string
-						templ_7745c5c3_Var352, templ_7745c5c3_Err = templ.ResolveAttributeValue(note.Creator)
-						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3650, Col: 69}
-						}
-						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var352)
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 682, "\" class=\"mt-1 block w-20 rounded-md border border-gray-300 px-2 py-2\"></label> <input type=\"hidden\" name=\"creator\" value=\"")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 648, "\"> <button type=\"submit\" class=\"rounded-lg bg-emerald-700 px-3 py-2 text-sm font-bold text-white\">Save</button></form></details></div>")
+						var templ_7745c5c3_Var366 string
+						templ_7745c5c3_Var366, templ_7745c5c3_Err = templ.ResolveAttributeValue(note.Creator)
+						if templ_7745c5c3_Err != nil {
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3795, Col: 69}
+						}
+						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var366)
+						if templ_7745c5c3_Err != nil {
+							return templ_7745c5c3_Err
+						}
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 683, "\"> <button type=\"submit\" class=\"rounded-lg bg-emerald-700 px-3 py-2 text-sm font-bold text-white\">Save</button></form></details></div>")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 649, "</div>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 684, "</div>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 650, "</div></details>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 685, "</div></details>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 651, "</div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 686, "</div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			if len(data.Notes) == 0 {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 652, "<div class=\"mt-3 text-sm font-semibold text-emerald-900\">No focus points published yet.</div>")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-			} else {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 653, "<ul class=\"mt-3 space-y-2\">")
+			if len(data.Notes) > 0 {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 687, "<ul class=\"mt-3 space-y-2\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				for _, note := range data.Notes {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 654, "<li class=\"rounded-lg bg-white px-3 py-2 text-sm font-semibold text-emerald-950 ring-1 ring-emerald-100\">")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 688, "<li class=\"rounded-lg bg-white px-3 py-2 text-sm font-semibold text-emerald-950 ring-1 ring-emerald-100\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					var templ_7745c5c3_Var353 string
-					templ_7745c5c3_Var353, templ_7745c5c3_Err = templ.JoinStringErrs(note.Note)
+					var templ_7745c5c3_Var367 string
+					templ_7745c5c3_Var367, templ_7745c5c3_Err = templ.JoinStringErrs(note.Note)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3668, Col: 18}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3811, Col: 18}
 					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var353))
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var367))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 655, "</li>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 689, "</li>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 656, "</ul>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 690, "</ul>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 657, "</div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 691, "</div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -7308,12 +7669,12 @@ func formationListPage(formations []Formation, selected *Formation, actor Lineup
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var354 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var354 == nil {
-			templ_7745c5c3_Var354 = templ.NopComponent
+		templ_7745c5c3_Var368 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var368 == nil {
+			templ_7745c5c3_Var368 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 658, "<!doctype html><html>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 692, "<!doctype html><html>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -7325,7 +7686,7 @@ func formationListPage(formations []Formation, selected *Formation, actor Lineup
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 659, "<body><div class=\"pitch-shell\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 693, "<body><div class=\"pitch-shell\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -7333,7 +7694,7 @@ func formationListPage(formations []Formation, selected *Formation, actor Lineup
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 660, "<section class=\"pitch-drawer\" data-state=\"collapsed\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 694, "<section class=\"pitch-drawer\" data-state=\"collapsed\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -7341,7 +7702,7 @@ func formationListPage(formations []Formation, selected *Formation, actor Lineup
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 661, "<div class=\"drawer-body space-y-4\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 695, "<div class=\"drawer-body space-y-4\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -7349,7 +7710,7 @@ func formationListPage(formations []Formation, selected *Formation, actor Lineup
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 662, "<p class=\"text-sm text-gray-500 leading-snug\">Formations are the overall shape of the team and where the players are on the pitch.</p>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 696, "<p class=\"text-sm text-gray-500 leading-snug\">Formations are the overall shape of the team and where the players are on the pitch.</p>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -7360,73 +7721,88 @@ func formationListPage(formations []Formation, selected *Formation, actor Lineup
 			}
 		}
 		for _, formation := range formations {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 663, "<div class=\"border rounded-lg p-3 shadow-sm\"><div class=\"font-bold\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 697, "<div class=\"border rounded-lg p-3 shadow-sm\"><div class=\"flex items-start justify-between gap-3\"><div class=\"min-w-0\"><div class=\"truncate font-bold\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var355 string
-			templ_7745c5c3_Var355, templ_7745c5c3_Err = templ.JoinStringErrs(formation.Name)
+			var templ_7745c5c3_Var369 string
+			templ_7745c5c3_Var369, templ_7745c5c3_Err = templ.JoinStringErrs(formation.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3695, Col: 47}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3840, Col: 58}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var355))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 664, "</div><div class=\"text-sm text-gray-600\">")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var369))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var356 string
-			templ_7745c5c3_Var356, templ_7745c5c3_Err = templ.JoinStringErrs(formation.Status)
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3696, Col: 61}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var356))
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 698, "</div><div class=\"truncate text-sm text-gray-600\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 665, "</div><div class=\"drawer-row-actions\"><a href=\"")
+			var templ_7745c5c3_Var370 string
+			templ_7745c5c3_Var370, templ_7745c5c3_Err = templ.JoinStringErrs(formation.Status)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3841, Col: 72}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var370))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var357 templ.SafeURL
-			templ_7745c5c3_Var357, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/formations/%d/edit", formation.ID))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3698, Col: 67}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var357))
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 699, "</div></div><a href=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 666, "\" class=\"drawer-row-action\" onclick=\"window.setDrawerState('collapsed')\">View</a></div></div>")
+			var templ_7745c5c3_Var371 templ.SafeURL
+			templ_7745c5c3_Var371, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/formations/%d/edit", formation.ID))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3843, Col: 67}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var371))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 700, "\" class=\"drawer-row-action compact\" onclick=\"window.setDrawerState('collapsed')\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			if actorCanEditFormation(actor, formation) {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 701, "Edit")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			} else {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 702, "View")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 703, "</a></div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 667, "<div class=\"drawer-list-footer\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 704, "<div class=\"drawer-list-footer\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var358 = []any{bigAdd}
-		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var358...)
+		var templ_7745c5c3_Var372 = []any{bigAdd}
+		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var372...)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 668, "<a href=\"/formations/new\" class=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 705, "<a href=\"/formations/new\" class=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var359 string
-		templ_7745c5c3_Var359, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var358).String())
+		var templ_7745c5c3_Var373 string
+		templ_7745c5c3_Var373, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var372).String())
 		if templ_7745c5c3_Err != nil {
 			return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 1, Col: 0}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var359)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var373)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 669, "\">New formation</a></div></div></section></div></body></html>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 706, "\">New formation</a></div></div></section></div></body></html>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -7450,12 +7826,12 @@ func formationNewPage(isAdmin bool, msg string, hasUpcomingMatch bool, matchDayL
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var360 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var360 == nil {
-			templ_7745c5c3_Var360 = templ.NopComponent
+		templ_7745c5c3_Var374 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var374 == nil {
+			templ_7745c5c3_Var374 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 670, "<!doctype html><html>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 707, "<!doctype html><html>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -7467,7 +7843,7 @@ func formationNewPage(isAdmin bool, msg string, hasUpcomingMatch bool, matchDayL
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 671, "<body><div class=\"pitch-shell\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 708, "<body><div class=\"pitch-shell\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -7475,7 +7851,7 @@ func formationNewPage(isAdmin bool, msg string, hasUpcomingMatch bool, matchDayL
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 672, "<section class=\"pitch-drawer\" data-state=\"collapsed\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 709, "<section class=\"pitch-drawer\" data-state=\"collapsed\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -7483,7 +7859,7 @@ func formationNewPage(isAdmin bool, msg string, hasUpcomingMatch bool, matchDayL
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 673, "<div class=\"drawer-body\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 710, "<div class=\"drawer-body\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -7495,51 +7871,51 @@ func formationNewPage(isAdmin bool, msg string, hasUpcomingMatch bool, matchDayL
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 674, "<form method=\"POST\" action=\"/formations/new\" class=\"space-y-4\" data-dirty-check=\"true\"><label class=\"block\">Name <input name=\"name\" class=\"w-full border rounded-lg p-3 mt-1\" placeholder=\"New formation\"></label> ")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 711, "<form method=\"POST\" action=\"/formations/new\" class=\"space-y-4\" data-dirty-check=\"true\"><label class=\"block\">Name <input name=\"name\" class=\"w-full border rounded-lg p-3 mt-1\" placeholder=\"New formation\"></label> ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var361 = []any{bigAdd}
-		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var361...)
+		var templ_7745c5c3_Var375 = []any{bigAdd}
+		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var375...)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 675, "<button type=\"submit\" class=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 712, "<button type=\"submit\" class=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var362 string
-		templ_7745c5c3_Var362, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var361).String())
+		var templ_7745c5c3_Var376 string
+		templ_7745c5c3_Var376, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var375).String())
 		if templ_7745c5c3_Err != nil {
 			return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 1, Col: 0}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var362)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var376)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 676, "\">Create draft formation</button> ")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 713, "\">Create draft formation</button> ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var363 = []any{bigPri}
-		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var363...)
+		var templ_7745c5c3_Var377 = []any{bigPri}
+		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var377...)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 677, "<a href=\"/formations\" class=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 714, "<a href=\"/formations\" class=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var364 string
-		templ_7745c5c3_Var364, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var363).String())
+		var templ_7745c5c3_Var378 string
+		templ_7745c5c3_Var378, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var377).String())
 		if templ_7745c5c3_Err != nil {
 			return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 1, Col: 0}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var364)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var378)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 678, "\" onclick=\"window.dirtyFormNavigationAllowedUntil = Date.now() + 2000\">Cancel</a></form></div></section></div></body></html>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 715, "\" onclick=\"window.dirtyFormNavigationAllowedUntil = Date.now() + 2000\">Cancel</a></form></div></section></div></body></html>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -7563,131 +7939,131 @@ func formationViewSummary(formation *Formation, canEdit bool) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var365 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var365 == nil {
-			templ_7745c5c3_Var365 = templ.NopComponent
+		templ_7745c5c3_Var379 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var379 == nil {
+			templ_7745c5c3_Var379 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 679, "<div class=\"space-y-4\"><div class=\"rounded-lg border border-gray-200 bg-white p-4 shadow-sm\"><div class=\"flex items-start justify-between gap-3\"><div><div class=\"text-xs font-bold uppercase text-gray-500\">Formation</div><h2 class=\"text-2xl font-bold text-gray-900\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 716, "<div class=\"space-y-4\"><div class=\"rounded-lg border border-gray-200 bg-white p-4 shadow-sm\"><div class=\"flex items-start justify-between gap-3\"><div><div class=\"text-xs font-bold uppercase text-gray-500\">Formation</div><h2 class=\"text-2xl font-bold text-gray-900\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var366 string
-		templ_7745c5c3_Var366, templ_7745c5c3_Err = templ.JoinStringErrs(formation.Name)
+		var templ_7745c5c3_Var380 string
+		templ_7745c5c3_Var380, templ_7745c5c3_Err = templ.JoinStringErrs(formation.Name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3745, Col: 66}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3896, Col: 66}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var366))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 680, "</h2><div class=\"mt-1 text-sm text-gray-600\">")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var380))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var367 string
-		templ_7745c5c3_Var367, templ_7745c5c3_Err = templ.JoinStringErrs(formation.Status)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3746, Col: 63}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var367))
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 717, "</h2><div class=\"mt-1 text-sm text-gray-600\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 681, "</div></div><div class=\"rounded bg-gray-100 px-3 py-2 text-sm font-bold text-gray-700\">")
+		var templ_7745c5c3_Var381 string
+		templ_7745c5c3_Var381, templ_7745c5c3_Err = templ.JoinStringErrs(formation.Status)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3897, Col: 63}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var381))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var368 string
-		templ_7745c5c3_Var368, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d positions", len(formation.Positions)))
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3749, Col: 60}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var368))
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 718, "</div></div><div class=\"rounded bg-gray-100 px-3 py-2 text-sm font-bold text-gray-700\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 682, "</div></div>")
+		var templ_7745c5c3_Var382 string
+		templ_7745c5c3_Var382, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d positions", len(formation.Positions)))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3900, Col: 60}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var382))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 719, "</div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if canEdit {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 683, "<div class=\"mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 720, "<div class=\"mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var369 = []any{bigPri}
-			templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var369...)
+			var templ_7745c5c3_Var383 = []any{bigPri}
+			templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var383...)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 684, "<a href=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 721, "<a href=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var370 templ.SafeURL
-			templ_7745c5c3_Var370, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/formations/%d/edit?mode=edit", formation.ID))
+			var templ_7745c5c3_Var384 templ.SafeURL
+			templ_7745c5c3_Var384, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/formations/%d/edit?mode=edit", formation.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3754, Col: 73}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3905, Col: 73}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var370))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 685, "\" class=\"")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var384))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var371 string
-			templ_7745c5c3_Var371, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var369).String())
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 722, "\" class=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var385 string
+			templ_7745c5c3_Var385, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var383).String())
 			if templ_7745c5c3_Err != nil {
 				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 1, Col: 0}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var371)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var385)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 686, "\">Edit formation</a><form method=\"POST\" action=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 723, "\">Edit formation</a><form method=\"POST\" action=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var372 templ.SafeURL
-			templ_7745c5c3_Var372, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/formations/%d/copy", formation.ID))
+			var templ_7745c5c3_Var386 templ.SafeURL
+			templ_7745c5c3_Var386, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/formations/%d/copy", formation.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3755, Col: 82}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3906, Col: 82}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var372))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 687, "\">")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var386))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var373 = []any{bigSec}
-			templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var373...)
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 724, "\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 688, "<button type=\"submit\" class=\"")
+			var templ_7745c5c3_Var387 = []any{bigSec}
+			templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var387...)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var374 string
-			templ_7745c5c3_Var374, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var373).String())
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 725, "<button type=\"submit\" class=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var388 string
+			templ_7745c5c3_Var388, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var387).String())
 			if templ_7745c5c3_Err != nil {
 				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 1, Col: 0}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var374)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var388)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 689, "\">Save a copy</button></form></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 726, "\">Save a copy</button></form></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 690, "</div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 727, "</div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -7697,69 +8073,69 @@ func formationViewSummary(formation *Formation, canEdit bool) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 691, "<details class=\"rounded-lg border border-gray-200 bg-white shadow-sm\"><summary class=\"cursor-pointer border-b border-gray-200 px-4 py-3 text-sm font-bold uppercase text-gray-500\">Positions (")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 728, "<details class=\"rounded-lg border border-gray-200 bg-white shadow-sm\"><summary class=\"cursor-pointer border-b border-gray-200 px-4 py-3 text-sm font-bold uppercase text-gray-500\">Positions (")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var375 string
-			templ_7745c5c3_Var375, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", len(formation.Positions)))
+			var templ_7745c5c3_Var389 string
+			templ_7745c5c3_Var389, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", len(formation.Positions)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3766, Col: 61}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3917, Col: 61}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var375))
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var389))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 692, ")</summary><div class=\"divide-y divide-gray-100\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 729, ")</summary><div class=\"divide-y divide-gray-100\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			for _, pos := range formation.Positions {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 693, "<div class=\"grid grid-cols-[48px_minmax(0,1fr)_auto] items-center gap-3 px-4 py-3\"><div class=\"flex h-9 w-9 items-center justify-center rounded bg-gray-900 text-sm font-bold text-white\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 730, "<div class=\"grid grid-cols-[48px_minmax(0,1fr)_auto] items-center gap-3 px-4 py-3\"><div class=\"flex h-9 w-9 items-center justify-center rounded bg-gray-900 text-sm font-bold text-white\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var376 string
-				templ_7745c5c3_Var376, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", pos.IndexNumber))
+				var templ_7745c5c3_Var390 string
+				templ_7745c5c3_Var390, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", pos.IndexNumber))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3771, Col: 146}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3922, Col: 146}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var376))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 694, "</div><div class=\"min-w-0\"><div class=\"truncate font-bold text-gray-900\">")
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var390))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var377 string
-				templ_7745c5c3_Var377, templ_7745c5c3_Err = templ.JoinStringErrs(pos.PositionName)
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3773, Col: 72}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var377))
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 731, "</div><div class=\"min-w-0\"><div class=\"truncate font-bold text-gray-900\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 695, "</div></div><div class=\"text-xs font-semibold text-gray-500\">")
+				var templ_7745c5c3_Var391 string
+				templ_7745c5c3_Var391, templ_7745c5c3_Err = templ.JoinStringErrs(pos.PositionName)
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3924, Col: 72}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var391))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var378 string
-				templ_7745c5c3_Var378, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.0f, %.0f", pos.X, pos.Y))
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3775, Col: 97}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var378))
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 732, "</div></div><div class=\"text-xs font-semibold text-gray-500\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 696, "</div></div>")
+				var templ_7745c5c3_Var392 string
+				templ_7745c5c3_Var392, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.0f, %.0f", pos.X, pos.Y))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3926, Col: 97}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var392))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 733, "</div></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 697, "</div></details> ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 734, "</div></details> ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -7770,7 +8146,7 @@ func formationViewSummary(formation *Formation, canEdit bool) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 698, "</div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 735, "</div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -7794,12 +8170,12 @@ func formationEditPage(formation *Formation, canEdit bool, isAdmin bool, editMod
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var379 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var379 == nil {
-			templ_7745c5c3_Var379 = templ.NopComponent
+		templ_7745c5c3_Var393 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var393 == nil {
+			templ_7745c5c3_Var393 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 699, "<!doctype html><html>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 736, "<!doctype html><html>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -7811,7 +8187,7 @@ func formationEditPage(formation *Formation, canEdit bool, isAdmin bool, editMod
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 700, "<body><div class=\"pitch-shell\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 737, "<body><div class=\"pitch-shell\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -7819,22 +8195,22 @@ func formationEditPage(formation *Formation, canEdit bool, isAdmin bool, editMod
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 701, "<section class=\"pitch-drawer\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 738, "<section class=\"pitch-drawer\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if drawerExpanded {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 702, " data-state=\"expanded\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 739, " data-state=\"expanded\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 703, " data-state=\"collapsed\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 740, " data-state=\"collapsed\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 704, ">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 741, ">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -7842,7 +8218,7 @@ func formationEditPage(formation *Formation, canEdit bool, isAdmin bool, editMod
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 705, "<div class=\"drawer-body\" data-formation-advanced=\"false\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 742, "<div class=\"drawer-body\" data-formation-advanced=\"false\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -7855,254 +8231,254 @@ func formationEditPage(formation *Formation, canEdit bool, isAdmin bool, editMod
 			return templ_7745c5c3_Err
 		}
 		if canEdit && editMode {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 706, "<form method=\"POST\" action=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 743, "<form method=\"POST\" action=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var380 templ.SafeURL
-			templ_7745c5c3_Var380, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/formations/%d/edit", formation.ID))
+			var templ_7745c5c3_Var394 templ.SafeURL
+			templ_7745c5c3_Var394, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/formations/%d/edit", formation.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3808, Col: 84}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3959, Col: 84}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var380))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 707, "\" class=\"space-y-4\" data-formation-editor=\"true\" data-dirty-check=\"true\"><label class=\"block\">Name <input name=\"name\" value=\"")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var394))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var381 string
-			templ_7745c5c3_Var381, templ_7745c5c3_Err = templ.ResolveAttributeValue(formation.Name)
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3810, Col: 50}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var381)
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 744, "\" class=\"space-y-4\" data-formation-editor=\"true\" data-dirty-check=\"true\"><label class=\"block\">Name <input name=\"name\" value=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 708, "\" class=\"w-full border rounded-lg p-3 mt-1\"></label> <label class=\"block\">Status <select name=\"status\" class=\"w-full border rounded-lg p-3 mt-1\">")
+			var templ_7745c5c3_Var395 string
+			templ_7745c5c3_Var395, templ_7745c5c3_Err = templ.ResolveAttributeValue(formation.Name)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3961, Col: 50}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var395)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 745, "\" class=\"w-full border rounded-lg p-3 mt-1\"></label> <label class=\"block\">Status <select name=\"status\" class=\"w-full border rounded-lg p-3 mt-1\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			for _, status := range formationStatusesForActor(LineupActor{IsAdmin: isAdmin}) {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 709, "<option value=\"")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var382 string
-				templ_7745c5c3_Var382, templ_7745c5c3_Err = templ.ResolveAttributeValue(status)
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3815, Col: 34}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var382)
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 710, "\"")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				if status == formation.Status {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 711, " selected")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 712, ">")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var383 string
-				templ_7745c5c3_Var383, templ_7745c5c3_Err = templ.JoinStringErrs(status)
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3815, Col: 86}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var383))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 713, "</option>")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 714, "</select></label> ")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var384 = []any{bigAdd}
-			templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var384...)
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 715, "<button type=\"submit\" class=\"")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var385 string
-			templ_7745c5c3_Var385, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var384).String())
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 1, Col: 0}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var385)
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 716, "\">Save formation</button> ")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			for _, pos := range formation.Positions {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 717, "<div class=\"border rounded-lg p-3\" data-slot-panel=\"")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var386 string
-				templ_7745c5c3_Var386, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", pos.ID))
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3821, Col: 87}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var386)
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 718, "\"><input type=\"hidden\" name=\"positionIds\" value=\"")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var387 string
-				templ_7745c5c3_Var387, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", pos.ID))
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3822, Col: 83}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var387)
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 719, "\"><div class=\"font-bold\">Position ")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var388 string
-				templ_7745c5c3_Var388, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", pos.IndexNumber))
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3823, Col: 78}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var388))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 720, "</div><label class=\"block text-sm\">Index <input name=\"")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var389 string
-				templ_7745c5c3_Var389, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("position_%d_index", pos.ID))
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3825, Col: 65}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var389)
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 721, "\" value=\"")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var390 string
-				templ_7745c5c3_Var390, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", pos.IndexNumber))
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3825, Col: 110}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var390)
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 722, "\" class=\"w-full border rounded p-2\"></label> <label class=\"block text-sm\">Name <input name=\"")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var391 string
-				templ_7745c5c3_Var391, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("position_%d_name", pos.ID))
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3828, Col: 64}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var391)
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 723, "\" value=\"")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var392 string
-				templ_7745c5c3_Var392, templ_7745c5c3_Err = templ.ResolveAttributeValue(pos.PositionName)
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3828, Col: 91}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var392)
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 724, "\" class=\"w-full border rounded p-2\"></label><div class=\"grid grid-cols-2 gap-2\" data-formation-advanced-field hidden><label class=\"block text-sm\">X <input name=\"")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var393 string
-				templ_7745c5c3_Var393, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("position_%d_x", pos.ID))
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3832, Col: 62}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var393)
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 725, "\" value=\"")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var394 string
-				templ_7745c5c3_Var394, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%.2f", pos.X))
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3832, Col: 99}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var394)
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 726, "\" class=\"w-full border rounded p-2\"></label> <label class=\"block text-sm\">Y <input name=\"")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var395 string
-				templ_7745c5c3_Var395, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("position_%d_y", pos.ID))
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3835, Col: 62}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var395)
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 727, "\" value=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 746, "<option value=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var396 string
-				templ_7745c5c3_Var396, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%.2f", pos.Y))
+				templ_7745c5c3_Var396, templ_7745c5c3_Err = templ.ResolveAttributeValue(status)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3835, Col: 99}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3966, Col: 34}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var396)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 728, "\" class=\"w-full border rounded p-2\"></label></div></div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 747, "\"")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				if status == formation.Status {
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 748, " selected")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 749, ">")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var397 string
+				templ_7745c5c3_Var397, templ_7745c5c3_Err = templ.JoinStringErrs(status)
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3966, Col: 86}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var397))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 750, "</option>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 729, "<div class=\"border rounded-lg p-3 bg-gray-50\"><div class=\"font-bold\">Add position</div><input name=\"newPositionName\" placeholder=\"Position name\" class=\"w-full border rounded p-2 mt-2\"><div class=\"mt-2\"><input name=\"newPositionIndex\" placeholder=\"Index\" class=\"border rounded p-2\"></div><div class=\"grid grid-cols-2 gap-2 mt-2\" data-formation-advanced-field hidden><input name=\"newPositionX\" placeholder=\"X\" class=\"border rounded p-2\"> <input name=\"newPositionY\" placeholder=\"Y\" class=\"border rounded p-2\"></div></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 751, "</select></label> ")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var398 = []any{bigAdd}
+			templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var398...)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 752, "<button type=\"submit\" class=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var399 string
+			templ_7745c5c3_Var399, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var398).String())
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 1, Col: 0}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var399)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 753, "\">Save formation</button> ")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			for _, pos := range formation.Positions {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 754, "<div class=\"border rounded-lg p-3\" data-slot-panel=\"")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var400 string
+				templ_7745c5c3_Var400, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", pos.ID))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3972, Col: 87}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var400)
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 755, "\"><input type=\"hidden\" name=\"positionIds\" value=\"")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var401 string
+				templ_7745c5c3_Var401, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", pos.ID))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3973, Col: 83}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var401)
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 756, "\"><div class=\"font-bold\">Position ")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var402 string
+				templ_7745c5c3_Var402, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", pos.IndexNumber))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3974, Col: 78}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var402))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 757, "</div><label class=\"block text-sm\">Index <input name=\"")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var403 string
+				templ_7745c5c3_Var403, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("position_%d_index", pos.ID))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3976, Col: 65}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var403)
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 758, "\" value=\"")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var404 string
+				templ_7745c5c3_Var404, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", pos.IndexNumber))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3976, Col: 110}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var404)
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 759, "\" class=\"w-full border rounded p-2\"></label> <label class=\"block text-sm\">Name <input name=\"")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var405 string
+				templ_7745c5c3_Var405, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("position_%d_name", pos.ID))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3979, Col: 64}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var405)
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 760, "\" value=\"")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var406 string
+				templ_7745c5c3_Var406, templ_7745c5c3_Err = templ.ResolveAttributeValue(pos.PositionName)
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3979, Col: 91}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var406)
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 761, "\" class=\"w-full border rounded p-2\"></label><div class=\"grid grid-cols-2 gap-2\" data-formation-advanced-field hidden><label class=\"block text-sm\">X <input name=\"")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var407 string
+				templ_7745c5c3_Var407, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("position_%d_x", pos.ID))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3983, Col: 62}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var407)
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 762, "\" value=\"")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var408 string
+				templ_7745c5c3_Var408, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%.2f", pos.X))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3983, Col: 99}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var408)
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 763, "\" class=\"w-full border rounded p-2\"></label> <label class=\"block text-sm\">Y <input name=\"")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var409 string
+				templ_7745c5c3_Var409, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("position_%d_y", pos.ID))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3986, Col: 62}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var409)
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 764, "\" value=\"")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var410 string
+				templ_7745c5c3_Var410, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%.2f", pos.Y))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3986, Col: 99}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var410)
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 765, "\" class=\"w-full border rounded p-2\"></label></div></div>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 766, "<div class=\"border rounded-lg p-3 bg-gray-50\"><div class=\"font-bold\">Add position</div><input name=\"newPositionName\" placeholder=\"Position name\" class=\"w-full border rounded p-2 mt-2\"><div class=\"mt-2\"><input name=\"newPositionIndex\" placeholder=\"Index\" class=\"border rounded p-2\"></div><div class=\"grid grid-cols-2 gap-2 mt-2\" data-formation-advanced-field hidden><input name=\"newPositionX\" placeholder=\"X\" class=\"border rounded p-2\"> <input name=\"newPositionY\" placeholder=\"Y\" class=\"border rounded p-2\"></div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -8110,134 +8486,134 @@ func formationEditPage(formation *Formation, canEdit bool, isAdmin bool, editMod
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var397 = []any{bigAdd}
-			templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var397...)
+			var templ_7745c5c3_Var411 = []any{bigAdd}
+			templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var411...)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 730, "<button type=\"submit\" class=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 767, "<button type=\"submit\" class=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var398 string
-			templ_7745c5c3_Var398, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var397).String())
+			var templ_7745c5c3_Var412 string
+			templ_7745c5c3_Var412, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var411).String())
 			if templ_7745c5c3_Err != nil {
 				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 1, Col: 0}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var398)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var412)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 731, "\">Save formation</button> ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 768, "\">Save formation</button> ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var399 = []any{bigSec}
-			templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var399...)
+			var templ_7745c5c3_Var413 = []any{bigSec}
+			templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var413...)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 732, "<button type=\"submit\" formaction=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 769, "<button type=\"submit\" formaction=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var400 string
-			templ_7745c5c3_Var400, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("/formations/%d/copy", formation.ID))
+			var templ_7745c5c3_Var414 string
+			templ_7745c5c3_Var414, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("/formations/%d/copy", formation.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3853, Col: 91}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 4004, Col: 91}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var400)
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 733, "\" class=\"")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var414)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var401 string
-			templ_7745c5c3_Var401, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var399).String())
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 770, "\" class=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var415 string
+			templ_7745c5c3_Var415, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var413).String())
 			if templ_7745c5c3_Err != nil {
 				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 1, Col: 0}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var401)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var415)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 734, "\">Save a copy</button> ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 771, "\">Save a copy</button> ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var402 = []any{bigPri}
-			templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var402...)
+			var templ_7745c5c3_Var416 = []any{bigPri}
+			templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var416...)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 735, "<a href=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 772, "<a href=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var403 templ.SafeURL
-			templ_7745c5c3_Var403, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/formations/%d/edit", formation.ID))
+			var templ_7745c5c3_Var417 templ.SafeURL
+			templ_7745c5c3_Var417, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/formations/%d/edit", formation.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3854, Col: 66}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 4005, Col: 66}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var403))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 736, "\" class=\"")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var417))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var404 string
-			templ_7745c5c3_Var404, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var402).String())
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 773, "\" class=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var418 string
+			templ_7745c5c3_Var418, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var416).String())
 			if templ_7745c5c3_Err != nil {
 				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 1, Col: 0}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var404)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var418)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 737, "\" onclick=\"window.dirtyFormNavigationAllowedUntil = Date.now() + 2000\">View mode</a> <button type=\"button\" hx-delete=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 774, "\" onclick=\"window.dirtyFormNavigationAllowedUntil = Date.now() + 2000\">View mode</a> <button type=\"button\" hx-delete=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var405 string
-			templ_7745c5c3_Var405, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("/formations/%d/edit", formation.ID))
+			var templ_7745c5c3_Var419 string
+			templ_7745c5c3_Var419, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("/formations/%d/edit", formation.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3857, Col: 69}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 4008, Col: 69}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var405)
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 738, "\" hx-confirm=\"")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var419)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var406 string
-			templ_7745c5c3_Var406, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("Delete this formation - %s?", formation.Name))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3858, Col: 80}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var406)
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 775, "\" hx-confirm=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 739, "\" class=\"w-full rounded-lg bg-red-600 px-4 py-3 font-bold text-white\">Delete this formation - ")
+			var templ_7745c5c3_Var420 string
+			templ_7745c5c3_Var420, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("Delete this formation - %s?", formation.Name))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 4009, Col: 80}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var420)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var407 string
-			templ_7745c5c3_Var407, templ_7745c5c3_Err = templ.JoinStringErrs(formation.Name)
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 3860, Col: 49}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var407))
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 776, "\" class=\"w-full rounded-lg bg-red-600 px-4 py-3 font-bold text-white\">Delete this formation - ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 740, "</button></form>")
+			var templ_7745c5c3_Var421 string
+			templ_7745c5c3_Var421, templ_7745c5c3_Err = templ.JoinStringErrs(formation.Name)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lineup.templ`, Line: 4011, Col: 49}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var421))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 777, "</button></form>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -8251,7 +8627,7 @@ func formationEditPage(formation *Formation, canEdit bool, isAdmin bool, editMod
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 741, "</div></section></div></body></html>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 778, "</div></section></div></body></html>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

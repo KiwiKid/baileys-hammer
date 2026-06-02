@@ -141,6 +141,7 @@ func FooterTeam(ctx context.Context) Team {
 	}
 	return Team{
 		EnableFinesModule:        true,
+		EnablePaymentsModule:     true,
 		ShowPitchMatchOnHomePage: true,
 		ShowCourtSheetOnHomePage: true,
 		EnablePublicFeedbackForm: true,
@@ -171,6 +172,7 @@ func setTeamSessionValues(team Team, session *sessions.Session) {
 	session.Values["EnableLineupsModule"] = team.EnableLineupsModule
 	session.Values["EnableMatchesModule"] = team.EnableMatchesModule
 	session.Values["EnablePlayersModule"] = team.EnablePlayersModule
+	session.Values["EnablePaymentsModule"] = team.EnablePaymentsModule
 	session.Values["EnableCourtModule"] = team.EnableCourtModule
 	session.Values["EnableLeaderboardModule"] = team.EnableLeaderboardModule
 	session.Values["AllowAdminRegistration"] = team.AllowAdminRegistration

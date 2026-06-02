@@ -232,12 +232,19 @@ templ noteForm(data NotesPageData) {
 
 templ contextualNotes(data NotesPageData) {
 	if data.ShowAdminNotes {
-		<div class="mt-6 space-y-4">
-			<h2 class="text-2xl font-bold">Model notes</h2>
-			@warning(data.Message)
-			@noteForm(data)
-			@contextualNotesList(data)
-		</div>
+		<details class="mt-6 rounded-lg bg-white shadow">
+			<summary class="cursor-pointer px-4 py-3 text-xl font-bold text-gray-900">
+				Model notes
+				if len(data.Notes) > 0 {
+					<span class="ml-2 text-sm font-semibold text-gray-500">{ fmt.Sprintf("(%d)", len(data.Notes)) }</span>
+				}
+			</summary>
+			<div class="space-y-4 border-t border-gray-100 p-4">
+				@warning(data.Message)
+				@noteForm(data)
+				@contextualNotesList(data)
+			</div>
+		</details>
 	}
 }
 

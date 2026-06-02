@@ -308,6 +308,28 @@ templ playerRoleSelector(player PlayerWithFines, config *Config, msg templ.Compo
 						}
 					</label>
 				}
+				<label for="playablePositions" class="block mt-2">
+					Positions
+					<input
+						type="text"
+						name="playablePositions"
+						id="playablePositions"
+						value={ player.PlayablePositions }
+						placeholder="GK, CB, CM, ST"
+						class="w-full text-3xl px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600"
+					/>
+				</label>
+				<label for="number" class="block mt-2">
+					Number
+					<input
+						type="text"
+						name="number"
+						id="number"
+						value={ player.Number }
+						placeholder="10"
+						class="w-full text-3xl px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600"
+					/>
+				</label>
 				<!--<label for="SubsOutstandingAmount" class="block mt-2">SubsOutstandingAmount
 					<input 
 						type="text"

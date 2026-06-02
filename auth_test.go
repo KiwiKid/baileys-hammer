@@ -98,6 +98,7 @@ func TestTeamCreateAssignsTeamAdminToCreator(t *testing.T) {
 		"enableLineupsModule":     {"on"},
 		"enableMatchesModule":     {"on"},
 		"enablePlayersModule":     {"on"},
+		"enablePaymentsModule":    {"on"},
 		"enableCourtModule":       {"on"},
 		"enableLeaderboardModule": {"on"},
 	}
@@ -263,6 +264,64 @@ func TestGoogleUserCanRequestTeamAdminAccess(t *testing.T) {
 	require.Len(t, requests, 1)
 }
 
+func TestGoogleUserCanRequestLineupAccess(t *testing.T) {
+	t.Setenv("GOOGLE_CLIENT_ID", "client-id")
+	t.Setenv("GOOGLE_CLIENT_SECRET", "client-secret")
+	db := testAuthDB(t)
+	team := Team{TeamName: "AFC"}
+	require.NoError(t, db.Create(&team).Error)
+	stubGoogleVerifier(t, googleUserInfo{Subject: "sub-lineup-request", Email: "lineup@example.com", DisplayName: "Lineup User"})
+	body := url.Values{"credential": {"token"}, "teamId": {S(team.ID)}}
+	req := httptest.NewRequest(http.MethodPost, "/lineups/login", strings.NewReader(body.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	rec := httptest.NewRecorder()
+
+	lineupLoginHandler(db)(rec, req)
+
+	require.Equal(t, http.StatusOK, rec.Code)
+	user, err := FindAdminUserByEmail(db, "lineup@example.com")
+	require.NoError(t, err)
+	ok, err := AdminUserHasRole(db, user.ID, team.ID, adminRoleLineupAccess)
+	require.NoError(t, err)
+	require.False(t, ok)
+	var requests []AdminAccessRequest
+	require.NoError(t, db.Where("admin_user_id = ? AND team_id = ? AND role = ? AND status = ?", user.ID, team.ID, adminRoleLineupAccess, "pending").Find(&requests).Error)
+	require.Len(t, requests, 1)
+}
+
+func TestApprovedGoogleLineupUserGetsLineupCookie(t *testing.T) {
+	t.Setenv("GOOGLE_CLIENT_ID", "client-id")
+	t.Setenv("GOOGLE_CLIENT_SECRET", "client-secret")
+	db := testAuthDB(t)
+	team := Team{TeamName: "AFC"}
+	user := AdminUser{Email: "lineup@example.com", GoogleSubjectID: "sub-lineup", DisplayName: "Lineup User"}
+	require.NoError(t, db.Create(&team).Error)
+	require.NoError(t, db.Create(&user).Error)
+	require.NoError(t, GrantAdminRole(db, user.ID, team.ID, adminRoleLineupAccess))
+	stubGoogleVerifier(t, googleUserInfo{Subject: "sub-lineup", Email: "lineup@example.com", DisplayName: "Lineup User"})
+	body := url.Values{"credential": {"token"}, "teamId": {S(team.ID)}}
+	req := httptest.NewRequest(http.MethodPost, "/lineups/login", strings.NewReader(body.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	rec := httptest.NewRecorder()
+
+	lineupLoginHandler(db)(rec, req)
+
+	require.Equal(t, http.StatusSeeOther, rec.Code)
+	require.Equal(t, "/lineups", rec.Header().Get("Location"))
+	var foundLineupCookie bool
+	for _, cookie := range rec.Result().Cookies() {
+		if cookie.Name != lineupUserCookieName {
+			continue
+		}
+		teamID, userID, ok := parseLineupUserToken(cookie.Value, adminTokenSecret())
+		require.True(t, ok)
+		require.Equal(t, team.ID, teamID)
+		require.NotZero(t, userID)
+		foundLineupCookie = true
+	}
+	require.True(t, foundLineupCookie)
+}
+
 func TestHomeTeamKeyActivatesAccessibleTeam(t *testing.T) {
 	t.Setenv("GOOGLE_CLIENT_ID", "client-id")
 	t.Setenv("GOOGLE_CLIENT_SECRET", "client-secret")
@@ -387,6 +446,32 @@ func TestTeamAdminCanApproveTeamAccessRequest(t *testing.T) {
 	require.True(t, ok)
 	require.NoError(t, db.First(&accessRequest, accessRequest.ID).Error)
 	require.Equal(t, "approved", accessRequest.Status)
+}
+
+func TestTeamAdminCanApproveLineupAccessRequest(t *testing.T) {
+	t.Setenv("GOOGLE_CLIENT_ID", "client-id")
+	t.Setenv("GOOGLE_CLIENT_SECRET", "client-secret")
+	db := testAuthDB(t)
+	team := Team{TeamName: "AFC"}
+	teamAdmin := AdminUser{Email: "team@example.com", GoogleSubjectID: "sub-team"}
+	target := AdminUser{Email: "target@example.com", GoogleSubjectID: "sub-target"}
+	require.NoError(t, db.Create(&team).Error)
+	require.NoError(t, db.Create(&teamAdmin).Error)
+	require.NoError(t, db.Create(&target).Error)
+	require.NoError(t, GrantAdminRole(db, teamAdmin.ID, team.ID, adminRoleTeamAdmin))
+	require.NoError(t, RequestAdminAccess(db, target.ID, team.ID, adminRoleLineupAccess))
+	var accessRequest AdminAccessRequest
+	require.NoError(t, db.Where("admin_user_id = ? AND team_id = ?", target.ID, team.ID).First(&accessRequest).Error)
+	body := url.Values{"requestId": {S(accessRequest.ID)}, "action": {"approve"}}
+	req := adminSessionRequest(http.MethodPost, "/admin/access-requests", teamAdmin.ID, team.ID, body)
+	rec := httptest.NewRecorder()
+
+	adminAccessRequestHandler(db)(rec, req)
+
+	require.Equal(t, http.StatusOK, rec.Code)
+	ok, err := AdminUserHasRole(db, target.ID, team.ID, adminRoleLineupAccess)
+	require.NoError(t, err)
+	require.True(t, ok)
 }
 
 func TestTeamAdminCanGrantAndRevokeTeamAdminForOwnTeam(t *testing.T) {

@@ -21,6 +21,7 @@ const (
 	adminSessionCookieName = "admin-session"
 	adminRoleSuperAdmin    = "super-admin"
 	adminRoleTeamAdmin     = "team-admin"
+	adminRoleLineupAccess  = "lineup-access"
 )
 
 type googleUserInfo struct {
@@ -160,6 +161,17 @@ func canAdminAccessTeam(db *gorm.DB, userID uint, teamID uint) bool {
 		return false
 	}
 	ok, err := AdminUserHasRole(db, userID, teamID, adminRoleTeamAdmin)
+	return err == nil && ok
+}
+
+func canGoogleUserAccessLineups(db *gorm.DB, userID uint, teamID uint) bool {
+	if userID == 0 || teamID == 0 {
+		return false
+	}
+	if canAdminAccessTeam(db, userID, teamID) {
+		return true
+	}
+	ok, err := AdminUserHasRole(db, userID, teamID, adminRoleLineupAccess)
 	return err == nil && ok
 }
 

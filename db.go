@@ -24,6 +24,8 @@ type Player struct {
 	Name                   string `gorm:"unique" form:"name"`
 	Fines                  []Fine
 	Active                 bool
+	Number                 string `schema:"number" form:"number"`
+	PlayablePositions      string `schema:"playablePositions" form:"playablePositions"`
 	Role                   string
 	RoleDescription        string
 	LatestSeasonId         int     `form:"seasonId" json:"seasonId"`
@@ -102,6 +104,7 @@ type Team struct {
 	EnableLineupsModule      bool
 	EnableMatchesModule      bool
 	EnablePlayersModule      bool
+	EnablePaymentsModule     bool
 	EnableCourtModule        bool
 	EnableLeaderboardModule  bool
 	AllowAdminRegistration   bool
@@ -168,6 +171,10 @@ func (t Team) LeaderboardModuleEnabled() bool {
 	return t.EnableLeaderboardModule
 }
 
+func (t Team) PaymentsModuleEnabled() bool {
+	return t.EnablePaymentsModule
+}
+
 type LineupUser struct {
 	gorm.Model
 	TeamID      uint
@@ -181,6 +188,7 @@ type Formation struct {
 	Name            string
 	Status          string
 	Positions       []FormationPosition
+	Creator         LineupUser `gorm:"foreignKey:CreatedByUserID"`
 }
 
 type FormationPosition struct {
@@ -254,6 +262,7 @@ func DBInit() (*gorm.DB, error) {
 		"enable_lineups_module":         db.Migrator().HasColumn(&Team{}, "EnableLineupsModule"),
 		"enable_matches_module":         db.Migrator().HasColumn(&Team{}, "EnableMatchesModule"),
 		"enable_players_module":         db.Migrator().HasColumn(&Team{}, "EnablePlayersModule"),
+		"enable_payments_module":        db.Migrator().HasColumn(&Team{}, "EnablePaymentsModule"),
 		"enable_court_module":           db.Migrator().HasColumn(&Team{}, "EnableCourtModule"),
 		"enable_leaderboard_module":     db.Migrator().HasColumn(&Team{}, "EnableLeaderboardModule"),
 		"show_pitch_match_on_home_page": db.Migrator().HasColumn(&Team{}, "ShowPitchMatchOnHomePage"),
@@ -349,6 +358,14 @@ func DBInit() (*gorm.DB, error) {
 
 	if (!db.Migrator().HasColumn(&Player{}, "Role")) {
 		db.Migrator().AddColumn(&Player{}, "Role")
+	}
+
+	if (!db.Migrator().HasColumn(&Player{}, "PlayablePositions")) {
+		db.Migrator().AddColumn(&Player{}, "PlayablePositions")
+	}
+
+	if (!db.Migrator().HasColumn(&Player{}, "Number")) {
+		db.Migrator().AddColumn(&Player{}, "Number")
 	}
 
 	if (!db.Migrator().HasColumn(&Player{}, "SubsOutstandingAmount")) {
@@ -589,7 +606,7 @@ func FirstTeamForAdminUser(db *gorm.DB, userID uint) (*Team, error) {
 	}
 
 	var role AdminUserTeamRole
-	if err := db.Where("admin_user_id = ? AND role = ? AND team_id > 0", userID, adminRoleTeamAdmin).Order("team_id").First(&role).Error; err != nil {
+	if err := db.Where("admin_user_id = ? AND role IN ? AND team_id > 0", userID, []string{adminRoleTeamAdmin, adminRoleLineupAccess}).Order("team_id").First(&role).Error; err != nil {
 		return nil, err
 	}
 	return GetTeam(db, role.TeamID)
@@ -672,8 +689,10 @@ type PlayerWithFines struct {
 	ID                     uint
 	Name                   string
 	Active                 bool
+	Number                 string
 	TotalFineCount         int
 	TotalFines             int
+	PlayablePositions      string
 	Role                   string
 	RoleDescription        string
 	Fines                  []Fine
@@ -728,8 +747,10 @@ func GetPlayersWithFines(db *gorm.DB, seasonId uint, teamId uint, playerIds []ui
 			ID:                     player.ID,
 			Name:                   player.Name,
 			Active:                 player.Active,
+			Number:                 player.Number,
 			TotalFineCount:         len(approvedFines),
 			TotalFines:             fineSum,
+			PlayablePositions:      player.PlayablePositions,
 			Role:                   player.Role,
 			RoleDescription:        player.RoleDescription,
 			Fines:                  approvedFines,

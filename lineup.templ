@@ -59,6 +59,40 @@ func lineupSubMinuteLabel(minute int) string {
 	return fmt.Sprintf(" %d'", minute)
 }
 
+func playerShortName(name string) string {
+	parts := strings.Fields(strings.TrimSpace(name))
+	if len(parts) == 0 {
+		return ""
+	}
+	if len(parts) == 1 {
+		return parts[0]
+	}
+	return fmt.Sprintf("%s. %s", strings.ToUpper(string([]rune(parts[0])[0])), parts[len(parts)-1])
+}
+
+func playerPitchLabel(player Player) string {
+	name := playerShortName(player.Name)
+	if name == "" {
+		name = strings.TrimSpace(player.Name)
+	}
+	number := strings.TrimSpace(player.Number)
+	if number == "" {
+		return name
+	}
+	if name == "" {
+		return fmt.Sprintf("#%s", number)
+	}
+	return fmt.Sprintf("#%s %s", number, name)
+}
+
+func playerPitchShirtNumber(player Player, fallback int) string {
+	number := strings.TrimSpace(player.Number)
+	if number != "" {
+		return number
+	}
+	return fmt.Sprintf("%d", fallback)
+}
+
 func lineupPositionInitials(positionName string) string {
 	normalized := normalizedLineupPosition(positionName)
 	if normalized == "" {
@@ -157,8 +191,15 @@ func playerPositionText(player Player) string {
 	return strings.TrimSpace(strings.Join([]string{player.Role, player.RoleDescription}, " "))
 }
 
+func playerPlayablePositionText(player Player) string {
+	return strings.TrimSpace(player.PlayablePositions)
+}
+
 func playerMatchesLineupPosition(player Player, positionName string) bool {
-	playerTokens := lineupPositionTokens(playerPositionText(player))
+	playerTokens := lineupPositionTokens(playerPlayablePositionText(player))
+	if len(playerTokens) == 0 {
+		playerTokens = lineupPositionTokens(playerPositionText(player))
+	}
 	if len(playerTokens) == 0 {
 		return false
 	}
@@ -174,6 +215,9 @@ func playerNearMatchesLineupPosition(player Player, positionName string) bool {
 	positionCategory := lineupPositionCategory(positionName)
 	if positionCategory == "" {
 		return false
+	}
+	if lineupPositionCategory(playerPlayablePositionText(player)) == positionCategory {
+		return true
 	}
 	return lineupPositionCategory(playerPositionText(player)) == positionCategory
 }
@@ -330,6 +374,14 @@ func matchDayAlternativeLineups(lineups []Lineup, selected *Lineup) []Lineup {
 		}
 	}
 	return alternatives
+}
+
+func lineupAuthorLabel(lineup Lineup) string {
+	name := strings.TrimSpace(lineup.Creator.DisplayName)
+	if name == "" {
+		return ""
+	}
+	return fmt.Sprintf("by %s", name)
 }
 
 func matchDayLineupOptionLabel(lineup Lineup) string {
@@ -938,9 +990,19 @@ templ lineupStylesAndScript() {
 			text-align: center;
 			font-weight: 700;
 		}
+		.drawer-row-action.compact {
+			display: inline-flex;
+			width: auto;
+			align-items: center;
+			justify-content: center;
+			padding: 6px 10px;
+			font-size: 0.875rem;
+			line-height: 1.15;
+			white-space: nowrap;
+		}
 		.match-day-summary {
 			display: grid;
-			grid-template-columns: repeat(3, minmax(0, 1fr));
+			grid-template-columns: repeat(2, minmax(0, 1fr));
 			gap: 8px;
 		}
 		.match-day-stat {
@@ -2139,7 +2201,7 @@ templ dirtyFormScript() {
 	</script>
 }
 
-templ lineupLoginPage(msg string) {
+templ lineupLoginPage(msg string, googleClientID string, teamID uint) {
 	<!DOCTYPE html>
 	<html>
 		@header()
@@ -2148,6 +2210,33 @@ templ lineupLoginPage(msg string) {
 				<h1 class="text-3xl font-bold mb-4">Line-up access</h1>
 				<a href="/" class="text-blue-600 underline">Back home</a>
 				@warning(msg)
+				if googleClientID != "" && teamID > 0 {
+					<div class="mb-6 rounded-lg border border-blue-100 bg-blue-50 p-4">
+						<div class="mb-3 font-bold text-blue-950">Google access</div>
+						<script src="https://accounts.google.com/gsi/client" async defer></script>
+						<form id="google-lineup-auth-form" method="POST" action="/lineups/login" class="space-y-3">
+							<input type="hidden" name="credential" id="google-lineup-credential"/>
+							<input type="hidden" name="teamId" value={ fmt.Sprintf("%d", teamID) }/>
+							<div
+								id="g_id_onload"
+								data-client_id={ googleClientID }
+								data-callback="handleGoogleLineupCredential"
+								data-auto_prompt="false"
+							></div>
+							<div class="g_id_signin" data-type="standard" data-size="large" data-theme="outline" data-text="signin_with" data-shape="rectangular" data-logo_alignment="left"></div>
+							<div class="text-sm text-blue-900">Sign in to request line-up and formation access for this team. A team admin or super admin can approve it.</div>
+						</form>
+						<script>
+							window.handleGoogleLineupCredential = function(response) {
+								var credentialInput = document.getElementById("google-lineup-credential");
+								var form = document.getElementById("google-lineup-auth-form");
+								if (!credentialInput || !form || !response || !response.credential) return;
+								credentialInput.value = response.credential;
+								form.submit();
+							};
+						</script>
+					</div>
+				}
 				<form method="POST" action="/lineups/login" class="space-y-4">
 					<label class="block">Team key
 						<input name="teamKey" required class="w-full border rounded-lg p-3 mt-1"/>
@@ -2182,15 +2271,19 @@ templ lineupPreviewPitch(lineup *Lineup) {
 				>
 					<div class="shirt">
 						<span class="shirt-collar"></span>
-						<span class="shirt-number">{ fmt.Sprintf("%d", pp.Position.IndexNumber) }</span>
+						if len(pp.Players) > 0 {
+							<span class="shirt-number">{ playerPitchShirtNumber(pp.Players[0].Player, pp.Position.IndexNumber) }</span>
+						} else {
+							<span class="shirt-number">{ fmt.Sprintf("%d", pp.Position.IndexNumber) }</span>
+						}
 					</div>
 					if len(pp.Players) > 0 {
 						<div class="marker-player-stack">
 							for i, assigned := range pp.Players {
 								if i == 0 {
-									<span class="marker-caption">{ assigned.Player.Name }{ lineupSubMinuteLabel(assigned.SubMinute) }</span>
+									<span class="marker-caption">{ playerPitchLabel(assigned.Player) }{ lineupSubMinuteLabel(assigned.SubMinute) }</span>
 								} else {
-									<span class="sub-player">{ assigned.Player.Name }{ lineupSubMinuteLabel(assigned.SubMinute) }</span>
+									<span class="sub-player">{ playerPitchLabel(assigned.Player) }{ lineupSubMinuteLabel(assigned.SubMinute) }</span>
 								}
 							}
 						</div>
@@ -2224,15 +2317,21 @@ templ matchDayPitch(lineup *Lineup, playerTimes []MatchDayPlayerTime, players []
 					<button type="button" class="w-full text-white" onclick="window.toggleMatchDayActions(this, event)">
 						<div class="shirt">
 							<span class="shirt-collar"></span>
-							<span class="shirt-number">{ fmt.Sprintf("%d", pp.Position.IndexNumber) }</span>
+							if currentPlayer.Player.ID > 0 {
+								<span class="shirt-number">{ playerPitchShirtNumber(currentPlayer.Player, pp.Position.IndexNumber) }</span>
+							} else if len(pp.Players) > 0 {
+								<span class="shirt-number">{ playerPitchShirtNumber(pp.Players[0].Player, pp.Position.IndexNumber) }</span>
+							} else {
+								<span class="shirt-number">{ fmt.Sprintf("%d", pp.Position.IndexNumber) }</span>
+							}
 						</div>
 						if len(pp.Players) > 0 {
 							<div class="marker-player-stack">
 								for i, assigned := range pp.Players {
 									if i == 0 {
-										<span class="marker-caption">{ assigned.Player.Name }{ lineupSubMinuteLabel(assigned.SubMinute) }</span>
+										<span class="marker-caption">{ playerPitchLabel(assigned.Player) }{ lineupSubMinuteLabel(assigned.SubMinute) }</span>
 									} else {
-										<span class="sub-player">{ assigned.Player.Name }{ lineupSubMinuteLabel(assigned.SubMinute) }</span>
+										<span class="sub-player">{ playerPitchLabel(assigned.Player) }{ lineupSubMinuteLabel(assigned.SubMinute) }</span>
 									}
 								}
 							</div>
@@ -2370,6 +2469,29 @@ templ matchDayPitch(lineup *Lineup, playerTimes []MatchDayPlayerTime, players []
 	</div>
 }
 
+templ matchDaySuggestedSubsPanel(lineup *Lineup, unavailablePlayerIDs map[uint]bool) {
+	{{ suggestedSubs := matchDaySuggestedSubs(lineup, unavailablePlayerIDs) }}
+	if len(suggestedSubs) > 0 {
+		<div class="space-y-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950">
+			<div class="font-bold">Suggested subs</div>
+			for _, suggestedSub := range suggestedSubs {
+				<form method="POST" action={ fmt.Sprintf("/match-day/%d/action", lineup.ID) } class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-lg bg-white/70 p-2 ring-1 ring-amber-100">
+					<input type="hidden" name="action" value="sub"/>
+					<input type="hidden" name="playerId" value={ fmt.Sprintf("%d", suggestedSub.CurrentPlayer.ID) }/>
+					<input type="hidden" name="replacementPlayerId" value={ fmt.Sprintf("%d", suggestedSub.ReplacementPlayer.ID) }/>
+					<input type="hidden" name="indexNumber" value={ fmt.Sprintf("%d", suggestedSub.PositionIndex) }/>
+					<input type="hidden" name="minute" value={ fmt.Sprintf("%d", matchDayMinute(lineup.Match)) }/>
+					<div class="min-w-0">
+						<div class="font-semibold">{ fmt.Sprintf("%s for %s", suggestedSub.ReplacementPlayer.Name, suggestedSub.CurrentPlayer.Name) }</div>
+						<div class="text-xs font-semibold uppercase tracking-wide text-amber-800">{ fmt.Sprintf("%s - due %d'", suggestedSub.PositionName, suggestedSub.DueMinute) }</div>
+					</div>
+					<button type="submit" class="match-day-action-button primary">Sub now</button>
+				</form>
+			}
+		</div>
+	}
+}
+
 templ lineupEditablePitch(lineup *Lineup, players []Player, unavailablePlayerIDs map[uint]bool) {
 	<div class="pitch" data-pitch>
 		@pitchMarkings()
@@ -2386,15 +2508,19 @@ templ lineupEditablePitch(lineup *Lineup, players []Player, unavailablePlayerIDs
 					<button type="button" data-marker-view={ fmt.Sprintf("%d", pp.Position.IndexNumber) } onclick="window.showPitchPlayerEditor(this.dataset.markerView)">
 						<div class="shirt">
 							<span class="shirt-collar"></span>
-							<span class="shirt-number">{ fmt.Sprintf("%d", pp.Position.IndexNumber) }</span>
+							if len(pp.Players) > 0 {
+								<span class="shirt-number">{ playerPitchShirtNumber(pp.Players[0].Player, pp.Position.IndexNumber) }</span>
+							} else {
+								<span class="shirt-number">{ fmt.Sprintf("%d", pp.Position.IndexNumber) }</span>
+							}
 						</div>
 						if len(pp.Players) > 0 {
 							<div class="marker-player-stack">
 								for i, assigned := range pp.Players {
 									if i == 0 {
-										<span class="marker-caption">{ assigned.Player.Name }{ lineupSubMinuteLabel(assigned.SubMinute) }</span>
+										<span class="marker-caption">{ playerPitchLabel(assigned.Player) }{ lineupSubMinuteLabel(assigned.SubMinute) }</span>
 									} else {
-										<span class="sub-player">{ assigned.Player.Name }{ lineupSubMinuteLabel(assigned.SubMinute) }</span>
+										<span class="sub-player">{ playerPitchLabel(assigned.Player) }{ lineupSubMinuteLabel(assigned.SubMinute) }</span>
 									}
 								}
 							</div>
@@ -2537,8 +2663,8 @@ func drawerNavButtonClass(active bool) string {
 templ drawerTopNav(active string, matchDayLineupID uint) {
 	<div class="flex w-full flex-wrap gap-2 text-sm pb-2">
 		<a href="/" class={ drawerNavButtonClass(active == "home") } onclick="event.stopPropagation()">Home</a>
-		<a href="/formations" class={ drawerNavButtonClass(active == "formations") } onclick="event.stopPropagation()">Formations</a>
-		<a href="/lineups" class={ drawerNavButtonClass(active == "lineups") } onclick="event.stopPropagation()">Line-ups</a>
+		<a href="/formations" class={ drawerNavButtonClass(active == "formations") } onclick="event.stopPropagation(); window.setDrawerState('expanded')">Formations</a>
+		<a href="/lineups" class={ drawerNavButtonClass(active == "lineups") } onclick="event.stopPropagation(); window.setDrawerState('expanded')">Line-ups</a>
 		if matchDayLineupID > 0 {
 			<a href={ fmt.Sprintf("/match-day/%d", matchDayLineupID) } class={ drawerNavButtonClass(active == "match-day") } onclick="event.stopPropagation()">Match day</a>
 		}
@@ -2615,19 +2741,33 @@ templ lineupListPage(lineups []Lineup, formations []Formation, selected *Lineup,
 						}
 						for _, lineup := range lineups {
 							<div class="border rounded-lg p-3 shadow-sm">
-								<div>
-									<div class="font-bold">{ lineup.Name }</div>
-									<div class="text-sm text-gray-600" data-drawer-extended>{ lineup.Status } - { lineup.Formation.Name }</div>
+								<div class="flex items-start justify-between gap-3">
+									<div class="min-w-0">
+										<div class="truncate font-bold">{ lineup.Name }</div>
+										<div class="truncate text-sm text-gray-600">
+											{ lineup.Status }
+											if lineupAuthorLabel(lineup) != "" {
+												- { lineupAuthorLabel(lineup) }
+											}
+											- { lineup.Formation.Name }
+										</div>
+									</div>
+									<a href={ fmt.Sprintf("/lineups/%d", lineup.ID) } class="drawer-row-action compact" onclick="window.setDrawerState('collapsed')">
+										if actorCanEditLineup(actor, lineup) {
+											Edit
+										} else {
+											Open
+										}
+									</a>
+								</div>
+								<div data-drawer-extended>
 									if lineup.Details != "" {
 										<div class="mt-2 text-sm text-gray-700" data-drawer-extended>{ lineup.Details }</div>
 									}
-									</div>
-									<div class="drawer-row-actions">
-									<a href={ fmt.Sprintf("/lineups/%d", lineup.ID) } class="drawer-row-action" onclick="window.setDrawerState('collapsed')">Open</a>
 									if lineup.Status != lineupStatusDraft {
 										<button
 											type="button"
-											class="drawer-row-action"
+											class="drawer-row-action compact mt-2"
 											data-share-url={ fmt.Sprintf("/lineups/%d/share", lineup.ID) }
 											onclick="window.copyLineupShareLink(this, event)"
 										>Share view</button>
@@ -3219,7 +3359,9 @@ templ matchDayPage(lineups []Lineup, selected *Lineup, playerTimes []MatchDayPla
 				<section class="pitch-drawer" data-state="collapsed">
 					@drawerChrome("Match day", "match-day", matchDayLineupID)
 					<div class="drawer-body space-y-4" data-detail-mode="simple">
-						@modeBadge(isAdmin)
+						<div data-drawer-extended>
+							@modeBadge(isAdmin)
+						</div>
 						@errMsg(errorMsg)
 						if selected == nil {
 							<div>
@@ -3369,40 +3511,44 @@ templ matchDayPage(lineups []Lineup, selected *Lineup, playerTimes []MatchDayPla
 													<button type="submit" class="match-day-action-button primary">Start match now</button>
 												</form>
 											}
-											<button
-												type="button"
-												class="match-day-action-button"
-												aria-expanded="false"
-												onclick="window.toggleMatchDayStartAt(this)"
-											>
-												if matchDayClockStarted(selected.Match) {
-													Adjust start time
-												} else {
-													Start match at
-												}
-											</button>
+											if !matchDayClockStateForMatch(selected.Match).Finished {
+												<button
+													type="button"
+													class="match-day-action-button"
+													aria-expanded="false"
+													onclick="window.toggleMatchDayStartAt(this)"
+												>
+													if matchDayClockStarted(selected.Match) {
+														Adjust start time
+													} else {
+														Start match at
+													}
+												</button>
+											}
 										</div>
-										<form
-											method="POST"
-											action={ fmt.Sprintf("/match-day/%d/action", selected.ID) }
-											class="match-day-start-at-form"
-											data-match-day-start-at-form
-										>
-											<input type="hidden" name="action" value="start-match-at"/>
-											<div class="match-day-start-input-row">
-												<input type="datetime-local" name="startTime" value={ matchDayStartInputValue(selected.Match) } required/>
-												<button type="submit" class="match-day-action-button primary">Set</button>
-											</div>
-											<div class="match-day-start-quick" aria-label="Start minutes ago">
-												for _, minutesAgo := range []int{1, 2, 3, 4, 5} {
-													<button
-														type="button"
-														data-start-minutes-ago={ fmt.Sprintf("%d", minutesAgo) }
-														onclick="window.setMatchDayStartMinutesAgo(this, parseInt(this.dataset.startMinutesAgo, 10), true)"
-													>{ fmt.Sprintf("%d", minutesAgo) }m</button>
-												}
-											</div>
-										</form>
+										if !matchDayClockStateForMatch(selected.Match).Finished {
+											<form
+												method="POST"
+												action={ fmt.Sprintf("/match-day/%d/action", selected.ID) }
+												class="match-day-start-at-form"
+												data-match-day-start-at-form
+											>
+												<input type="hidden" name="action" value="start-match-at"/>
+												<div class="match-day-start-input-row">
+													<input type="datetime-local" name="startTime" value={ matchDayStartInputValue(selected.Match) } required/>
+													<button type="submit" class="match-day-action-button primary">Set</button>
+												</div>
+												<div class="match-day-start-quick" aria-label="Start minutes ago">
+													for _, minutesAgo := range []int{1, 2, 3, 4, 5} {
+														<button
+															type="button"
+															data-start-minutes-ago={ fmt.Sprintf("%d", minutesAgo) }
+															onclick="window.setMatchDayStartMinutesAgo(this, parseInt(this.dataset.startMinutesAgo, 10), true)"
+														>{ fmt.Sprintf("%d", minutesAgo) }m</button>
+														}
+													</div>
+												</form>
+										}
 									}
 								</div>
 								<div class="match-day-global-actions">
@@ -3463,6 +3609,9 @@ templ matchDayPage(lineups []Lineup, selected *Lineup, playerTimes []MatchDayPla
 										</form>
 									}
 								</div>
+								if isAdmin {
+									@matchDaySuggestedSubsPanel(selected, unavailablePlayerIDs)
+								}
 								<div class="space-y-2" data-drawer-extended>
 									{{ matchEvents := matchDaySortedEvents(selected.Match) }}
 									<button
@@ -3526,10 +3675,6 @@ templ matchDayPage(lineups []Lineup, selected *Lineup, playerTimes []MatchDayPla
 								<div class="match-day-stat">
 									<div class="match-day-stat-value">{ fmt.Sprintf("%d", len(playerTimes)) }</div>
 									<div class="match-day-stat-label">Players</div>
-								</div>
-								<div class="match-day-stat">
-									<div class="match-day-stat-value">{ fmt.Sprintf("%d", currentMatchDayPlayerCount(playerTimes)) }</div>
-									<div class="match-day-stat-label">On pitch</div>
 								</div>
 								<div class="match-day-stat">
 									<div class="match-day-stat-value">90</div>
@@ -3612,7 +3757,7 @@ templ matchDayFocusPoints(data NotesPageData) {
 				</div>
 				if data.ShowAdminNotes {
 					<details class="text-sm">
-						<summary class="cursor-pointer rounded-md bg-white px-3 py-2 font-bold text-emerald-900 ring-1 ring-emerald-200">Configure</summary>
+						<summary class="cursor-pointer rounded-md bg-white px-3 py-2 font-bold text-emerald-900 ring-1 ring-emerald-200"><i class="fas fa-plus"></i></summary>
 						<div class="mt-3 w-full min-w-[260px] space-y-3 rounded-lg bg-white p-3 text-gray-900 shadow ring-1 ring-emerald-100">
 							<form method="POST" action={ noteActionURL("/notes", data.ReturnTo) } class="space-y-3">
 								@noteHiddenTarget(data.Selected)
@@ -3659,9 +3804,7 @@ templ matchDayFocusPoints(data NotesPageData) {
 					</details>
 				}
 			</div>
-			if len(data.Notes) == 0 {
-				<div class="mt-3 text-sm font-semibold text-emerald-900">No focus points published yet.</div>
-			} else {
+			if len(data.Notes) > 0 {
 				<ul class="mt-3 space-y-2">
 					for _, note := range data.Notes {
 						<li class="rounded-lg bg-white px-3 py-2 text-sm font-semibold text-emerald-950 ring-1 ring-emerald-100">
@@ -3692,10 +3835,18 @@ templ formationListPage(formations []Formation, selected *Formation, actor Lineu
 							}
 						for _, formation := range formations {
 							<div class="border rounded-lg p-3 shadow-sm">
-								<div class="font-bold">{ formation.Name }</div>
-								<div class="text-sm text-gray-600">{ formation.Status }</div>
-								<div class="drawer-row-actions">
-									<a href={ fmt.Sprintf("/formations/%d/edit", formation.ID) } class="drawer-row-action" onclick="window.setDrawerState('collapsed')">View</a>
+								<div class="flex items-start justify-between gap-3">
+									<div class="min-w-0">
+										<div class="truncate font-bold">{ formation.Name }</div>
+										<div class="truncate text-sm text-gray-600">{ formation.Status }</div>
+									</div>
+									<a href={ fmt.Sprintf("/formations/%d/edit", formation.ID) } class="drawer-row-action compact" onclick="window.setDrawerState('collapsed')">
+										if actorCanEditFormation(actor, formation) {
+											Edit
+										} else {
+											View
+										}
+									</a>
 								</div>
 							</div>
 						}

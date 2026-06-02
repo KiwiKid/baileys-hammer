@@ -2071,6 +2071,7 @@ func teamHandler(db *gorm.DB) http.HandlerFunc {
 					enableLineupsModule := r.FormValue("enableLineupsModule") == "on"
 					enableMatchesModule := r.FormValue("enableMatchesModule") == "on"
 					enablePlayersModule := r.FormValue("enablePlayersModule") == "on"
+					enablePaymentsModule := r.FormValue("enablePaymentsModule") == "on"
 					enableCourtModule := r.FormValue("enableCourtModule") == "on"
 					enableLeaderboardModule := r.FormValue("enableLeaderboardModule") == "on"
 					allowAdminRegistration := r.FormValue("allowAdminRegistration") == "on"
@@ -2104,6 +2105,7 @@ func teamHandler(db *gorm.DB) http.HandlerFunc {
 					team.EnableLineupsModule = enableLineupsModule
 					team.EnableMatchesModule = enableMatchesModule
 					team.EnablePlayersModule = enablePlayersModule
+					team.EnablePaymentsModule = enablePaymentsModule
 					team.EnableCourtModule = enableCourtModule
 					team.EnableLeaderboardModule = enableLeaderboardModule
 					team.AllowAdminRegistration = allowAdminRegistration
@@ -2182,6 +2184,7 @@ func teamHandler(db *gorm.DB) http.HandlerFunc {
 				enableLineupsModule := r.FormValue("enableLineupsModule") == "on"
 				enableMatchesModule := r.FormValue("enableMatchesModule") == "on"
 				enablePlayersModule := r.FormValue("enablePlayersModule") == "on"
+				enablePaymentsModule := r.FormValue("enablePaymentsModule") == "on"
 				enableCourtModule := r.FormValue("enableCourtModule") == "on"
 				enableLeaderboardModule := r.FormValue("enableLeaderboardModule") == "on"
 				allowAdminRegistration := r.FormValue("allowAdminRegistration") == "on"
@@ -2206,6 +2209,7 @@ func teamHandler(db *gorm.DB) http.HandlerFunc {
 					EnableLineupsModule:      enableLineupsModule,
 					EnableMatchesModule:      enableMatchesModule,
 					EnablePlayersModule:      enablePlayersModule,
+					EnablePaymentsModule:     enablePaymentsModule,
 					EnableCourtModule:        enableCourtModule,
 					EnableLeaderboardModule:  enableLeaderboardModule,
 					AllowAdminRegistration:   allowAdminRegistration,
@@ -2724,7 +2728,7 @@ func canManageAdminRole(db *gorm.DB, viewer AdminUser, role string, teamID uint)
 	if isSuperAdmin(db, viewer.ID) {
 		return true
 	}
-	return role == adminRoleTeamAdmin && teamID > 0 && canAdminAccessTeam(db, viewer.ID, teamID)
+	return (role == adminRoleTeamAdmin || role == adminRoleLineupAccess) && teamID > 0 && canAdminAccessTeam(db, viewer.ID, teamID)
 }
 
 func adminUserRoleHandler(db *gorm.DB) http.HandlerFunc {
@@ -2758,10 +2762,10 @@ func adminUserRoleHandler(db *gorm.DB) http.HandlerFunc {
 		switch role {
 		case adminRoleSuperAdmin:
 			teamID = 0
-		case adminRoleTeamAdmin:
+		case adminRoleTeamAdmin, adminRoleLineupAccess:
 			teamID64, err := strconv.ParseUint(r.FormValue("teamId"), 10, 64)
 			if err != nil || teamID64 == 0 {
-				http.Error(w, "Team admin role requires a team", http.StatusBadRequest)
+				http.Error(w, "Team-scoped role requires a team", http.StatusBadRequest)
 				return
 			}
 			teamID = uint(teamID64)
@@ -2791,14 +2795,16 @@ func adminUserRoleHandler(db *gorm.DB) http.HandlerFunc {
 				return
 			}
 		case "revoke":
-			count, err := CountAdminUsersWithRole(db, teamID, role)
-			if err != nil {
-				http.Error(w, "Could not check admin role count", http.StatusInternalServerError)
-				return
-			}
-			if count <= 1 {
-				http.Error(w, "Cannot remove the last admin for this role", http.StatusBadRequest)
-				return
+			if role == adminRoleSuperAdmin || role == adminRoleTeamAdmin {
+				count, err := CountAdminUsersWithRole(db, teamID, role)
+				if err != nil {
+					http.Error(w, "Could not check admin role count", http.StatusInternalServerError)
+					return
+				}
+				if count <= 1 {
+					http.Error(w, "Cannot remove the last admin for this role", http.StatusBadRequest)
+					return
+				}
 			}
 			if err := RevokeAdminRole(db, uint(adminUserID64), teamID, role); err != nil {
 				http.Error(w, "Could not remove admin role", http.StatusInternalServerError)
@@ -2917,7 +2923,7 @@ func adminAccountsViewData(db *gorm.DB, viewer AdminUser) ([]AdminUserAccountVie
 	for _, account := range accounts {
 		filteredRoles := []AdminUserRoleView{}
 		for _, role := range account.Roles {
-			if role.Role == adminRoleTeamAdmin && allowedTeams[role.TeamID] {
+			if (role.Role == adminRoleTeamAdmin || role.Role == adminRoleLineupAccess) && allowedTeams[role.TeamID] {
 				filteredRoles = append(filteredRoles, role)
 			}
 		}
@@ -3163,6 +3169,7 @@ func setupRouter(db *gorm.DB) *chi.Mux {
 	lineupsEnabled := func(team Team) bool { return team.LineupsModuleEnabled() }
 	matchesEnabled := func(team Team) bool { return team.EnableMatchesModule }
 	playersEnabled := func(team Team) bool { return team.EnablePlayersModule }
+	paymentsEnabled := func(team Team) bool { return team.PaymentsModuleEnabled() }
 	courtEnabled := func(team Team) bool { return team.EnableCourtModule }
 
 	r.HandleFunc("/players", requireTeamFeature(db, "Players", playersEnabled, playerHandler(db)))
@@ -3222,7 +3229,7 @@ func setupRouter(db *gorm.DB) *chi.Mux {
 	r.HandleFunc("/match-day/{lineupId}", requireTeamFeature(db, "Line-ups and formations", lineupsEnabled, matchDayHandler(db)))
 
 	r.HandleFunc("/playersName", requireTeamFeature(db, "Players", playersEnabled, playerNamesHandler(db)))
-	r.HandleFunc("/season/{seasonId}/payments", requireTeamFeature(db, "Players", playersEnabled, playerPayments(db)))
+	r.HandleFunc("/season/{seasonId}/payments", requireTeamFeature(db, "Payments", paymentsEnabled, playerPayments(db)))
 
 	r.HandleFunc("/match/{matchId}/event", requireTeamFeature(db, "Matches", matchesEnabled, matchEventHandler(db)))
 	r.HandleFunc("/match/{matchId}/event/{eventId}", requireTeamFeature(db, "Matches", matchesEnabled, matchEventHandler(db)))

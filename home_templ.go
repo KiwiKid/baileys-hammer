@@ -1599,7 +1599,7 @@ func home(players []PlayerWithFines, approvedPFines []PresetFine, pendingPFines 
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 133, "\">Notes <i class=\"fa-solid fa-user-shield\"></i></a> ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 133, "\">Model notes <i class=\"fa-solid fa-user-shield\"></i></a> ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

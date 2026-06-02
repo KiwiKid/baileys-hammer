@@ -66,8 +66,10 @@ func TestPlayerHandlerPreservesActiveStateOnNormalUpdate(t *testing.T) {
 	}
 
 	postPlayerForm(t, db, url.Values{
-		"ID":   {S(player.ID)},
-		"Name": {"Taylor Updated"},
+		"ID":                {S(player.ID)},
+		"Name":              {"Taylor Updated"},
+		"number":            {"8"},
+		"playablePositions": {"CM, ST"},
 	})
 	var updated Player
 	if err := db.First(&updated, player.ID).Error; err != nil {
@@ -78,6 +80,12 @@ func TestPlayerHandlerPreservesActiveStateOnNormalUpdate(t *testing.T) {
 	}
 	if updated.Name != "Taylor Updated" {
 		t.Fatalf("expected player name to update, got %q", updated.Name)
+	}
+	if updated.Number != "8" {
+		t.Fatalf("expected player number to update, got %q", updated.Number)
+	}
+	if updated.PlayablePositions != "CM, ST" {
+		t.Fatalf("expected playable positions to update, got %q", updated.PlayablePositions)
 	}
 }
 

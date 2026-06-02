@@ -535,6 +535,10 @@ func teamAddForm() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
+		templ_7745c5c3_Err = teamFeatureCheckbox("enablePaymentsModule", "Payments", true).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
 		templ_7745c5c3_Err = teamFeatureCheckbox("enablePublicFeedbackForm", "Public feedback form", true).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
@@ -566,7 +570,7 @@ func teamAddForm() templ.Component {
 		var templ_7745c5c3_Var21 string
 		templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", minLineupPlayerCount))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 212, Col: 107}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 213, Col: 107}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var21)
 		if templ_7745c5c3_Err != nil {
@@ -579,7 +583,7 @@ func teamAddForm() templ.Component {
 		var templ_7745c5c3_Var22 string
 		templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", maxLineupPlayerCount))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 212, Col: 155}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 213, Col: 155}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var22)
 		if templ_7745c5c3_Err != nil {
@@ -592,7 +596,7 @@ func teamAddForm() templ.Component {
 		var templ_7745c5c3_Var23 string
 		templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", defaultLineupPlayerCount))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 212, Col: 209}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 213, Col: 209}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var23)
 		if templ_7745c5c3_Err != nil {
@@ -666,7 +670,7 @@ func teamEditForm(team Team, matches []Match, msg templ.Component) templ.Compone
 		var templ_7745c5c3_Var25 string
 		templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("/teams?teamId=%d", team.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 255, Col: 58}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 256, Col: 58}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var25)
 		if templ_7745c5c3_Err != nil {
@@ -679,7 +683,7 @@ func teamEditForm(team Team, matches []Match, msg templ.Component) templ.Compone
 		var templ_7745c5c3_Var26 string
 		templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", team.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 258, Col: 93}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 259, Col: 93}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var26)
 		if templ_7745c5c3_Err != nil {
@@ -692,7 +696,7 @@ func teamEditForm(team Team, matches []Match, msg templ.Component) templ.Compone
 		var templ_7745c5c3_Var27 string
 		templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", team.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 259, Col: 85}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 260, Col: 85}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var27)
 		if templ_7745c5c3_Err != nil {
@@ -705,7 +709,7 @@ func teamEditForm(team Team, matches []Match, msg templ.Component) templ.Compone
 		var templ_7745c5c3_Var28 string
 		templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.ResolveAttributeValue(team.TeamName)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 264, Col: 81}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 265, Col: 81}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var28)
 		if templ_7745c5c3_Err != nil {
@@ -718,7 +722,7 @@ func teamEditForm(team Team, matches []Match, msg templ.Component) templ.Compone
 		var templ_7745c5c3_Var29 string
 		templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.ResolveAttributeValue(team.TeamKey)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 270, Col: 78}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 271, Col: 78}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var29)
 		if templ_7745c5c3_Err != nil {
@@ -731,7 +735,7 @@ func teamEditForm(team Team, matches []Match, msg templ.Component) templ.Compone
 		var templ_7745c5c3_Var30 string
 		templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.ResolveAttributeValue(team.TeamMemberPass)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 276, Col: 103}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 277, Col: 103}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var30)
 		if templ_7745c5c3_Err != nil {
@@ -749,7 +753,7 @@ func teamEditForm(team Team, matches []Match, msg templ.Component) templ.Compone
 			var templ_7745c5c3_Var31 string
 			templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.ResolveAttributeValue(F("%d", m.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 286, Col: 41}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 287, Col: 41}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var31)
 			if templ_7745c5c3_Err != nil {
@@ -772,7 +776,7 @@ func teamEditForm(team Team, matches []Match, msg templ.Component) templ.Compone
 			var templ_7745c5c3_Var32 string
 			templ_7745c5c3_Var32, templ_7745c5c3_Err = templ.JoinStringErrs(m.Opponent)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 291, Col: 36}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 292, Col: 36}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var32))
 			if templ_7745c5c3_Err != nil {
@@ -785,7 +789,7 @@ func teamEditForm(team Team, matches []Match, msg templ.Component) templ.Compone
 			var templ_7745c5c3_Var33 string
 			templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.JoinStringErrs(m.Location)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 291, Col: 54}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 292, Col: 54}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var33))
 			if templ_7745c5c3_Err != nil {
@@ -799,7 +803,7 @@ func teamEditForm(team Team, matches []Match, msg templ.Component) templ.Compone
 				var templ_7745c5c3_Var34 string
 				templ_7745c5c3_Var34, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("-  %s [%s]", humanize.Time(*m.StartTime), m.StartTime.Format("2006-01-02T15:04")))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 293, Col: 124}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 294, Col: 124}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var34))
 				if templ_7745c5c3_Err != nil {
@@ -818,7 +822,7 @@ func teamEditForm(team Team, matches []Match, msg templ.Component) templ.Compone
 		var templ_7745c5c3_Var35 string
 		templ_7745c5c3_Var35, templ_7745c5c3_Err = templ.ResolveAttributeValue(team.TeamAdminPass)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 302, Col: 100}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 303, Col: 100}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var35)
 		if templ_7745c5c3_Err != nil {
@@ -829,6 +833,10 @@ func teamEditForm(team Team, matches []Match, msg templ.Component) templ.Compone
 			return templ_7745c5c3_Err
 		}
 		templ_7745c5c3_Err = teamFeatureCheckbox("enablePlayersModule", "Players and player registration", team.EnablePlayersModule).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = teamFeatureCheckbox("enablePaymentsModule", "Payments", team.EnablePaymentsModule).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -863,7 +871,7 @@ func teamEditForm(team Team, matches []Match, msg templ.Component) templ.Compone
 		var templ_7745c5c3_Var36 string
 		templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", minLineupPlayerCount))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 318, Col: 107}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 320, Col: 107}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var36)
 		if templ_7745c5c3_Err != nil {
@@ -876,7 +884,7 @@ func teamEditForm(team Team, matches []Match, msg templ.Component) templ.Compone
 		var templ_7745c5c3_Var37 string
 		templ_7745c5c3_Var37, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", maxLineupPlayerCount))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 318, Col: 155}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 320, Col: 155}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var37)
 		if templ_7745c5c3_Err != nil {
@@ -889,7 +897,7 @@ func teamEditForm(team Team, matches []Match, msg templ.Component) templ.Compone
 		var templ_7745c5c3_Var38 string
 		templ_7745c5c3_Var38, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", teamLineupPlayerCount(team)))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 318, Col: 212}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 320, Col: 212}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var38)
 		if templ_7745c5c3_Err != nil {
@@ -934,7 +942,7 @@ func teamEditForm(team Team, matches []Match, msg templ.Component) templ.Compone
 		var templ_7745c5c3_Var39 string
 		templ_7745c5c3_Var39, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", team.SportyCompetitionID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 336, Col: 119}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 338, Col: 119}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var39)
 		if templ_7745c5c3_Err != nil {
@@ -947,7 +955,7 @@ func teamEditForm(team Team, matches []Match, msg templ.Component) templ.Compone
 		var templ_7745c5c3_Var40 string
 		templ_7745c5c3_Var40, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", team.SportyGradeID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 339, Col: 107}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 341, Col: 107}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var40)
 		if templ_7745c5c3_Err != nil {
@@ -960,7 +968,7 @@ func teamEditForm(team Team, matches []Match, msg templ.Component) templ.Compone
 		var templ_7745c5c3_Var41 string
 		templ_7745c5c3_Var41, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", team.SportyTeamID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 342, Col: 105}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 344, Col: 105}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var41)
 		if templ_7745c5c3_Err != nil {
@@ -988,7 +996,7 @@ func teamEditForm(team Team, matches []Match, msg templ.Component) templ.Compone
 			var templ_7745c5c3_Var42 string
 			templ_7745c5c3_Var42, templ_7745c5c3_Err = templ.JoinStringErrs(humanize.Time(*team.SportyLastSyncedAt))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 354, Col: 109}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 356, Col: 109}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var42))
 			if templ_7745c5c3_Err != nil {
@@ -1007,7 +1015,7 @@ func teamEditForm(team Team, matches []Match, msg templ.Component) templ.Compone
 			var templ_7745c5c3_Var43 string
 			templ_7745c5c3_Var43, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("/teams/sporty-sync?teamId=%d", team.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 363, Col: 82}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 365, Col: 82}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var43)
 			if templ_7745c5c3_Err != nil {
@@ -1043,7 +1051,7 @@ func teamEditForm(team Team, matches []Match, msg templ.Component) templ.Compone
 		var templ_7745c5c3_Var44 string
 		templ_7745c5c3_Var44, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("/teams?teamId=%d", team.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 388, Col: 76}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 390, Col: 76}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var44)
 		if templ_7745c5c3_Err != nil {
@@ -1085,7 +1093,7 @@ func sportySyncPreview(team Team, preview *SportySyncPreview) templ.Component {
 		var templ_7745c5c3_Var46 string
 		templ_7745c5c3_Var46, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("sporty-sync-preview-%d", team.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 398, Col: 60}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 400, Col: 60}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var46)
 		if templ_7745c5c3_Err != nil {
@@ -1098,7 +1106,7 @@ func sportySyncPreview(team Team, preview *SportySyncPreview) templ.Component {
 		var templ_7745c5c3_Var47 string
 		templ_7745c5c3_Var47, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d matched, %d skipped", preview.Matched, preview.Skipped))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 401, Col: 85}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 403, Col: 85}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var47))
 		if templ_7745c5c3_Err != nil {
@@ -1148,7 +1156,7 @@ func sportySyncPreview(team Team, preview *SportySyncPreview) templ.Component {
 				var templ_7745c5c3_Var48 string
 				templ_7745c5c3_Var48, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", candidate.Fixture.ID))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 421, Col: 75}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 423, Col: 75}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var48)
 				if templ_7745c5c3_Err != nil {
@@ -1172,7 +1180,7 @@ func sportySyncPreview(team Team, preview *SportySyncPreview) templ.Component {
 				var templ_7745c5c3_Var49 string
 				templ_7745c5c3_Var49, templ_7745c5c3_Err = templ.JoinStringErrs(candidate.Match.Opponent)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 432, Col: 58}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 434, Col: 58}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var49))
 				if templ_7745c5c3_Err != nil {
@@ -1190,7 +1198,7 @@ func sportySyncPreview(team Team, preview *SportySyncPreview) templ.Component {
 					var templ_7745c5c3_Var50 string
 					templ_7745c5c3_Var50, templ_7745c5c3_Err = templ.JoinStringErrs(candidate.Match.StartTime.Format("Mon 2 Jan 15:04"))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 436, Col: 89}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 438, Col: 89}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var50))
 					if templ_7745c5c3_Err != nil {
@@ -1208,7 +1216,7 @@ func sportySyncPreview(team Team, preview *SportySyncPreview) templ.Component {
 				var templ_7745c5c3_Var51 string
 				templ_7745c5c3_Var51, templ_7745c5c3_Err = templ.JoinStringErrs(candidate.Match.Location)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 440, Col: 58}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 442, Col: 58}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var51))
 				if templ_7745c5c3_Err != nil {
@@ -1222,7 +1230,7 @@ func sportySyncPreview(team Team, preview *SportySyncPreview) templ.Component {
 					var templ_7745c5c3_Var52 string
 					templ_7745c5c3_Var52, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf(" - %s", candidate.Match.Subtitle))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 442, Col: 84}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 444, Col: 84}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var52))
 					if templ_7745c5c3_Err != nil {
@@ -1241,7 +1249,7 @@ func sportySyncPreview(team Team, preview *SportySyncPreview) templ.Component {
 			var templ_7745c5c3_Var53 string
 			templ_7745c5c3_Var53, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("/teams/sporty-sync?teamId=%d&confirm=1", team.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 452, Col: 92}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 454, Col: 92}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var53)
 			if templ_7745c5c3_Err != nil {
@@ -1254,7 +1262,7 @@ func sportySyncPreview(team Team, preview *SportySyncPreview) templ.Component {
 			var templ_7745c5c3_Var54 string
 			templ_7745c5c3_Var54, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("#sporty-sync-preview-%d", team.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 453, Col: 80}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 455, Col: 80}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var54)
 			if templ_7745c5c3_Err != nil {
@@ -1301,7 +1309,7 @@ func sportySkippedRecordsAccordion(records []SportySyncSkippedRecord) templ.Comp
 		var templ_7745c5c3_Var56 string
 		templ_7745c5c3_Var56, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("Skipped records (%d)", len(records)))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 475, Col: 63}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 477, Col: 63}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var56))
 		if templ_7745c5c3_Err != nil {
@@ -1319,7 +1327,7 @@ func sportySkippedRecordsAccordion(records []SportySyncSkippedRecord) templ.Comp
 			var templ_7745c5c3_Var57 string
 			templ_7745c5c3_Var57, templ_7745c5c3_Err = templ.JoinStringErrs(sportyFixtureSummary(skipped.Fixture))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 480, Col: 86}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 482, Col: 86}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var57))
 			if templ_7745c5c3_Err != nil {
@@ -1332,7 +1340,7 @@ func sportySkippedRecordsAccordion(records []SportySyncSkippedRecord) templ.Comp
 			var templ_7745c5c3_Var58 string
 			templ_7745c5c3_Var58, templ_7745c5c3_Err = templ.JoinStringErrs(skipped.Reason)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 481, Col: 69}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 483, Col: 69}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var58))
 			if templ_7745c5c3_Err != nil {
@@ -1345,7 +1353,7 @@ func sportySkippedRecordsAccordion(records []SportySyncSkippedRecord) templ.Comp
 			var templ_7745c5c3_Var59 string
 			templ_7745c5c3_Var59, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("Fixture %d - home team %d - away team %d", skipped.Fixture.ID, skipped.Fixture.HomeTeamID, skipped.Fixture.AwayTeamID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 483, Col: 157}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 485, Col: 157}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var59))
 			if templ_7745c5c3_Err != nil {
@@ -1399,7 +1407,7 @@ func sportySyncResultMessage(prefix string, result *SportySyncResult, includeHom
 				var templ_7745c5c3_Var61 string
 				templ_7745c5c3_Var61, templ_7745c5c3_Err = templ.JoinStringErrs(prefix)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 498, Col: 28}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 500, Col: 28}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var61))
 				if templ_7745c5c3_Err != nil {
@@ -1413,7 +1421,7 @@ func sportySyncResultMessage(prefix string, result *SportySyncResult, includeHom
 			var templ_7745c5c3_Var62 string
 			templ_7745c5c3_Var62, templ_7745c5c3_Err = templ.JoinStringErrs(sportySyncSummary(result))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 500, Col: 43}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 502, Col: 43}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var62))
 			if templ_7745c5c3_Err != nil {
@@ -1474,7 +1482,7 @@ func teamEditFormButton(team Team, open bool) templ.Component {
 			var templ_7745c5c3_Var64 string
 			templ_7745c5c3_Var64, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("/teams?teamId=%d", team.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 517, Col: 65}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 519, Col: 65}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var64)
 			if templ_7745c5c3_Err != nil {
@@ -1517,7 +1525,7 @@ func courtNotes(teamId uint) templ.Component {
 		var templ_7745c5c3_Var66 string
 		templ_7745c5c3_Var66, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("/teams/court-session?viewMode=court-notes&teamId=%d", teamId))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 523, Col: 92}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 525, Col: 92}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var66)
 		if templ_7745c5c3_Err != nil {
@@ -1569,7 +1577,7 @@ func teamActiveMatchAddOrOverrideForm(team *Team, mst *MatchSeasonTeam, matches 
 		var templ_7745c5c3_Var68 string
 		templ_7745c5c3_Var68, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", team.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 534, Col: 89}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 536, Col: 89}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var68)
 		if templ_7745c5c3_Err != nil {
@@ -1587,7 +1595,7 @@ func teamActiveMatchAddOrOverrideForm(team *Team, mst *MatchSeasonTeam, matches 
 			var templ_7745c5c3_Var69 string
 			templ_7745c5c3_Var69, templ_7745c5c3_Err = templ.ResolveAttributeValue(F("%d", m.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 544, Col: 49}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 546, Col: 49}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var69)
 			if templ_7745c5c3_Err != nil {
@@ -1610,7 +1618,7 @@ func teamActiveMatchAddOrOverrideForm(team *Team, mst *MatchSeasonTeam, matches 
 			var templ_7745c5c3_Var70 string
 			templ_7745c5c3_Var70, templ_7745c5c3_Err = templ.JoinStringErrs(m.Opponent)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 549, Col: 40}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 551, Col: 40}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var70))
 			if templ_7745c5c3_Err != nil {
@@ -1623,7 +1631,7 @@ func teamActiveMatchAddOrOverrideForm(team *Team, mst *MatchSeasonTeam, matches 
 			var templ_7745c5c3_Var71 string
 			templ_7745c5c3_Var71, templ_7745c5c3_Err = templ.JoinStringErrs(m.Location)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 549, Col: 58}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 551, Col: 58}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var71))
 			if templ_7745c5c3_Err != nil {
@@ -1637,7 +1645,7 @@ func teamActiveMatchAddOrOverrideForm(team *Team, mst *MatchSeasonTeam, matches 
 				var templ_7745c5c3_Var72 string
 				templ_7745c5c3_Var72, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("-  %s [%s]", humanize.Time(*m.StartTime), m.StartTime.Format("2006-01-02T15:04")))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 551, Col: 128}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 553, Col: 128}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var72))
 				if templ_7745c5c3_Err != nil {
@@ -1947,7 +1955,7 @@ func teamCourtNotesForm(team Team) templ.Component {
 		var templ_7745c5c3_Var82 string
 		templ_7745c5c3_Var82, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", team.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 642, Col: 81}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 644, Col: 81}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var82)
 		if templ_7745c5c3_Err != nil {
@@ -1960,7 +1968,7 @@ func teamCourtNotesForm(team Team) templ.Component {
 		var templ_7745c5c3_Var83 string
 		templ_7745c5c3_Var83, templ_7745c5c3_Err = templ.JoinStringErrs(team.CourtNotes)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 645, Col: 210}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 647, Col: 210}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var83))
 		if templ_7745c5c3_Err != nil {
@@ -2008,7 +2016,7 @@ func teamCourtNotes(team Team, msg string) templ.Component {
 		var templ_7745c5c3_Var85 string
 		templ_7745c5c3_Var85, templ_7745c5c3_Err = templ.JoinStringErrs(team.CourtNotes)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 661, Col: 20}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `team.templ`, Line: 663, Col: 20}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var85))
 		if templ_7745c5c3_Err != nil {

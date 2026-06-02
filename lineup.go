@@ -16,6 +16,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/a-h/templ"
 	"github.com/go-chi/chi/v5"
 	"gorm.io/gorm"
 )
@@ -72,6 +73,14 @@ type MatchDayPlayerTime struct {
 	CurrentIndexNumber  int
 	CurrentPositionName string
 	Positions           []string
+}
+
+type MatchDaySuggestedSub struct {
+	PositionIndex     int
+	PositionName      string
+	DueMinute         int
+	CurrentPlayer     Player
+	ReplacementPlayer Player
 }
 
 type MatchDayAdjacentLineups struct {
@@ -244,6 +253,64 @@ func findOrCreateLineupUser(db *gorm.DB, teamID uint, displayName string) (*Line
 		return nil, err
 	}
 	return &user, nil
+}
+
+func lineupLoginPageForRequest(r *http.Request, db *gorm.DB, msg string) templ.Component {
+	return lineupLoginPage(msg, strings.TrimSpace(os.Getenv("GOOGLE_CLIENT_ID")), getTeamId(GetContext(r, db)))
+}
+
+func setLineupUserCookie(w http.ResponseWriter, teamID uint, userID uint) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     lineupUserCookieName,
+		Value:    makeLineupUserToken(teamID, userID, adminTokenSecret()),
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   false,
+		SameSite: http.SameSiteStrictMode,
+		MaxAge:   60 * 60 * 24 * 365,
+	})
+}
+
+func loginLineupUserFromGoogle(db *gorm.DB, w http.ResponseWriter, r *http.Request) {
+	if !googleAuthEnabled() {
+		lineupLoginPageForRequest(r, db, "Google line-up access is not configured.").Render(GetContext(r, db), w)
+		return
+	}
+	info, err := googleCredentialVerifier(r.FormValue("credential"))
+	if err != nil {
+		lineupLoginPageForRequest(r, db, "Google sign-in failed.").Render(GetContext(r, db), w)
+		return
+	}
+	teamID := parseAdminTeamID(r, db)
+	if teamID == 0 {
+		lineupLoginPageForRequest(r, db, "Choose a team before requesting line-up access.").Render(GetContext(r, db), w)
+		return
+	}
+	user, _, err := SaveAdminUserFromGoogle(db, *info, true)
+	if err != nil {
+		lineupLoginPageForRequest(r, db, "Could not save Google user.").Render(GetContext(r, db), w)
+		return
+	}
+	if canGoogleUserAccessLineups(db, user.ID, teamID) {
+		displayName := strings.TrimSpace(user.DisplayName)
+		if displayName == "" {
+			displayName = user.Email
+		}
+		lineupUser, err := findOrCreateLineupUser(db, teamID, displayName)
+		if err != nil {
+			lineupLoginPageForRequest(r, db, err.Error()).Render(GetContext(r, db), w)
+			return
+		}
+		setLineupUserCookie(w, teamID, lineupUser.ID)
+		w.Header().Set("HX-Redirect", "/lineups")
+		http.Redirect(w, r, "/lineups", http.StatusSeeOther)
+		return
+	}
+	if err := RequestAdminAccess(db, user.ID, teamID, adminRoleLineupAccess); err != nil {
+		lineupLoginPageForRequest(r, db, "Could not request line-up access.").Render(GetContext(r, db), w)
+		return
+	}
+	lineupLoginPageForRequest(r, db, "Line-up access request sent. A team admin or super admin can approve it.").Render(GetContext(r, db), w)
 }
 
 func lineupActorName(db *gorm.DB, actor LineupActor) string {
@@ -639,6 +706,15 @@ func matchDayPlayerCurrentlyOn(playerTimes []MatchDayPlayerTime, playerID uint) 
 	return false
 }
 
+func matchDayPlayerActuallyCurrentlyOn(lineup *Lineup, playerID uint) bool {
+	for _, currentPlayerID := range matchDayActualCurrentPositions(lineup) {
+		if currentPlayerID == playerID {
+			return true
+		}
+	}
+	return false
+}
+
 func currentMatchDayPlayerForPosition(playerTimes []MatchDayPlayerTime, indexNumber int) MatchDayPlayerTime {
 	for _, playerTime := range playerTimes {
 		if playerTime.Current && playerTime.CurrentIndexNumber == indexNumber {
@@ -673,25 +749,35 @@ func matchDayPlayerByID(lineup *Lineup) map[uint]Player {
 }
 
 func matchDayCurrentActions(lineup *Lineup, minute int) []matchDayCurrentAction {
+	return matchDayCurrentActionsFor(lineup, minute, true)
+}
+
+func matchDayActualCurrentActions(lineup *Lineup, minute int) []matchDayCurrentAction {
+	return matchDayCurrentActionsFor(lineup, minute, false)
+}
+
+func matchDayCurrentActionsFor(lineup *Lineup, minute int, includePlannedSubs bool) []matchDayCurrentAction {
 	if lineup == nil {
 		return nil
 	}
 	actions := []matchDayCurrentAction{}
-	for _, lineupPlayer := range lineup.Players {
-		if lineupPlayer.PlayerID == 0 || lineupPlayer.SlotOrder == 0 {
-			continue
+	if includePlannedSubs {
+		for _, lineupPlayer := range lineup.Players {
+			if lineupPlayer.PlayerID == 0 || lineupPlayer.SlotOrder == 0 {
+				continue
+			}
+			subMinute := clampMatchMinute(lineupPlayer.SubMinute)
+			if subMinute > minute {
+				continue
+			}
+			actions = append(actions, matchDayCurrentAction{
+				Minute:    subMinute,
+				CreatedAt: lineupPlayer.CreatedAt,
+				Kind:      "sub",
+				Index:     lineupPlayer.IndexNumber,
+				PlayerID:  lineupPlayer.PlayerID,
+			})
 		}
-		subMinute := clampMatchMinute(lineupPlayer.SubMinute)
-		if subMinute > minute {
-			continue
-		}
-		actions = append(actions, matchDayCurrentAction{
-			Minute:    subMinute,
-			CreatedAt: lineupPlayer.CreatedAt,
-			Kind:      "sub",
-			Index:     lineupPlayer.IndexNumber,
-			PlayerID:  lineupPlayer.PlayerID,
-		})
 	}
 	swapEvents := []MatchEvent{}
 	subOffByMinute := map[int][]MatchEvent{}
@@ -780,6 +866,14 @@ func matchDayCurrentActions(lineup *Lineup, minute int) []matchDayCurrentAction 
 }
 
 func matchDayCurrentPositions(lineup *Lineup) map[int]uint {
+	return matchDayCurrentPositionsFor(lineup, true)
+}
+
+func matchDayActualCurrentPositions(lineup *Lineup) map[int]uint {
+	return matchDayCurrentPositionsFor(lineup, false)
+}
+
+func matchDayCurrentPositionsFor(lineup *Lineup, includePlannedSubs bool) map[int]uint {
 	positions := map[int]uint{}
 	if lineup == nil {
 		return positions
@@ -789,7 +883,7 @@ func matchDayCurrentPositions(lineup *Lineup) map[int]uint {
 			positions[lineupPlayer.IndexNumber] = lineupPlayer.PlayerID
 		}
 	}
-	for _, action := range matchDayCurrentActions(lineup, matchDayMinute(lineup.Match)) {
+	for _, action := range matchDayCurrentActionsFor(lineup, matchDayMinute(lineup.Match), includePlannedSubs) {
 		switch action.Kind {
 		case "sub":
 			positions[action.Index] = action.PlayerID
@@ -810,6 +904,76 @@ func matchDayCurrentPositions(lineup *Lineup) map[int]uint {
 		}
 	}
 	return positions
+}
+
+func matchDaySuggestedSubs(lineup *Lineup, unavailablePlayerIDs map[uint]bool) []MatchDaySuggestedSub {
+	if lineup == nil || lineup.Locked || lineupMatchID(lineup) == 0 || !matchDayCanLogLiveEvent(lineup.Match) {
+		return nil
+	}
+	currentMinute := matchDayMinute(lineup.Match)
+	actualPositions := matchDayActualCurrentPositions(lineup)
+	actualPlayerOn := map[uint]bool{}
+	for _, playerID := range actualPositions {
+		if playerID > 0 {
+			actualPlayerOn[playerID] = true
+		}
+	}
+	playerByID := matchDayPlayerByID(lineup)
+	positionNames := matchDayPositionNamesByIndex(lineup)
+	suggestions := []MatchDaySuggestedSub{}
+	for _, pitchPosition := range lineupPitchPlayers(lineup) {
+		indexNumber := pitchPosition.Position.IndexNumber
+		currentPlayerID := actualPositions[indexNumber]
+		if currentPlayerID == 0 {
+			continue
+		}
+		assignedPlayers := append([]LineupPlayer(nil), pitchPosition.Players...)
+		sort.SliceStable(assignedPlayers, func(i, j int) bool {
+			return assignedPlayers[i].SlotOrder < assignedPlayers[j].SlotOrder
+		})
+		for i := 1; i < len(assignedPlayers); i++ {
+			replacement := assignedPlayers[i]
+			if replacement.PlayerID == 0 || replacement.SubMinute <= 0 || clampMatchMinute(replacement.SubMinute) > currentMinute {
+				continue
+			}
+			if playerUnavailableForMatch(unavailablePlayerIDs, replacement.PlayerID) || actualPlayerOn[replacement.PlayerID] {
+				continue
+			}
+			if assignedPlayers[i-1].PlayerID != currentPlayerID {
+				continue
+			}
+			positionName := positionNames[indexNumber]
+			if strings.TrimSpace(positionName) == "" {
+				positionName = fmt.Sprintf("Position %d", indexNumber)
+			}
+			currentPlayer := playerByID[currentPlayerID]
+			if currentPlayer.ID == 0 {
+				currentPlayer = Player{Model: gorm.Model{ID: currentPlayerID}, Name: fmt.Sprintf("player %d", currentPlayerID)}
+			}
+			replacementPlayer := playerByID[replacement.PlayerID]
+			if replacementPlayer.ID == 0 {
+				replacementPlayer = replacement.Player
+			}
+			if replacementPlayer.ID == 0 {
+				replacementPlayer = Player{Model: gorm.Model{ID: replacement.PlayerID}, Name: fmt.Sprintf("player %d", replacement.PlayerID)}
+			}
+			suggestions = append(suggestions, MatchDaySuggestedSub{
+				PositionIndex:     indexNumber,
+				PositionName:      positionName,
+				DueMinute:         clampMatchMinute(replacement.SubMinute),
+				CurrentPlayer:     currentPlayer,
+				ReplacementPlayer: replacementPlayer,
+			})
+			break
+		}
+	}
+	sort.SliceStable(suggestions, func(i, j int) bool {
+		if suggestions[i].DueMinute != suggestions[j].DueMinute {
+			return suggestions[i].DueMinute < suggestions[j].DueMinute
+		}
+		return suggestions[i].PositionIndex < suggestions[j].PositionIndex
+	})
+	return suggestions
 }
 
 func matchDayPlayerTimesWithEvents(lineup *Lineup) []MatchDayPlayerTime {
@@ -1431,31 +1595,27 @@ func lineupLoginHandler(db *gorm.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case "GET":
-			lineupLoginPage("").Render(GetContext(r, db), w)
+			lineupLoginPageForRequest(r, db, "").Render(GetContext(r, db), w)
 		case "POST":
 			if err := r.ParseForm(); err != nil {
-				lineupLoginPage("Invalid form data").Render(GetContext(r, db), w)
+				lineupLoginPageForRequest(r, db, "Invalid form data").Render(GetContext(r, db), w)
+				return
+			}
+			if strings.TrimSpace(r.FormValue("credential")) != "" {
+				loginLineupUserFromGoogle(db, w, r)
 				return
 			}
 			team, err := getTeamByKeyAndMemberPassword(db, r.FormValue("teamKey"), r.FormValue("teamMemberPass"))
 			if err != nil {
-				lineupLoginPage("Team key or member password did not match").Render(GetContext(r, db), w)
+				lineupLoginPageForRequest(r, db, "Team key or member password did not match").Render(GetContext(r, db), w)
 				return
 			}
 			user, err := findOrCreateLineupUser(db, team.ID, r.FormValue("displayName"))
 			if err != nil {
-				lineupLoginPage(err.Error()).Render(GetContext(r, db), w)
+				lineupLoginPageForRequest(r, db, err.Error()).Render(GetContext(r, db), w)
 				return
 			}
-			http.SetCookie(w, &http.Cookie{
-				Name:     lineupUserCookieName,
-				Value:    makeLineupUserToken(team.ID, user.ID, adminTokenSecret()),
-				Path:     "/",
-				HttpOnly: true,
-				Secure:   false,
-				SameSite: http.SameSiteStrictMode,
-				MaxAge:   60 * 60 * 24 * 365,
-			})
+			setLineupUserCookie(w, team.ID, user.ID)
 			w.Header().Set("HX-Redirect", "/lineups")
 			http.Redirect(w, r, "/lineups", http.StatusSeeOther)
 		default:
@@ -1468,7 +1628,7 @@ func lineupListHandler(db *gorm.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		actor := getLineupActor(r, db)
 		if actor.TeamID == 0 || (!actor.IsAdmin && actor.UserID == 0) {
-			lineupLoginPage("").Render(GetContext(r, db), w)
+			lineupLoginPageForRequest(r, db, "").Render(GetContext(r, db), w)
 			return
 		}
 		lineups, err := visibleLineups(db, actor)
@@ -1725,7 +1885,7 @@ func matchDayHandler(db *gorm.DB) http.HandlerFunc {
 		}
 		actor := getLineupActor(r, db)
 		if actor.TeamID == 0 || (!actor.IsAdmin && actor.UserID == 0) {
-			lineupLoginPage("").Render(GetContext(r, db), w)
+			lineupLoginPageForRequest(r, db, "").Render(GetContext(r, db), w)
 			return
 		}
 		lineups, err := visibleLineups(db, actor)
@@ -2214,7 +2374,7 @@ func matchDayActionHandler(db *gorm.DB) http.HandlerFunc {
 				http.Error(w, "Replacement player is unavailable for this match", http.StatusBadRequest)
 				return
 			}
-			if matchDayPlayerCurrentlyOn(matchDayPlayerTimesWithEvents(lineup), replacementPlayer.ID) {
+			if matchDayPlayerActuallyCurrentlyOn(lineup, replacementPlayer.ID) {
 				http.Error(w, "Replacement player is already on the pitch", http.StatusBadRequest)
 				return
 			}
@@ -2248,7 +2408,7 @@ func lineupNewHandler(db *gorm.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		actor := getLineupActor(r, db)
 		if actor.TeamID == 0 || (!actor.IsAdmin && actor.UserID == 0) {
-			lineupLoginPage("").Render(GetContext(r, db), w)
+			lineupLoginPageForRequest(r, db, "").Render(GetContext(r, db), w)
 			return
 		}
 		renderNewPage := func(msg string) {
@@ -2798,7 +2958,7 @@ func formationListHandler(db *gorm.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		actor := getLineupActor(r, db)
 		if actor.TeamID == 0 || (!actor.IsAdmin && actor.UserID == 0) {
-			lineupLoginPage("").Render(GetContext(r, db), w)
+			lineupLoginPageForRequest(r, db, "").Render(GetContext(r, db), w)
 			return
 		}
 		formations, err := visibleFormations(db, actor)
@@ -2815,7 +2975,7 @@ func formationNewHandler(db *gorm.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		actor := getLineupActor(r, db)
 		if actor.TeamID == 0 || (!actor.IsAdmin && actor.UserID == 0) {
-			lineupLoginPage("").Render(GetContext(r, db), w)
+			lineupLoginPageForRequest(r, db, "").Render(GetContext(r, db), w)
 			return
 		}
 		switch r.Method {
@@ -3049,7 +3209,7 @@ func formationCopyHandler(db *gorm.DB) http.HandlerFunc {
 		}
 		actor := getLineupActor(r, db)
 		if actor.TeamID == 0 || (!actor.IsAdmin && actor.UserID == 0) {
-			lineupLoginPage("").Render(GetContext(r, db), w)
+			lineupLoginPageForRequest(r, db, "").Render(GetContext(r, db), w)
 			return
 		}
 		formation, err := getFormation(db, uint(id))
