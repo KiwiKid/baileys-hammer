@@ -31,6 +31,18 @@ type googleUserInfo struct {
 }
 
 var googleCredentialVerifier = verifyGoogleCredentialWithTokenInfo
+var googleConnectivityChecker = checkGoogleOAuthDiscovery
+
+type GoogleAuthIntegrationStatus struct {
+	Enabled                 bool
+	ClientIDConfigured      bool
+	ClientSecretConfigured  bool
+	SessionSecretUsesClient bool
+	ConnectivityChecked     bool
+	CanConnect              bool
+	ConnectivityStatus      string
+	ConnectivityError       string
+}
 
 func googleAuthEnabled() bool {
 	return strings.TrimSpace(os.Getenv("GOOGLE_CLIENT_ID")) != ""
@@ -42,6 +54,39 @@ func googleAdminSessionSecret() string {
 		return secret
 	}
 	return strings.TrimSpace(os.Getenv("GOOGLE_CLIENT_ID"))
+}
+
+func googleAuthIntegrationStatus() GoogleAuthIntegrationStatus {
+	clientIDConfigured := strings.TrimSpace(os.Getenv("GOOGLE_CLIENT_ID")) != ""
+	clientSecretConfigured := strings.TrimSpace(os.Getenv("GOOGLE_CLIENT_SECRET")) != ""
+	status := GoogleAuthIntegrationStatus{
+		Enabled:                 clientIDConfigured,
+		ClientIDConfigured:      clientIDConfigured,
+		ClientSecretConfigured:  clientSecretConfigured,
+		SessionSecretUsesClient: clientIDConfigured && !clientSecretConfigured,
+	}
+	canConnect, message, err := googleConnectivityChecker()
+	status.ConnectivityChecked = true
+	status.CanConnect = canConnect
+	status.ConnectivityStatus = message
+	if err != nil {
+		status.ConnectivityError = err.Error()
+	}
+	return status
+}
+
+func checkGoogleOAuthDiscovery() (bool, string, error) {
+	endpoint := "https://accounts.google.com/.well-known/openid-configuration"
+	client := http.Client{Timeout: 5 * time.Second}
+	resp, err := client.Get(endpoint)
+	if err != nil {
+		return false, "Could not reach Google OAuth discovery", err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return false, fmt.Sprintf("Google OAuth discovery returned %s", resp.Status), nil
+	}
+	return true, "Google OAuth discovery is reachable", nil
 }
 
 func verifyGoogleCredentialWithTokenInfo(credential string) (*googleUserInfo, error) {

@@ -14,6 +14,9 @@ const defaultLitestreamConfigPath = "/etc/litestream.yml"
 type LitestreamBackupStatus struct {
 	DatabasePath       string
 	ConfigPath         string
+	ConfigReadable     bool
+	ConfigReadout      string
+	ConfigError        string
 	EndpointSet        bool
 	BucketSet          bool
 	AccessKeySet       bool
@@ -44,6 +47,7 @@ func litestreamBackupStatus() LitestreamBackupStatus {
 		SecretKeySet:   strings.TrimSpace(os.Getenv("R2_SECRET_ACCESS_KEY")) != "",
 		StartedWithApp: strings.EqualFold(strings.TrimSpace(os.Getenv("LITESTREAM_ACTIVE")), "true"),
 	}
+	status.ConfigReadable, status.ConfigReadout, status.ConfigError = litestreamConfigReadout(status.ConfigPath)
 
 	litestreamPath, err := exec.LookPath("litestream")
 	status.LitestreamPresent = err == nil
@@ -79,6 +83,39 @@ func litestreamBackupStatus() LitestreamBackupStatus {
 	status.LastSnapshotAt = snapshot.CreatedAt
 	status.LastSnapshotSize = snapshot.Size
 	return status
+}
+
+func litestreamConfigReadout(configPath string) (bool, string, string) {
+	if strings.TrimSpace(configPath) == "" {
+		return false, "", "Litestream config path is empty."
+	}
+	config, err := os.ReadFile(configPath)
+	if err != nil {
+		return false, "", err.Error()
+	}
+	return true, sanitizeLitestreamConfig(string(config)), ""
+}
+
+func sanitizeLitestreamConfig(config string) string {
+	lines := strings.Split(config, "\n")
+	for i, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		switch {
+		case strings.HasPrefix(trimmed, "access-key-id:"):
+			lines[i] = redactConfigLineValue(line)
+		case strings.HasPrefix(trimmed, "secret-access-key:"):
+			lines[i] = redactConfigLineValue(line)
+		}
+	}
+	return strings.TrimSpace(strings.Join(lines, "\n"))
+}
+
+func redactConfigLineValue(line string) string {
+	separator := strings.Index(line, ":")
+	if separator == -1 {
+		return line
+	}
+	return line[:separator+1] + " <redacted>"
 }
 
 func envOrDefault(name string, fallback string) string {

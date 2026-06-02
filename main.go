@@ -3161,6 +3161,19 @@ func requireTeamFeature(db *gorm.DB, moduleName string, enabled func(Team) bool,
 	}
 }
 
+func googleAuthStatusHandler(db *gorm.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if googleAuthEnabled() {
+			user, _, ok := currentAdminUser(r, db)
+			if !ok || !isSuperAdmin(db, user.ID) {
+				http.Error(w, "Google auth status is only available to super-admins", http.StatusForbidden)
+				return
+			}
+		}
+		googleAuthStatusPanel(googleAuthIntegrationStatus()).Render(GetContext(r, db), w)
+	}
+}
+
 // setupRouter initializes the HTTP routes and returns a router.
 func setupRouter(db *gorm.DB) *chi.Mux {
 	r := chi.NewRouter()
@@ -3179,6 +3192,7 @@ func setupRouter(db *gorm.DB) *chi.Mux {
 	r.HandleFunc("/admin", adminHandler(db))
 	r.HandleFunc("/admin/users/roles", requireGoogleAdmin(db, adminUserRoleHandler(db)))
 	r.HandleFunc("/admin/access-requests", requireGoogleAdmin(db, adminAccessRequestHandler(db)))
+	r.HandleFunc("/admin/google-auth-status", requireGoogleAdmin(db, googleAuthStatusHandler(db)))
 	r.HandleFunc("/admin/team-access-requests", adminTeamAccessRequestHandler(db))
 	r.HandleFunc("/admin/team-switch", adminTeamSwitchHandler(db))
 
